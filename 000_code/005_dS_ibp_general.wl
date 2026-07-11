@@ -841,6 +841,17 @@ missingVertexEnergyNumericRules[topo_Association] := Complement[
    ];
 
 
+lineParameterVariables[topo_Association] := DeleteDuplicates[
+   Variables[Flatten[Lookup[topo["lines"], #, {}] & /@ {"nu", "eomCoefficients", "shrinkPrefactor"}]]
+   ];
+
+
+missingLineParameterNumericRules[topo_Association] := Complement[
+   lineParameterVariables[topo],
+   numericRuleLHSVariables[topo]
+   ];
+
+
 (* 将两个线性动量表达式的点积展开为 qq/qk/kk。 *)
 expandDotExpr[p_, r_, topo_Association] := Module[
    {loops = topo["loopMomenta"], exts = topo["externalMomenta"],
@@ -1865,7 +1876,8 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
-    missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies, pendingFeatures, ruleData},
+    missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
+    missingLineParameters, pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
    lineIds = Lookup[topo["lines"], "id"];
@@ -1932,6 +1944,14 @@ topologyValidationReport[topo_Association] := Module[
       "missingVertexEnergies" -> missingVertexEnergies,
       "numericRules" -> topo["numericRules"],
       "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"
+      |>]
+    ];
+   missingLineParameters = missingLineParameterNumericRules[topo];
+   If[missingLineParameters =!= {},
+    appendIssue["warning", "numericRulesMissingLineParameters", <|
+      "missingLineParameters" -> missingLineParameters,
+      "numericRules" -> topo["numericRules"],
+      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need massive line parameter rules"
       |>]
     ];
    discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
@@ -2653,7 +2673,7 @@ Options[makeIBPWorkflowData] = Join[
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
     exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport,
-    allowedLinearModes, missingExternalInvariants, missingVertexEnergies},
+    allowedLinearModes, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    topologyReport = topologyValidationReport[topo];
    linearMode = OptionValue[LinearSystemMode];
@@ -2687,6 +2707,17 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "stage" -> "linear",
       "reason" -> "numericRulesMissingVertexEnergies",
       "missingVertexEnergies" -> missingVertexEnergies,
+      "topology" -> topo,
+      "topologyValidationReport" -> topologyReport
+      |>]
+    ];
+   missingLineParameters = missingLineParameterNumericRules[topo];
+   If[linearMode === "numeric" && missingLineParameters =!= {},
+    Return[<|
+      "status" -> "notReady",
+      "stage" -> "linear",
+      "reason" -> "numericRulesMissingLineParameters",
+      "missingLineParameters" -> missingLineParameters,
       "topology" -> topo,
       "topologyValidationReport" -> topologyReport
       |>]
@@ -2797,6 +2828,7 @@ makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Modul
         }]],
     "missingExternalInvariants" -> Lookup[workflow, "missingExternalInvariants", {}],
     "missingVertexEnergies" -> Lookup[workflow, "missingVertexEnergies", {}],
+    "missingLineParameters" -> Lookup[workflow, "missingLineParameters", {}],
     "pendingFeatures" -> DeleteDuplicates[Flatten[{
         Lookup[topologyReport, "pendingFeatures", {}],
         Lookup[seedBatch, "pendingFeatures", {}],
