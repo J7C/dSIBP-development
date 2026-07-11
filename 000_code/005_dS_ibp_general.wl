@@ -2218,7 +2218,8 @@ topologyValidationReport[topo_Association] := Module[
     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
     ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData, seedOptions,
-    unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport, numericRuleValidationReport,
+     unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport, numericRuleValidationReport,
+     zeroPointRuleValidationReport, shrinkPrefactorRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2291,6 +2292,14 @@ topologyValidationReport[topo_Association] := Module[
    numericRuleValidationReport = validateCoefficientRules[topo["numericRules"]];
    If[Lookup[numericRuleValidationReport, "status", "ok"] =!= "ok",
     appendIssue["error", "invalidNumericRules", KeyDrop[numericRuleValidationReport, {"status"}]]
+    ];
+   zeroPointRuleValidationReport = validateCoefficientRules[topo["zeroPointRules"]];
+   If[Lookup[zeroPointRuleValidationReport, "status", "ok"] =!= "ok",
+    appendIssue["error", "invalidZeroPointRules", KeyDrop[zeroPointRuleValidationReport, {"status"}]]
+    ];
+   shrinkPrefactorRuleValidationReport = validateCoefficientRules[topo["shrinkPrefactorRules"]];
+   If[Lookup[shrinkPrefactorRuleValidationReport, "status", "ok"] =!= "ok",
+    appendIssue["error", "invalidShrinkPrefactorRules", KeyDrop[shrinkPrefactorRuleValidationReport, {"status"}]]
     ];
    If[! DuplicateFreeQ[vertexIds],
     appendIssue["error", "duplicateVertexIds", <|"vertexIds" -> vertexIds|>]

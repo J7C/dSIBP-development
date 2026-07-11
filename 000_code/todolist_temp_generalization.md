@@ -39,6 +39,7 @@
 - [x] numeric 初始化需求汇总：`numericRuleRequirementReport` 集中列出外部不变量、time-IBP 顶点能量和 massive line 参数的 required/provided/missing 变量，并接入 `makeTopologyData`、`topologyValidationReport`、workflow/readiness。
 - [x] numericRules 模板接口：`makeNumericRuleTemplate[case]` 默认给出缺失数值规则的可编辑骨架，也可用 `NumericRuleTemplateScope -> "required"` 列出全量静态需求。
 - [x] sampleDiscreteRules 输入门禁：要求输入为替换规则列表的列表，并继续检查未知离散变量、非 0/1 值和 sample 覆盖性。
+- [x] 零点/缩并 prefactor 初始化规则门禁：`zeroPointRules` 与 `shrinkPrefactorRules` 必须是替换规则列表，坏形状会在 topology validation 阶段早停。
 - [x] 最小端到端 workflow 入口：`makeIBPWorkflowData` 按 topology -> canonical seed -> linear/sample linear -> optional Kira export 串联现有 gate；默认不运行 Kira reduction。
 - [x] workflow 控制选项门禁：`ExportKira` 必须是布尔值，`OutputDirectory` 必须是 `None`、`Automatic` 或非空字符串；坏值会在 seed 生成前返回 `invalidWorkflowOptions`。
 - [x] 分阶段 readiness report：`makeIBPReadinessReport` 汇总 topology/seed/linear/Kira 的 ready 状态、计数、pending features 和 issue codes，方便任意拓扑输入先做轻量体检。

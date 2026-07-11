@@ -1147,6 +1147,8 @@ compareExpectedTopologyValidationReport[] := Module[
         |>,
       "kiraOrdering" -> <|"PreferredPriority" -> "Middle", "PreferredIntegrals" -> Global`J[{}, {}, {}], "TypoOrderingKey" -> 1|>,
       "numericRules" -> {Global`dim, Global`kk[1, 1] -> 5},
+      "zeroPointRules" -> <||>,
+      "shrinkPrefactorRules" -> {Global`badShrinkRule},
       "ispData" -> {
         {Global`ispQ1K, Global`qk[1, 1], {"bad"}},
         {Global`ispQ2K, Global`qk[2, 1], {0, 2}}
@@ -1227,14 +1229,16 @@ compareExpectedTopologyValidationReport[] := Module[
        duplicateISPReport["errorCount"] === 1 &&
        MemberQ[duplicateISPCodes, "duplicateISPNames"] &&
        malformedRangeReport["status"] === "issues" &&
-       malformedRangeReport["errorCount"] === 7 &&
-       MemberQ[malformedRangeCodes, "malformedSeedRangeSpecs"] &&
-       MemberQ[malformedRangeCodes, "malformedSeedSampleOnly"] &&
-       MemberQ[malformedRangeCodes, "malformedISPRangeSpecs"] &&
-       MemberQ[malformedRangeCodes, "unknownSeedOptionKeys"] &&
-       MemberQ[malformedRangeCodes, "malformedSeedOptionValues"] &&
-       MemberQ[malformedRangeCodes, "invalidKiraOrdering"] &&
-       MemberQ[malformedRangeCodes, "invalidNumericRules"] &&
+        malformedRangeReport["errorCount"] === 9 &&
+        MemberQ[malformedRangeCodes, "malformedSeedRangeSpecs"] &&
+        MemberQ[malformedRangeCodes, "malformedSeedSampleOnly"] &&
+        MemberQ[malformedRangeCodes, "malformedISPRangeSpecs"] &&
+        MemberQ[malformedRangeCodes, "unknownSeedOptionKeys"] &&
+        MemberQ[malformedRangeCodes, "malformedSeedOptionValues"] &&
+        MemberQ[malformedRangeCodes, "invalidKiraOrdering"] &&
+        MemberQ[malformedRangeCodes, "invalidNumericRules"] &&
+        MemberQ[malformedRangeCodes, "invalidZeroPointRules"] &&
+        MemberQ[malformedRangeCodes, "invalidShrinkPrefactorRules"] &&
        malformedSampleReport["status"] === "issues" &&
        malformedSampleReport["errorCount"] === 1 &&
        MemberQ[malformedSampleCodes, "malformedSampleDiscreteRules"] &&
