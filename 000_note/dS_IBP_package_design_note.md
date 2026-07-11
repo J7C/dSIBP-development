@@ -273,7 +273,7 @@ IBP seed 包括：
 
 Kira 编号必须对所有 sector 的积分一起做全局排序，不能先按 sector 追加。当前 `sortIntegralsForKira` 的第一优先级是所有线第一幂次指标的复杂度，随后再看 `a`、ISP、离散 `n` 和稳定字符串序；后续可在此基础上叠加用户指定 master/weight。
 
-`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。它只做轻量结构检查：线编号、端点、声明的圈/外动量基、ISP 数量、z/ISP 坐标数是否闭合、sampleDiscreteRules 和当前未实现的 seed feature；不做解析 rank、全局求解或大规模 IBP 展开。若使用 sample 离散模式，`sampleDiscreteRules` 的每条规则必须覆盖该 sector 的全部离散 `n` 变量；否则 seed 中会残留符号 `n`，不能进入即时 EOM canonical。
+`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。它只做轻量结构检查：线编号、端点、声明的圈/外动量基、ISP 数量、z/ISP 坐标数是否闭合、`numericRules` 是否覆盖外动量不变量、sampleDiscreteRules 和当前未实现的 seed feature；不做解析 rank、全局求解或大规模 IBP 展开。`numericRules` 缺少某些 `kk[i,j]` 时只给 warning，因为解析 seed 仍可生成，但 numeric linear/Kira 阶段必须补齐这些规则。若使用 sample 离散模式，`sampleDiscreteRules` 的每条规则必须覆盖该 sector 的全部离散 `n` 变量；否则 seed 中会残留符号 `n`，不能进入即时 EOM canonical。
 
 ## 9. 外腿与传播子统一约定
 
@@ -316,6 +316,7 @@ $$J[\{a_v\}; \{\text{pack}_e\}; \{n_{\text{isp}_j}\}]$$
 2. **独立性**：直接作为 ISP 给出的标量积之间线性无关，并且不应再由传播子平方线性表示。
 3. **数目检查**：当前实现要求 `zExprs` 的数量等于“非 ISP 标量积”的数量，即 $\#z_e = N_{\text{sp}} - \#\text{ISP}_{\text{direct}}$。这里的计数是用户定义的 `z/ISP` 坐标闭合条件，不是程序自动选择 propagator 子集。
 4. **可解性检查**：数量闭合后，程序会实际构造小矩阵并尝试生成 `repSP2Z`；若传播子动量退化、重复或无法反解，会在 `validationReport` 中报告 `scalarProductCoordinateSolveFailed`，而不是等到 IBP seed 生成时报错。
+5. **数值规则检查**：若拓扑包含独立外动量基，`validationReport` 会检查 `numericRules` 是否覆盖全部 `kk[i,j]` 外部不变量；缺失时报 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed。
 
 其中 $N_{\text{sp}} = L(L+1)/2 + L K$，$K$ 是初始化中 `externalMomenta` 的独立外动量基个数。
 

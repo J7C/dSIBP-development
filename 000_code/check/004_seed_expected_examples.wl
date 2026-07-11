@@ -696,7 +696,8 @@ compareExpectedTopologyDataInterface[] := Module[
 
 compareExpectedTopologyValidationReport[] := Module[
    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
-    badCodes, redundantCodes, singularCodes, badSeverities, incompleteDiscreteData},
+    missingNumericCase, missingNumericReport, badCodes, redundantCodes, singularCodes, missingNumericCodes,
+    badSeverities, incompleteDiscreteData},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -742,12 +743,29 @@ compareExpectedTopologyValidationReport[] := Module[
      "sampleDiscreteRules" -> {{Global`n[1] -> 0, Global`n[2] -> 0}},
      "seedRanges" -> <|"sampleOnly" -> True|>
      |>;
+   missingNumericCase = <|
+     "name" -> "missingNumericInvariantToy",
+     "vertexData" -> {{1, "+"}, {2, "+"}},
+     "lineData" -> {
+       <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>,
+       <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> Global`q1 - Global`k, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
+       },
+     "extLegs" -> {},
+     "loopMomenta" -> {Global`q1},
+     "externalMomenta" -> {Global`k},
+     "ispData" -> {},
+     "numericRules" -> {Global`dim -> 3},
+     "sampleDiscreteRules" -> {{Global`n[1] -> 0, Global`n[2] -> 0}},
+     "seedRanges" -> <|"sampleOnly" -> True|>
+     |>;
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
    redundantReport = Global`topologyValidationReport[Global`parseTopology[redundantCase]];
    singularReport = Global`topologyValidationReport[Global`parseTopology[singularCase]];
+   missingNumericReport = Global`topologyValidationReport[Global`parseTopology[missingNumericCase]];
    badCodes = Lookup[badReport["issues"], "code", {}];
    redundantCodes = Lookup[redundantReport["issues"], "code", {}];
    singularCodes = Lookup[singularReport["issues"], "code", {}];
+   missingNumericCodes = Lookup[missingNumericReport["issues"], "code", {}];
    badSeverities = Lookup[badReport["issues"], "severity", {}];
    incompleteDiscreteData = Global`selectedDiscreteSeedRules[Global`parseTopology[badCase]];
    <|
@@ -774,6 +792,10 @@ compareExpectedTopologyValidationReport[] := Module[
        singularReport["status"] === "issues" &&
        singularReport["errorCount"] === 1 &&
        MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"] &&
+       missingNumericReport["status"] === "ok" &&
+       missingNumericReport["errorCount"] === 0 &&
+       missingNumericReport["warningCount"] === 1 &&
+       MemberQ[missingNumericCodes, "numericRulesMissingExternalInvariants"] &&
        incompleteDiscreteData["status"] === "incompleteSampleDiscreteRules"
       ],
     "goodReport" -> goodData["validationReport"],
@@ -781,6 +803,7 @@ compareExpectedTopologyValidationReport[] := Module[
     "badReport" -> badReport,
     "redundantReport" -> redundantReport,
     "singularReport" -> singularReport,
+    "missingNumericReport" -> missingNumericReport,
     "incompleteDiscreteData" -> incompleteDiscreteData
     |>
    ];

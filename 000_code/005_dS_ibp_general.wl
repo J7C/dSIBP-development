@@ -726,6 +726,17 @@ externalInvariantVariables[topo_Association] := Module[{nK = topo["nK"]},
    ];
 
 
+numericRuleLHSVariables[topo_Association] := DeleteDuplicates[
+   Cases[topo["numericRules"], (Rule | RuleDelayed)[lhs_, _] :> lhs, {0, Infinity}]
+   ];
+
+
+missingExternalInvariantNumericRules[topo_Association] := Complement[
+   externalInvariantVariables[topo],
+   numericRuleLHSVariables[topo]
+   ];
+
+
 (* 将两个线性动量表达式的点积展开为 qq/qk/kk。 *)
 expandDotExpr[p_, r_, topo_Association] := Module[
    {loops = topo["loopMomenta"], exts = topo["externalMomenta"],
@@ -1718,7 +1729,7 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
-    missingDiscreteRuleIssues, pendingFeatures, ruleData},
+    missingDiscreteRuleIssues, missingExternalInvariants, pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
    lineIds = Lookup[topo["lines"], "id"];
@@ -1767,6 +1778,14 @@ topologyValidationReport[topo_Association] := Module[
        "nonISPScalarProductCount" -> spData["nonISPScalarProductCount"]
        |>]
      ]
+    ];
+   missingExternalInvariants = missingExternalInvariantNumericRules[topo];
+   If[missingExternalInvariants =!= {},
+    appendIssue["warning", "numericRulesMissingExternalInvariants", <|
+      "missingExternalInvariants" -> missingExternalInvariants,
+      "numericRules" -> topo["numericRules"],
+      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need these kk rules"
+      |>]
     ];
    discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
    sampleRulePairs = Cases[topo["sampleDiscreteRules"], Rule[l_, r_] :> {l, r}, {0, Infinity}];

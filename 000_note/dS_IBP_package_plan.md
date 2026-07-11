@@ -268,6 +268,7 @@ ispData = {
 2. ISP 之间线性无关，并且当前主线要求 ISP 表达式直接是某个 `qq[i,j]` 或 `qk[i,j]` 标量积变量
 3. `zExprs` 数量等于非 ISP 标量积数量，即 $\#z_e = N_{\text{sp}} - \#\text{ISP}_{\text{direct}}$
 4. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
+5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量 `kk[i,j]`；缺失只触发 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed 生成
 
 这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不自动从冗余传播子中挑选独立子集，也不替用户重定义 family；若计数不闭合或 ISP 不足，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 
@@ -543,7 +544,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 ## 10. v4.1 后端排序、撒点与 sector metadata 约定
 
 - seed 生成阶段自动完成：按 sector 生成，再按 momentum/time 分类，每类内部枚举该 sector 的离散 `n=0/1` 状态，并立即应用 EOM/massless endpoint canonical。若为验证使用 `DiscreteMode -> "sample"`，`sampleDiscreteRules` 中每条规则也必须覆盖全部离散 `n` 变量；sample 只是减少取样条数，不允许保留符号 `n`。seed 只保存 MMA 表达式，不直接导出 Kira。
-- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；验证默认只用小样本，不做大范围遍历。
+- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`validationReport` 会提前检查外部不变量 `kk[i,j]` 是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
 - Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。
 - 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。
 - 每个 sector 缓存一份 `sectorMetadata`：包含 `sectorVertexRepresentativeMap`、`compactASlots`、`vertexIdToCompactASlot`、`lineSlots`、`lineIdToSlot`、`bSymbolToLineSlot`。这样导出、排序和人工检查不需要每次从指标形状反推“哪个 a/b 属于哪条线或哪个顶点”。
