@@ -1425,7 +1425,7 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
 
 compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
    {topo, batch, linearData, outDir, kiraData, requiredFiles, ibpText, listText, jobsText, blocks, blockCount, listCount,
-    roundtripFiles, repJ2Kira, repKira2J, metadata, customStrings, customJobsText},
+    roundtripFiles, repJ2Kira, repKira2J, metadata, customStrings, customJobsText, targetSpec, targetIDs, targetedStrings},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
@@ -1456,6 +1456,9 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
      ];
    customStrings = Global`makeKiraInputStrings[linearData, {}, <|"RunFirefly" -> False, "WriteKira2MathJob" -> False|>];
    customJobsText = Lookup[customStrings, "jobs.yaml", ""];
+   targetSpec = DeleteDuplicates[{First[linearData["integralList"]], Last[linearData["integralList"]]}];
+   targetIDs = targetSpec /. linearData["integralRules"];
+   targetedStrings = Global`makeKiraInputStrings[linearData, {}, Automatic, targetSpec];
    <|
     "name" -> "kiraWorkspaceExport_mixedBubble_linearSystemFilesOnly",
     "pass" -> TrueQ[
@@ -1489,7 +1492,11 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        Lookup[metadata["sectorMetadataList"], "sectorKey"] === Lookup[linearData["sectorMetadataList"], "sectorKey"] &&
        Lookup[customStrings, "status", Missing["status"]] === "generated" &&
        StringContainsQ[customJobsText, "run_firefly: false"] &&
-       ! StringContainsQ[customJobsText, "kira2math"]
+       ! StringContainsQ[customJobsText, "kira2math"] &&
+       Lookup[targetedStrings, "status", Missing["status"]] === "generated" &&
+       targetedStrings["targetIntegralIDs"] === targetIDs &&
+       targetedStrings["targetIntegralCount"] === Length[targetIDs] &&
+       StringSplit[StringTrim[targetedStrings["list"]], WhitespaceCharacter ..] === ToString /@ targetIDs
       ],
     "outputDir" -> outDir,
     "filesWritten" -> Lookup[kiraData, "filesWritten", {}],
@@ -1503,7 +1510,8 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
     "numericDummyAppendedQ" -> Lookup[kiraData, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}],
     "sectorKeysInMetadata" -> If[AssociationQ[metadata], Lookup[metadata["sectorMetadataList"], "sectorKey", {}], {}],
-    "customJobOptionStatus" -> Lookup[customStrings, "status", Missing["status"]]
+    "customJobOptionStatus" -> Lookup[customStrings, "status", Missing["status"]],
+    "targetedListIDs" -> Lookup[targetedStrings, "targetIntegralIDs", Missing["targetIntegralIDs"]]
     |>
    ];
 
@@ -1514,7 +1522,7 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
    batch = Global`makeMomentumIBPSeedBatch[topo];
    sampledLinear = Global`makeSampledLinearSystemData[batch, topo];
    outDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "kira_export_massless_box"}];
-   kiraData = Global`makeKiraExportData[sampledLinear, Global`OutputDirectory -> outDir];
+   kiraData = Global`makeKiraExportData[sampledLinear, Global`OutputDirectory -> outDir, Global`KiraTargetIntegrals -> {1}];
    requiredFiles = FileNameJoin[{outDir, #}] & /@ {
       "userSystem/ibp.kira",
       "list",
@@ -1551,9 +1559,12 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
        kiraData["numericCoefficientSystemQ"] === True &&
        kiraData["numericDummyAppendedQ"] === True &&
        kiraData["numericDummyIntegralId"] === kiraData["integralCount"] + 1 &&
-       kiraData["targetIntegralCount"] === kiraData["integralCount"] + 1 &&
+       kiraData["targetIntegralIDs"] === {1, kiraData["numericDummyIntegralId"]} &&
+       kiraData["targetIntegralCount"] === 2 &&
        metadata["numericDummyAppendedQ"] === True &&
-       metadata["targetIntegralCount"] === kiraData["targetIntegralCount"]
+       metadata["targetIntegralCount"] === kiraData["targetIntegralCount"] &&
+       metadata["targetIntegralIDs"] === kiraData["targetIntegralIDs"] &&
+       metadata["kiraTargetIntegrals"] === {1}
       ],
     "outputDir" -> outDir,
     "filesWritten" -> Lookup[kiraData, "filesWritten", {}],
@@ -1564,13 +1575,14 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
     "kiraBlockCount" -> Lookup[kiraData, "kiraBlockCount", Missing["kiraBlockCount"]],
     "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]],
     "targetIntegralCount" -> Lookup[kiraData, "targetIntegralCount", Missing["targetIntegralCount"]],
+    "targetIntegralIDs" -> Lookup[kiraData, "targetIntegralIDs", Missing["targetIntegralIDs"]],
     "numericDummyAppendedQ" -> Lookup[kiraData, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}]
     |>
    ];
 compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
    {topo, batch, linearData, preferred, missingIntegral, customData, reorderedData, badReorderedData,
-    kiraData, exportedLinear},
+    kiraData, exportedLinear, badTargetData},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
@@ -1588,6 +1600,10 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
      Global`KiraIntegralOrder -> {preferred, 999, missingIntegral},
      Global`KiraCoefficientRules -> topo["numericRules"]
      ];
+   badTargetData = Global`makeKiraExportData[
+     linearData,
+     Global`KiraTargetIntegrals -> {linearData["integralCount"] + 99}
+     ];
    exportedLinear = Lookup[kiraData, "linearSystem", <||>];
    <|
     "name" -> "kiraIntegralOrdering_mixedBubble_globalAllSectors",
@@ -1602,7 +1618,9 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
        Lookup[kiraData, "status", Missing["status"]] === "ready" &&
        AssociationQ[exportedLinear] &&
        First[exportedLinear["integralList"]] === preferred &&
-       exportedLinear["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral}
+       exportedLinear["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
+       Lookup[badTargetData, "status", Missing["status"]] === "notReady" &&
+       Lookup[Lookup[badTargetData, "kiraInput", <||>], "status", Missing["status"]] === "invalidTargetIntegrals"
       ],
     "preferred" -> preferred,
     "defaultFirst" -> First[linearData["integralList"]],
@@ -1611,7 +1629,8 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
     "exportedFirst" -> If[AssociationQ[exportedLinear], First[exportedLinear["integralList"]], Missing["exportedLinear"]],
     "customOrderingReport" -> Lookup[customData, "kiraOrderingReport", <||>],
     "badManualOrderReport" -> Lookup[badReorderedData, "manualIntegralOrderReport", <||>],
-    "exportManualOrderReport" -> If[AssociationQ[exportedLinear], Lookup[exportedLinear, "manualIntegralOrderReport", <||>], <||>]
+    "exportManualOrderReport" -> If[AssociationQ[exportedLinear], Lookup[exportedLinear, "manualIntegralOrderReport", <||>], <||>],
+    "badTargetStatus" -> Lookup[badTargetData, "status", Missing["status"]]
     |>
    ];
 

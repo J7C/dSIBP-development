@@ -29,6 +29,7 @@
 - [x] 正式 canonical seed coverage report：`makeCanonicalSeedCoverageReport` 返回 all-sector `qIBP/tIBP` 分类、top-sector 生成元覆盖、EOM canonical、pending/forbidden 扫描；workflow、linear-system 和 Kira metadata 同步保留 `seedCoverageReport`。
 - [x] Kira user-defined system 文件导出：`makeKiraExportData` 只接受 `makeLinearSystemData` 的输出，不直接消费 seed batch；seed 可用 `writeSeedBatchMMA` 保存；可写 `userSystem/ibp.kira`、`list`、`jobs.yaml` 和 `J <-> id` 映射文件，并跳过零方程。
 - [x] 后端排序与 master 优先级接口：支持全 sector 的 `KiraOrdering["IntegralOrder"/"PreferredIntegrals"]`、`reorderLinearSystemIntegrals` 和 `makeKiraExportData[..., KiraIntegralOrder -> ...]`，默认仍以 b/bS 幂次复杂度为主。
+- [x] Kira 目标列表接口：`KiraTargetIntegrals -> Automatic` 默认导出全量目标，也支持 id 与 `J[...]` 混合列表；数值 dummy 会自动附加到目标列表。
 - [x] Kira 导出可复现 metadata：`kira_export_metadata.m` 记录实际使用的 `KiraCoefficientRules` 和 `KiraJobOptions`；`jobs.yaml` 的 `run_initiate`、`run_firefly`、`kira2math` 默认开启但可由用户覆盖。
 - [x] 数值 Kira 系统 dummy 保护：当导出系数全数值化时，自动追加 `(N+1)*(ccc)` dummy block，并在 metadata 中记录 `targetIntegralCount` 与 dummy id。
 - [x] 最小端到端 workflow 入口：`makeIBPWorkflowData` 按 topology -> canonical seed -> linear/sample linear -> optional Kira export 串联现有 gate；默认不运行 Kira reduction。

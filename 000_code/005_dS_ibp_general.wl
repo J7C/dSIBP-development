@@ -2243,6 +2243,42 @@ kiraDummyCoefficientString[symbol_] := If[StringQ[symbol], symbol, kiraCoefficie
 kiraDummyEquationBlock[id_Integer, symbol_] := ToString[id] <> "*(" <> kiraDummyCoefficientString[symbol] <> ")\n\n";
 
 
+kiraTargetIntegralItems[targetSpec_] := Which[
+   targetSpec === Automatic || targetSpec === All, Automatic,
+   ListQ[targetSpec], targetSpec,
+   True, {targetSpec}
+   ];
+
+
+kiraResolveTargetIntegralIDs[linearData_Association, targetSpec_, numericDummyIntegralId_] := Module[
+   {maxId = linearData["integralCount"], idRules, items, resolvedPairs, missingItems, ids, invalidIds, targetIDs},
+   idRules = Association[linearData["integralRules"]];
+   items = kiraTargetIntegralItems[targetSpec];
+   If[items === Automatic,
+    targetIDs = Range[maxId],
+    resolvedPairs = ({#, Which[
+          IntegerQ[#], #,
+          MatchQ[#, _J], Lookup[idRules, #, Missing["targetIntegralNotInSystem", #]],
+          True, Missing["unsupportedTargetIntegral", #]
+          ]} &) /@ items;
+    missingItems = Cases[resolvedPairs, {item_, _Missing} :> item];
+    ids = DeleteDuplicates[Cases[resolvedPairs, {_, id_Integer} :> id]];
+    invalidIds = Select[ids, # < 1 || # > maxId &];
+    If[missingItems =!= {} || invalidIds =!= {},
+     Return[<|"status" -> "invalidTargetIntegrals", "targetSpec" -> targetSpec, "missingTargetItems" -> missingItems, "invalidTargetIDs" -> invalidIds, "maxIntegralID" -> maxId|>]
+     ];
+    targetIDs = ids
+    ];
+   If[numericDummyIntegralId =!= None && ! MemberQ[targetIDs, numericDummyIntegralId],
+    targetIDs = Append[targetIDs, numericDummyIntegralId]
+    ];
+   If[targetIDs === {},
+    Return[<|"status" -> "invalidTargetIntegrals", "targetSpec" -> targetSpec, "missingTargetItems" -> {}, "invalidTargetIDs" -> {}, "reason" -> "empty target list"|>]
+    ];
+   <|"status" -> "resolved", "targetSpec" -> targetSpec, "targetIDs" -> targetIDs, "targetIntegralCount" -> Length[targetIDs]|>
+   ];
+
+
 applyKiraCoefficientRulesToLinearEquation[linearEquation_Association, coeffRules_List] := Module[
    {rules, const},
    rules = linearEquation["coefficientRules"] /. coeffRules;
@@ -2291,10 +2327,10 @@ kiraJobsYAML[jobOptions_: Automatic] := Module[
    ];
 
 
-makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic] := Module[
+makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic, targetSpec_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, repKira2JText, repJ2KiraText, metadataText,
     normalizedJobOptions, topologyReport, requiredKeys, missingKeys, numericCoefficientSystemQ, appendNumericDummyQ,
-    numericDummyIntegralId, targetIntegralCount, kiraBlockCount, numericDummySymbol},
+    numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "reason" -> "linear data missing", "topologyValidationReport" -> topologyReport|>]
@@ -2320,12 +2356,16 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
    numericCoefficientSystemQ = kiraNumericCoefficientSystemQ[exportedEquations];
    appendNumericDummyQ = kiraAppendNumericDummyQ[Lookup[normalizedJobOptions, "AppendNumericDummyEquation", Automatic], numericCoefficientSystemQ];
    numericDummyIntegralId = If[appendNumericDummyQ, linearData["integralCount"] + 1, None];
-   targetIntegralCount = linearData["integralCount"] + If[appendNumericDummyQ, 1, 0];
+   targetData = kiraResolveTargetIntegralIDs[linearData, targetSpec, numericDummyIntegralId];
+   If[Lookup[targetData, "status", "missing"] =!= "resolved",
+    Return[Join[targetData, <|"topologyValidationReport" -> topologyReport|>]]
+    ];
+   targetIntegralCount = targetData["targetIntegralCount"];
    kiraBlockCount = Length[exportedEquations] + If[appendNumericDummyQ, 1, 0];
    numericDummySymbol = Lookup[normalizedJobOptions, "NumericDummySymbol", "ccc"];
    ibpText = StringJoin[kiraEquationBlock[#, #["coefficientRules"]] & /@ exportedEquations] <>
      If[appendNumericDummyQ, kiraDummyEquationBlock[numericDummyIntegralId, numericDummySymbol], ""];
-   listText = StringRiffle[ToString /@ Range[targetIntegralCount], "\n"] <> "\n";
+   listText = StringRiffle[ToString /@ targetData["targetIDs"], "\n"] <> "\n";
    jobsText = kiraJobsYAML[normalizedJobOptions];
    repKira2JText = ToString[InputForm[linearData["integralRules"] /. (j_J -> id_Integer) :> (Tuserweight[id] -> j)]] <> "\n";
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
@@ -2336,6 +2376,8 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
          "exportedEquationCount" -> Length[exportedEquations],
          "kiraBlockCount" -> kiraBlockCount,
          "targetIntegralCount" -> targetIntegralCount,
+         "targetIntegralIDs" -> targetData["targetIDs"],
+         "kiraTargetIntegrals" -> targetSpec,
          "numericCoefficientSystemQ" -> numericCoefficientSystemQ,
          "numericDummyAppendedQ" -> appendNumericDummyQ,
          "numericDummyIntegralId" -> numericDummyIntegralId,
@@ -2358,6 +2400,8 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
     "kiraBlockCount" -> kiraBlockCount,
     "integralCount" -> linearData["integralCount"],
     "targetIntegralCount" -> targetIntegralCount,
+    "targetIntegralIDs" -> targetData["targetIDs"],
+    "kiraTargetIntegrals" -> targetSpec,
     "numericCoefficientSystemQ" -> numericCoefficientSystemQ,
     "numericDummyAppendedQ" -> appendNumericDummyQ,
     "numericDummyIntegralId" -> numericDummyIntegralId
@@ -2389,6 +2433,7 @@ Options[makeKiraExportData] = {
    OutputDirectory -> None,
    KiraCoefficientRules -> {},
    KiraIntegralOrder -> Automatic,
+   KiraTargetIntegrals -> Automatic,
    KiraJobOptions -> Automatic
    };
 
@@ -2409,7 +2454,7 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
       |>]
     ];
    linearForExport = If[ListQ[OptionValue[KiraIntegralOrder]], reorderLinearSystemIntegrals[linearData, OptionValue[KiraIntegralOrder]], linearData];
-   strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions]];
+   strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions], OptionValue[KiraTargetIntegrals]];
    If[Lookup[strings, "status", "missing"] =!= "generated",
     Message[makeKiraExportData::badlinear, Lookup[strings, "status", Missing["status"]]];
     Return[<|"status" -> "notReady", "caseName" -> linearForExport["caseName"], "topologyValidationReport" -> Lookup[linearForExport, "topologyValidationReport", topologyReport], "reason" -> "linear system is not exportable", "linearSystem" -> linearForExport, "kiraInput" -> strings|>]
@@ -2427,6 +2472,8 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
     "kiraBlockCount" -> Lookup[strings, "kiraBlockCount", Missing["kiraBlockCount"]],
     "integralCount" -> Lookup[linearForExport, "integralCount", Missing["integralCount"]],
     "targetIntegralCount" -> Lookup[strings, "targetIntegralCount", Missing["targetIntegralCount"]],
+    "targetIntegralIDs" -> Lookup[strings, "targetIntegralIDs", Missing["targetIntegralIDs"]],
+    "kiraTargetIntegrals" -> Lookup[strings, "kiraTargetIntegrals", Missing["kiraTargetIntegrals"]],
     "numericCoefficientSystemQ" -> Lookup[strings, "numericCoefficientSystemQ", Missing["numericCoefficientSystemQ"]],
     "numericDummyAppendedQ" -> Lookup[strings, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
     "numericDummyIntegralId" -> Lookup[strings, "numericDummyIntegralId", Missing["numericDummyIntegralId"]],
@@ -2453,6 +2500,7 @@ Options[makeIBPWorkflowData] = Join[
     ExportKira -> False,
     KiraCoefficientRules -> Automatic,
     KiraIntegralOrder -> Automatic,
+    KiraTargetIntegrals -> Automatic,
     KiraJobOptions -> Automatic
     }
    ];
@@ -2512,6 +2560,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       OutputDirectory -> OptionValue[OutputDirectory],
       KiraCoefficientRules -> kiraCoeffRules,
       KiraIntegralOrder -> OptionValue[KiraIntegralOrder],
+      KiraTargetIntegrals -> OptionValue[KiraTargetIntegrals],
       KiraJobOptions -> OptionValue[KiraJobOptions]
       },
      Options[makeKiraExportData]

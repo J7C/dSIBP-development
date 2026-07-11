@@ -547,6 +547,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`validationReport` 会提前检查外部不变量 `kk[i,j]` 是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
 - Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。linear-system 会保存 `kiraOrderingReport`，其中 `missingIntegralOrderItems` 用来提示未命中的候选。
 - 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。手动重排会额外保存 `manualIntegralOrderReport`，越界编号或不在系统中的 `J` 不会静默消失。
+- Kira 的 `list` 目标也可独立选择：`KiraTargetIntegrals -> Automatic` 表示全量目标；用户可传 Kira id 或 `J[...]` 积分对象列表，导出时会按当前全局 `integralRules` 转成 id。数值 dummy 若启用会自动附加到目标列表末尾。
 - `makeKiraExportData` 的最后一步规则必须可追溯：`KiraCoefficientRules` 和 `KiraJobOptions` 写入 `result/kira_export_metadata.m`。默认 `jobs.yaml` 开启 `run_initiate`、`run_firefly` 和 `kira2math`；用户可覆盖这些开关，但这只改变后端文件，不改变 seed 或 linear-system。
 - 数值 Kira 输入沿用参考 code 的 dummy 保护：若所有导出系数均为数值，`KiraJobOptions` 中的 `"AppendNumericDummyEquation" -> Automatic` 会在 `ibp.kira` 末尾加入 `(N+1)*(ccc)`，并让 `list` 多包含这个 dummy id；metadata 中记录 `numericDummyAppendedQ`、`numericDummyIntegralId` 和 `targetIntegralCount`。
 - 每个 sector 缓存一份 `sectorMetadata`：包含 `sectorVertexRepresentativeMap`、`compactASlots`、`vertexIdToCompactASlot`、`lineSlots`、`lineIdToSlot`、`bSymbolToLineSlot`。这样导出、排序和人工检查不需要每次从指标形状反推“哪个 a/b 属于哪条线或哪个顶点”。
