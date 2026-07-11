@@ -71,7 +71,7 @@ kiraData = makeKiraExportData[
 - `makeIBPWorkflowData[..., ExportKira -> True]` 可只生成内存中的 Kira 字符串；只有同时给出 `OutputDirectory -> "..."` 时才写入文件，返回的 `kiraExport["writeFilesQ"]` 会显式记录是否落盘。
 - `KiraTargetIntegrals -> Automatic` 默认把全部积分编号写入 `list`；也可传 `{1, J[...]}` 这样的 id/积分对象混合列表来只导出指定目标。
 - 若导出的 Kira 系数已经全部数值化，`KiraJobOptions` 中的 `"AppendNumericDummyEquation" -> Automatic` 会追加参考代码同款 dummy block `(N+1)*(ccc)`，并把 `list` 扩到 `targetIntegralCount = integralCount + 1`。
-- 默认只写 Kira 输入文件，不运行 Kira reduction。
+- 默认只写 Kira 输入文件和参考式 `run.sh`，不运行 Kira reduction；`KiraJobOptions` 可覆盖 `"KiraCommand"`、`"KiraParallelJobs"` 或设 `"WriteRunScript" -> False`。
 
 ## 当前验证覆盖
 

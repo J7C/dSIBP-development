@@ -1337,7 +1337,8 @@ compareExpectedIBPWorkflowData[] := Module[
        exportWorkflow["linearSystem"]["topologyValidationReport"]["status"] === "ok" &&
        exportWorkflow["linearSystem"]["seedCoverageReport"]["status"] === "ready" &&
        exportWorkflow["kiraExport"]["status"] === "ready" &&
-       Length[exportWorkflow["kiraExport"]["filesWritten"]] === 6 &&
+       Length[exportWorkflow["kiraExport"]["filesWritten"]] === 7 &&
+       MemberQ[FileNameTake /@ exportWorkflow["kiraExport"]["filesWritten"], "run.sh"] &&
        FileExistsQ[metadataFile] &&
        metadata["topologyValidationReport"]["status"] === "ok" &&
        metadata["seedCoverageReport"]["status"] === "ready" &&
@@ -1435,6 +1436,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
       "userSystem/ibp.kira",
       "list",
       "jobs.yaml",
+      "run.sh",
       "result/repkira2J.m",
       "result/repJ2kira.m",
       "result/kira_export_metadata.m"
@@ -1454,7 +1456,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
      {$Context = "Global`", $ContextPath = {"System`", "Global`"}},
      Get /@ roundtripFiles
      ];
-   customStrings = Global`makeKiraInputStrings[linearData, {}, <|"RunFirefly" -> False, "WriteKira2MathJob" -> False|>];
+   customStrings = Global`makeKiraInputStrings[linearData, {}, <|"RunFirefly" -> False, "WriteKira2MathJob" -> False, "WriteRunScript" -> False|>];
    customJobsText = Lookup[customStrings, "jobs.yaml", ""];
    targetSpec = DeleteDuplicates[{First[linearData["integralList"]], Last[linearData["integralList"]]}];
    targetIDs = targetSpec /. linearData["integralRules"];
@@ -1470,6 +1472,8 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        StringContainsQ[jobsText, "reduce_user_defined_system"] &&
        StringContainsQ[jobsText, "run_firefly: true"] &&
        StringContainsQ[jobsText, "kira2math"] &&
+       StringContainsQ[Import[FileNameJoin[{outDir, "run.sh"}], "Text"], "kira --parallel=10 jobs.yaml"] &&
+       StringContainsQ[Import[FileNameJoin[{outDir, "run.sh"}], "Text"], "dos2unix userSystem/ibp.kira"] &&
        blockCount === kiraData["kiraBlockCount"] &&
        blockCount === kiraData["exportedEquationCount"] + If[TrueQ[kiraData["numericDummyAppendedQ"]], 1, 0] &&
        listCount === kiraData["targetIntegralCount"] &&
@@ -1493,6 +1497,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        Lookup[customStrings, "status", Missing["status"]] === "generated" &&
        StringContainsQ[customJobsText, "run_firefly: false"] &&
        ! StringContainsQ[customJobsText, "kira2math"] &&
+       ! StringQ[Lookup[customStrings, "run.sh", Missing["run.sh"]]] &&
        Lookup[targetedStrings, "status", Missing["status"]] === "generated" &&
        targetedStrings["targetIntegralIDs"] === targetIDs &&
        targetedStrings["targetIntegralCount"] === Length[targetIDs] &&
@@ -1527,6 +1532,7 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
       "userSystem/ibp.kira",
       "list",
       "jobs.yaml",
+      "run.sh",
       "result/repkira2J.m",
       "result/repJ2kira.m",
       "result/kira_export_metadata.m"
@@ -1553,6 +1559,7 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
        And @@ (FileExistsQ /@ requiredFiles) &&
        metadata["topologyValidationReport"]["status"] === "ok" &&
        StringContainsQ[Import[FileNameJoin[{outDir, "jobs.yaml"}], "Text"], "reduce_user_defined_system"] &&
+       StringContainsQ[Import[FileNameJoin[{outDir, "run.sh"}], "Text"], "kira --parallel=10 jobs.yaml"] &&
        blockCount === kiraData["kiraBlockCount"] &&
        blockCount > 0 &&
        listCount === kiraData["targetIntegralCount"] &&

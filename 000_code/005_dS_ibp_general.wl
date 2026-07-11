@@ -2294,7 +2294,13 @@ defaultKiraJobOptions[] := <|
    "WriteKira2MathJob" -> True,
    "Kira2MathTarget" -> "list",
    "AppendNumericDummyEquation" -> Automatic,
-   "NumericDummySymbol" -> "ccc"
+   "NumericDummySymbol" -> "ccc",
+   "WriteRunScript" -> True,
+   "RunScriptName" -> "run.sh",
+   "KiraCommand" -> "kira",
+   "KiraParallelJobs" -> 10,
+   "RunScriptDos2Unix" -> True,
+   "RunScriptCleanup" -> True
    |>;
 
 
@@ -2327,8 +2333,42 @@ kiraJobsYAML[jobOptions_: Automatic] := Module[
    ];
 
 
+kiraRunCommand[opts_Association] := Module[
+   {cmd = ToString[Lookup[opts, "KiraCommand", "kira"]], parallel = Lookup[opts, "KiraParallelJobs", 10]},
+   If[IntegerQ[parallel] && parallel > 0,
+    cmd <> " --parallel=" <> ToString[parallel] <> " jobs.yaml",
+    cmd <> " jobs.yaml"
+    ]
+   ];
+
+
+kiraRunScript[jobOptions_: Automatic] := Module[
+   {opts = normalizeKiraJobOptions[jobOptions], lines = {}},
+   If[TrueQ[Lookup[opts, "RunScriptCleanup", True]],
+    lines = Join[lines, {
+        "rm -f kira.log",
+        "rm -f firefly.log",
+        "rm -rf results",
+        "rm -rf tmp",
+        "rm -rf sectormappings",
+        "rm -rf firefly_saves",
+        "rm -rf ff_save"
+        }]
+    ];
+   If[TrueQ[Lookup[opts, "RunScriptDos2Unix", True]],
+    lines = Join[lines, {
+        "dos2unix list",
+        "dos2unix userSystem/ibp.kira",
+        "dos2unix jobs.yaml"
+        }]
+    ];
+   lines = Append[lines, kiraRunCommand[opts]];
+   StringRiffle[lines, "\n"] <> "\n"
+   ];
+
+
 makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic, targetSpec_: Automatic] := Module[
-   {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, repKira2JText, repJ2KiraText, metadataText,
+   {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, runScriptText, repKira2JText, repJ2KiraText, metadataText,
     normalizedJobOptions, topologyReport, requiredKeys, missingKeys, numericCoefficientSystemQ, appendNumericDummyQ,
     numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
@@ -2367,6 +2407,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
      If[appendNumericDummyQ, kiraDummyEquationBlock[numericDummyIntegralId, numericDummySymbol], ""];
    listText = StringRiffle[ToString /@ targetData["targetIDs"], "\n"] <> "\n";
    jobsText = kiraJobsYAML[normalizedJobOptions];
+   runScriptText = If[TrueQ[Lookup[normalizedJobOptions, "WriteRunScript", True]], kiraRunScript[normalizedJobOptions], Missing["RunScriptDisabled"]];
    repKira2JText = ToString[InputForm[linearData["integralRules"] /. (j_J -> id_Integer) :> (Tuserweight[id] -> j)]] <> "\n";
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
    metadataText = ToString[InputForm[
@@ -2392,6 +2433,8 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
     "ibp.kira" -> ibpText,
     "list" -> listText,
     "jobs.yaml" -> jobsText,
+    "runScriptName" -> Lookup[normalizedJobOptions, "RunScriptName", "run.sh"],
+    "run.sh" -> runScriptText,
     "result/repkira2J.m" -> repKira2JText,
     "result/repJ2kira.m" -> repJ2KiraText,
     "result/kira_export_metadata.m" -> metadataText,
@@ -2410,12 +2453,13 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
 
 
 writeKiraInputFiles[outputDir_String, strings_Association] := Module[
-   {userSystemDir, resultDir, files},
+   {userSystemDir, resultDir, runScriptName, files},
    userSystemDir = FileNameJoin[{outputDir, "userSystem"}];
    resultDir = FileNameJoin[{outputDir, "result"}];
    If[! DirectoryQ[outputDir], CreateDirectory[outputDir, CreateIntermediateDirectories -> True]];
    If[! DirectoryQ[userSystemDir], CreateDirectory[userSystemDir, CreateIntermediateDirectories -> True]];
    If[! DirectoryQ[resultDir], CreateDirectory[resultDir, CreateIntermediateDirectories -> True]];
+   runScriptName = Lookup[strings, "runScriptName", "run.sh"];
    files = <|
      FileNameJoin[{userSystemDir, "ibp.kira"}] -> strings["ibp.kira"],
      FileNameJoin[{outputDir, "list"}] -> strings["list"],
@@ -2424,6 +2468,9 @@ writeKiraInputFiles[outputDir_String, strings_Association] := Module[
      FileNameJoin[{resultDir, "repJ2kira.m"}] -> strings["result/repJ2kira.m"],
      FileNameJoin[{resultDir, "kira_export_metadata.m"}] -> strings["result/kira_export_metadata.m"]
      |>;
+   If[StringQ[Lookup[strings, "run.sh", Missing["NoRunScript"]]],
+    files = Join[files, <|FileNameJoin[{outputDir, runScriptName}] -> strings["run.sh"]|>]
+    ];
    KeyValueMap[Export[#1, #2, "Text"] &, files];
    Keys[files]
    ];
