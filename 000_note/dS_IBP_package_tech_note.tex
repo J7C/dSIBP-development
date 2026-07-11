@@ -579,7 +579,7 @@ ispData = {
   \begin{enumerate}
     \item 构造该 sector 的连续指标盒子 $\{a_v, b_e, n_{\text{isp}}\}$ 与离散 $n$ 状态集合
     \item 枚举连续 seed（撒点范围控制）
-    \item 对每个连续 seed，先枚举该 sector 的离散 $n=0,1$ 状态
+    \item 对每个连续 seed，先枚举该 sector 的离散 $n=0,1$ 状态；若使用 \texttt{sampleDiscreteRules} 做小样本验证，每条 sample rule 也必须给出完整离散态，不允许残留符号 $n$
     \item 对每个离散态，遍历 time-IBP 与 momentum-IBP 生成元：
       \begin{itemize}
         \item 应用链式法则 $\to$ $z/\xi$-导数 + ISP-导数 + 相位项

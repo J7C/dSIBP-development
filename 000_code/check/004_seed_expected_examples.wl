@@ -696,7 +696,7 @@ compareExpectedTopologyDataInterface[] := Module[
 
 compareExpectedTopologyValidationReport[] := Module[
    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
-    badCodes, redundantCodes, singularCodes, badSeverities},
+    badCodes, redundantCodes, singularCodes, badSeverities, incompleteDiscreteData},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -749,6 +749,7 @@ compareExpectedTopologyValidationReport[] := Module[
    redundantCodes = Lookup[redundantReport["issues"], "code", {}];
    singularCodes = Lookup[singularReport["issues"], "code", {}];
    badSeverities = Lookup[badReport["issues"], "severity", {}];
+   incompleteDiscreteData = Global`selectedDiscreteSeedRules[Global`parseTopology[badCase]];
    <|
     "name" -> "topologyValidationReport_goodPendingBad",
     "pass" -> TrueQ[
@@ -758,26 +759,29 @@ compareExpectedTopologyValidationReport[] := Module[
        crossData["validationReport", "pendingFeatures"] === {} &&
        crossData["validationReport", "pendingCount"] === 0 &&
        badReport["status"] === "issues" &&
-       badReport["errorCount"] === 2 &&
+       badReport["errorCount"] === 3 &&
        badReport["warningCount"] === 2 &&
        MemberQ[badCodes, "undeclaredMomentumVariables"] &&
        MemberQ[badCodes, "insufficientISPData"] &&
+       MemberQ[badCodes, "sampleDiscreteRulesMissingVariables"] &&
        MemberQ[badCodes, "sampleDiscreteRulesContainUnknownVariables"] &&
        MemberQ[badCodes, "sampleDiscreteRulesContainNonBinaryValues"] &&
-       Count[badSeverities, "error"] === 2 &&
+       Count[badSeverities, "error"] === 3 &&
        Count[badSeverities, "warning"] === 2 &&
        redundantReport["status"] === "issues" &&
        redundantReport["errorCount"] === 1 &&
        MemberQ[redundantCodes, "scalarProductCoordinateCountMismatch"] &&
        singularReport["status"] === "issues" &&
        singularReport["errorCount"] === 1 &&
-       MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"]
+       MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"] &&
+       incompleteDiscreteData["status"] === "incompleteSampleDiscreteRules"
       ],
     "goodReport" -> goodData["validationReport"],
     "crossReport" -> crossData["validationReport"],
     "badReport" -> badReport,
     "redundantReport" -> redundantReport,
-    "singularReport" -> singularReport
+    "singularReport" -> singularReport,
+    "incompleteDiscreteData" -> incompleteDiscreteData
     |>
    ];
 

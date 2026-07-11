@@ -476,6 +476,27 @@ sampleDiscreteIntegrals[expr_, topo_Association] := Module[{rules = topo["sample
    ];
 
 
+(* sample 模式必须给出完整 n=0/1 替换；否则 seed 中会残留符号 n，无法保证即时 EOM。 *)
+sampleDiscreteRuleCoverageIssues[topo_Association, rules_List] := Module[
+   {vars = Flatten[discreteVarsForLine /@ topo["lines"]]},
+   If[vars === {}, Return[{}]];
+   DeleteCases[
+    MapIndexed[
+     Module[{ruleVars, missing},
+       ruleVars = DeleteDuplicates[Cases[#1, Rule[l_, _] :> l, {0, Infinity}]];
+       missing = Complement[vars, ruleVars];
+       If[missing === {},
+        Nothing,
+        <|"ruleIndex" -> First[#2], "missingVariables" -> missing, "rule" -> #1|>
+        ]
+       ] &,
+     rules
+     ],
+    Nothing
+    ]
+   ];
+
+
 (* ::Chapter:: *)
 (*EOM canonical 与 forbidden-n 扫描*)
 
@@ -1401,14 +1422,18 @@ selectedDiscreteSeedRules::toomany =
 
 
 selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
-   {mode, maxCount, rules, count},
+   {mode, maxCount, rules, count, coverageIssues},
    mode = OptionValue[DiscreteMode];
    maxCount = OptionValue[MaxDiscreteRuleCount];
    Switch[mode,
     "none",
     rules = {{}},
     "sample",
-    rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}],
+    rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}];
+    coverageIssues = sampleDiscreteRuleCoverageIssues[topo, rules];
+    If[coverageIssues =!= {},
+     Return[<|"status" -> "incompleteSampleDiscreteRules", "mode" -> mode, "ruleCount" -> Length[rules], "coverageIssues" -> coverageIssues, "rules" -> {}|>]
+     ],
     "all",
     count = discreteStateCount[topo];
     If[count > maxCount,
@@ -1693,7 +1718,7 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
-    pendingFeatures, ruleData},
+    missingDiscreteRuleIssues, pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
    lineIds = Lookup[topo["lines"], "id"];
@@ -1752,6 +1777,15 @@ topologyValidationReport[topo_Association] := Module[
    badDiscreteValues = Select[sampleRulePairs, MemberQ[discreteVars, #[[1]]] && ! MemberQ[{0, 1}, #[[2]]] &];
    If[badDiscreteValues =!= {},
     appendIssue["warning", "sampleDiscreteRulesContainNonBinaryValues", <|"rules" -> (Rule @@@ badDiscreteValues)|>]
+    ];
+   If[discreteVars =!= {} && topo["sampleDiscreteRules"] === {},
+    appendIssue["warning", "sampleDiscreteRulesMissingForDiscreteVariables", <|"missingVariables" -> discreteVars, "comment" -> "sample seed mode needs complete n=0/1 rules; DiscreteMode -> all can enumerate them automatically"|>]
+    ];
+   If[topo["sampleDiscreteRules"] =!= {},
+    missingDiscreteRuleIssues = sampleDiscreteRuleCoverageIssues[topo, topo["sampleDiscreteRules"]];
+    If[missingDiscreteRuleIssues =!= {},
+     appendIssue["error", "sampleDiscreteRulesMissingVariables", <|"issues" -> missingDiscreteRuleIssues, "allowedDiscreteVariables" -> discreteVars|>]
+     ]
     ];
    pendingFeatures = unsupportedSeedFeaturesForTopology[topo];
    If[pendingFeatures =!= {},
