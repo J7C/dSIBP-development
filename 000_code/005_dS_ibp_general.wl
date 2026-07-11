@@ -2,7 +2,7 @@
 (* 本文件是 dS IBP package 的通用生成器骨架。
    目标是先把 topology-driven 的结构层做实：拓扑解析、传播子 metadata、统一 J 指标包、
    离散态枚举、完整圈动量 IBP 生成元列表、标量积/ISP 覆盖性验证。
-   当前文件生成 momentum seed、time-core seed 与受保护的自动 shrink-sector seed；EOM、per-line massless endpoint canonical 与 massive theta boundary shrink 项已作为 seed 门禁接入，真实 Kira 文件导出仍应建立在本结构层之上。
+   当前文件生成 momentum seed、time-core seed 与受保护的自动 shrink-sector seed；EOM、per-line massless endpoint canonical 与 massive theta boundary shrink 项已作为 seed 门禁接入，并提供 linear-system 层与 Kira user-defined system 导出门禁。
    性能原则：默认只定义函数和示例输入，不自动运行检查；验证必须是 seed/metadata 层或代数赋值后的小检查。 *)
 
 ClearAll["Global`*"];

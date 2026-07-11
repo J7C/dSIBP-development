@@ -33,12 +33,14 @@
 - [x] massive `G^{+-}/G^{-+}` 不再误落入 `massiveFull`：`005` 已加入 `massiveCross` 分派，但按 massive convention 保持 `{b_e,n_{e,1},n_{e,2}}`；momentum/time building-block seed 与 EOM canonical 已接入，且不产生 theta boundary shrink。
 - [x] massless `G^{+-}/G^{-+}` time seed：无 theta、无离散态，只保留 `{b_e}`；时间导数按端点 SK 符号产生 `\pm i q_e`，在指标上实现为 `b_e -> b_e-1`，并加入 massless-cross bubble 小检查。
 - [x] topology validation report：`makeTopologyData` / `summarizeCase` 现在返回 `validationReport`，提前报告重复线编号、端点不在顶点表、未声明动量变量、ISP 数量不足、sampleDiscreteRules 异常和当前 unsupported seed feature。
-- [ ] 测试分层：
+- [x] 测试分层：
   - bubble massive/h 与参考 code 对比（已加入 `ibp[expr_G,3]` raw momentum seed 小检查）；
   - bubble massless 双 theta `{b,n}` 检查 endpoint 压缩（已加入小样本 check）；
   - 单圈 triangle/box 检查 topology input 替换（triangle 已有结构检查，并加入 `∂q1·k1` 单 seed 手推对照；massless box 已加入 sample momentum linear-system 小检查）；
   - 两圈含 ISP toy 拓扑检查生成元数和 ISP 完备性（已加入 twoLoopISP / twoLoopISPCompleteness 小检查）；
   - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
+
+当前测试分层只覆盖主线逐线 `{b_e,n_e}` 的 merged-two-theta massless 方案；同一顶点对多 massless 线的真实 bundle 合并仍作为 future feature，仅检查 `masslessBundleCandidates` metadata。
 
 验证红线：任何默认脚本不得启动解析 IBP 大计算；需要验证时只做 seed/metadata 结构检查，或对参数做代数值替换后做小规模有限检查。
 
