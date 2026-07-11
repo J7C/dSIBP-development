@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedSeedPresetConfig, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedCaseInputPreflight, compareExpectedTopologyValidationReport, compareExpectedSeedPresetConfig, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement, canonicalCoverageCase, compareExpectedCanonicalCoverageSmallCases,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -957,6 +957,44 @@ compareExpectedTopologyDataInterface[] := Module[
     "numericRuleRequirementReport" -> req,
     "fullNumericRuleTemplate" -> fullTemplate,
     "indexMapKeys" -> Keys[Lookup[data, "indexMaps", <||>]]
+    |>
+   ];
+
+
+compareExpectedCaseInputPreflight[] := Module[
+   {badCase, data, workflow, readiness, template},
+   badCase = <|
+     "name" -> "missingRequiredCaseKeysToy",
+     "vertexData" -> {{1, "+"}, {2, "-"}}
+     |>;
+   data = Global`makeTopologyData[badCase];
+   workflow = Global`makeIBPWorkflowData[badCase];
+   readiness = Global`makeIBPReadinessReport[badCase];
+   template = Global`makeNumericRuleTemplate[badCase];
+   <|
+    "name" -> "caseInputPreflight_missingRequiredKeys",
+    "pass" -> TrueQ[
+      data["status"] === "invalidInput" &&
+       Sort[data["inputRequirementReport", "missingRequiredKeys"]] === {"lineData", "loopMomenta"} &&
+       data["validationReport", "errorCount"] === 1 &&
+       Lookup[data["validationReport", "issues"], "code"] === {"missingRequiredCaseKeys"} &&
+       data["sectorMetadataList"] === {} &&
+       workflow["status"] === "notReady" &&
+       workflow["stage"] === "topology" &&
+       workflow["reason"] === "missingRequiredCaseKeys" &&
+       Sort[workflow["missingRequiredKeys"]] === {"lineData", "loopMomenta"} &&
+       ! KeyExistsQ[workflow, "seedBatch"] &&
+       readiness["status"] === "notReady" &&
+       readiness["stage"] === "topology" &&
+       readiness["topologyReadyQ"] === False &&
+       readiness["workflowReason"] === "missingRequiredCaseKeys" &&
+       Sort[readiness["missingRequiredKeys"]] === {"lineData", "loopMomenta"} &&
+       template === {}
+      ],
+    "topologyData" -> data,
+    "workflow" -> workflow,
+    "readiness" -> KeyDrop[readiness, "workflowSummary"],
+    "template" -> template
     |>
    ];
 
@@ -2026,6 +2064,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "doubleShrinkCompactA" -> compareExpectedDoubleShrinkCompactA[],
     "threeVertexMultiShrinkCompactA" -> compareExpectedThreeVertexMultiShrinkCompactA[],
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
+    "caseInputPreflight" -> compareExpectedCaseInputPreflight[],
     "topologyValidationReport" -> compareExpectedTopologyValidationReport[],
     "seedPresetConfig" -> compareExpectedSeedPresetConfig[],
     "twoLoopISPCompleteness" -> compareExpectedTwoLoopISPCompleteness[],

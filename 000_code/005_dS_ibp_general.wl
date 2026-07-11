@@ -63,6 +63,50 @@ normalizeISP[{name_, expr_, range_}] := <|
    |>;
 
 
+requiredCaseInputKeys[] := {"vertexData", "lineData", "loopMomenta"};
+
+
+optionalCaseInputKeys[] := {
+   "name", "extLegs", "externalMomenta", "ispData", "vertexEnergies", "activeVertexIds",
+   "fixedAVertexValues", "numericRules", "sampleDiscreteRules", "seedPreset", "seedRanges",
+   "seedOptions", "zeroPointRules", "shrinkPrefactorRules", "kiraOrdering"
+   };
+
+
+(* raw case 入口的轻量 preflight；避免缺必需字段时 parser 先抛底层 Part 消息。 *)
+caseInputRequirementReport[case_Association] := Module[
+   {keys = Keys[case], required = requiredCaseInputKeys[], optional = optionalCaseInputKeys[]},
+   <|
+    "providedKeys" -> keys,
+    "requiredKeys" -> required,
+    "optionalKeys" -> optional,
+    "missingRequiredKeys" -> Complement[required, keys],
+    "unknownKeys" -> Complement[keys, Join[required, optional]],
+    "completeRequiredKeysQ" -> TrueQ[Complement[required, keys] === {}]
+    |>
+   ];
+
+
+caseInputErrorReport[case_Association] := Module[{report = caseInputRequirementReport[case]},
+   <|
+    "status" -> If[TrueQ[report["completeRequiredKeysQ"]], "ok", "issues"],
+    "errorCount" -> If[TrueQ[report["completeRequiredKeysQ"]], 0, 1],
+    "warningCount" -> 0,
+    "pendingCount" -> 0,
+    "pendingFeatures" -> {},
+    "inputRequirementReport" -> report,
+    "issues" -> If[
+      TrueQ[report["completeRequiredKeysQ"]],
+      {},
+      {<|"severity" -> "error", "code" -> "missingRequiredCaseKeys", "missingRequiredKeys" -> report["missingRequiredKeys"]|>}
+      ]
+    |>
+   ];
+
+
+caseInputMissingRequiredKeysQ[case_Association] := ! TrueQ[caseInputRequirementReport[case]["completeRequiredKeysQ"]];
+
+
 seedPresetAssociation[preset_] := Switch[preset,
    "quickCheck" | Automatic | Missing["NotSet"],
    <|
@@ -141,10 +185,17 @@ completeLineMetadata[line_, vertexSignAssoc_] := Module[
 
 
 (* 将一个 case 解析为通用拓扑对象。externalMomenta 必须给出独立外动量基。 *)
+parseTopology::missingkeys = "case 缺少必需字段：`1`。";
+
+
 parseTopology[case_Association] := Module[
    {vertexData, vertexIds, vertexSignAssoc, rawLines, lines, loopMomenta,
    externalMomenta, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
     eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig},
+   If[caseInputMissingRequiredKeysQ[case],
+    Message[parseTopology::missingkeys, caseInputRequirementReport[case]["missingRequiredKeys"]];
+    Return[$Failed]
+    ];
    vertexData = case["vertexData"];
    vertexIds = vertexData[[All, 1]];
    vertexSignAssoc = Association[Rule @@@ vertexData];
@@ -897,6 +948,9 @@ Options[makeNumericRuleTemplate] = {
 (* 生成可直接复制到 case["numericRules"] 的替换规则骨架；默认只列当前缺失项。 *)
 makeNumericRuleTemplate[caseOrTopo_Association, OptionsPattern[]] := Module[
    {topo, report, vars, valueSpec},
+   If[! parsedTopologyQ[caseOrTopo] && caseInputMissingRequiredKeysQ[caseOrTopo],
+    Return[{}]
+    ];
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    report = numericRuleRequirementReport[topo];
    vars = numericRuleTemplateVariables[report, OptionValue[NumericRuleTemplateScope]];
@@ -2049,7 +2103,24 @@ topologyValidationErrorQ[_] := False;
 
 
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
-   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, maxShrinkDepth, maxShrinkCount},
+   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, maxShrinkDepth, maxShrinkCount, inputReport, validationReport},
+   If[caseInputMissingRequiredKeysQ[case],
+    inputReport = caseInputRequirementReport[case];
+    validationReport = caseInputErrorReport[case];
+    Return[Join[case, <|
+       "status" -> "invalidInput",
+       "inputRequirementReport" -> inputReport,
+       "validationReport" -> validationReport,
+       "sectorMetadataList" -> {},
+       "indexMaps" -> <||>,
+       "seedSummary" -> <||>,
+       "numericRuleRequirementReport" -> <||>,
+       "numericRuleTemplate" -> {},
+       "masslessBundleCandidates" -> {},
+       "precomputedShrinkSectorSummary" -> <|"status" -> "skipped"|>,
+       "precomputedShrinkSectorKeys" -> {}
+       |>]]
+    ];
    topo = parseTopology[case];
    topMetadata = makeSectorMetadata[topo];
    maxShrinkDepth = resolveSeedOption[topo, "MaxShrinkSectorDepth", OptionValue[MaxShrinkSectorDepth], Automatic];
@@ -2785,7 +2856,19 @@ Options[makeIBPWorkflowData] = Join[
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
     exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport,
-    allowedLinearModes, numericRequirementReport, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
+    allowedLinearModes, inputReport, numericRequirementReport, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
+   If[! parsedTopologyQ[caseOrTopo] && caseInputMissingRequiredKeysQ[caseOrTopo],
+    inputReport = caseInputRequirementReport[caseOrTopo];
+    topologyReport = caseInputErrorReport[caseOrTopo];
+    Return[<|
+      "status" -> "notReady",
+      "stage" -> "topology",
+      "reason" -> "missingRequiredCaseKeys",
+      "missingRequiredKeys" -> inputReport["missingRequiredKeys"],
+      "inputRequirementReport" -> inputReport,
+      "topologyValidationReport" -> topologyReport
+      |>]
+    ];
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    topologyReport = topologyValidationReport[topo];
    numericRequirementReport = numericRuleRequirementReport[topo];
@@ -2932,6 +3015,8 @@ makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Modul
     "kiraReadyQ" -> kiraReadyQ,
     "topologyStatus" -> Lookup[topologyReport, "status", Missing["status"]],
     "topologyIssueCodes" -> readinessIssueCodes[topologyReport],
+    "inputRequirementReport" -> Lookup[workflow, "inputRequirementReport", Lookup[topologyReport, "inputRequirementReport", <||>]],
+    "missingRequiredKeys" -> Lookup[workflow, "missingRequiredKeys", {}],
     "seedStatus" -> Lookup[seedBatch, "status", Missing["notGenerated"]],
     "seedCoverageStatus" -> Lookup[seedReport, "status", Missing["notGenerated"]],
     "linearStatus" -> Lookup[linearData, "status", Missing["notGenerated"]],
