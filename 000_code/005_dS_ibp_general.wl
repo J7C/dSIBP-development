@@ -2076,6 +2076,7 @@ unsupportedSeedFeaturesForTopology[topo_Association] := DeleteDuplicates@Join[
 
 topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
+    vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2083,11 +2084,29 @@ topologyValidationReport[topo_Association] := Module[
     missingLineParameters, numericRequirementReport, pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
+   vertexSigns = topo["vertexData"][[All, 2]];
+   activeVertexIds = Lookup[topo, "activeVertexIds", vertexIds];
+   fixedAVertexIds = Keys[Lookup[topo, "fixedAVertexValues", <||>]];
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
    If[! DuplicateFreeQ[lineIds],
     appendIssue["error", "duplicateLineIds", <|"lineIds" -> lineIds|>]
+    ];
+   If[! DuplicateFreeQ[vertexIds],
+    appendIssue["error", "duplicateVertexIds", <|"vertexIds" -> vertexIds|>]
+    ];
+   badVertexSigns = DeleteDuplicates[Complement[vertexSigns, {"+", "-"}]];
+   If[badVertexSigns =!= {},
+    appendIssue["error", "unknownVertexSigns", <|"vertexSigns" -> badVertexSigns, "allowedVertexSigns" -> {"+", "-"}|>]
+    ];
+   badActiveVertexIds = Complement[activeVertexIds, vertexIds];
+   If[badActiveVertexIds =!= {},
+    appendIssue["error", "activeVertexIdsNotInVertexData", <|"activeVertexIds" -> badActiveVertexIds, "vertexIds" -> vertexIds|>]
+    ];
+   badFixedAVertexIds = Complement[fixedAVertexIds, vertexIds];
+   If[badFixedAVertexIds =!= {},
+    appendIssue["error", "fixedAVertexValuesNotInVertexData", <|"fixedAVertexIds" -> badFixedAVertexIds, "vertexIds" -> vertexIds|>]
     ];
    If[Lookup[topo, "unknownSeedPreset", None] =!= None,
     appendIssue["warning", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "fallback" -> "quickCheck"|>]

@@ -50,6 +50,7 @@
   - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
 - [x] seed preset 初始化：`quickCheck/fullDiscrete/bounded` 统一配置 `seedRanges`、默认离散枚举模式和 seed/batch/shrink-sector 上限，未知 preset 只给 warning，显式 `seedRanges/seedOptions` 可覆盖，batch 调用的显式 option 优先级最高。
 - [x] raw case 输入 preflight：`caseInputRequirementReport` 检查 `vertexData/lineData/loopMomenta` 必需字段和基础形状，`makeTopologyData`、workflow/readiness 对缺字段或 malformed case 早停并返回 `missingRequiredCaseKeys` / `malformedCaseInput`。
+- [x] vertex metadata 语义检查：`topologyValidationReport` 会拦截重复 vertex id、非法 `+/-` 符号，以及 `activeVertexIds` / `fixedAVertexValues` 中不存在的顶点。
 - [x] line metadata 语义检查：`topologyValidationReport` 会拦截非法 `massType/skType/state`，避免 typo 被默认解释成 massive full 线后继续生成 seed。
 
 当前测试分层只覆盖主线逐线 `{b_e,n_e}` 的 merged-two-theta massless 方案；同一顶点对多 massless 线的真实 bundle 合并仍作为 future feature，仅检查 `masslessBundleCandidates` metadata。

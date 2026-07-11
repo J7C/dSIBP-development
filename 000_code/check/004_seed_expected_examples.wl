@@ -1079,11 +1079,13 @@ compareExpectedTopologyValidationReport[] := Module[
      |>;
    semanticCase = <|
      "name" -> "semanticLineMetadataToy",
-     "vertexData" -> {{1, "+"}, {2, "+"}},
+     "vertexData" -> {{1, "x"}, {1, "+"}, {2, "+"}},
      "lineData" -> {
        <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massles", "skType" -> "+?", "state" -> "opened"|>
        },
      "extLegs" -> {},
+     "activeVertexIds" -> {1, 3},
+     "fixedAVertexValues" -> <|4 -> 0|>,
      "loopMomenta" -> {Global`q1},
      "externalMomenta" -> {},
      "ispData" -> {},
@@ -1162,7 +1164,11 @@ compareExpectedTopologyValidationReport[] := Module[
        singularReport["errorCount"] === 1 &&
        MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"] &&
        semanticReport["status"] === "issues" &&
-       semanticReport["errorCount"] === 3 &&
+       semanticReport["errorCount"] === 7 &&
+       MemberQ[semanticCodes, "duplicateVertexIds"] &&
+       MemberQ[semanticCodes, "unknownVertexSigns"] &&
+       MemberQ[semanticCodes, "activeVertexIdsNotInVertexData"] &&
+       MemberQ[semanticCodes, "fixedAVertexValuesNotInVertexData"] &&
        MemberQ[semanticCodes, "unknownLineMassTypes"] &&
        MemberQ[semanticCodes, "unknownLineSKTypes"] &&
        MemberQ[semanticCodes, "unknownLineStates"] &&
