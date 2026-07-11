@@ -1557,7 +1557,7 @@ timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispL
       "masslessFull",
       endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
       If[Head[endpointPos] === Missing, 0,
-       endpointSign = If[First[endpointPos] === 1, 1, -1];
+       endpointSign = If[StringTake[Lookup[lines[[e]], "skType", "++"], 1] === "+", 1, -1] If[First[endpointPos] === 1, 1, -1];
        newLinePacks = linePacks;
        newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
        newLinePacks[[e, 2]] = 1 - newLinePacks[[e, 2]];

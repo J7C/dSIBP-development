@@ -2746,6 +2746,165 @@ compareExpectedShrunkLineIBP[] := Module[
    ];
 
 
+
+(* ::Chapter:: *)
+(*顶点 +/- 费曼规则遍历与变换检查*)
+
+vertexSignAssignmentsForCase[case_Association] := Tuples[{"+", "-"}, Length[case["vertexData"]]];
+
+caseWithFeynmanVertexSigns[case_Association, signs_List] := Module[
+   {vertexIds, signAssoc, newVertexData, newLineData, skForLine},
+   vertexIds = case["vertexData"][[All, 1]];
+   signAssoc = AssociationThread[vertexIds -> signs];
+   newVertexData = Transpose[{vertexIds, signs}];
+   skForLine[line_Association] := StringJoin[Lookup[signAssoc, #, "+"] & /@ line["endpoints"]];
+   newLineData = case["lineData"] /. line_Association :> Join[KeyDrop[line, {"skType", "packType"}], <|"skType" -> skForLine[line]|>];
+   Join[
+    case,
+    <|
+     "name" -> Lookup[case, "name", "case"] <> "_SK_" <> StringJoin[signs],
+     "vertexData" -> newVertexData,
+     "lineData" -> newLineData
+     |>
+    ]
+   ];
+
+firstMomentumGenerator[topo_Association] := SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" &];
+firstTimeGenerator[topo_Association] := SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" &];
+
+sectorTopologiesForSeedProbe[topo_Association] := Module[
+   {subsetData, subsets},
+   subsetData = Global`shrinkSectorSubsets[
+     topo,
+     Lookup[topo["seedOptions"], "MaxShrinkSectorDepth", Infinity],
+     Lookup[topo["seedOptions"], "MaxShrinkSectorCount", 64]
+     ];
+   subsets = If[Lookup[subsetData, "status", "generated"] === "generated", Lookup[subsetData, "subsets", {}], {}];
+   Join[{<|"subset" -> {}, "topology" -> topo|>}, <|"subset" -> #, "topology" -> Global`shrinkSectorTopology[topo, #]|> & /@ subsets]
+   ];
+
+seedProbeForSector[sector_Association] := Module[
+   {topo, subset, int0, qgen, tgen, qSeed, tSeed, qOK, tOK, ispRequiredQ, ispQ, sectorKey},
+   topo = sector["topology"];
+   subset = sector["subset"];
+   sectorKey = Global`sectorKeyFromShrunkLines[subset];
+   int0 = Global`makeBaseIntegral[topo];
+   qgen = firstMomentumGenerator[topo];
+   tgen = firstTimeGenerator[topo];
+   qSeed = If[AssociationQ[qgen], Global`applySeedCanonical[Expand[Global`applyMomentumGeneratorSeed[topo, int0, qgen]], topo], $Failed];
+   tSeed = If[AssociationQ[tgen], Global`applySeedCanonical[Expand[Global`applyTimeGeneratorSeed[topo, int0, tgen]], topo], $Failed];
+   qOK = qSeed =!= $Failed && ! TrueQ[Global`containsForbiddenNQ[topo, qSeed]];
+   tOK = tSeed =!= $Failed && ! TrueQ[Global`containsForbiddenNQ[topo, tSeed]];
+   ispRequiredQ = Length[Lookup[topo, "ispData", {}]] > 0;
+   ispQ = ! ispRequiredQ || (! FreeQ[qSeed, Global`ispN] && ! FreeQ[tSeed, Global`ispN]);
+   <|
+    "sectorKey" -> sectorKey,
+    "subset" -> subset,
+    "packTypes" -> Lookup[topo["lines"], "packType"],
+    "qGenerator" -> If[AssociationQ[qgen], Global`momentumGeneratorLabel[qgen], Missing["NoMomentumGenerator"]],
+    "tGenerator" -> If[AssociationQ[tgen], Global`timeGeneratorLabel[tgen], Missing["NoTimeGenerator"]],
+    "qPass" -> qOK,
+    "tPass" -> tOK,
+    "ispPresentQ" -> ispQ,
+    "pass" -> TrueQ[qOK && tOK && ispQ]
+    |>
+   ];
+
+vertexSignSeedProbeForCase[case_Association] := Module[
+   {assignments, results},
+   assignments = vertexSignAssignmentsForCase[case];
+   results = Table[
+     Module[{variantCase, topo, sectorChecks},
+      variantCase = caseWithFeynmanVertexSigns[case, signs];
+      topo = Global`parseTopology[variantCase];
+      sectorChecks = seedProbeForSector /@ sectorTopologiesForSeedProbe[topo];
+      <|
+       "signs" -> signs,
+       "packTypes" -> Lookup[topo["lines"], "packType"],
+       "sectorChecks" -> sectorChecks,
+       "pass" -> TrueQ[And @@ Lookup[sectorChecks, "pass", {False}]]
+       |>
+      ],
+     {signs, assignments}
+     ];
+   <|
+    "caseName" -> Lookup[case, "name", "case"],
+    "assignmentCount" -> Length[assignments],
+    "pass" -> TrueQ[And @@ Lookup[results, "pass", {False}]],
+    "results" -> results
+    |>
+   ];
+
+compareExpectedVertexSignEnumerationSeeds[] := Module[
+   {cases, results},
+   cases = {Global`bubbleMasslessCase, Global`mixedBubbleCase, Global`mixedTriangleCase, Global`mixedSunriseCase};
+   results = vertexSignSeedProbeForCase /@ cases;
+   <|
+    "name" -> "vertexSignEnumeration_allChosenFamilies_allSectors_qAndT",
+    "pass" -> TrueQ[And @@ Lookup[results, "pass", {False}]],
+    "caseResults" -> results
+    |>
+   ];
+
+masslessPhasePartForFirstTimeSeed[topo_Association] := Module[
+   {int0, tgen},
+   int0 = Global`makeBaseIntegral[topo];
+   tgen = firstTimeGenerator[topo];
+   If[! AssociationQ[tgen], Return[$Failed]];
+   Expand[Global`timeMasslessEndpointDerivativeTerms[topo, int0, tgen["vertex"]]]
+   ];
+
+compareExpectedMasslessSKPhaseTransform[] := Module[
+   {ppCase, mmCase, pmCase, mpCase, ppTopo, mmTopo, pmTopo, mpTopo,
+    ppSeed, mmSeed, pmSeed, mpSeed, ppPhase, pmPhase, ppTransformed, pmTransformed,
+    intPP, intPM, tPP, tPM, qPP, qMM, qPM, qMP},
+   ppCase = caseWithFeynmanVertexSigns[Global`bubbleMasslessCase, {"+", "+"}];
+   mmCase = caseWithFeynmanVertexSigns[Global`bubbleMasslessCase, {"-", "-"}];
+   pmCase = caseWithFeynmanVertexSigns[Global`bubbleMasslessCase, {"+", "-"}];
+   mpCase = caseWithFeynmanVertexSigns[Global`bubbleMasslessCase, {"-", "+"}];
+   ppTopo = Global`parseTopology[ppCase];
+   mmTopo = Global`parseTopology[mmCase];
+   pmTopo = Global`parseTopology[pmCase];
+   mpTopo = Global`parseTopology[mpCase];
+   intPP = Global`makeBaseIntegral[ppTopo];
+   intPM = Global`makeBaseIntegral[pmTopo];
+   tPP = firstTimeGenerator[ppTopo];
+   tPM = firstTimeGenerator[pmTopo];
+   qPP = firstMomentumGenerator[ppTopo];
+   qMM = firstMomentumGenerator[mmTopo];
+   qPM = firstMomentumGenerator[pmTopo];
+   qMP = firstMomentumGenerator[mpTopo];
+   ppSeed = Expand[Global`applyTimeGeneratorSeed[ppTopo, intPP, tPP]];
+   mmSeed = Expand[Global`applyTimeGeneratorSeed[mmTopo, Global`makeBaseIntegral[mmTopo], firstTimeGenerator[mmTopo]]];
+   pmSeed = Expand[Global`applyTimeGeneratorSeed[pmTopo, intPM, tPM]];
+   mpSeed = Expand[Global`applyTimeGeneratorSeed[mpTopo, Global`makeBaseIntegral[mpTopo], firstTimeGenerator[mpTopo]]];
+   ppPhase = masslessPhasePartForFirstTimeSeed[ppTopo];
+   pmPhase = masslessPhasePartForFirstTimeSeed[pmTopo];
+   ppTransformed = Expand[ppSeed - 2 ppPhase];
+   pmTransformed = Expand[pmSeed - 2 pmPhase];
+   <|
+    "name" -> "masslessSKPhaseTransform_beforeAfterIBP",
+    "pass" -> TrueQ[
+      Lookup[ppTopo["lines"], "packType"] === {"masslessFull", "masslessFull"} &&
+       Lookup[mmTopo["lines"], "packType"] === {"masslessFull", "masslessFull"} &&
+       Lookup[pmTopo["lines"], "packType"] === {"masslessCross", "masslessCross"} &&
+       Lookup[mpTopo["lines"], "packType"] === {"masslessCross", "masslessCross"} &&
+       ppTransformed === mmSeed &&
+       pmTransformed === mpSeed &&
+       Expand[Global`applyMomentumGeneratorSeed[ppTopo, intPP, qPP]] === Expand[Global`applyMomentumGeneratorSeed[mmTopo, Global`makeBaseIntegral[mmTopo], qMM]] &&
+       Expand[Global`applyMomentumGeneratorSeed[pmTopo, intPM, qPM]] === Expand[Global`applyMomentumGeneratorSeed[mpTopo, Global`makeBaseIntegral[mpTopo], qMP]]
+      ],
+    "fullTransformPass" -> TrueQ[ppTransformed === mmSeed],
+    "crossTransformPass" -> TrueQ[pmTransformed === mpSeed],
+    "fullPackTypes" -> {Lookup[ppTopo["lines"], "packType"], Lookup[mmTopo["lines"], "packType"]},
+    "crossPackTypes" -> {Lookup[pmTopo["lines"], "packType"], Lookup[mpTopo["lines"], "packType"]},
+    "ppToMMTransformed" -> ppTransformed,
+    "mmSeed" -> mmSeed,
+    "pmToMPTransformed" -> pmTransformed,
+    "mpSeed" -> mpSeed
+    |>
+   ];
+
 (* 调用前需先 loadGeneralGenerator[]，或已在当前 kernel 中定义 summarizeCase/mixedBubbleCase/mixedTriangleCase。 *)
 compareExpectedWithCurrentGenerator[] := Module[
    {bubbleSummary, triangleSummary, masslessBubbleSummary, sunriseSummary, twoLoopISPSummary},
@@ -2773,6 +2932,8 @@ compareExpectedWithCurrentGenerator[] := Module[
     "timeSeedMixedSunriseCore" -> compareExpectedTimeSeedMixedSunriseCore[],
     "mixedBubbleAllSectorHandSeeds" -> compareExpectedMixedBubbleAllSectorHandSeeds[],
     "mixedSunriseAllSectorHandSeeds" -> compareExpectedMixedSunriseAllSectorHandSeeds[],
+    "vertexSignEnumerationSeeds" -> compareExpectedVertexSignEnumerationSeeds[],
+    "masslessSKPhaseTransform" -> compareExpectedMasslessSKPhaseTransform[],
     "timeSeedBatchMixedBubbleEOM" -> compareExpectedTimeSeedBatchMixedBubbleEOM[],
     "masslessEndpointCanonical" -> compareExpectedMasslessEndpointCanonical[],
     "momentumSeedBatch" -> compareExpectedMomentumSeedBatch[],
