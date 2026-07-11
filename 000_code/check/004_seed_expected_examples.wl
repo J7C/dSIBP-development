@@ -1305,24 +1305,46 @@ compareExpectedIBPWorkflowData[] := Module[
 
 
 compareExpectedKiraExporterRejectsSeedBatch[] := Module[
-   {topo, batch, outDir, inputStrings, exportData, writtenFiles},
+   {topo, batch, outDir, inputStrings, exportData, writtenFiles, topologyReport,
+    notGeneratedStrings, emptyLinearData, emptyStrings},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
+   topologyReport = batch["topologyValidationReport"];
    outDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "kira_reject_seed_batch"}];
    inputStrings = Global`makeKiraInputStrings[batch, topo["numericRules"]];
    exportData = Global`makeKiraExportData[batch, Global`OutputDirectory -> outDir];
+   notGeneratedStrings = Global`makeKiraInputStrings[<|
+       "status" -> "notGenerated",
+       "caseName" -> topo["name"],
+       "topologyValidationReport" -> topologyReport
+       |>];
+   emptyLinearData = <|
+     "status" -> "generated",
+     "caseName" -> topo["name"],
+     "topologyValidationReport" -> topologyReport,
+     "linearEquations" -> {<|"coefficientRules" -> {1 -> 0}, "constantTerm" -> 0, "linearQ" -> True|>},
+     "integralRules" -> {Global`J[{}, {}, {}] -> 1},
+     "integralCount" -> 1
+     |>;
+   emptyStrings = Global`makeKiraInputStrings[emptyLinearData];
    writtenFiles = If[DirectoryQ[outDir], FileNames["*", outDir, Infinity], {}];
    <|
     "name" -> "kiraExporter_rejectsRawSeedBatch",
     "pass" -> TrueQ[
       inputStrings["status"] === "notLinearSystem" &&
        inputStrings["topologyValidationReport"]["status"] === "ok" &&
+       notGeneratedStrings["status"] === "notGenerated" &&
+       notGeneratedStrings["topologyValidationReport"]["status"] === "ok" &&
+       emptyStrings["status"] === "emptySystem" &&
+       emptyStrings["topologyValidationReport"]["status"] === "ok" &&
        exportData["status"] === "notReady" &&
        exportData["topologyValidationReport"]["status"] === "ok" &&
        StringContainsQ[exportData["reason"], "linear-system"] &&
        writtenFiles === {}
       ],
     "inputStringStatus" -> Lookup[inputStrings, "status", Missing["status"]],
+    "notGeneratedStringStatus" -> Lookup[notGeneratedStrings, "status", Missing["status"]],
+    "emptyStringStatus" -> Lookup[emptyStrings, "status", Missing["status"]],
     "exportStatus" -> Lookup[exportData, "status", Missing["status"]],
     "exportReason" -> Lookup[exportData, "reason", Missing["reason"]],
     "writtenFiles" -> writtenFiles
