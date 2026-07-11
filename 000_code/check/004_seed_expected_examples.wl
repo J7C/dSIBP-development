@@ -695,7 +695,8 @@ compareExpectedTopologyDataInterface[] := Module[
 
 
 compareExpectedTopologyValidationReport[] := Module[
-   {goodData, crossData, badCase, overCase, badReport, overReport, badCodes, overCodes, badSeverities},
+   {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
+    badCodes, redundantCodes, singularCodes, badSeverities},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -712,7 +713,7 @@ compareExpectedTopologyValidationReport[] := Module[
      "sampleDiscreteRules" -> {{Global`n[99] -> 1, Global`n[1] -> 2}},
      "seedRanges" -> <|"sampleOnly" -> True|>
      |>;
-   overCase = <|
+   redundantCase = <|
      "name" -> "redundantZCoordinateToy",
      "vertexData" -> {{1, "+"}, {2, "+"}},
      "lineData" -> {
@@ -727,10 +728,26 @@ compareExpectedTopologyValidationReport[] := Module[
      "sampleDiscreteRules" -> {{Global`n[1] -> 0, Global`n[2] -> 0, Global`n[3] -> 0}},
      "seedRanges" -> <|"sampleOnly" -> True|>
      |>;
+   singularCase = <|
+     "name" -> "singularZCoordinateToy",
+     "vertexData" -> {{1, "+"}, {2, "+"}},
+     "lineData" -> {
+       <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>,
+       <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> -Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
+       },
+     "extLegs" -> {},
+     "loopMomenta" -> {Global`q1},
+     "externalMomenta" -> {Global`k},
+     "ispData" -> {},
+     "sampleDiscreteRules" -> {{Global`n[1] -> 0, Global`n[2] -> 0}},
+     "seedRanges" -> <|"sampleOnly" -> True|>
+     |>;
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
-   overReport = Global`topologyValidationReport[Global`parseTopology[overCase]];
+   redundantReport = Global`topologyValidationReport[Global`parseTopology[redundantCase]];
+   singularReport = Global`topologyValidationReport[Global`parseTopology[singularCase]];
    badCodes = Lookup[badReport["issues"], "code", {}];
-   overCodes = Lookup[overReport["issues"], "code", {}];
+   redundantCodes = Lookup[redundantReport["issues"], "code", {}];
+   singularCodes = Lookup[singularReport["issues"], "code", {}];
    badSeverities = Lookup[badReport["issues"], "severity", {}];
    <|
     "name" -> "topologyValidationReport_goodPendingBad",
@@ -749,14 +766,18 @@ compareExpectedTopologyValidationReport[] := Module[
        MemberQ[badCodes, "sampleDiscreteRulesContainNonBinaryValues"] &&
        Count[badSeverities, "error"] === 2 &&
        Count[badSeverities, "warning"] === 2 &&
-       overReport["status"] === "issues" &&
-       overReport["errorCount"] === 1 &&
-       MemberQ[overCodes, "scalarProductCoordinateCountMismatch"]
+       redundantReport["status"] === "issues" &&
+       redundantReport["errorCount"] === 1 &&
+       MemberQ[redundantCodes, "scalarProductCoordinateCountMismatch"] &&
+       singularReport["status"] === "issues" &&
+       singularReport["errorCount"] === 1 &&
+       MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"]
       ],
     "goodReport" -> goodData["validationReport"],
     "crossReport" -> crossData["validationReport"],
     "badReport" -> badReport,
-    "overReport" -> overReport
+    "redundantReport" -> redundantReport,
+    "singularReport" -> singularReport
     |>
    ];
 
@@ -1129,4 +1150,3 @@ runSeedExpectedStructureCheck[] := Module[{},
 End[];
 
 EndPackage[];
-

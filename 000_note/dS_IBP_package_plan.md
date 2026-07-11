@@ -267,6 +267,7 @@ ispData = {
 1. 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
 2. ISP 之间线性无关，并且当前主线要求 ISP 表达式直接是某个 `qq[i,j]` 或 `qk[i,j]` 标量积变量
 3. `zExprs` 数量等于非 ISP 标量积数量，即 $\#z_e = N_{\text{sp}} - \#\text{ISP}_{\text{direct}}$
+4. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
 
 这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不自动从冗余传播子中挑选独立子集，也不替用户重定义 family；若计数不闭合或 ISP 不足，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 

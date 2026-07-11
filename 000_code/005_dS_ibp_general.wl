@@ -1693,7 +1693,7 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
-    pendingFeatures},
+    pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
    lineIds = Lookup[topo["lines"], "id"];
@@ -1731,6 +1731,17 @@ topologyValidationReport[topo_Association] := Module[
       "nonISPScalarProductCount" -> spData["nonISPScalarProductCount"],
       "assumption" -> "topology input must provide a closed z/ISP coordinate system; no automatic redundant propagator subset is selected"
       |>]
+    ];
+   If[spData["unsupportedISPExprs"] === {} && TrueQ[spData["structuralCountQ"]] && TrueQ[spData["coordinateCountQ"]],
+    ruleData = makeScalarProductRules[topo];
+    If[Lookup[ruleData, "status", "notComputed"] =!= "computed",
+     appendIssue["error", "scalarProductCoordinateSolveFailed", <|
+       "reason" -> Lookup[ruleData, "reason", Missing["reason"]],
+       "solveVars" -> Lookup[ruleData, "solveVars", spData["solveVars"]],
+       "zCount" -> spData["zCount"],
+       "nonISPScalarProductCount" -> spData["nonISPScalarProductCount"]
+       |>]
+     ]
     ];
    discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
    sampleRulePairs = Cases[topo["sampleDiscreteRules"], Rule[l_, r_] :> {l, r}, {0, Infinity}];
