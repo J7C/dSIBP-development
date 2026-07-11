@@ -695,9 +695,9 @@ compareExpectedTopologyDataInterface[] := Module[
 
 
 compareExpectedTopologyValidationReport[] := Module[
-   {goodData, pendingData, badCase, badReport, badCodes, badSeverities},
+   {goodData, crossData, badCase, badReport, badCodes, badSeverities},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
-   pendingData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
+   crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
      "name" -> "badTopologyValidationToy",
      "vertexData" -> {{1, "+"}, {2, "+"}},
@@ -720,9 +720,9 @@ compareExpectedTopologyValidationReport[] := Module[
     "pass" -> TrueQ[
       goodData["validationReport", "status"] === "ok" &&
        goodData["validationReport", "pendingFeatures"] === {} &&
-       pendingData["validationReport", "status"] === "ok" &&
-       pendingData["validationReport", "pendingFeatures"] === {"massiveCrossSeed"} &&
-       pendingData["validationReport", "pendingCount"] === 1 &&
+       crossData["validationReport", "status"] === "ok" &&
+       crossData["validationReport", "pendingFeatures"] === {} &&
+       crossData["validationReport", "pendingCount"] === 0 &&
        badReport["status"] === "issues" &&
        badReport["errorCount"] === 2 &&
        badReport["warningCount"] === 2 &&
@@ -734,7 +734,7 @@ compareExpectedTopologyValidationReport[] := Module[
        Count[badSeverities, "warning"] === 2
       ],
     "goodReport" -> goodData["validationReport"],
-    "pendingReport" -> pendingData["validationReport"],
+    "crossReport" -> crossData["validationReport"],
     "badReport" -> badReport
     |>
    ];
@@ -851,18 +851,19 @@ compareExpectedMassiveCrossGate[] := Module[
    canonicalBatch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[canonicalBatch, topo];
    <|
-    "name" -> "massiveCross_packAndPendingGate",
+    "name" -> "massiveCross_doubleEndpointPackReady",
     "pass" -> TrueQ[
       summary["packTypes"] === {"massiveCross", "massiveCross"} &&
-       summary["linePacks"] === {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}} &&
-       summary["discreteStateCount"] === 4 &&
-       baseIntegral === Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}}, {}] &&
-       Lookup[momentumBatch, "pendingFeatures", {}] === {"massiveCrossSeed"} &&
-       Lookup[canonicalBatch, "pendingFeatures", {}] === {"massiveCrossSeed"} &&
-       Lookup[canonicalBatch, "completeCanonicalQ", True] === False &&
-       Global`canonicalSeedReadyQ[canonicalBatch] === False &&
-       Lookup[linearData, "status", Missing["status"]] === "notReady" &&
-       Lookup[linearData, "reason", Missing["reason"]] === "pendingFeatures"
+       summary["linePacks"] === {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}} &&
+       summary["discreteStateCount"] === 16 &&
+       baseIntegral === Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}}, {}] &&
+       Lookup[momentumBatch, "pendingFeatures", {"missing"}] === {} &&
+       Lookup[momentumBatch, "forbiddenNData", {"missing"}] === {} &&
+       Lookup[canonicalBatch, "pendingFeatures", {"missing"}] === {} &&
+       Lookup[canonicalBatch, "forbiddenNData", {"missing"}] === {} &&
+       TrueQ[Lookup[canonicalBatch, "completeCanonicalQ", False]] &&
+       TrueQ[Global`canonicalSeedReadyQ[canonicalBatch]] &&
+       Lookup[linearData, "status", Missing["status"]] === "generated"
       ],
     "summary" -> KeyTake[summary, {"packTypes", "linePacks", "discreteStateCount"}],
     "momentumSummary" -> KeyDrop[momentumBatch, "equations"],
@@ -1107,8 +1108,6 @@ runSeedExpectedStructureCheck[] := Module[{},
 End[];
 
 EndPackage[];
-
-
 
 
 

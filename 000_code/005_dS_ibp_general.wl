@@ -186,7 +186,7 @@ parseTopology[case_Association] := Module[
 makeLinePack[line_Association] := Module[{id = line["id"]},
    Switch[line["packType"],
     "massiveFull", {b[id], n[id, 1], n[id, 2]},
-    "massiveCross", {b[id], n[id]},
+    "massiveCross", {b[id], n[id, 1], n[id, 2]},
     "masslessFull", {b[id], n[id]},
     "masslessCross", {b[id]},
     "shrunk", {bS[id]},
@@ -430,7 +430,7 @@ integralMetadataList[integrals_List, metadataList_List, orderingSpec_: <||>] := 
 discreteVarsForLine[line_Association] := Module[{id = line["id"]},
    Switch[line["packType"],
     "massiveFull", {n[id, 1], n[id, 2]},
-    "massiveCross", {n[id]},
+    "massiveCross", {n[id, 1], n[id, 2]},
     "masslessFull", {n[id]},
     _, {}
     ]
@@ -458,7 +458,7 @@ enumerateDiscreteStates[expr_, topo_Association] := Module[
 (* 大拓扑下不要为了 summary 展开所有离散态；计数只用逐线状态数相乘。 *)
 discreteStateCountForLine[line_Association] := Switch[line["packType"],
    "massiveFull", 4,
-   "massiveCross", 2,
+   "massiveCross", 4,
    "masslessFull", 2,
    _, 1
    ];
@@ -554,7 +554,7 @@ massiveEOMTarget[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
    Do[
     pack = linePacks[[e]];
     packType = actualLinePackType[topo, e, pack];
-    If[packType === "massiveFull",
+    If[MemberQ[{"massiveFull", "massiveCross"}, packType],
      Do[
       nValue = pack[[endpointSlot + 1]];
       If[IntegerQ[nValue] && nValue >= 2 && Head[target] === Missing,
@@ -650,15 +650,18 @@ forbiddenNDataForIntegral[topo_Association, J[aList_, linePacks_, ispList_]] := 
       If[IntegerQ[pack[[endpointSlot + 1]]] && pack[[endpointSlot + 1]] >= 2,
        AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "endpointSlot" -> endpointSlot, "nValue" -> pack[[endpointSlot + 1]]|>]
        ],
-      {endpointSlot, 2}
-      ],
+     {endpointSlot, 2}
+     ],
      "masslessFull",
      If[Length[pack] >= 2 && IntegerQ[pack[[2]]] && ! MemberQ[{0, 1}, pack[[2]]],
       AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "nValue" -> pack[[2]]|>]
       ],
      "massiveCross",
-     If[Length[pack] >= 2 && IntegerQ[pack[[2]]] && pack[[2]] >= 2,
-      AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "nValue" -> pack[[2]], "reason" -> "massiveCrossEOMNotImplemented"|>]
+     Do[
+      If[IntegerQ[pack[[endpointSlot + 1]]] && pack[[endpointSlot + 1]] >= 2,
+       AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "endpointSlot" -> endpointSlot, "nValue" -> pack[[endpointSlot + 1]]|>]
+       ],
+      {endpointSlot, 2}
       ],
      _, Null
      ],
@@ -931,7 +934,7 @@ momentumBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Association, r
    lines = topo["lines"];
    Total[
     Table[
-     If[lines[[e]]["packType"] =!= "massiveFull",
+     If[! MemberQ[{"massiveFull", "massiveCross"}, lines[[e]]["packType"]],
       0,
       loopCoeff = Coefficient[lineMomenta[[e]], topo["loopMomenta"][[dLoop]]];
       If[zeroQ[loopCoeff],
@@ -1071,7 +1074,7 @@ timeMassiveBuildingBlockDerivativeTerms[topo_Association, J[aList_, linePacks_, 
    connectedLines = topo["vertexLines"][[pos]][[All, 1]];
    Total[
     Table[
-     If[actualLinePackType[topo, e, linePacks[[e]]] =!= "massiveFull",
+     If[! MemberQ[{"massiveFull", "massiveCross"}, actualLinePackType[topo, e, linePacks[[e]]]],
       0,
       endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
       If[Head[endpointPos] === Missing,
@@ -1653,7 +1656,7 @@ masslessBundleCandidates[topo_Association] := Module[
 
 
 unsupportedSeedFeaturesForTopology[topo_Association] := DeleteDuplicates@Join[
-    If[MemberQ[Lookup[topo["lines"], "packType"], "massiveCross"], {"massiveCrossSeed"}, {}]
+    {}
     ];
 
 
@@ -2376,8 +2379,8 @@ massiveCrossBubbleCase = <|
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2},
    "sampleDiscreteRules" -> {
-     {n[1] -> 0, n[2] -> 0},
-     {n[1] -> 1, n[2] -> 0}
+     {n[1, 1] -> 0, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 0},
+     {n[1, 1] -> 1, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 1}
      },
    "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
    |>;
@@ -2515,7 +2518,7 @@ runStructureExamples[] := Module[
      "mixedBubbleDiscreteStateCount" -> (summaryValue[4, "discreteStateCount"] === 8),
      "mixedBubbleMomentumGeneratorCount" -> (summaryValue[4, "momentumGeneratorCount"] === 2),
      "massiveCrossPackTypes" -> (summaryValue[5, "packTypes"] === {"massiveCross", "massiveCross"}),
-     "massiveCrossDiscreteStateCount" -> (summaryValue[5, "discreteStateCount"] === 4),
+     "massiveCrossDiscreteStateCount" -> (summaryValue[5, "discreteStateCount"] === 16),
      "mixedTriangleDiscreteStateCount" -> (summaryValue[6, "discreteStateCount"] === 32),
      "mixedTriangleMomentumGeneratorCount" -> (summaryValue[6, "momentumGeneratorCount"] === 3),
      "mixedSunriseDiscreteStateCount" -> (summaryValue[7, "discreteStateCount"] === 16),
@@ -2531,5 +2534,3 @@ runStructureExamples[] := Module[
 
 
 (* 默认加载只定义函数和示例输入；需要检查时显式调用 runStructureExamples[]。 *)
-
-

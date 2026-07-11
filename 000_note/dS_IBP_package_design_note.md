@@ -103,7 +103,7 @@ in-in formalism 中，顶点 ± 标记决定传播子类型：
 | 传播子类型 | massive（`\nu_e` 非半奇数） | massless（`\nu_e` 半奇数） |
 |-----------|---------------------------|---------------------------|
 | `G^{++}, G^{--}` | `{b_e, n_{e,1}, n_{e,2}}`，`n_{e,a} \in \{0,1\}` | `{b_e, n_e}`，`n_e \in \{0,1\}` |
-| `G^{+-}, G^{-+}` | `{b_e, \tilde{n}_e}`（见 §3.3） | `{b_e}`（无离散态） |
+| `G^{+-}, G^{-+}` | `{b_e, n_{e,1}, n_{e,2}}`（无 Heaviside 边界项） | `{b_e}`（无离散态） |
 
 其中 `b_e` 是动量幂次（分母 `\xi_e^{b_e}`），`n_{e,a}` 是 Hankel building block 端点指标（massive）或端点导数压缩态（massless）。
 
@@ -120,13 +120,14 @@ in-in formalism 中，顶点 ± 标记决定传播子类型：
 
 ### 3.4 G^{+-}/G^{-+} 型 massive 的处理
 
-Massive 线的 Hankel building block `h[\nu, n, q_e \tau]` 在端点导数下产生 `n \to n+1` 的递推。对 `G^{+-}/G^{-+}` 型，由于无 Heaviside 结构，端点导数不产生独立分支，但 Hankel 阶 `n` 仍可升高。处理方式：
+Massive 线的 Hankel building block `h[\nu, n, q_e \tau]` 在每个端点导数下分别产生 `n_{e,a} \to n_{e,a}+1` 的递推。对 `G^{+-}/G^{-+}` 型，由于无 Heaviside 结构，time IBP 不产生 theta 边界缩并项；但两端 Hankel building block 仍是独立对象，不能像 massless 指数核那样压缩成单个 `n_e`。
 
-- 引入简化指标 `\tilde{n}_e \in \{0, 1\}`（类似 massless 但携带 Hankel 阶信息）
-- 具体映射关系由 H/h 转换给出（§4）
-- EOM 递推与 `G^{++}/G^{--}` 型相同
+- 指标包仍采用 `{b_e,n_{e,1},n_{e,2}}`
+- momentum/time building-block 导数项与 `G^{++}/G^{--}` 型 massive 线相同
+- EOM 递推与 `G^{++}/G^{--}` 型相同，种子层递归消去所有 `n>=2`
+- 唯一区别是没有 theta 导数产生的 shrink-sector 边界项
 
-当前代码状态：`005` 已把这类线显式分派为 `massiveCross`，指标包为 `{b_e,n_e}`，并纳入离散态枚举与 forbidden-n 扫描；但对应的 momentum/time building-block seed 尚未实现。因此含 `massiveCross` 的 topology 会带 `pendingFeatures -> {"massiveCrossSeed"}`，只能停在 seed/metadata 检查层，不能进入 linear-system 或 Kira 导出。
+当前代码状态：`005` 已把这类线显式分派为 `massiveCross`，但指标包仍为 `{b_e,n_{e,1},n_{e,2}}`。它已接入离散态枚举、momentum/time building-block seed、EOM canonical 和 linear-system/Kira 前置门禁；theta boundary shrink 只作用于 `massiveFull`。
 
 ## 4. h 函数与 H/h 转换
 
