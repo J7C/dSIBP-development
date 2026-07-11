@@ -1164,7 +1164,8 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
 
 
 compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
-   {topo, batch, linearData, outDir, kiraData, requiredFiles, ibpText, listText, blocks, blockCount, listCount},
+   {topo, batch, linearData, outDir, kiraData, requiredFiles, ibpText, listText, blocks, blockCount, listCount,
+    roundtripFiles, repJ2Kira, repKira2J, metadata},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
@@ -1183,6 +1184,15 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
    blocks = Select[StringSplit[StringTrim[ibpText], RegularExpression["\\n\\s*\\n"]], StringTrim[#] =!= "" &];
    blockCount = Length[blocks];
    listCount = Length[StringSplit[StringTrim[listText], WhitespaceCharacter ..]];
+   roundtripFiles = FileNameJoin[{outDir, #}] & /@ {
+      "result/repJ2kira.m",
+      "result/repkira2J.m",
+      "result/kira_export_metadata.m"
+      };
+   {repJ2Kira, repKira2J, metadata} = Block[
+     {$Context = "Global`", $ContextPath = {"System`", "Global`"}},
+     Get /@ roundtripFiles
+     ];
    <|
     "name" -> "kiraWorkspaceExport_mixedBubble_linearSystemFilesOnly",
     "pass" -> TrueQ[
@@ -1192,7 +1202,14 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        And @@ (FileExistsQ /@ requiredFiles) &&
        StringContainsQ[Import[FileNameJoin[{outDir, "jobs.yaml"}], "Text"], "reduce_user_defined_system"] &&
        blockCount === kiraData["exportedEquationCount"] &&
-       listCount === kiraData["integralCount"]
+       listCount === kiraData["integralCount"] &&
+       repJ2Kira === linearData["integralRules"] &&
+       Sort[repKira2J /. Global`Tuserweight[id_] -> id] === Sort[Reverse /@ linearData["integralRules"]] &&
+       metadata["caseName"] === linearData["caseName"] &&
+       metadata["integralCount"] === linearData["integralCount"] &&
+       metadata["equationCount"] === linearData["equationCount"] &&
+       metadata["exportedEquationCount"] === kiraData["exportedEquationCount"] &&
+       Lookup[metadata["sectorMetadataList"], "sectorKey"] === Lookup[linearData["sectorMetadataList"], "sectorKey"]
       ],
     "outputDir" -> outDir,
     "filesWritten" -> Lookup[kiraData, "filesWritten", {}],
@@ -1200,7 +1217,9 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
     "listCount" -> listCount,
     "equationCount" -> Lookup[kiraData, "equationCount", Missing["equationCount"]],
     "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["exportedEquationCount"]],
-    "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]]
+    "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]],
+    "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}],
+    "sectorKeysInMetadata" -> If[AssociationQ[metadata], Lookup[metadata["sectorMetadataList"], "sectorKey", {}], {}]
     |>
    ];
 
