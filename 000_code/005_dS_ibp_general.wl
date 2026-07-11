@@ -2622,8 +2622,70 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
     "seedCoverageReport" -> seedCoverageReport,
     "linearSystem" -> linearData,
     "kiraExport" -> kiraData
+   |>
+   ];
+
+
+readinessIssueCodes[report_] := If[AssociationQ[report], Lookup[Lookup[report, "issues", {}], "code", {}], {}];
+
+
+readinessStatusFromQ[q_] := If[TrueQ[q], "ready", "notReady"];
+
+
+Options[makeIBPReadinessReport] = Options[makeIBPWorkflowData];
+
+
+makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
+   {workflow, topologyReport, seedBatch, seedReport, linearData, kiraData, exportQ, topologyReadyQ, seedReadyQ,
+    linearReadyQ, kiraReadyQ},
+   workflow = makeIBPWorkflowData[caseOrTopo, opts];
+   topologyReport = Lookup[workflow, "topologyValidationReport", <||>];
+   seedBatch = Lookup[workflow, "seedBatch", <||>];
+   seedReport = Lookup[workflow, "seedCoverageReport", <||>];
+   linearData = Lookup[workflow, "linearSystem", <||>];
+   kiraData = Lookup[workflow, "kiraExport", <|"status" -> "skipped"|>];
+   exportQ = TrueQ[OptionValue[ExportKira]] || StringQ[OptionValue[OutputDirectory]];
+   topologyReadyQ = AssociationQ[topologyReport] && ! topologyValidationErrorQ[topologyReport];
+   seedReadyQ = AssociationQ[seedReport] && Lookup[seedReport, "status", Missing["status"]] === "ready";
+   linearReadyQ = AssociationQ[linearData] && Lookup[linearData, "status", Missing["status"]] === "generated" && TrueQ[Lookup[linearData, "linearQ", False]];
+   kiraReadyQ = If[exportQ, AssociationQ[kiraData] && Lookup[kiraData, "status", Missing["status"]] === "ready", Missing["NotRequested"]];
+   <|
+    "status" -> Lookup[workflow, "status", Missing["status"]],
+    "stage" -> Lookup[workflow, "stage", Missing["stage"]],
+    "caseName" -> Lookup[Lookup[workflow, "topology", <||>], "name", Lookup[workflow, "caseName", Missing["caseName"]]],
+    "topologyReadyQ" -> topologyReadyQ,
+    "seedReadyQ" -> seedReadyQ,
+    "linearReadyQ" -> linearReadyQ,
+    "kiraRequestedQ" -> exportQ,
+    "kiraReadyQ" -> kiraReadyQ,
+    "topologyStatus" -> Lookup[topologyReport, "status", Missing["status"]],
+    "topologyIssueCodes" -> readinessIssueCodes[topologyReport],
+    "seedStatus" -> Lookup[seedBatch, "status", Missing["notGenerated"]],
+    "seedCoverageStatus" -> Lookup[seedReport, "status", Missing["notGenerated"]],
+    "linearStatus" -> Lookup[linearData, "status", Missing["notGenerated"]],
+    "kiraStatus" -> Lookup[kiraData, "status", "skipped"],
+    "equationCount" -> Lookup[seedBatch, "equationCount", Missing["notGenerated"]],
+    "linearEquationCount" -> Lookup[linearData, "equationCount", Missing["notGenerated"]],
+    "integralCount" -> Lookup[linearData, "integralCount", Missing["notGenerated"]],
+    "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["notGenerated"]],
+    "pendingFeatures" -> DeleteDuplicates[Flatten[{
+        Lookup[topologyReport, "pendingFeatures", {}],
+        Lookup[seedBatch, "pendingFeatures", {}],
+        Lookup[seedReport, "pendingFeatures", {}],
+        Lookup[linearData, "pendingFeatures", {}]
+        }]],
+    "workflowReason" -> Lookup[workflow, "reason", None],
+    "readinessByStage" -> <|
+      "topology" -> readinessStatusFromQ[topologyReadyQ],
+      "seed" -> readinessStatusFromQ[seedReadyQ],
+      "linear" -> readinessStatusFromQ[linearReadyQ],
+      "kira" -> If[exportQ, readinessStatusFromQ[kiraReadyQ], "notRequested"]
+      |>,
+    "workflowSummary" -> KeyDrop[workflow, {"topology", "seedBatch", "linearSystem", "kiraExport"}]
     |>
    ];
+
+
 (* ::Chapter:: *)
 (*线性系统中间格式*)
 

@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement, canonicalCoverageCase, compareExpectedCanonicalCoverageSmallCases,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -1356,6 +1356,51 @@ compareExpectedIBPWorkflowData[] := Module[
    ];
 
 
+compareExpectedIBPReadinessReport[] := Module[
+   {linearReport, kiraReport, invalidModeReport},
+   linearReport = Global`makeIBPReadinessReport[
+     Global`masslessBoxCase,
+     Global`LinearSystemMode -> "sampled"
+     ];
+   kiraReport = Global`makeIBPReadinessReport[
+     Global`bubbleMasslessCase,
+     Global`ExportKira -> True,
+     Global`KiraJobOptions -> <|"RunFirefly" -> False, "WriteKira2MathJob" -> False|>
+     ];
+   invalidModeReport = Global`makeIBPReadinessReport[
+     Global`mixedBubbleCase,
+     Global`LinearSystemMode -> "sample"
+     ];
+   <|
+    "name" -> "ibpReadinessReport_stageSummary",
+    "pass" -> TrueQ[
+      linearReport["status"] === "ready" &&
+       linearReport["stage"] === "linear" &&
+       linearReport["topologyReadyQ"] === True &&
+       linearReport["seedReadyQ"] === True &&
+       linearReport["linearReadyQ"] === True &&
+       linearReport["kiraRequestedQ"] === False &&
+       linearReport["readinessByStage", "kira"] === "notRequested" &&
+       linearReport["topologyIssueCodes"] === {} &&
+       kiraReport["status"] === "ready" &&
+       kiraReport["stage"] === "kira" &&
+       kiraReport["kiraRequestedQ"] === True &&
+       kiraReport["kiraReadyQ"] === True &&
+       kiraReport["readinessByStage", "kira"] === "ready" &&
+       invalidModeReport["status"] === "notReady" &&
+       invalidModeReport["stage"] === "linear" &&
+       invalidModeReport["topologyReadyQ"] === True &&
+       invalidModeReport["seedReadyQ"] === False &&
+       invalidModeReport["linearReadyQ"] === False &&
+       invalidModeReport["workflowReason"] === "invalidLinearSystemMode"
+      ],
+    "linearReport" -> KeyDrop[linearReport, "workflowSummary"],
+    "kiraReport" -> KeyDrop[kiraReport, "workflowSummary"],
+    "invalidModeReport" -> KeyDrop[invalidModeReport, "workflowSummary"]
+    |>
+   ];
+
+
 compareExpectedKiraExporterRejectsSeedBatch[] := Module[
    {topo, batch, outDir, inputStrings, exportData, writtenFiles, topologyReport,
     notGeneratedStrings, emptyLinearData, emptyStrings, badTopologyReport, badLinearData,
@@ -1800,6 +1845,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "seedClassificationAndSampledLinear" -> compareExpectedSeedClassificationAndSampledLinear[],
     "seedMMASaveMixedBubble" -> compareExpectedSeedMMASaveMixedBubble[],
     "ibpWorkflowData" -> compareExpectedIBPWorkflowData[],
+    "ibpReadinessReport" -> compareExpectedIBPReadinessReport[],
     "kiraExporterRejectsSeedBatch" -> compareExpectedKiraExporterRejectsSeedBatch[],
     "kiraWorkspaceExportMixedBubble" -> compareExpectedKiraWorkspaceExportMixedBubble[],
     "kiraWorkspaceExportMasslessBox" -> compareExpectedKiraWorkspaceExportMasslessBox[],

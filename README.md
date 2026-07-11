@@ -33,6 +33,7 @@
 Get["000_code/005_dS_ibp_general.wl"];
 
 topoData = makeTopologyData[mixedBubbleCase];
+readiness = makeIBPReadinessReport[mixedBubbleCase];
 seedBatch = makeCanonicalSeedBatch[mixedBubbleCase];
 seedReport = makeCanonicalSeedCoverageReport[seedBatch];
 
@@ -59,6 +60,7 @@ kiraData = makeKiraExportData[
 流程约束：
 
 - seed 阶段只生成 Mathematica 表达式，不直接导出 Kira。
+- `makeIBPReadinessReport[case, ...]` 是轻量体检入口，会返回 topology/seed/linear/Kira 各阶段 ready 状态、计数、pending features 和 issue codes。
 - `makeCanonicalSeedBatch` 会合并 momentum/time/shrink-sector seed，并检查 EOM canonical 与 pending features。
 - `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、top-sector 生成元标签、EOM canonical 和 pending/forbidden 数据；canonical batch 进入 linear/Kira 时会把这个 report 写入 metadata。
 - `topologyValidationReport` 在 topology 初始化、seed batch、linear-system 和 Kira metadata 中都会保留，用来追踪输入拓扑/ISP/numeric rules 是否满足通用生成器前置条件。

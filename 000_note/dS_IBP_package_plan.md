@@ -566,6 +566,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - seed 分类：`classifyCanonicalSeedBatch` 按 sector 与 `qIBP/tIBP` 分类。
 - 撒点后端：`makeSampledLinearSystemData` 在 linear-system 层应用 `numericRules` 或用户显式 `CoefficientRules`，不污染解析 seed。
 - 端到端入口：`makeIBPWorkflowData` 只串联现有 gate，返回 topology、seed、linear-system 和可选 Kira export；`ExportKira -> True` 可只生成内存中的 Kira 字符串，只有给出 `OutputDirectory` 时才写 Kira 文件。
+- 体检入口：`makeIBPReadinessReport` 复用 workflow gate，返回 topology/seed/linear/Kira 分阶段 ready 状态、计数、pending features、topology issue codes 和 workflow reason，便于用户在真正导出前确认输入是否满足主线。
 - Kira 排序：默认全 sector 排序；用户仍可在 linear 后查看 `integralList` 并重排，且排序命中情况会写入 report。
 - Massless bundle metadata：`masslessBundleCandidates` 只预扫描同一顶点对的多条 `masslessFull` 线，当前不把它们合成一个指标包，也不减少离散态枚举。
 
