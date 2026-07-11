@@ -812,8 +812,8 @@ coefficientMatrix[exprs_List, vars_List] := Table[
 
 
 (* 小规模线性规则生成：直接作为 ISP 给出的标量积会被保留，不强行改写成 rho。
-   本 package 假设用户输入的 z_e 与直接 ISP 已经构成闭合坐标；这里不自动挑选
-   冗余 propagator 子集，避免改变用户定义的函数族。 *)
+   本 package 假设用户输入的 z_e 与直接 ISP 已经构成闭合坐标；这里不把 dS 图
+   默认当成 overcomplete propagator family 处理，避免改变用户定义的函数族。 *)
 makeScalarProductRules[topo_Association] := Module[
    {spVars, zVars, zExprs, ispExprs, directISPVars, unsupportedISPExprs, solveVars,
     mat, const, rhs, solVec},

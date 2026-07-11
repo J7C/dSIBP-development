@@ -270,7 +270,7 @@ ispData = {
 4. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
 5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量 `kk[i,j]`；缺失只触发 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed 生成
 
-这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不自动从冗余传播子中挑选独立子集，也不替用户重定义 family；若计数不闭合或 ISP 不足，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
+这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动挑选独立传播子子集；若计数不闭合、ISP 不足/过多、传播子动量退化或特殊数值外动量导致不可反解，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 
 验证通过后，才进入 IBP 生成步骤。
 

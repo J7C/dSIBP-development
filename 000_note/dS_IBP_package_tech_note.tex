@@ -567,7 +567,7 @@ ispData = {
   \item \texttt{numericRules} 应覆盖全部外部不变量 \texttt{kk[i,j]}；缺失只触发 \texttt{numericRulesMissingExternal\allowbreak Invariants} warning，不阻止解析 seed 生成
 \end{enumerate}
 
-这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合；程序不自动从冗余传播子中选择独立子集，也不替用户重定义 family。
+这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动从传播子中选择独立子集；若输入中存在重复/退化传播子、ISP 不足或特殊数值外动量导致不可反解，应由用户修正 family 输入。
 验证通过后，才进入 IBP 生成步骤。
 
 \subsection{分 Sector IBP 生成流程}
