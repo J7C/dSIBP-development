@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -1139,6 +1139,30 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
    ];
 
 
+compareExpectedKiraExporterRejectsSeedBatch[] := Module[
+   {topo, batch, outDir, inputStrings, exportData, writtenFiles},
+   topo = Global`parseTopology[Global`mixedBubbleCase];
+   batch = Global`makeCanonicalSeedBatch[topo];
+   outDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "kira_reject_seed_batch"}];
+   inputStrings = Global`makeKiraInputStrings[batch, topo["numericRules"]];
+   exportData = Global`makeKiraExportData[batch, Global`OutputDirectory -> outDir];
+   writtenFiles = If[DirectoryQ[outDir], FileNames["*", outDir, Infinity], {}];
+   <|
+    "name" -> "kiraExporter_rejectsRawSeedBatch",
+    "pass" -> TrueQ[
+      inputStrings["status"] === "notLinearSystem" &&
+       exportData["status"] === "notReady" &&
+       StringContainsQ[exportData["reason"], "linear-system"] &&
+       writtenFiles === {}
+      ],
+    "inputStringStatus" -> Lookup[inputStrings, "status", Missing["status"]],
+    "exportStatus" -> Lookup[exportData, "status", Missing["status"]],
+    "exportReason" -> Lookup[exportData, "reason", Missing["reason"]],
+    "writtenFiles" -> writtenFiles
+    |>
+   ];
+
+
 compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
    {topo, batch, linearData, outDir, kiraData, requiredFiles, ibpText, listText, blocks, blockCount, listCount},
    topo = Global`parseTopology[Global`mixedBubbleCase];
@@ -1419,6 +1443,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "massiveCrossGate" -> compareExpectedMassiveCrossGate[],
     "seedClassificationAndSampledLinear" -> compareExpectedSeedClassificationAndSampledLinear[],
     "seedMMASaveMixedBubble" -> compareExpectedSeedMMASaveMixedBubble[],
+    "kiraExporterRejectsSeedBatch" -> compareExpectedKiraExporterRejectsSeedBatch[],
     "kiraWorkspaceExportMixedBubble" -> compareExpectedKiraWorkspaceExportMixedBubble[],
     "kiraWorkspaceExportMasslessBox" -> compareExpectedKiraWorkspaceExportMasslessBox[],
     "kiraIntegralOrderingMixedBubble" -> compareExpectedKiraIntegralOrderingMixedBubble[],

@@ -36,7 +36,7 @@
   - bubble massless 双 theta `{b,n}` 检查 endpoint 压缩（已加入小样本 check）；
   - 单圈 triangle/box 检查 topology input 替换（triangle 已有结构检查；massless box 已加入 sample momentum linear-system 小检查）；
   - 两圈含 ISP toy 拓扑检查生成元数和 ISP 完备性（已加入 twoLoopISP / twoLoopISPCompleteness 小检查）；
-  - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，不运行 Kira）。
+  - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
 
 验证红线：任何默认脚本不得启动解析 IBP 大计算；需要验证时只做 seed/metadata 结构检查，或对参数做代数值替换后做小规模有限检查。
 
