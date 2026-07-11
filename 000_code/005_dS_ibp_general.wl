@@ -2077,6 +2077,7 @@ unsupportedSeedFeaturesForTopology[topo_Association] := DeleteDuplicates@Join[
 topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
+    extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2087,6 +2088,8 @@ topologyValidationReport[topo_Association] := Module[
    vertexSigns = topo["vertexData"][[All, 2]];
    activeVertexIds = Lookup[topo, "activeVertexIds", vertexIds];
    fixedAVertexIds = Keys[Lookup[topo, "fixedAVertexValues", <||>]];
+   extLegs = Lookup[topo, "extLegs", {}];
+   vertexEnergies = Lookup[topo, "vertexEnergies", <||>];
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
@@ -2107,6 +2110,39 @@ topologyValidationReport[topo_Association] := Module[
    badFixedAVertexIds = Complement[fixedAVertexIds, vertexIds];
    If[badFixedAVertexIds =!= {},
     appendIssue["error", "fixedAVertexValuesNotInVertexData", <|"fixedAVertexIds" -> badFixedAVertexIds, "vertexIds" -> vertexIds|>]
+    ];
+   If[! ListQ[extLegs],
+    appendIssue["error", "malformedExtLegs", <|"reason" -> "extLegs must be a list of entries with at least {label, vertexId, energy}"|>],
+    badExtLegShapePositions = Flatten @ Position[extLegs, entry_ /; !(ListQ[entry] && Length[entry] >= 3), {1}, Heads -> False];
+    If[badExtLegShapePositions =!= {},
+     appendIssue["error", "malformedExtLegs", <|"badPositions" -> badExtLegShapePositions|>]
+     ];
+    badExtLegVertexData = DeleteCases[
+      MapIndexed[
+       If[ListQ[#1] && Length[#1] >= 2 && ! MemberQ[vertexIds, #1[[2]]],
+         <|"extLegPosition" -> First[#2], "vertexId" -> #1[[2]]|>,
+         Nothing
+         ] &,
+       extLegs
+       ],
+      Nothing
+      ];
+    If[badExtLegVertexData =!= {},
+     appendIssue["error", "extLegVertexNotInVertexData", <|"extLegs" -> badExtLegVertexData, "vertexIds" -> vertexIds|>]
+     ]
+    ];
+   vertexEnergyKeys = Which[
+     AssociationQ[vertexEnergies], Keys[vertexEnergies],
+     ListQ[vertexEnergies] && And @@ (MatchQ[#, _Rule | _RuleDelayed] & /@ vertexEnergies), Cases[vertexEnergies, (Rule | RuleDelayed)[v_, _] :> v],
+     vertexEnergies === <||>, {},
+     True, Missing["MalformedVertexEnergies"]
+     ];
+   If[vertexEnergyKeys === Missing["MalformedVertexEnergies"],
+    appendIssue["error", "malformedVertexEnergies", <|"reason" -> "vertexEnergies must be an Association or list of rules"|>],
+    badVertexEnergyKeys = Complement[vertexEnergyKeys, vertexIds];
+    If[badVertexEnergyKeys =!= {},
+     appendIssue["error", "vertexEnergiesNotInVertexData", <|"vertexEnergyKeys" -> badVertexEnergyKeys, "vertexIds" -> vertexIds|>]
+     ]
     ];
    If[Lookup[topo, "unknownSeedPreset", None] =!= None,
     appendIssue["warning", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "fallback" -> "quickCheck"|>]

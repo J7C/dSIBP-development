@@ -1083,7 +1083,8 @@ compareExpectedTopologyValidationReport[] := Module[
      "lineData" -> {
        <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massles", "skType" -> "+?", "state" -> "opened"|>
        },
-     "extLegs" -> {},
+     "extLegs" -> {{"badVertex", 3, Global`p3}, {"tooShort", 1}},
+     "vertexEnergies" -> <|4 -> Global`p4|>,
      "activeVertexIds" -> {1, 3},
      "fixedAVertexValues" -> <|4 -> 0|>,
      "loopMomenta" -> {Global`q1},
@@ -1164,11 +1165,14 @@ compareExpectedTopologyValidationReport[] := Module[
        singularReport["errorCount"] === 1 &&
        MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"] &&
        semanticReport["status"] === "issues" &&
-       semanticReport["errorCount"] === 7 &&
+       semanticReport["errorCount"] === 10 &&
        MemberQ[semanticCodes, "duplicateVertexIds"] &&
        MemberQ[semanticCodes, "unknownVertexSigns"] &&
        MemberQ[semanticCodes, "activeVertexIdsNotInVertexData"] &&
        MemberQ[semanticCodes, "fixedAVertexValuesNotInVertexData"] &&
+       MemberQ[semanticCodes, "malformedExtLegs"] &&
+       MemberQ[semanticCodes, "extLegVertexNotInVertexData"] &&
+       MemberQ[semanticCodes, "vertexEnergiesNotInVertexData"] &&
        MemberQ[semanticCodes, "unknownLineMassTypes"] &&
        MemberQ[semanticCodes, "unknownLineSKTypes"] &&
        MemberQ[semanticCodes, "unknownLineStates"] &&
