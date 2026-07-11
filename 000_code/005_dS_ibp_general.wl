@@ -2389,6 +2389,8 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
     "equationCount" -> Lookup[linearForExport, "equationCount", Missing["equationCount"]],
     "exportedEquationCount" -> Lookup[strings, "exportedEquationCount", Missing["exportedEquationCount"]],
     "integralCount" -> Lookup[linearForExport, "integralCount", Missing["integralCount"]],
+    "outputDirectory" -> outputDir,
+    "writeFilesQ" -> StringQ[outputDir],
     "filesWritten" -> filesWritten
     |>
    ];

@@ -1276,7 +1276,7 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
 
 
 compareExpectedIBPWorkflowData[] := Module[
-   {sampledWorkflow, invalidModeWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
+   {sampledWorkflow, invalidModeWorkflow, inMemoryExportWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
    sampledWorkflow = Global`makeIBPWorkflowData[
      Global`masslessBoxCase,
      Global`LinearSystemMode -> "sampled",
@@ -1285,6 +1285,11 @@ compareExpectedIBPWorkflowData[] := Module[
    invalidModeWorkflow = Global`makeIBPWorkflowData[
      Global`mixedBubbleCase,
      Global`LinearSystemMode -> "sample"
+     ];
+   inMemoryExportWorkflow = Global`makeIBPWorkflowData[
+     Global`bubbleMasslessCase,
+     Global`ExportKira -> True,
+     Global`KiraJobOptions -> <|"RunFirefly" -> False, "WriteKira2MathJob" -> False|>
      ];
    exportDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "workflow_mixed_bubble"}];
    exportWorkflow = Global`makeIBPWorkflowData[
@@ -1313,6 +1318,12 @@ compareExpectedIBPWorkflowData[] := Module[
        invalidModeWorkflow["reason"] === "invalidLinearSystemMode" &&
        invalidModeWorkflow["allowedLinearSystemModes"] === {"symbolic", "sampled", "numeric"} &&
        ! KeyExistsQ[invalidModeWorkflow, "seedBatch"] &&
+       inMemoryExportWorkflow["status"] === "ready" &&
+       inMemoryExportWorkflow["stage"] === "kira" &&
+       inMemoryExportWorkflow["kiraExport"]["status"] === "ready" &&
+       inMemoryExportWorkflow["kiraExport"]["writeFilesQ"] === False &&
+       inMemoryExportWorkflow["kiraExport"]["filesWritten"] === {} &&
+       inMemoryExportWorkflow["kiraExport"]["kiraInput"]["status"] === "generated" &&
        exportWorkflow["status"] === "ready" &&
        exportWorkflow["stage"] === "kira" &&
        exportWorkflow["topologyValidationReport"]["status"] === "ok" &&
@@ -1336,6 +1347,7 @@ compareExpectedIBPWorkflowData[] := Module[
       ],
     "sampledSummary" -> KeyTake[sampledWorkflow, {"status", "stage"}],
     "invalidModeSummary" -> KeyTake[invalidModeWorkflow, {"status", "stage", "reason", "linearSystemMode"}],
+    "inMemoryExportSummary" -> KeyTake[inMemoryExportWorkflow["kiraExport"], {"status", "writeFilesQ", "filesWritten"}],
     "exportSummary" -> KeyTake[exportWorkflow, {"status", "stage"}],
     "filesWritten" -> Lookup[Lookup[exportWorkflow, "kiraExport", <||>], "filesWritten", {}],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}]
