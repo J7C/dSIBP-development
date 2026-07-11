@@ -1996,7 +1996,7 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
    ];
 compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
    {topo, batch, linearData, preferred, missingIntegral, customData, reorderedData, badReorderedData,
-    kiraData, exportedLinear, badTargetData},
+    kiraData, exportedLinear, badTargetData, badIntegralOrderData},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
@@ -2018,6 +2018,10 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
      linearData,
      Global`KiraTargetIntegrals -> {linearData["integralCount"] + 99}
      ];
+   badIntegralOrderData = Global`makeKiraExportData[
+     linearData,
+     Global`KiraIntegralOrder -> "badOrderSpec"
+     ];
    exportedLinear = Lookup[kiraData, "linearSystem", <||>];
    <|
     "name" -> "kiraIntegralOrdering_mixedBubble_globalAllSectors",
@@ -2036,7 +2040,9 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
        kiraData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
        AssociationQ[kiraData["kiraOrderingReport"]] &&
        Lookup[badTargetData, "status", Missing["status"]] === "notReady" &&
-       Lookup[Lookup[badTargetData, "kiraInput", <||>], "status", Missing["status"]] === "invalidTargetIntegrals"
+       Lookup[Lookup[badTargetData, "kiraInput", <||>], "status", Missing["status"]] === "invalidTargetIntegrals" &&
+       Lookup[badIntegralOrderData, "status", Missing["status"]] === "notReady" &&
+       Lookup[Lookup[badIntegralOrderData, "kiraInput", <||>], "status", Missing["status"]] === "invalidKiraIntegralOrder"
       ],
     "preferred" -> preferred,
     "defaultFirst" -> First[linearData["integralList"]],
@@ -2047,7 +2053,8 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
     "badManualOrderReport" -> Lookup[badReorderedData, "manualIntegralOrderReport", <||>],
     "exportManualOrderReport" -> If[AssociationQ[exportedLinear], Lookup[exportedLinear, "manualIntegralOrderReport", <||>], <||>],
     "kiraExportManualOrderReport" -> Lookup[kiraData, "manualIntegralOrderReport", <||>],
-    "badTargetStatus" -> Lookup[badTargetData, "status", Missing["status"]]
+    "badTargetStatus" -> Lookup[badTargetData, "status", Missing["status"]],
+    "badIntegralOrderStatus" -> Lookup[badIntegralOrderData, "status", Missing["status"]]
     |>
    ];
 

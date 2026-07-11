@@ -691,6 +691,12 @@ missingIntegralOrderItems[order_List, integrals_List] := Cases[
    ];
 
 
+validateKiraIntegralOrderSpec[orderSpec_] := If[orderSpec === Automatic || ListQ[orderSpec],
+   <|"status" -> "ok"|>,
+   <|"status" -> "invalidKiraIntegralOrder", "reason" -> "KiraIntegralOrder must be Automatic or a list of integral IDs/J objects", "kiraIntegralOrder" -> orderSpec|>
+   ];
+
+
 kiraOrderingIntegralRequestList[orderingSpec_Association] := Module[
    {manual = Lookup[orderingSpec, "IntegralOrder", Lookup[orderingSpec, "ManualIntegralOrder", {}]],
     preferred = Lookup[orderingSpec, "PreferredIntegrals", {}]},
@@ -3135,7 +3141,7 @@ makeKiraExportData::badlinear = "linear-system 不能导出 Kira：`1`。";
 
 
 makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
-   {linearForExport, strings, outputDir, filesWritten, topologyReport},
+   {linearForExport, strings, outputDir, filesWritten, topologyReport, integralOrderReport},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[! KeyExistsQ[linearData, "linearEquations"],
     Message[makeKiraExportData::notlinearinput, Lookup[linearData, "caseName", Missing["caseName"]]];
@@ -3145,6 +3151,10 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
       "topologyValidationReport" -> topologyReport,
       "reason" -> "Kira exporter expects linear-system data; save seed batch as MMA first, then call makeLinearSystemData after numeric/sampling choices"
       |>]
+    ];
+   integralOrderReport = validateKiraIntegralOrderSpec[OptionValue[KiraIntegralOrder]];
+   If[Lookup[integralOrderReport, "status", "ok"] =!= "ok",
+    Return[<|"status" -> "notReady", "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalid KiraIntegralOrder", "linearSystem" -> linearData, "kiraInput" -> integralOrderReport|>]
     ];
    linearForExport = If[ListQ[OptionValue[KiraIntegralOrder]], reorderLinearSystemIntegrals[linearData, OptionValue[KiraIntegralOrder]], linearData];
    strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions], OptionValue[KiraTargetIntegrals]];
