@@ -1,0 +1,821 @@
+\documentclass[a4paper,11pt]{article}
+\pdfoutput=1
+\pdfminorversion=7
+\usepackage[utf8]{inputenc}
+\usepackage{CJKutf8}
+\AtBeginDocument{\begin{CJK*}{UTF8}{gbsn}}
+\AtEndDocument{\clearpage\end{CJK*}}
+\usepackage{amsmath,amssymb,latexsym}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage[svgnames]{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{dS IBP Package 技术笔记}
+\author{基于 2401.00129 (dS IBP) 与 1703.10166 (SK Diagrammatics)}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{实现门禁与 seed canonical 约定}
+% ============================================================
+
+本 package 的目标是生成任意拓扑、任意 massive/massless 混合情形的 dS IBP seed。实现顺序上，Kira 导出不是前端公式的一部分，必须等以下条件全部满足后才开放：
+\begin{itemize}
+  \item time-IBP 与 momentum-IBP 两类生成元都已经实现；
+  \item building-block 导数项已经包含在 seed 中；
+  \item 对每个 sector 先枚举离散 $n=0,1$ 状态，再作用生成元；
+  \item 生成元作用后一旦出现 $n=2$ 或更高 Hankel 导数态，立刻用 EOM 递推消去；
+  \item 输出 seed 中所有完整线的 $n$ 指标均已 canonical 到 $0/1$，massless 线保持双 theta 合并指标包 $\{b_e,n_e\}$；
+  \item 同一顶点对多条 massless 线的 bundle theta 合并暂不作为当前实现要求，只作为未来减少冗余状态的优化。
+\end{itemize}
+
+因此，当前 momentum seed 中的传播子幂次项、shrunk-line $bS$ 幂次项、z/ISP 吸收、massive building-block 导数项、EOM/massless endpoint 门禁，以及 time-core seed 中的顶点幂次、外部相位、massive 端点导数、massless 端点翻转、massive theta boundary shrink、自动 shrink-sector 派生/联立和线性系统编号都只能作为前端 seed 与中间层回归；它们不能替代真实 Kira 文件导出和后端语法检查。
+
+% ============================================================
+\section{h 函数及其性质}
+% ============================================================
+
+本节从 dS IBP 文献 (2401.00129) Eq.~17--21 提取 building block 函数 $h$ 的定义、微分方程和递推关系。这些公式是 EOM 约化和 IBP 生成的基础。
+
+\subsection{质量参数 $\nu$ 的定义}
+
+参数 $\nu$ 由 dS 标量场的质量 $m$ 和时空维度决定。对 $\text{dS}_{d+1}$ 中的标量场（边界维度为 $d$）：
+\begin{equation}
+  \nu^2 = \frac{m^2}{H^2} - \frac{d^2}{4},
+  \label{nuDef}
+\end{equation}
+其中 $H$ 是 Hubble 常数。本 package 中 $d$ 缺省为 $3$（即 $\text{dS}_4$ 体时空），此时：
+\begin{equation}
+  \nu^2 = \frac{m^2}{H^2} - \frac{9}{4}.
+  \label{nuDef3d}
+\end{equation}
+
+$\nu$ 的取值分为两类：
+\begin{itemize}
+  \item \textbf{纯实数 $\nu$}（重场，$m > \frac{d}{2}H$）：$\nu = \sqrt{m^2/H^2 - d^2/4} \in \mathbb{R}^+$。此时 $\nu^* = \nu$，h 函数的两类 building block $h^{(1)}$ 和 $h^{(2)}$ 使用相同阶数的 Hankel 函数。
+  \item \textbf{纯虚数 $\nu$}（轻场，$m < \frac{d}{2}H$）：$\nu = i\mu$，其中 $\mu = \sqrt{d^2/4 - m^2/H^2} \in \mathbb{R}^+$。此时 $\nu^* = -\nu = -i\mu$，h 函数的两类 building block 使用不同阶数（$\nu$ 与 $\nu^*$）的 Hankel 函数。
+\end{itemize}
+
+\textbf{本 package 只考虑纯实数和纯虚数 $\nu$}，不处理一般复数 $\nu$ 的情况。对 $d=3$，分界质量为 $m = \frac{3}{2}H$。
+
+注意：部分文献使用相反符号约定 $\nu^2 = d^2/4 - m^2/H^2$，此时轻场对应实数 $\nu$、重场对应虚数 $\nu$。本 package 采用式~\eqref{nuDef} 的约定。
+
+\subsection{定义}
+
+文献 Eq.~17 定义 building block 函数为 Hankel 函数乘以归一化因子：
+\begin{equation}
+  h^{(1,2)}(\nu, 0; -k\tau) \equiv (-k\tau)^{-\nu} H_\nu^{(1,2)}(-k\tau),
+  \label{hdef0}
+\end{equation}
+其中 $H_\nu^{(1,2)}$ 是第一/二类 Hankel 函数，$\nu$ 是质量参数（对 dS scalar $\nu^2 = m^2/H^2 - d^2/4$），$k = |\boldsymbol{k}|$ 是动量模长，$\tau < 0$ 是共形时间。
+
+一阶导数态定义为：
+\begin{equation}
+  h^{(1,2)}(\nu, 1; -k\tau) \equiv -\frac{1}{k} \partial_\tau h^{(1,2)}(\nu, 0; -k\tau).
+  \label{hdef1}
+\end{equation}
+此定义使得 $n \in \{0, 1\}$ 标记导数阶数，$n=0$ 为基函数，$n=1$ 为一次导数。
+
+\subsection{微分方程}
+
+从 Hankel 方程导出，$h(\nu, 0; -k\tau)$ 满足（文献 Eq.~18）：
+\begin{equation}
+  h''(\nu, 0; -k\tau) + \frac{2\nu+1}{\tau} h'(\nu, 0; -k\tau) + k^2 h(\nu, 0; -k\tau) = 0,
+  \label{hODE}
+\end{equation}
+其中撇号表示对 $\tau$ 的导数。
+
+令 $\tilde{\tau} = -k\tau$，方程变为（文献 Eq.~19）：
+\begin{equation}
+  \partial_{\tilde{\tau}}^2 h(\nu, 0; \tilde{\tau}) + \frac{2\nu+1}{\tilde{\tau}} \partial_{\tilde{\tau}} h(\nu, 0; \tilde{\tau}) + h(\nu, 0; \tilde{\tau}) = 0.
+  \label{hODEtilde}
+\end{equation}
+
+\subsection{递推关系}
+
+时间导数作用于 $h$ 函数产生指标递推（文献 Eq.~20）：
+\begin{align}
+  \partial_\tau h(\nu, 0; -k\tau) &= -k\, h(\nu, 1; -k\tau), \label{dh0} \\
+  \partial_\tau h(\nu, 1; -k\tau) &= -k \left[ \frac{2\nu+1}{k\tau} h(\nu, 1; -k\tau) - h(\nu, 0; -k\tau) \right]. \label{dh1}
+\end{align}
+
+式~\eqref{dh0} 是 $h(\nu,1)$ 的定义 \eqref{hdef1} 的直接结果。式~\eqref{dh1} 由 ODE \eqref{hODE} 导出：将 $h''$ 用 ODE 替换后整理。
+
+动量导数的递推关系类似（文献 Eq.~21）：
+\begin{align}
+  \partial_k h(\nu, 0; -k\tau) &= -\tau\, h(\nu, 1; -k\tau), \label{dkh0} \\
+  \partial_k h(\nu, 1; -k\tau) &= -\tau \left[ \frac{2\nu+1}{k\tau} h(\nu, 1; -k\tau) - h(\nu, 0; -k\tau) \right]. \label{dkh1}
+\end{align}
+
+\subsection{EOM 递推规则（指标语言）}
+
+将式~\eqref{dh1} 翻译为指标操作。被积函数中 $h(\nu, n; -k\tau)$ 与 $(-\tau)^a q^{-b}$ 的乘积在 $\partial_\tau$ 下产生：
+
+对 $n=1$ 态的 $\tau$ 导数：
+\begin{equation}
+  \partial_\tau [(-\tau)^a q^{-b} h(\nu, 1)] = (-\tau)^{a-1} q^{-b} \left[ -a\, h(\nu,1) + (2\nu+1) h(\nu,1) + k\tau\, h(\nu,0) \right].
+\end{equation}
+
+在 IBP 中令此式为零（全微分 = 边界项），得到 $n=2$ 的 EOM 递推：
+\begin{equation}
+  \boxed{h(\nu, 2; -k\tau) = \frac{2\nu+1}{k\tau} h(\nu, 1; -k\tau) - h(\nu, 0; -k\tau).}
+  \label{EOMrecurrence}
+\end{equation}
+
+在指标语言中（$n_{e,a} = 2$ 的积分用 $n_{e,a} = 1, 0$ 的积分表示）：
+\begin{align}
+  J[\ldots, \{b_e, \ldots, 2, \ldots\}, \ldots] &= -(2\nu_e + 1) \cdot J[\ldots, \{b_e + 1, \ldots, 1, \ldots\}, \ldots]_{\text{with } a_v \to a_v \pm 1} \notag \\
+  &\quad + 1 \cdot J[\ldots, \{b_e, \ldots, 0, \ldots\}, \ldots],
+  \label{EOMindex}
+\end{align}
+其中 $a_v$ 的移位方向取决于端点：端点 1 ($v = u[e]$) 取 $a_v \to a_v - 1$，端点 2 ($v = v[e]$) 取 $a_v \to a_v + 1$。$b_e \to b_e + 1$（端点 1）或 $b_e \to b_e - 1$（端点 2）。
+
+EOM 递推系数总结：
+\begin{equation}
+  c_1 = 2\nu + 1, \quad c_2 = 1.
+  \label{EOMcoeffs}
+\end{equation}
+
+对 Hankel 函数 $H_\nu^{(1)}$（无 $(-k\tau)^{-\nu}$ 归一化），递推系数为 $c_1 = 2\nu$, $c_2 = 1$。
+
+% ============================================================
+\section{线缩并（Shrink）机制}
+% ============================================================
+
+本节从 dS IBP 文献 Eq.~24--28 推导时间 IBP 中 Heaviside 函数导数产生的 delta 缩并项。
+
+\subsection{物理机制}
+
+时间 IBP 算子 $d/d\tau_v$ 作用于被积函数时，对 Heaviside 函数 $\theta(\tau_{u[e]} - \tau_{v[e]})$ 求导产生 delta 函数：
+\begin{equation}
+  \partial_{\tau_v} \theta(\tau_{u[e]} - \tau_{v[e]}) = \pm \delta(\tau_{u[e]} - \tau_{v[e]}),
+  \label{thetaderiv}
+\end{equation}
+其中符号取决于 $v$ 是 $u[e]$ 还是 $v[e]$。
+
+delta 函数将两个顶点 $u[e]$ 和 $v[e]$ 粘合为同一时间点，线 $e$ 的传播子被「缩并」。文献 Eq.~24 给出：
+\begin{equation}
+  \int \hat{V}_i(\ldots;\tau_i) \delta(\tau_i - \tau_j) \hat{V}_j(\ldots;\tau_j) d\tau_i d\tau_j = \int \hat{V}_i(\ldots;\tau_i) \hat{V}_j(\ldots;\tau_i) d\tau_i,
+  \label{deltacollapse}
+\end{equation}
+即对 $\tau_j$ 的积分被消除，所有 $\tau_j$ 替换为 $\tau_i$。
+
+\subsection{缩并线的 h 函数乘积}
+
+当线 $e$ 被缩并（$\tau_{u[e]} \to \tau_{v[e]} \equiv \tau_v$），该线的两个端点处的 $h$ 函数乘积需要求值。文献 Eq.~25--28 分析了四种情况（$h^{(1,2)}$ 的组合），其中两种为零（反对称抵消），两种非零。
+
+非零情况给出 Wronskian 型表达式（文献 Eq.~27）：
+\begin{equation}
+  F(-k_e\tau_v) = h^{(1)}(\nu_e, 1; -k_e\tau_v) h^{(2)}(\nu_e, 0; -k_e\tau_v) - h^{(2)}(\nu_e, 1; -k_e\tau_v) h^{(1)}(\nu_e, 0; -k_e\tau_v).
+  \label{Fdef}
+\end{equation}
+
+利用 Hankel 函数的 Wronskian $W[H_\nu^{(1)}(z), H_\nu^{(2)}(z)] = -4i/(\pi z)$ 以及 $h$ 的定义 \eqref{hdef0}--\eqref{hdef1}，计算：
+\begin{align}
+  h^{(1)}(\nu, 1; z) &= -\frac{1}{k} \partial_\tau [(-k\tau)^{-\nu} H_\nu^{(1)}(-k\tau)] \notag \\
+  &= (-k\tau)^{-\nu} \left[ \frac{\nu}{\tau} H_\nu^{(1)} - k H_\nu^{(1)\prime} \right].
+\end{align}
+
+代入 Wronskian 并化简（详细代数略），得到文献 Eq.~28：
+\begin{equation}
+  \boxed{F(-k_e\tau_v) = \mathcal{N}(\nu_e) \cdot (-k_e\tau_v)^{-(2\nu_e + 1)},}
+  \label{Fresult}
+\end{equation}
+其中 $\mathcal{N}(\nu_e) = e^{\pi \text{Im}[\nu_e]} \cdot 4i/\pi$ 是纯系数（不依赖 $\tau$ 或 $k$）。
+
+\subsection{缩并对指标的影响}
+
+式~\eqref{Fresult} 的关键结构是 $(-k_e\tau_v)^{-(2\nu_e+1)}$。展开为：
+\begin{equation}
+  (-k_e\tau_v)^{-(2\nu_e+1)} = (-1)^{-(2\nu_e+1)} \cdot k_e^{-(2\nu_e+1)} \cdot \tau_v^{-(2\nu_e+1)}.
+  \label{Fexpand}
+\end{equation}
+
+三个因子各自的影响：
+
+\textbf{(a) $\tau_v^{-(2\nu_e+1)}$ 因子}：被吸收进合并顶点的时间幂次。原被积函数含 $(-\tau_v)^{a_u+a0_u+a_v+a0_v}$，乘以 $\tau_v^{-(2\nu_e+1)}$ 后，物理幂次移位为 $-(2\nu_e+1)$。在 package 的整数指标/零点分解中，整数部分 $-1$ 进入指标，非整数部分 $-2\nu_e$ 进入零点：
+\begin{equation}
+  \boxed{a_{\text{merged}} = a_u + a_v - 1,\qquad a0_{\text{merged}} = a0_u + a0_v - 2\nu_e.}
+  \label{ashift}
+\end{equation}
+
+\textbf{(b) $k_e^{-(2\nu_e+1)}$ 因子}：这是动量模长的幂次。当线 $e$ 携带圈动量时，$k_e = |\boldsymbol{Q}_e|$ 依赖圈动量。在动量 IBP ($q_l^\mu \partial/\partial q_l^\mu$) 中：
+\begin{equation}
+  q_l^\mu \frac{\partial}{\partial q_l^\mu} k_e^{-(2\nu_e+1)} = -(2\nu_e+1) \frac{q_l \cdot Q_e}{k_e^2} k_e^{-(2\nu_e+1)}.
+  \label{kshift}
+\end{equation}
+在 package 的整数指标/零点分解中，物理幂次 $-(2\nu_e+1)$ 对应缩并线分母指标的整数移位 $+1$，非整数部分 $+2\nu_e$ 进入 $bS0_e$：
+\begin{equation}
+  \boxed{bS_e = b_e + 1,\qquad bS0_e = b0_e + 2\nu_e.}
+  \label{bSdef}
+\end{equation}
+
+\textbf{(c) $(-1)^{-(2\nu_e+1)}$ 因子}：纯相位，合并入总系数。
+
+\subsection{缩并公式汇总}
+
+时间 IBP 中线 $e$ 缩并的完整效果：
+
+\begin{enumerate}
+  \item 线 $e$ 从完整态 $\{b_e, n_{e,1}, n_{e,2}\}$ 变为缩并态 $\{bS_e\}$，整数指标为 $bS_e=b_e+1$；非整数部分进入 $bS0_e=b0_e+2\nu_e$。
+  \item 合并顶点时间幂次的整数指标为 $a_{\text{merged}} = a_u + a_v - 1$；非整数部分进入 $a0_{\text{merged}}=a0_u+a0_v-2\nu_e$。
+  \item 总系数获得因子 $\mathcal{N}(\nu_e)$；纯相位按初始化 convention 吸收到 prefactor 规则。
+  \item 缩并线的 $h$ 函数消失，不再有 EOM 递推和 $n$ 指标。
+  \item 在 sub-sector 的动量 IBP 中，当前缩并线 pack 的第一项 $bS_e$ 作为分母幂次指标贡献参与。
+\end{enumerate}
+
+条件：$n_{e,1} + n_{e,2} = 1$（一个端点 $n=0$，另一个 $n=1$）。$n_{e,1} + n_{e,2} = 0$ 或 $2$ 时缩并不产生（$F = 0$ 或对应不同机制）。
+
+\subsection{Hankel 函数与 h 函数的缩并比较}
+
+\subsubsection{h 函数的精确定义（文献 Eq.~17）}
+
+文献 Eq.~17 的定义为（注意 $h^{(2)}$ 使用 $\nu^*$ 阶）：
+\begin{align}
+  h^{(1)}(\nu, 0; -k\tau) &\equiv (-k\tau)^{-\nu} H_\nu^{(1)}(-k\tau), \\
+  h^{(2)}(\nu, 0; -k\tau) &\equiv (-k\tau)^{-\nu} H_{\nu^*}^{(2)}(-k\tau).
+  \label{hdef_explicit}
+\end{align}
+
+\textbf{关键细节}：$h^{(2)}$ 的 Hankel 函数阶为 $\nu^*$（复共轭），不是 $\nu$。这源于 SK 形式论中 $(+)$ 顶点用 $H_\nu^{(1)}$、$(-)$ 顶点用 $H_{\nu^*}^{(2)}$ 的约定。$\nu$ 为实数时 $\nu^*=\nu$，两者等价；$\nu$ 为复数时此区别至关重要。
+
+\subsubsection{Wronskian 的精确计算}
+
+缩并因子为 $F = h^{(1)}(\nu,1) h^{(2)}(\nu,0) - h^{(2)}(\nu,1) h^{(1)}(\nu,0)$（文献 Eq.~27）。令 $z = -k\tau > 0$：
+
+\begin{align}
+  F &= z^{-2\nu} (-k) \left[ H_\nu^{(1)} {H_{\nu^*}^{(2)}}' - H_{\nu^*}^{(2)} {H_\nu^{(1)}}' \right] = z^{-2\nu} (-k) \cdot W_z[H_\nu^{(1)}, H_{\nu^*}^{(2)}].
+\end{align}
+
+这里出现的是 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$（\textbf{不同阶} $\nu$ 与 $\nu^*$），而非标准的 $W[H_\nu^{(1)}, H_\nu^{(2)}]$（同阶 $\nu$）。
+
+对 $z > 0$ 实数，$H_{\nu^*}^{(2)}(z) = [H_\nu^{(1)}(z)]^*$，故：
+\begin{equation}
+  W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = H_\nu^{(1)} [H_\nu^{(1)}]'^* - [H_\nu^{(1)}] [H_\nu^{(1)}]'^* = -2i\,\text{Im}\!\left[H_\nu^{(1)}(z) {H_\nu^{(1)}}'(z)^*\right].
+\end{equation}
+
+此 Wronskian 的值依赖 $\nu$（包括 $\text{Im}[\nu]$），不是常数。
+
+对比标准 Wronskian（同阶 $\nu$，与 $\nu$ 无关）：
+\begin{equation}
+  W[H_\nu^{(1)}, H_\nu^{(2)}] = -\frac{4i}{\pi z} \quad (\text{对任意 } \nu \text{ 成立}).
+  \label{Wsameorder}
+\end{equation}
+
+文献 Eq.~28 给出 h 模式缩并因子的最终结果：
+\begin{equation}
+  F_h(-k\tau) = e^{\pi\text{Im}[\nu]} \frac{4i}{\pi} (-k\tau)^{-2\nu-1}.
+  \label{Fresult_h}
+\end{equation}
+
+\subsubsection{H 模式（裸 Hankel）的缩并}
+
+H 模式使用裸 Hankel 函数（无 $(-k\tau)^{-\nu}$ 归一化），但仍遵循 SK 约定 $H_\nu^{(1)}$/$H_{\nu^*}^{(2)}$：
+\begin{equation}
+  F_H(-k\tau) = (-k) \cdot W[H_\nu^{(1)}, H_{\nu^*}^{(2)}].
+\end{equation}
+
+\textbf{数值验证结果}（见 \texttt{test/test\_wronskian.wl}，纯实数和纯虚数 $\nu$ 均测试，精度 $\sim 77$ 位）：
+\begin{equation}
+  \boxed{W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -e^{\pi\text{Im}[\nu]} \frac{4i}{\pi z} \quad (\text{对纯实数和纯虚数 } \nu \text{ 成立}).}
+  \label{WcrossOrderExact}
+\end{equation}
+
+因此 H 模式缩并因子为：
+\begin{equation}
+  F_H(-k\tau) = e^{\pi\text{Im}[\nu]} \frac{4i}{\pi} (-k\tau)^{-1}.
+  \label{Fresult_H}
+\end{equation}
+
+$\tau$ 依赖为纯 $1/z$（整数幂次 $-1$），零点无移位。prefactor $= e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}$，\textbf{与 h 模式相同}。
+
+\subsubsection{$e^{\pi\text{Im}[\nu]}$ 因子的来源}
+
+$e^{\pi\text{Im}[\nu]}$ 是以下两个因素\textbf{共同作用}的结果：
+
+\begin{enumerate}
+  \item \textbf{h 定义中 $h^{(2)}$ 使用 $H_{\nu^*}^{(2)}$}：使 Wronskian 变为 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$（$\nu$-依赖），而非 $W[H_\nu^{(1)}, H_\nu^{(2)}] = -4i/(\pi z)$（$\nu$-无关）。
+  \item \textbf{归一化因子 $(-k\tau)^{-\nu}$}：两个 h 函数的归一化合并为 $z^{-2\nu}$，与 Wronskian 组合后产生最终的 $(-k\tau)^{-2\nu-1}$ 幂次。
+\end{enumerate}
+
+若 $h^{(2)}$ 改用 $H_\nu^{(2)}$（同阶），Wronskian 变为 $\nu$-无关的 $-4i/(\pi z)$，但 h 函数不再与 SK 顶点自然对应。
+
+\subsubsection{缩并比较汇总}
+
+\begin{itemize}
+  \item \textbf{h 模式}：$F_h = e^{\pi\text{Im}[\nu]} \frac{4i}{\pi} (-k\tau)^{-2\nu-1}$。幂次 $-(2\nu+1)$ 分解为整数 $-1$（进入指标）和非整数 $-2\nu$（进入零点）。prefactor $= e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}$。
+  \item \textbf{H 模式}：$F_H = e^{\pi\text{Im}[\nu]} \frac{4i}{\pi} (-k\tau)^{-1}$（式~\eqref{Fresult_H}）。$\tau$ 依赖为纯 $1/z$（整数幂次 $-1$），零点无移位。prefactor $= e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}$，\textbf{与 h 模式相同}。
+  \item \textbf{无质量}：模式函数 $e^{\pm ik\tau}$，无 Hankel 缩并机制，prefactor $= 1$。
+\end{itemize}
+
+\textbf{关键结论}：h 模式和 H 模式的缩并 prefactor 相同，均为 $e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}$。差异仅在于 $\tau$ 幂次：h 模式为 $(-k\tau)^{-2\nu-1}$（含非整数部分 $-2\nu$，进入零点），H 模式为 $(-k\tau)^{-1}$（纯整数，零点无移位）。
+
+% ============================================================
+\section{维度参数约定}
+% ============================================================
+
+本 package 区分两个维度概念：
+
+\begin{itemize}
+  \item \textbf{PQ 维度 $d_{\text{PQ}}$}：出现在 $h$ 函数的 ODE 和 EOM 递推中（如式~\eqref{hODE} 的 $(2\nu+1)/\tau$ 项中的 $2\nu+1 = d-1$ 部分）。缺省值 $d_{\text{PQ}} = 3$。在 EOM 递推系数中已直接代入（$c_1 = 2\nu+1$ 不显式含 $d_{\text{PQ}}$）。
+  \item \textbf{维正规化维度 $d$}：出现在动量 IBP 的维度项 $\text{dim} \cdot J$ 中。缺省值 $d = 3$（树图）或 $d = 3 - 2\epsilon$（圈图）。
+\end{itemize}
+
+两者独立，不做混用。
+
+% ============================================================
+\section{Building Block 参数体系}
+% ============================================================
+
+每条完整线 $e$ 的 building block 类型由参数 $\text{bbType}_e$ 指定，展开为三元组 $\{c_1, c_2, \text{sp}\}$：
+
+\begin{itemize}
+  \item $c_1$：EOM 递推中 $n=1$ 项的系数（式~\eqref{EOMcoeffs}）。
+  \item $c_2$：EOM 递推中 $n=0$ 项的系数。
+  \item $\text{sp}$：缩并产生的 $k\tau$ 幂次（式~\eqref{bSdef}，$\text{sp} = -(2\nu+1)$）。
+\end{itemize}
+
+内置缺省值：
+\begin{align}
+  \texttt{"h"} &\to \{2\nu+1,\; 1,\; -(2\nu+1)\}, \label{bbH} \\
+  \texttt{"H"} &\to \{2\nu,\; 1,\; -1\}. \label{bbHankel}
+\end{align}
+
+用户自定义：$\texttt{\{c1, c2, sp\}}$ 直接指定三元组。
+
+% ============================================================
+\section{指标零点体系}
+% ============================================================
+
+本 package 采用指标零点（zero-point）体系，将每个指标分解为整数部分（可变指标）和非整数/固定部分（零点）。这一分解使得 IBP 关系中的指标移位始终为整数，便于 Kira 等后端处理。
+
+\subsection{基本定义}
+
+对顶点 $v$ 的时间幂次指标 $a_v$（正幂次，即 $(-\tau_v)$ 的幂次）：
+\begin{equation}
+  \text{物理幂次} = a_v + a0_v, \quad \text{即被积函数含 } (-\tau_v)^{a_v + a0_v}.
+  \label{adecomp}
+\end{equation}
+
+对线 $e$ 的动量幂次指标 $b_e$（分母幂次，即 $q_e$ 的幂次取负）：
+\begin{equation}
+  \text{物理幂次} = -(b_e + b0_e), \quad \text{即被积函数含 } q_e^{-(b_e + b0_e)}.
+  \label{bdecomp}
+\end{equation}
+
+注意 $a$ 是正幂次（分子），$b$ 是分母幂次。物理幂次与指标的关系：$a$ 的物理幂次 $= +a$，$b$ 的物理幂次 $= -b$。
+
+\subsection{零点缺省值}
+
+零点缺省值由 building block 类型决定。验证依据：参考代码 \texttt{001 bubble\_ibp\_sym.m} 的 \texttt{reppara2N} 给出 $a0 \to 2\nu$, $b0 \to -2\nu$。
+
+\begin{align}
+  \texttt{"h" 模式:} \quad a0_v &= 2\nu_{\text{ref}}, & b0_e &= -2\nu_e, \label{zeroHmode} \\
+  \texttt{"H" 模式:} \quad a0_v &= 0, & b0_e &= 0. \label{zeroHmodeH}
+\end{align}
+
+其中 $\nu_{\text{ref}}$ 是该顶点关联的线的质量参数（对 bubble：两线共享同一 $\nu$，故 $a0 = 2\nu$）。
+
+\subsection{缩并时的零点移位}
+
+当线 $e$ 缩并时，式~\eqref{Fresult} 的缩并因子 $(k_e \tau_v)^{-(2\nu_e+1)}$ 的幂次分解为整数部分和非整数部分：
+\begin{equation}
+  -(2\nu_e + 1) = \underbrace{-1}_{\text{整数}} + \underbrace{(-2\nu_e)}_{\text{非整数}}.
+  \label{shrinkDecomp}
+\end{equation}
+
+\textbf{对 $a$ 零点}（$\tau$ 幂次）：合并顶点的零点为
+\begin{equation}
+  a0_{\text{merged}} = a0_u + a0_v + (-2\nu_e).
+  \label{a0merged}
+\end{equation}
+整数部分 $-1$ 进入指标：$a_{\text{merged}} = a_u + a_v - 1$。
+
+验证：参考代码 \texttt{repvar} 中 $a0R \to 2a0 - 2\nu = 2(2\nu) - 2\nu = 2\nu$。式~\eqref{a0merged} 给出 $a0_{\text{merged}} = 2\nu + 2\nu - 2\nu = 2\nu$。一致。
+
+\textbf{对 $b$ 零点}（$q$ 幂次，分母幂次）：缩并线的零点为
+\begin{equation}
+  bS0_e = b0_e + 2\nu_e.
+  \label{bS0def}
+\end{equation}
+注意符号：$b$ 的物理幂次 $= -b$，缩并因子的 $k$ 幂次为 $-(2\nu_e+1)$，对应物理 $q$ 幂次移位 $-(2\nu_e+1)$。由于物理幂次 $= -(b + b0)$，物理幂次移位 $-(2\nu_e+1)$ 对应 $b+b0$ 移位 $+(2\nu_e+1) = +1 + 2\nu_e$。整数部分 $+1$ 进入指标，非整数部分 $+2\nu_e$ 进入零点。
+
+验证：参考代码 \texttt{repvar} 中 $b10R \to b0 + 2\nu = -2\nu + 2\nu = 0$。式~\eqref{bS0def} 给出 $bS0 = -2\nu + 2\nu = 0$。一致。
+
+\textbf{剩余线}的 $b$ 零点不变：$b0_{\text{remaining}} = b0_e$。
+
+\subsection{H 模式的缩并与零点}
+
+H 模式使用裸 Hankel 函数 $H_\nu^{(1)}$/$H_{\nu^*}^{(2)}$（无 $(-k\tau)^{-\nu}$ 归一化），零点缺省为 0（式~\eqref{zeroHmodeH}）。
+
+缩并因子为 $F_H = (-k) \cdot W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$。对本 package 允许的纯实数和纯虚数 $\nu$，数值验证给出
+\begin{equation}
+  W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -e^{\pi\text{Im}[\nu]} \frac{4i}{\pi z}.
+\end{equation}
+因此
+\begin{equation}
+  F_H = e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}(-k\tau)^{-1}.
+\end{equation}
+整数移位部分与 h 模式相同（$a$-shift $= -1$, $b$-shift $= +1$），因为 Wronskian 的 $1/z$ 依赖给出 $(-k\tau)^{-1}$ 的整数幂次；H 模式无非整数 $-2\nu$ 幂次，因此零点无移位。
+
+\subsection{缩并常数 prefactor}
+
+每次缩并除产生指标移位和零点移位外，还产生一个常数 prefactor $\mathcal{C}_e$，乘入总体系数。此 prefactor 来自 Wronskian 计算中不依赖 $\tau$ 的部分。
+
+\textbf{h 模式}（文献 Eq.~28）：
+\begin{equation}
+  \mathcal{C}_e^{(h)} = \frac{4i}{\pi} \cdot e^{\pi \text{Im}[\nu_e]}.
+  \label{prefactorH}
+\end{equation}
+
+此 $e^{\pi\text{Im}[\nu]}$ 因子是以下两个因素\textbf{共同作用}的结果：
+\begin{enumerate}
+  \item h 定义中 $h^{(2)}$ 使用 $H_{\nu^*}^{(2)}$（而非 $H_\nu^{(2)}$），使 Wronskian 变为 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -2i\,\text{Im}[H_\nu^{(1)} {H_\nu^{(1)}}'^*]$，此量依赖 $\nu$（包括 $\text{Im}[\nu]$）。
+  \item 归一化因子 $(-k\tau)^{-\nu}$ 与 Wronskian 组合后，$\nu$-依赖部分整理为 $e^{\pi\text{Im}[\nu]}$。
+\end{enumerate}
+
+当 $\nu_e$ 为实数时 $\text{Im}[\nu_e] = 0$，prefactor 简化为 $4i/\pi$。当 $\nu_e = i\mu$ 为纯虚数（轻场）时，$e^{\pi\mu}$ 给出指数增强。
+
+\textbf{H 模式}：缩并因子为 $F_H = (-k) \cdot W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$。对纯实数和纯虚数 $\nu$，已数值验证
+\begin{equation}
+  W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -e^{\pi\text{Im}[\nu]} \frac{4i}{\pi z}.
+  \label{WcrossOrder}
+\end{equation}
+因此 H 模式的常数 prefactor 为
+\begin{equation}
+  \mathcal{C}_e^{(H)} = \frac{4i}{\pi} e^{\pi\text{Im}[\nu_e]},
+\end{equation}
+与 h 模式相同；差异只在于 H 模式的 $\tau$ 依赖为纯 $(-k\tau)^{-1}$，零点无移位。
+
+注意：标准 Wronskian $W[H_\nu^{(1)}, H_\nu^{(2)}] = -4i/(\pi z)$（对任意 $\nu$ 成立）是\textbf{同阶} $\nu$ 的结果，与物理缩并中出现的 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$（\textbf{异阶} $\nu$ 与 $\nu^*$）不同。
+
+\textbf{无质量传播子}：无质量标量在 dS 中的模式函数为 $e^{\pm ik\tau}$（指数函数，非 Hankel），其 Wronskian 为常数：
+\begin{equation}
+  W[e^{ik\tau}, e^{-ik\tau}] = -2ik.
+\end{equation}
+无 Hankel 缩并机制，故无 $\mathcal{C}_e$ prefactor（或等价地 $\mathcal{C}_e^{(\text{massless})} = 1$）。这里说的“无缩并机制”只指没有 Hankel Wronskian 型的 $h/H$ 塌缩 prefactor；massless 的 Heaviside 边界与双 theta 合并关系仍需在 time-IBP 的 canonical 步骤中处理，并保持逐线指标包 $\{b_e,n_e\}$。若同一顶点对之间有多条 massless 线，严格支撑可进一步 bundle 合并；当前实现先不做此优化。
+
+\textbf{多次缩并}：当多条线同时缩并时（如 2-line shrink），总 prefactor 为各线 prefactor 之积：
+\begin{equation}
+  \mathcal{C}_{\text{total}} = \prod_{e \in \text{shrunk}} \mathcal{C}_e.
+  \label{prefactorTotal}
+\end{equation}
+
+在 package 实现中，$\mathcal{C}_e$ 作为每条缩并线的属性存储，在导出 Kira 输入时乘入 sub-sector 方程的系数。
+
+% ============================================================
+\section{多圈 IBP 生成：链式法则与复合算符}
+% ============================================================
+
+本节描述如何从拓扑输入自动生成圈动量 IBP 关系。核心思想是将 $\partial/\partial q_l^\mu$ 通过链式法则分解为对 $\xi_e$ 和 ISP 的导数，再与矢量 $v^\mu$ 缩并。
+
+\subsection{链式法则分解}
+
+每条内线 $e$ 的动量为 $Q_e^\mu = \sum_l c_{e,l}\, q_l^\mu + P_e^\mu$，其中 $c_{e,l}$ 为整数系数，$P_e^\mu$ 为外动量组合。定义 $\xi_e = |Q_e| = \sqrt{Q_e \cdot Q_e}$。
+
+被积函数通过以下途径依赖圈动量 $q_l^\mu$：
+\begin{enumerate}
+  \item 传播子分母 $\xi_e^{-(b_e + b0_e)}$
+  \item Building block $h(\nu_e, n_{e,a}; \xi_e)$
+  \item ISP 分子因子 $\text{isp}_j^{n_j}$
+  \item 指数相位 $e^{i P_v \cdot \tau_v}$（通常不含 $q_l$）
+\end{enumerate}
+
+链式法则给出：
+\begin{equation}
+  \frac{\partial}{\partial q_l^\mu} = \sum_e \frac{\partial \xi_e}{\partial q_l^\mu} \frac{\partial}{\partial \xi_e} + \sum_j \frac{\partial\, \text{isp}_j}{\partial q_l^\mu} \frac{\partial}{\partial\, \text{isp}_j}
+\end{equation}
+
+其中：
+\begin{equation}
+  \frac{\partial \xi_e}{\partial q_l^\mu} = c_{e,l} \frac{Q_{e,\mu}}{\xi_e}
+\end{equation}
+
+\subsection{复合 IBP 算符}
+
+IBP 恒等式来自全微分在维正规化下积分为零：
+\begin{equation}
+  0 = \int \prod_l d^d q_l\; \frac{\partial}{\partial q_l^\mu} \left[ v^\mu \cdot F \right] = \int \prod_l d^d q_l\; \left[ (\partial \cdot v)\, F + v^\mu \frac{\partial F}{\partial q_l^\mu} \right]
+\end{equation}
+
+\textbf{复合 IBP 算符}定义为：
+\begin{equation}
+  \mathcal{O}_{l,v} = (\partial \cdot v) + v^\mu \frac{\partial}{\partial q_l^\mu}
+\end{equation}
+
+其中 $v^\mu$ 为可用动量的任意线性组合。代入链式法则：
+\begin{equation}
+  v^\mu \frac{\partial F}{\partial q_l^\mu} = \sum_e c_{e,l} \frac{v \cdot Q_e}{\xi_e} \frac{\partial F}{\partial \xi_e} + \sum_j (v \cdot \partial_{q_l} \text{isp}_j) \frac{\partial F}{\partial\, \text{isp}_j}
+\end{equation}
+
+每一项的作用：
+\begin{itemize}
+  \item $\frac{\partial}{\partial \xi_e}$ 作用在传播子上：$b_e \to b_e + 1$（因为 $\partial_{\xi_e} \xi_e^{-b} = -b\, \xi_e^{-b-1}$，再乘以 $1/\xi_e$ 得 $\xi_e^{-b-2}$，对应 $b \to b+2$；但通常与分子中的 $Q_{e,\mu} Q_{e,\nu}$ 缩并后简化为 $b \to b+1$）
+  \item $\frac{\partial}{\partial \xi_e}$ 作用在 h-函数上：$n_{e,a} \to n_{e,a} \pm 1$，由 ODE 递推
+  \item $\frac{\partial}{\partial\, \text{isp}_j}$ 作用在 ISP 因子上：$n_{\text{isp}_j} \to n_{\text{isp}_j} - 1$
+\end{itemize}
+
+\subsection{完备 IBP 生成元集合}
+
+参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，独立外动量 $E-1$ 个（动量守恒 $\sum p_i = 0$），完备的 IBP 生成元为：
+
+\begin{equation}
+  \mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_{E-1}^\mu\}
+\end{equation}
+
+总数 $N_{\text{IBP}} = L(L + E - 1)$，分解为：
+
+\begin{itemize}
+  \item \textbf{对角（scale）}：$v = q_l$，共 $L$ 个。$\partial \cdot q_l = d$。
+  \item \textbf{交叉（cross）}：$v = q_m$（$m \neq l$），共 $L(L-1)$ 个。$\partial \cdot q_m = 0$（当 $m \neq l$）。
+  \item \textbf{外动量（special）}：$v = k_j$，共 $L(E-1)$ 个。$\partial \cdot k_j = 0$。
+\end{itemize}
+
+\textbf{交叉 IBP 的必要性}：$L \geq 2$ 时，仅对角 IBP 不足以将所有积分约化到 master integrals。交叉 IBP $\partial_{q_l} \cdot q_m$ 提供不同圈动量之间的关系，是完备约化系统所必需的。
+
+\textbf{验证}：独立标量积数目 $N_{\text{sp}} = L(L+1)/2 + L(E-1)$ 恰好等于 $N_{\text{IBP}}$，确认生成元集合与标量积空间维度匹配。
+
+\subsection{ISP 处理}
+
+\textbf{定义}：给定拓扑的传播子 $\{\xi_e^2\}$，所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 中不能表示为 $\xi_e^2$ 线性组合的，称为 ISP（Irreducible Scalar Products）。
+
+\textbf{函数族扩展}：积分家族增加 ISP 指标：
+\begin{equation}
+  J[\{a_v\}, \{\text{pack}_e\}, \{n_{\text{isp}_j}\}]
+\end{equation}
+ISP 指标 $n_{\text{isp}_j} \geq 0$（仅出现在分子，不出现在分母）。
+
+\textbf{用户输入}：
+\begin{verbatim}
+ispData = {
+  {"isp1", q1 . q2, {0, 2}},     (* q1·q2，分子幂次 0,1,2 *)
+  {"isp2", q1 . k1, {0, 1}}      (* q1·k1，分子幂次 0,1 *)
+};
+\end{verbatim}
+
+\textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
+\begin{enumerate}
+  \item 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
+  \item ISP 之间线性无关
+  \item ISP 数目 $= N_{\text{sp}} - E_{\text{prop}}$（$E_{\text{prop}}$ 为独立传播子数）
+\end{enumerate}
+
+验证通过后，才进入 IBP 生成步骤。
+
+\subsection{分 Sector IBP 生成流程}
+
+\begin{enumerate}
+  \item 读取拓扑 + ISP 配置
+  \item 验证 ISP 完备性
+  \item 构造 IBP 生成元集合 $\{\mathcal{O}_{l,v}\}$（$L(L+E-1)$ 个）
+  \item 对每个 sector（由缩并线集合标记）：
+  \begin{enumerate}
+    \item 构造该 sector 的连续指标盒子 $\{a_v, b_e, n_{\text{isp}}\}$ 与离散 $n$ 状态集合
+    \item 枚举连续 seed（撒点范围控制）
+    \item 对每个连续 seed，先枚举该 sector 的离散 $n=0,1$ 状态
+    \item 对每个离散态，遍历 time-IBP 与 momentum-IBP 生成元：
+      \begin{itemize}
+        \item 应用链式法则 $\to$ $z/\xi$-导数 + ISP-导数 + 相位项
+        \item 转化为指标移位算符，包含传播子幂次项与 building-block 导数项
+        \item 立即应用 EOM 递推，递归消去所有 $n\geq 2$
+        \item 应用 massless 双 theta 合并关系，保持 $\{b_e,n_e\}$ 指标包
+        \item 扫描输出，若仍含 $n=2$ 或未知 pack，则该 seed 失败，不进入后端导出
+      \end{itemize}
+    \item 保存 EOM-canonical IBP 方程，命名区分 sector 与生成元类型
+  \end{enumerate}
+  \item 输出：按 sector 分组的 canonical IBP seed 文件。linear/Kira 阶段只能读取这些文件。
+\end{enumerate}
+
+\textbf{命名规则}：\texttt{IBP\_sector\_<shrunkLines>\_seed\_<seedIndex>.dat}
+
+例如：\texttt{IBP\_sector\_none\_seed\_001.dat}（top sector），\texttt{IBP\_sector\_e3\_seed\_012.dat}（线 3 缩并）。
+
+% ============================================================
+\section{标量积变量与 $z=\xi^2$ 线性变换}
+% ============================================================
+
+本节引入 $z_e = \xi_e^2$ 变量，建立标量积到 $z$ 变量的线性变换体系。这一框架是动量 IBP 链式法则中指标移位操作的基础。
+
+\subsection{$z$ 变量定义}
+
+对每条内线 $e$，定义
+\begin{equation}
+  z_e \equiv \xi_e^2 = Q_e \cdot Q_e,
+  \label{zDef}
+\end{equation}
+其中 $Q_e^\mu = \sum_l c_{e,l}\, q_l^\mu + P_e^\mu$ 为线 $e$ 的总动量。$z_e$ 与 $\xi_e$ 的关系为
+\begin{equation}
+  \xi_e = z_e^{1/2}.
+  \label{xiFromZ}
+\end{equation}
+
+传播子的物理幂次用 $z$ 变量表示为
+\begin{equation}
+  \xi_e^{-(b_e + b0_e)} = z_e^{-(b_e + b0_e)/2}.
+  \label{zPower}
+\end{equation}
+因此 $z_e^n$ 作用在 $z_e^{-(b_e+b0_e)/2}$ 上等价于指标移位 $b_e \to b_e - 2n$。
+
+\subsection{标量积变量约定}
+
+独立标量积分为三类：
+
+\begin{itemize}
+  \item \textbf{圈--圈}：$q_l \cdot q_m$（$l \leq m$），共 $L(L+1)/2$ 个。
+  \item \textbf{圈--外}：$q_l \cdot k_j$，共 $L(E-1)$ 个。
+  \item \textbf{外--外}：$k_i \cdot k_j \equiv k_{ij}$（定义为独立符号，不保持矢量点积结构），共 $(E-1)(E-2)/2$ 个。在 IBP 生成中作为常数参数处理。
+\end{itemize}
+
+总独立标量积数目为
+\begin{equation}
+  N_{\text{sp}} = \frac{L(L+1)}{2} + L(E-1).
+  \label{Nsp}
+\end{equation}
+
+将所有独立标量积排成向量 $\vec{s}$，其分量依次为 $\{q_1^2,\, q_1 \cdot q_2,\, \ldots,\, q_L^2,\, q_1 \cdot k_1,\, \ldots\}$。
+
+\subsection{线性变换的推导}
+
+线 $e$ 的总动量平方为
+\begin{equation}
+  z_e = Q_e^2 = \left(\sum_l c_{e,l}\, q_l + P_e\right)^2.
+  \label{zeExpand}
+\end{equation}
+
+展开后：
+\begin{equation}
+  z_e = \sum_{l,m} c_{e,l}\, c_{e,m}\, (q_l \cdot q_m) + 2 \sum_l c_{e,l}\, (q_l \cdot P_e) + P_e^2.
+  \label{zeExpandFull}
+\end{equation}
+
+其中 $P_e$ 为外动量组合，$P_e^2$ 和 $q_l \cdot P_e$ 中的外动量点积均以 $k_{ij}$ 符号替代。因此 $z_e$ 是标量积变量 $\vec{s}$ 的线性函数加上常数项。
+
+对所有线 $e$ 写为矩阵形式：
+\begin{equation}
+  \vec{z} = M \vec{s} + \vec{c},
+  \label{zLinear}
+\end{equation}
+其中 $M$ 是 $E_{\text{prop}} \times N_{\text{sp}}$ 矩阵（$E_{\text{prop}}$ 为内线数），$\vec{c}$ 的分量为各 $P_e^2$（用 $k_{ij}$ 表示）。
+
+当传播子数等于独立标量积数（$E_{\text{prop}} = N_{\text{sp}}$，即无 ISP）时，$M$ 为方阵且可逆，逆变换为
+\begin{equation}
+  \vec{s} = M^{-1}(\vec{z} - \vec{c}).
+  \label{zInverse}
+\end{equation}
+
+当存在 ISP 时，$M$ 不是方阵，逆变换需补充 ISP 的定义关系（ISP 直接用 $\vec{s}$ 中的分量表示）。
+
+\subsection{Bubble 拓扑的显式计算}
+
+以 bubble 拓扑（单圈，$L=1$，$E=2$ 条内线，1 个外动量 $k$）为例。两条内线的动量为
+\begin{align}
+  Q_1 &= q_1, \\
+  Q_2 &= q_1 - k.
+\end{align}
+
+\textbf{正变换} $\vec{z} = M \vec{s} + \vec{c}$：
+\begin{align}
+  z_1 &= Q_1^2 = q_1^2, \label{z1bubble} \\
+  z_2 &= Q_2^2 = q_1^2 - 2\, q_1 \cdot k + k_{11}, \label{z2bubble}
+\end{align}
+其中 $k_{11} \equiv k \cdot k$。矩阵形式为
+\begin{equation}
+  \begin{pmatrix} z_1 \\ z_2 \end{pmatrix}
+  = \begin{pmatrix} 1 & 0 \\ 1 & -2 \end{pmatrix}
+  \begin{pmatrix} q_1^2 \\ q_1 \cdot k \end{pmatrix}
+  + \begin{pmatrix} 0 \\ k_{11} \end{pmatrix}.
+  \label{bubbleMatrix}
+\end{equation}
+
+\textbf{逆变换} $\vec{s} = M^{-1}(\vec{z} - \vec{c})$：
+\begin{align}
+  q_1^2 &= z_1, \label{q1sqInv} \\
+  q_1 \cdot k &= \frac{1}{2}(z_1 + k_{11} - z_2). \label{q1kInv}
+\end{align}
+
+\textbf{标量积 $q_1 \cdot Q_e$}（在 IBP 链式法则中直接使用）：
+\begin{align}
+  q_1 \cdot Q_1 &= q_1^2 = z_1, \label{q1Q1} \\
+  q_1 \cdot Q_2 &= q_1 \cdot (q_1 - k) = q_1^2 - q_1 \cdot k = z_1 - \frac{1}{2}(z_1 + k_{11} - z_2) = \frac{1}{2}(z_1 + z_2 - k_{11}). \label{q1Q2}
+\end{align}
+
+这些关系表明 $q_l \cdot Q_e$ 可以表示为 $z$ 变量和外动量不变量 $k_{ij}$ 的线性组合。
+
+\subsection{在动量 IBP 链式法则中的应用}
+
+动量 IBP 的核心算符为 $q_l^\mu\, \partial / \partial q_l^\mu$（对角生成元）或 $q_m^\mu\, \partial / \partial q_l^\mu$（交叉生成元）。通过链式法则将 $\partial / \partial q_l^\mu$ 分解为对 $\xi_e$ 的导数：
+\begin{equation}
+  q_l \cdot \frac{\partial}{\partial q_l} = \sum_e c_{e,l}\, \frac{q_l \cdot Q_e}{\xi_e}\, \frac{\partial}{\partial \xi_e}.
+  \label{chainRuleXi}
+\end{equation}
+
+利用 $\xi_e = z_e^{1/2}$，即 $\partial / \partial \xi_e = 2\xi_e\, \partial / \partial z_e = 2 z_e\, \partial / \partial z_e$，以及 $z_e\, \partial / \partial z_e = \frac{1}{2}\, \partial / \partial(\ln z_e)$，得到
+\begin{equation}
+  q_l \cdot \frac{\partial}{\partial q_l} = \sum_e c_{e,l}\, \frac{q_l \cdot Q_e}{z_e} \cdot \frac{1}{2}\, \frac{\partial}{\partial(\ln z_e)}.
+  \label{chainRuleZ}
+\end{equation}
+
+\textbf{指标移位规则}：$q_l \cdot Q_e$ 用式~\eqref{zInverse} 或显式计算表示为 $z$ 变量的线性组合后，每一项形如 $\alpha\, z_e$（$\alpha$ 为常数或 $k_{ij}$ 的函数）。$z_e$ 作用在传播子 $z_e^{-(b_e+b0_e)/2}$ 上的效果为
+\begin{equation}
+  z_e \cdot z_e^{-(b_e+b0_e)/2} = z_e^{-(b_e - 2 + b0_e)/2},
+  \label{zShift}
+\end{equation}
+即指标移位 $b_e \to b_e - 2$。
+
+类似地，$1/z_e$ 项产生 $b_e \to b_e + 2$ 的移位。
+
+\textbf{实现步骤}：
+\begin{enumerate}
+  \item 用替换规则将每个 $q_l \cdot Q_e$ 表示为 $\{z_e\}$ 和 $\{k_{ij}\}$ 的线性组合。
+  \item 将 $\frac{1}{z_e} \cdot \frac{1}{2}\, \partial / \partial(\ln z_e)$ 分解为对传播子的移位算符。
+  \item $z_e^n$ 作用在 $z_e^{-(b_e+b0_e)/2}$ 上 $\to$ 移位 $b_e \to b_e - 2n$。
+\end{enumerate}
+
+这一框架使得动量 IBP 的链式法则完全转化为指标移位操作，与式~\eqref{zDef}--\eqref{zShift} 定义的指标体系自洽。
+
+% ============================================================
+\section{Convention 汇总}
+% ============================================================
+
+本节汇总 package 中所有约定设置，包括用途和缺省值。
+
+\subsection{积分表示}
+
+\begin{itemize}
+  \item \textbf{Head}：统一使用 $J[\{a_v\}, \{\text{pack}_e\}]$。所有 sector（top 和 sub-sector）使用同一 Head。
+  \item \textbf{massive 完整线 pack}：$\{b_e, n_{e,1}, n_{e,2}\}$（3 元素）。$b_e$ 为整数指标（分母幂次），$n_{e,a} \in \{0,1\}$ 为 building block 导数阶数。
+  \item \textbf{massless 完整线 pack}：$\{b_e,n_e\}$（2 元素，双 theta 合并路线）。端点关系 $\{1,0\}=-\{0,1\}$ 和 $\{1,1\}=q_e^2\{0,0\}$ 已在 canonical 层吸收，因此 seed 输出保持逐线 $\{b_e,n_e\}$。
+  \item \textbf{缩并线 pack}：$\{bS_e\}$（1 元素）。$bS_e$ 为整数指标。
+  \item \textbf{$a$ 指标}：正幂次，$(-\tau_v)^{a_v + a0_v}$。
+  \item \textbf{$b$ 指标}：分母幂次，$q_e^{-(b_e + b0_e)}$。
+\end{itemize}
+
+\subsection{指标零点}
+
+\begin{itemize}
+  \item $a0_v$：顶点 $v$ 的 $a$ 零点。h 模式缺省 $2\nu_{\text{ref}}$，H 模式缺省 $0$。
+  \item $b0_e$：线 $e$ 的 $b$ 零点。h 模式缺省 $-2\nu_e$，H 模式缺省 $0$。
+  \item $bS0_e$：缩并线 $e$ 的 $b$ 零点。h 模式：$bS0_e = b0_e + 2\nu_e$；H 模式：$bS0_e = b0_e$（Wronskian 给出纯 $1/z$，无非整数部分）。
+  \item $a0_{\text{merged}}$：合并顶点的 $a$ 零点。h 模式：$a0_{\text{merged}} = a0_u + a0_v - 2\nu_e$；H 模式：$a0_{\text{merged}} = a0_u + a0_v$。
+\end{itemize}
+
+\subsection{Building Block 类型}
+
+\begin{itemize}
+  \item $\text{bbType}_e$：线 $e$ 的 building block 类型。展开为 $\{c_1, c_2, \text{sp}\}$。
+  \item \texttt{"h"} $\to \{2\nu+1, 1, -(2\nu+1)\}$：h 函数（归一化 Hankel）。
+  \item \texttt{"H"} $\to \{2\nu, 1, -1\}$：Hankel 函数。
+  \item \texttt{\{c1, c2, sp\}}：自定义。
+\end{itemize}
+
+\subsection{维度参数}
+
+\begin{itemize}
+  \item $d_{\text{PQ}}$：EOM 中的维度参数。缺省 $3$。与维正规化维度独立。
+  \item $d$：维正规化维度，出现在动量 IBP 的维度项 $d \cdot J$ 中。缺省 $3$（树图）或 $3-2\epsilon$（圈图）。
+\end{itemize}
+
+\subsection{外部能量与 SK 符号}
+
+\begin{itemize}
+  \item $P[v]$：顶点 $v$ 的外部能量符号。保持独立到 \texttt{repvar} 阶段。
+  \item SK 符号约定：$(+)$ 顶点对应 $e^{-iP_v \tau_v}$，$(-)$ 顶点对应 $e^{+iP_v \tau_v}$。
+  \item 时间 IBP 各项符号：vertex power $-a_v$，external energy $-iP_v$，building block derivative $-1$（两端点均取负号）。
+\end{itemize}
+
+\subsection{缩并约定}
+
+\begin{itemize}
+  \item 缩并条件：$n_{e,1} + n_{e,2} = 1$（h/H 模式）。无质量传播子无 Hankel Wronskian 缩并条件；其 time-IBP theta 边界按双 theta 合并 canonical 关系处理。
+  \item 缩并因子幂次（h 模式）：$-(2\nu_e+1)$。整数 $-1$ 进入指标，非整数 $-2\nu_e$ 进入零点。
+  \item 缩并因子幂次（H 模式）：$-1$（纯整数，来自 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] \propto 1/z$）。零点无移位。
+  \item 缩并因子幂次（无质量）：无 Hankel 缩并机制；同一顶点对多条 massless 线的 bundle 合并暂列未来优化。
+  \item $a$ 指标移位：$a_{\text{merged}} = a_u + a_v - 1$（两种模式整数部分相同）。
+  \item $a$ 零点移位（h 模式）：$a0_{\text{merged}} = a0_u + a0_v - 2\nu_e$。
+  \item $a$ 零点移位（H 模式）：$a0_{\text{merged}} = a0_u + a0_v$（无非整数部分）。
+  \item $b$ 指标移位：$bS_e = b_e + 1$（两种模式整数部分相同）。
+  \item $b$ 零点移位（h 模式）：$bS0_e = b0_e + 2\nu_e$。
+  \item $b$ 零点移位（H 模式）：$bS0_e = b0_e$（无非整数部分）。
+  \item 常数 prefactor（h 模式）：$\mathcal{C}_e^{(h)} = \frac{4i}{\pi} e^{\pi \text{Im}[\nu_e]}$。
+  \item 常数 prefactor（H 模式）：$\mathcal{C}_e^{(H)} = \frac{4i}{\pi} e^{\pi \text{Im}[\nu_e]}$（与 h 模式相同，来自 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -e^{\pi \text{Im}[\nu]} \frac{4i}{\pi z}$，已数值验证）。
+  \item 常数 prefactor（无质量）：$\mathcal{C}_e = 1$（无 prefactor）。
+  \item 多次缩并：$\mathcal{C}_{\text{total}} = \prod_{e \in \text{shrunk}} \mathcal{C}_e$。
+  \item Sub-sector 中塌缩线的 $\nu$ 消失：$\nu_e \to 0$（参考代码约定）。
+\end{itemize}
+
+\subsection{符号选用}
+
+\begin{itemize}
+  \item 不同物理对象使用不同符号（如动量 $k_i$ 与指标 $i$ 不混同）。
+  \item 当指标不在同一公式中与物理量冲突时，优先使用 $i, j, k$ 作为指标。
+  \item 圈动量符号：$q_l$（$l$ 为圈编号）。
+  \item 外部能量符号：$P_v$（$v$ 为顶点编号）或 $k_v$。
+\end{itemize}
+
+\end{document}
+

@@ -1,0 +1,51 @@
+- [x] 从三篇 kinematic-flow PDF 中定位 wavefunction 规则、t→x / energy integral、loop bubble kinematic-flow 公式。
+- [x] 在主笔记中补 conformal wavefunction Feynman 规则公式。
+- [x] 在主笔记中补 t→x 变换和 xq 分母来源。
+- [x] 在主笔记中补 wavefunction 与 correlator 函数族差别对比。
+- [x] 统一新增 wavefunction 公式到本项目 convention，并补充超平面/临界点/主积分计数说明。
+- [x] 用简单例子重写主积分个数的图形解释。
+- [x] 将重复的主积分图形/临界点解释集中到附录，正文只保留结论和指引。
+- [x] 更新资料 README 的公式用途说明。
+- [x] 编译 LaTeX 并检查引用。
+- [x] 阅读 dS IBP 参考资料中 massive Hankel / remaining-term / parity-split 结构。
+- [x] 在 tq 章补充 A/B/C 三种处理方式的对比与结论。
+- [x] 用本项目 convention 检查新增公式和族标号。
+- [x] 重新编译 LaTeX 并检查引用。
+- [x] 将 A/B/C 对比从表格改为正文分点，并澄清反对称组合的含义。
+- [x] 强化双 theta massless 相对 massive 的 $(1,0)=-(0,1)$ 简化说明。
+- [x] 重新编译 LaTeX 并检查引用。
+- [x] 明确反对称组合在 $\tau_1$ 与 $\tau_2$ 求导中相反号出现，这是 massless 相对 massive 的简化。
+- [x] 将 tq 章时间幂次统一改为分子 convention，并同步修正时间 IBP 移位方向。
+- [x] 重新编译 LaTeX 并检查引用。
+- [x] 更新项目 notation 文档：单圈内线模长统一记为 $q_i$，并在函数族首次引入处定义。
+- [x] 将主笔记中的 $|\boldsymbol{q}|,|\boldsymbol{q}+\boldsymbol{k}_3|$ 改为 $q_1,q_2$。
+- [x] 重新编译 LaTeX 并检查残留旧记号。
+- [x] 修正 tq 小节中公式 5.9--5.12 附近的 Hankel、$\sigma_i$ 与端点导数指标记号。
+- [x] 补强 massless remaining term 与 massive Hankel remaining term 的对比说明。
+- [x] 重新编译 LaTeX 并检查旧记号残留。
+- [x] 将 A 类两 Heaviside 合并处理的 tq-IBP 统一改为端点标签放在 $\mathcal{I}_{\pm}[\cdots]$ 内部；B 类单 theta 不加该标签。
+- [x] 补充 massless 指数核的同一传播子两端点关系和双端点关系。
+- [x] 删除“组合两个时间 IBP 消去标签积分”的压缩关系，保留单个 $\tau_i$-IBP。
+- [x] 重新编译 LaTeX 并清理临时文件。
+- [x] 将 A 类端点标签从传播子编号 $r$ 加两位标签改为显式 naive 来源定义，并在 A 类 subsection 中进一步化成每对顶点单指标 $n_i$。
+- [x] 给 B 类单 theta 族补完整积分定义式。
+- [x] 重新编译 LaTeX 并清理临时文件。
+- [x] 重排 tq 章：5.1 只保留 bubble 基础和 naive 来源定义，5.2/5.3 分别写 A/B 处理。
+- [x] 去掉 A 类中人为定义的去虚数单位端点导数符号，并把最终 A 类表示改为每对顶点单指标 $n_i$。
+- [x] 补充多传播子共享同一对顶点时只有两项互斥 Heaviside 分支的说明。
+- [x] 重新编译 LaTeX 并清理临时文件。
+- [x] 将 A 类指标统一写成 $\{n_i\}$ 槽位，并把 naive 指标改为 $n_{i,j}$。
+- [x] 去掉 tq 函数族定义和 tq-IBP 中默认携带的 $\epsilon$。
+- [x] 正文删除封闭动量 IBP 公式，只指向附录记录。
+- [x] 重新编译 LaTeX 并清理临时文件。
+- [x] 将 5.5 前 naive 四端点定义改为带编号的完整函数族定义式。
+- [x] 重新编译 LaTeX 并清理临时文件。
+- [x] 在 5.4 中补无阶梯 $(+-)$ 情形的 $\tau$ 积分 Gamma 推导和积掉时间后的指标族定义。
+- [x] 新建 5.6 讨论 B 类单 theta 的 sector 内等价积掉时间表示与 dlog 构造选择。
+- [x] 重新编译 LaTeX 并清理临时文件。
+- [x] 修正 A 类与有质量系统并排处理、B 类联立不同 sector 时积分核视角的表述。
+- [x] 重新编译 LaTeX 并清理临时文件。
+- [x] 测试 pdfLaTeX 编译失败点，区分中文字体问题和 Unicode 符号问题。
+- [x] 调整导言区与正文 Unicode，使 Overleaf/pdfLaTeX 可编译。
+- [x] 用 pdfLaTeX 重新编译并清理临时文件。
+- [x] 修正公式 2.7--2.8 的 Heaviside 区域积分推导和第一项分母。

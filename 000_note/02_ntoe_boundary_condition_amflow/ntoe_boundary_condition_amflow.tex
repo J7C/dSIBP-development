@@ -1,0 +1,165 @@
+\documentclass[a4paper,11pt]{article}
+% !TeX program = pdflatex
+\pdfoutput=1
+\pdfminorversion=7
+\usepackage[utf8]{inputenc}
+\usepackage{CJKutf8}
+\AtBeginDocument{\begin{CJK*}{UTF8}{gbsn}}
+\AtEndDocument{\clearpage\end{CJK*}}
+\usepackage{jheppub}
+
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{braket}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{阻尼处方与辅助质量流中的边界条件}
+\abstract{本短笔记记录平直时空传播子在混合表象 $(t,\mathbf{k})$ 中的核心 $i\epsilon$ 推导，并把它作为 dS IBP package 系统化处理边界条件的预备讨论。可类比的对象是 AMFlow 的辅助质量流思想：引入形变参数，沿流变量求解微分方程，再在指数阻尼或大参数极限使问题简化的边界上确定边界数据。}
+
+\begin{document}
+\maketitle
+
+\section{目的}
+
+本文只固定一个边界条件直觉，方便后续转成 package 逻辑。共同结构是
+\begin{equation}
+    \begin{aligned}
+    &\text{处方或流参数}
+    \quad\Longrightarrow\quad
+    \text{带阻尼的边界}
+    \\
+    &\hspace{2.4cm}\Longrightarrow\quad
+    \text{更简单的微分方程边界输入}.
+    \end{aligned}
+\end{equation}
+在平直时空中，这个角色由 $i\epsilon$ 处方承担。在 AMFlow 中，对应的是辅助质量 $\eta$；大 $\eta$ 边界通过展开和迭代策略化为更简单的真空图或降圈数据 \cite{Liu:2017jxz,Liu:2020kpc,Liu:2021wks,Liu:2022chg,Liu:2022tji,Liu:2022mfb}。在树图 dS 超几何解中，Wick 旋转后的大能量边界压低时间积分的远端贡献，从而局域化边界系数 \cite{Chen:2024jms}。
+
+这里的“热核展开”说法需要谨慎。严格地说，heat-kernel 或 Schwinger-DeWitt expansion 指的是热核的小 proper-time 渐近展开。本文真正需要的只是更弱的机制：指数阻尼因子使某个边界区域可控。它和 Schwinger/proper-time 阻尼有类比，但在没有真正引入热核对象前，本文不把它称为严格的热核展开。
+
+\section{平直传播子的混合表象}
+
+取度规 $(+---)$，并定义
+\begin{equation}
+    E_{\mathbf{k}}=\sqrt{\mathbf{k}^2+m^2}.
+\end{equation}
+混合表象传播子为
+\begin{equation}
+    \Delta_F(t,\mathbf{k})
+    =
+    \int\frac{dk^0}{2\pi}
+    \frac{i e^{-ik^0 t}}
+    {(k^0)^2-E_{\mathbf{k}}^2+i\epsilon}.
+\end{equation}
+由于 $\epsilon$ 是正的无穷小量，乘上有限正数后仍可重命名为 $\epsilon$，因此
+\begin{equation}
+    (k^0)^2-E_{\mathbf{k}}^2+i\epsilon
+    =
+    (k^0-E_{\mathbf{k}}+i\epsilon)
+    (k^0+E_{\mathbf{k}}-i\epsilon).
+\end{equation}
+极点位置为
+\begin{equation}
+    k^0=E_{\mathbf{k}}-i\epsilon,
+    \qquad
+    k^0=-E_{\mathbf{k}}+i\epsilon .
+\end{equation}
+当 $t>0$ 时，围道闭合到下半平面：
+\begin{equation}
+    \Delta_F(t,\mathbf{k})\big|_{t>0}
+    =
+    \frac{1}{2E_{\mathbf{k}}}
+    e^{-i(E_{\mathbf{k}}-i\epsilon)t}
+    =
+    \frac{1}{2E_{\mathbf{k}}}
+    e^{-iE_{\mathbf{k}}t-\epsilon t}.
+\end{equation}
+当 $t<0$ 时，围道闭合到上半平面：
+\begin{equation}
+    \Delta_F(t,\mathbf{k})\big|_{t<0}
+    =
+    \frac{1}{2E_{\mathbf{k}}}
+    e^{-i(-E_{\mathbf{k}}+i\epsilon)t}
+    =
+    \frac{1}{2E_{\mathbf{k}}}
+    e^{+iE_{\mathbf{k}}t+\epsilon t}.
+\end{equation}
+合并后得到
+\begin{equation}
+    \boxed{
+    \Delta_F(t,\mathbf{k})
+    =
+    \frac{1}{2E_{\mathbf{k}}}
+    \left[
+        \theta(t)e^{-iE_{\mathbf{k}}t-\epsilon t}
+        +
+        \theta(-t)e^{+iE_{\mathbf{k}}t+\epsilon t}
+    \right]}
+\end{equation}
+或等价地写作
+\begin{equation}
+    \boxed{
+    \Delta_F(t,\mathbf{k})
+    =
+    \frac{1}{2E_{\mathbf{k}}}
+    \left[
+        \theta(t)e^{-iE_{\mathbf{k}}t}
+        +
+        \theta(-t)e^{+iE_{\mathbf{k}}t}
+    \right]e^{-\epsilon |t|}} .
+\end{equation}
+这里真正重要的不是归一化，而是边界规则：$i\epsilon$ 同时决定时序选取，并在大 $|t|$ 边界给出无穷小阻尼。
+
+\section{AMFlow 类比}
+
+AMFlow 引入辅助质量参数，并对该参数建立常微分方程
+\begin{equation}
+    \frac{\partial}{\partial \eta}\vec{I}(\eta)
+    =
+    A(\eta)\vec{I}(\eta),
+\end{equation}
+最后在目标 $\eta$ 值处恢复物理积分。大 $\eta$ 边界不应被理解为一个任意未知的高圈输入。通过大质量展开，边界积分会化为更简单的积分；在迭代 AMFlow 策略中，这些边界输入继续被降到低圈或更简单的真空图。线性代数文章进一步强调，剩余边界信息可由 IBP 线性关系迭代确定 \cite{Liu:2022mfb}；AMFlow package 文章则把这一点作为自动化目标之一 \cite{Liu:2022chg}。
+
+对 dS package 来说，有用的类比是
+\begin{equation}
+    \begin{aligned}
+    i\epsilon\text{ 或 Wick 旋转}
+    &\quad\leftrightarrow\quad
+    \eta\text{-flow},
+    \\
+    \text{大时间或大能量阻尼}
+    &\quad\leftrightarrow\quad
+    \eta\to\infty\text{ 边界}.
+    \end{aligned}
+\end{equation}
+两者都应作为微分方程系统的边界条件提供器，而不是在微分方程解完后再手动补上的归一化常数。
+
+\section{dS 边界条件启发}
+
+在树图 dS 超几何解的分析中，选择 $k_i\to\infty$ 边界的原因是：Wick 旋转后，指数因子会压低远离简单端点区域的贡献 \cite{Chen:2024jms}。因此只需展开局域端点区域，就能固定局部级数解中的边界系数。
+
+对 package 设计，相应规则可以写成
+\begin{equation}
+    \begin{aligned}
+    &\text{选择一个形变或运动学极限},
+    \\
+    &\hspace{1.0cm}\text{使得在不需要的边界上}\quad
+    \operatorname{Re}(\text{exponent})<0 .
+    \end{aligned}
+\end{equation}
+然后从被阻尼后剩下的局域区域计算边界系数，再由微分方程把结果运回物理点。这个结构与平直传播子中的 $e^{-\epsilon |t|}$、AMFlow 中的大 $\eta$ 展开扮演的是同一类角色。
+
+\section{Package 层面的记录项}
+
+dS IBP package 中应显式保存以下信息：
+\begin{itemize}
+    \item 极点或围道处方，例如 $i\epsilon$；
+    \item 所采用的表示，例如 $(t,\mathbf{k})$、tq、xq 或某个流变量；
+    \item 用来固定积分常数的边界极限；
+    \item 阻尼后真正贡献的局域展开区域；
+    \item 该边界所需的低复杂度输入。
+\end{itemize}
+这样可以避免把边界条件藏进最终归一化常数里，也方便把平直时空、AMFlow 与 dS 大能量边界数据放在同一个系统接口中比较。
+
+\bibliographystyle{JHEP}
+\bibliography{references}
+
+\end{document}

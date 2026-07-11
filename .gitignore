@@ -1,0 +1,58 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+
+# Mathematica / notebooks autosave
+*.nb~
+*.mx
+
+# Logs and generated algebra outputs
+*.log
+*.aux
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+*_stdout.txt
+*_stderr.txt
+*_output.txt
+ibp_equations*.m
+
+# Project generated outputs
+000_code/test/
+000_code/**/results_test/
+000_code/results/
+000_code/results_temp/
+000_code/results_ignore/
+results_temp/
+results_ignore/
+
+# Kira / reduction outputs generated during checks or reference runs
+**/kira_export*/
+**/userSystem/
+**/results/
+**/result/
+**/temp/
+
+# Keep only current two main scripts in 000_code; older generated prototypes are ignored if recreated.
+000_code/001_*.wl
+000_code/002_*.wl
+000_code/003_*.wl
+
+# Keep source check scripts, but ignore old textual run outputs.
+000_code/check/*_out.txt
+000_code/check/*_output.txt
+000_code/check/check_stdout.txt
+000_code/check/compare_output*.txt
+000_code/check/extract_ref_stdout.txt
+
+# Large/local runtime scratch
+input/
+output/
+batches/
+structured/
+cache/
