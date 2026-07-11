@@ -1144,6 +1144,7 @@ compareExpectedTopologyValidationReport[] := Module[
         "TypoOption" -> 1
         |>,
       "kiraOrdering" -> <|"PreferredPriority" -> "Middle", "PreferredIntegrals" -> Global`J[{}, {}, {}], "TypoOrderingKey" -> 1|>,
+      "numericRules" -> {Global`dim, Global`kk[1, 1] -> 5},
       "ispData" -> {
         {Global`ispQ1K, Global`qk[1, 1], {"bad"}},
         {Global`ispQ2K, Global`qk[2, 1], {0, 2}}
@@ -1218,13 +1219,14 @@ compareExpectedTopologyValidationReport[] := Module[
        duplicateISPReport["errorCount"] === 1 &&
        MemberQ[duplicateISPCodes, "duplicateISPNames"] &&
        malformedRangeReport["status"] === "issues" &&
-       malformedRangeReport["errorCount"] === 6 &&
+       malformedRangeReport["errorCount"] === 7 &&
        MemberQ[malformedRangeCodes, "malformedSeedRangeSpecs"] &&
        MemberQ[malformedRangeCodes, "malformedSeedSampleOnly"] &&
        MemberQ[malformedRangeCodes, "malformedISPRangeSpecs"] &&
        MemberQ[malformedRangeCodes, "unknownSeedOptionKeys"] &&
        MemberQ[malformedRangeCodes, "malformedSeedOptionValues"] &&
        MemberQ[malformedRangeCodes, "invalidKiraOrdering"] &&
+       MemberQ[malformedRangeCodes, "invalidNumericRules"] &&
        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 2 &&
@@ -1514,12 +1516,13 @@ compareExpectedMassiveCrossGate[] := Module[
 
 
 compareExpectedSeedClassificationAndSampledLinear[] := Module[
-   {topo, batch, classified, sampled, sampledFromRawCase, firstCoeffRules},
+   {topo, batch, classified, sampled, sampledFromRawCase, badSampled, firstCoeffRules},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    classified = Global`classifyCanonicalSeedBatch[batch];
    sampled = Global`makeSampledLinearSystemData[batch, topo];
    sampledFromRawCase = Global`makeSampledLinearSystemData[batch, Global`mixedBubbleCase];
+   badSampled = Global`makeSampledLinearSystemData[batch, topo, System`CoefficientRules -> {Global`dim, Global`kk[1, 1] -> 5}];
    firstCoeffRules = Lookup[First[Lookup[sampled, "linearEquations", {<||>}]], "coefficientRules", {}];
    <|
     "name" -> "seedClassificationAndSampledLinear_mixedBubble",
@@ -1536,11 +1539,15 @@ compareExpectedSeedClassificationAndSampledLinear[] := Module[
        sampledFromRawCase["status"] === "generated" &&
        sampledFromRawCase["coefficientRulesApplied"] === topo["numericRules"] &&
        sampledFromRawCase["integralCount"] === sampled["integralCount"] &&
-       Lookup[sampledFromRawCase["sectorMetadataList"], "sectorKey"] === Lookup[sampled["sectorMetadataList"], "sectorKey"]
+       Lookup[sampledFromRawCase["sectorMetadataList"], "sectorKey"] === Lookup[sampled["sectorMetadataList"], "sectorKey"] &&
+       badSampled["status"] === "notReady" &&
+       badSampled["reason"] === "invalidCoefficientRules" &&
+       badSampled["coefficientRuleValidationReport", "badPositions"] === {1}
       ],
     "classificationSummary" -> Lookup[classified, "summary", <||>],
     "coefficientRulesApplied" -> Lookup[sampled, "coefficientRulesApplied", Missing["rules"]],
     "rawCaseCoefficientRulesApplied" -> Lookup[sampledFromRawCase, "coefficientRulesApplied", Missing["rules"]],
+    "badSampledStatus" -> Lookup[badSampled, "status", Missing["status"]],
     "firstCoeffRules" -> firstCoeffRules
     |>
    ];

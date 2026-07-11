@@ -2171,7 +2171,7 @@ topologyValidationReport[topo_Association] := Module[
     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
     ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData, seedOptions,
-    unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport,
+    unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport, numericRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2240,6 +2240,10 @@ topologyValidationReport[topo_Association] := Module[
    kiraOrderingReport = validateKiraOrderingSpec[Lookup[topo, "kiraOrdering", <||>]];
    If[Lookup[kiraOrderingReport, "status", "ok"] =!= "ok",
     appendIssue["error", "invalidKiraOrdering", KeyDrop[kiraOrderingReport, {"status"}]]
+    ];
+   numericRuleValidationReport = validateCoefficientRules[topo["numericRules"]];
+   If[Lookup[numericRuleValidationReport, "status", "ok"] =!= "ok",
+    appendIssue["error", "invalidNumericRules", KeyDrop[numericRuleValidationReport, {"status"}]]
     ];
    If[! DuplicateFreeQ[vertexIds],
     appendIssue["error", "duplicateVertexIds", <|"vertexIds" -> vertexIds|>]
@@ -3628,8 +3632,12 @@ Options[applyCoefficientRulesToLinearSystem] = {CoefficientRules -> {}};
 
 
 applyCoefficientRulesToLinearSystem[linearData_Association, OptionsPattern[]] := Module[
-   {rules = OptionValue[CoefficientRules], linearEquations, coefficientDiagnostics},
+   {rules = OptionValue[CoefficientRules], ruleReport, linearEquations, coefficientDiagnostics},
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! KeyExistsQ[linearData, "linearEquations"], Return[linearData]];
+   ruleReport = validateCoefficientRules[rules];
+   If[Lookup[ruleReport, "status", "ok"] =!= "ok",
+    Return[Join[linearData, <|"status" -> "notReady", "reason" -> "invalidCoefficientRules", "coefficientRuleValidationReport" -> ruleReport|>]]
+    ];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, rules] & /@ linearData["linearEquations"];
    coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    Join[linearData, <|

@@ -56,6 +56,7 @@
 - [x] ISP 输入检查：raw preflight 会拦截 malformed `ispData` 与缺少 `name/expr` 的 Association；topology validation 会拦截重复 ISP 名，避免后续 `z/ISP` 坐标映射含糊。
 - [x] seed/ISP range 输入检查：`seedRanges` 必须是 Association，`a/b/isp` 和 ISP 自带 `range` 必须是整数或非空整数列表，避免错误范围被静默当作 `{0}`。
 - [x] seedOptions 输入检查：`DiscreteMode`、seed/batch/shrink 上限和未知 option key 会在 topology validation 中检查，避免 typo 后意外退回 sample 或无效上限。
+- [x] numericRules / sampled CoefficientRules 输入检查：数值规则和 sampled linear 替换规则必须是规则列表，坏规则会在进入 seed/linear/Kira 前明确报错。
 - [x] KiraJobOptions 输入检查：Kira 导出前会拦截未知 job option key、非法布尔开关、非法并行数和空字符串命令/文件名，避免坏后端配置静默回默认值。
 - [x] KiraCoefficientRules 输入检查：Kira 导出前会拦截非列表或混入非替换规则的系数规则，避免参数替换阶段出现不清楚的模式失败或静默无效。
 - [x] KiraIntegralOrder 输入检查：导出阶段要求手动全局积分排序为 `Automatic` 或列表，避免用户指定 master 排序时因类型写错而被静默忽略。
