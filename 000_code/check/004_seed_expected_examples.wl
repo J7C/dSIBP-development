@@ -1316,7 +1316,9 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
     "name" -> "kiraExporter_rejectsRawSeedBatch",
     "pass" -> TrueQ[
       inputStrings["status"] === "notLinearSystem" &&
+       inputStrings["topologyValidationReport"]["status"] === "ok" &&
        exportData["status"] === "notReady" &&
+       exportData["topologyValidationReport"]["status"] === "ok" &&
        StringContainsQ[exportData["reason"], "linear-system"] &&
        writtenFiles === {}
       ],
@@ -1365,6 +1367,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
     "name" -> "kiraWorkspaceExport_mixedBubble_linearSystemFilesOnly",
     "pass" -> TrueQ[
       kiraData["status"] === "ready" &&
+       kiraData["topologyValidationReport"]["status"] === "ok" &&
        linearData["status"] === "generated" &&
        Length[kiraData["filesWritten"]] === Length[requiredFiles] &&
        And @@ (FileExistsQ /@ requiredFiles) &&

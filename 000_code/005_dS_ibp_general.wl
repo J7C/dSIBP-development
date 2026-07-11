@@ -2252,21 +2252,22 @@ kiraJobsYAML[jobOptions_: Automatic] := Module[
 
 makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, repKira2JText, repJ2KiraText, metadataText,
-    normalizedJobOptions},
+    normalizedJobOptions, topologyReport},
+   topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
-    Return[<|"status" -> "notGenerated", "reason" -> "linear data missing"|>]
+    Return[<|"status" -> "notGenerated", "reason" -> "linear data missing", "topologyValidationReport" -> topologyReport|>]
     ];
    If[! KeyExistsQ[linearData, "linearEquations"] || ! KeyExistsQ[linearData, "integralRules"],
-    Return[<|"status" -> "notLinearSystem", "reason" -> "Kira exporter expects makeLinearSystemData output"|>]
+    Return[<|"status" -> "notLinearSystem", "reason" -> "Kira exporter expects makeLinearSystemData output", "topologyValidationReport" -> topologyReport|>]
     ];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, coeffRules] & /@ linearData["linearEquations"];
    badEquations = Select[linearEquations, ! TrueQ[#["linearQ"]] || ! TrueQ[#["constantTerm"] === 0] &];
    If[badEquations =!= {},
-    Return[<|"status" -> "notLinear", "badEquationCount" -> Length[badEquations], "badEquations" -> badEquations|>]
+    Return[<|"status" -> "notLinear", "topologyValidationReport" -> topologyReport, "badEquationCount" -> Length[badEquations], "badEquations" -> badEquations|>]
     ];
    exportedEquations = Select[linearEquations, kiraNonzeroCoefficientRules[#["coefficientRules"]] =!= {} &];
    If[exportedEquations === {},
-    Return[<|"status" -> "emptySystem", "reason" -> "all linear equations are zero after coefficient rules"|>]
+    Return[<|"status" -> "emptySystem", "reason" -> "all linear equations are zero after coefficient rules", "topologyValidationReport" -> topologyReport|>]
     ];
    ibpText = StringJoin[kiraEquationBlock[#, #["coefficientRules"]] & /@ exportedEquations];
    listText = StringRiffle[ToString /@ Range[linearData["integralCount"]], "\n"] <> "\n";
@@ -2286,6 +2287,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
        ]] <> "\n";
    <|
     "status" -> "generated",
+    "topologyValidationReport" -> topologyReport,
     "ibp.kira" -> ibpText,
     "list" -> listText,
     "jobs.yaml" -> jobsText,
@@ -2331,12 +2333,14 @@ makeKiraExportData::badlinear = "linear-system 不能导出 Kira：`1`。";
 
 
 makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
-   {linearForExport, strings, outputDir, filesWritten},
+   {linearForExport, strings, outputDir, filesWritten, topologyReport},
+   topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[! KeyExistsQ[linearData, "linearEquations"],
     Message[makeKiraExportData::notlinearinput, Lookup[linearData, "caseName", Missing["caseName"]]];
     Return[<|
       "status" -> "notReady",
       "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
+      "topologyValidationReport" -> topologyReport,
       "reason" -> "Kira exporter expects linear-system data; save seed batch as MMA first, then call makeLinearSystemData after numeric/sampling choices"
       |>]
     ];
@@ -2344,13 +2348,14 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
    strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions]];
    If[Lookup[strings, "status", "missing"] =!= "generated",
     Message[makeKiraExportData::badlinear, Lookup[strings, "status", Missing["status"]]];
-    Return[<|"status" -> "notReady", "caseName" -> linearForExport["caseName"], "reason" -> "linear system is not exportable", "linearSystem" -> linearForExport, "kiraInput" -> strings|>]
+    Return[<|"status" -> "notReady", "caseName" -> linearForExport["caseName"], "topologyValidationReport" -> Lookup[linearForExport, "topologyValidationReport", topologyReport], "reason" -> "linear system is not exportable", "linearSystem" -> linearForExport, "kiraInput" -> strings|>]
     ];
    outputDir = OptionValue[OutputDirectory];
    filesWritten = If[StringQ[outputDir], writeKiraInputFiles[outputDir, strings], {}];
    <|
     "status" -> "ready",
     "caseName" -> linearForExport["caseName"],
+    "topologyValidationReport" -> Lookup[linearForExport, "topologyValidationReport", topologyReport],
     "linearSystem" -> linearForExport,
     "kiraInput" -> strings,
     "equationCount" -> Lookup[linearForExport, "equationCount", Missing["equationCount"]],
