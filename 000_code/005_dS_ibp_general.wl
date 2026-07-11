@@ -1021,6 +1021,16 @@ timeVertexPowerTerm[topo_Association, J[aList_, linePacks_, ispList_], vertexId_
 timeExternalEnergyTerm[topo_Association, int_J, vertexId_] := -I vertexExternalEnergy[topo, vertexId] int;
 
 
+skEndpointPhaseSign[line_Association, endpointSlot_Integer] := Module[
+   {skType = Lookup[line, "skType", "++"], chars},
+   chars = Characters[skType];
+   If[Length[chars] < endpointSlot,
+    If[endpointSlot === 1, 1, -1],
+    If[chars[[endpointSlot]] === "+", 1, -1]
+    ]
+   ];
+
+
 timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] := Module[
    {pos, connectedLines, lines = topo["lines"], endpointPos, endpointSign, newLinePacks},
    pos = vertexPosition[topo, vertexId];
@@ -1028,17 +1038,25 @@ timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispL
    connectedLines = topo["vertexLines"][[pos]][[All, 1]];
    Total[
     Table[
-     If[lines[[e]]["packType"] =!= "masslessFull",
-      0,
+     Switch[lines[[e]]["packType"],
+      "masslessFull",
       endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
-      If[Head[endpointPos] === Missing,
-       0,
+      If[Head[endpointPos] === Missing, 0,
        endpointSign = If[First[endpointPos] === 1, 1, -1];
        newLinePacks = linePacks;
        newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
        newLinePacks[[e, 2]] = 1 - newLinePacks[[e, 2]];
        I endpointSign J[aList, newLinePacks, ispList]
-       ]
+       ],
+      "masslessCross",
+      endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
+      If[Head[endpointPos] === Missing, 0,
+       endpointSign = skEndpointPhaseSign[lines[[e]], First[endpointPos]];
+       newLinePacks = linePacks;
+       newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
+       I endpointSign J[aList, newLinePacks, ispList]
+       ],
+      _, 0
       ],
      {e, connectedLines}
      ]
@@ -2244,6 +2262,23 @@ bubbleMasslessCase = <|
    |>;
 
 
+masslessCrossBubbleCase = <|
+   "name" -> "bubbleMasslessCrossNoTheta",
+   "vertexData" -> {{1, "+"}, {2, "-"}},
+   "lineData" -> {
+     <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>,
+     <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> q1 - k, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
+     },
+   "extLegs" -> {{B, 1, p1}, {B, 2, p2}},
+   "loopMomenta" -> {q1},
+   "externalMomenta" -> {k},
+   "ispData" -> {},
+   "numericRules" -> {dim -> 3, kk[1, 1] -> 5},
+   "sampleDiscreteRules" -> {{}},
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   |>;
+
+
 mixedBubbleCase = <|
    "name" -> "mixedBubbleMassiveMassless",
    "vertexData" -> {{1, "+"}, {2, "+"}},
@@ -2399,6 +2434,7 @@ runStructureExamples[] := Module[
    caseSummaries = summarizeCase /@ {
       bubbleMassiveCase,
       bubbleMasslessCase,
+      masslessCrossBubbleCase,
       mixedBubbleCase,
       massiveCrossBubbleCase,
       mixedTriangleCase,
@@ -2409,17 +2445,19 @@ runStructureExamples[] := Module[
    structureChecks = <|
      "bubbleMassiveDiscreteStateCount" -> (summaryValue[1, "discreteStateCount"] === 16),
      "bubbleMasslessDiscreteStateCount" -> (summaryValue[2, "discreteStateCount"] === 4),
-     "mixedBubbleDiscreteStateCount" -> (summaryValue[3, "discreteStateCount"] === 8),
-     "mixedBubbleMomentumGeneratorCount" -> (summaryValue[3, "momentumGeneratorCount"] === 2),
-     "massiveCrossPackTypes" -> (summaryValue[4, "packTypes"] === {"massiveCross", "massiveCross"}),
-     "massiveCrossDiscreteStateCount" -> (summaryValue[4, "discreteStateCount"] === 4),
-     "mixedTriangleDiscreteStateCount" -> (summaryValue[5, "discreteStateCount"] === 32),
-     "mixedTriangleMomentumGeneratorCount" -> (summaryValue[5, "momentumGeneratorCount"] === 3),
-     "mixedSunriseDiscreteStateCount" -> (summaryValue[6, "discreteStateCount"] === 16),
-     "mixedSunriseMomentumGeneratorCount" -> (summaryValue[6, "momentumGeneratorCount"] === 6),
-     "mixedSunriseISPCount" -> TrueQ[summaryValue[6, "ispCountQ"]],
-     "twoLoopMomentumGeneratorCount" -> (summaryValue[7, "momentumGeneratorCount"] === 6),
-     "twoLoopISPCount" -> TrueQ[summaryValue[7, "ispCountQ"]]
+     "masslessCrossPackTypes" -> (summaryValue[3, "packTypes"] === {"masslessCross", "masslessCross"}),
+     "masslessCrossDiscreteStateCount" -> (summaryValue[3, "discreteStateCount"] === 1),
+     "mixedBubbleDiscreteStateCount" -> (summaryValue[4, "discreteStateCount"] === 8),
+     "mixedBubbleMomentumGeneratorCount" -> (summaryValue[4, "momentumGeneratorCount"] === 2),
+     "massiveCrossPackTypes" -> (summaryValue[5, "packTypes"] === {"massiveCross", "massiveCross"}),
+     "massiveCrossDiscreteStateCount" -> (summaryValue[5, "discreteStateCount"] === 4),
+     "mixedTriangleDiscreteStateCount" -> (summaryValue[6, "discreteStateCount"] === 32),
+     "mixedTriangleMomentumGeneratorCount" -> (summaryValue[6, "momentumGeneratorCount"] === 3),
+     "mixedSunriseDiscreteStateCount" -> (summaryValue[7, "discreteStateCount"] === 16),
+     "mixedSunriseMomentumGeneratorCount" -> (summaryValue[7, "momentumGeneratorCount"] === 6),
+     "mixedSunriseISPCount" -> TrueQ[summaryValue[7, "ispCountQ"]],
+     "twoLoopMomentumGeneratorCount" -> (summaryValue[8, "momentumGeneratorCount"] === 6),
+     "twoLoopISPCount" -> TrueQ[summaryValue[8, "ispCountQ"]]
      |>;
    summaryFile = FileNameJoin[{baseDir, "004_general_structure_summary.m"}];
    Put[caseSummaries, summaryFile];
@@ -2428,8 +2466,6 @@ runStructureExamples[] := Module[
 
 
 (* 默认加载只定义函数和示例输入；需要检查时显式调用 runStructureExamples[]。 *)
-
-
 
 
 

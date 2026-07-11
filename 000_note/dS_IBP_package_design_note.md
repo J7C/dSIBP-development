@@ -116,6 +116,8 @@ in-in formalism 中，顶点 ± 标记决定传播子类型：
 
 因此在指标层面，`G^{+-}/G^{-+}` 型 massless 线不需要离散态指标 `n_e`，指标包退化为纯 `{b_e}`。这是相对 `G^{++}/G^{--}` 型 massless 线（需要 `n_e \in \{0,1\}`）的关键简化。
 
+当前代码状态：`005` 已实现 `masslessCross -> {b_e}`。momentum IBP 中它只参与传播子幂次导数；time IBP 中无 theta 边界项，端点相位导数按 SK 符号给出 `+ i q_e` 或 `- i q_e`，指标上为 `b_e -> b_e-1`。该路线已有 `bubbleMasslessCrossNoTheta` 小检查。
+
 ### 3.4 G^{+-}/G^{-+} 型 massive 的处理
 
 Massive 线的 Hankel building block `h[\nu, n, q_e \tau]` 在端点导数下产生 `n \to n+1` 的递推。对 `G^{+-}/G^{-+}` 型，由于无 Heaviside 结构，端点导数不产生独立分支，但 Hankel 阶 `n` 仍可升高。处理方式：
