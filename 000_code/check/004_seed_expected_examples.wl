@@ -14,8 +14,8 @@ Begin["`Private`"];
 
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
-   expectedMixedBubble, expectedMixedTriangle, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -213,11 +213,50 @@ expectedMixedSunriseBundledFuture[] := <|
    "maxExpandedSeedCountSketch" -> 64
    |>;
 
+
+expectedTwoLoopISP[] := <|
+   "name" -> "twoLoopISPtoy",
+   "linePacks" -> {
+     {Global`b[1], Global`n[1, 1], Global`n[1, 2]},
+     {Global`b[2], Global`n[2, 1], Global`n[2, 2]},
+     {Global`b[3], Global`n[3, 1], Global`n[3, 2]}
+     },
+   "baseIntegral" -> Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}, {Global`b[3], Global`n[3, 1], Global`n[3, 2]}}, {Global`ispN[1], Global`ispN[2]}],
+   "discreteStateCount" -> 64,
+   "momentumGeneratorCount" -> 6,
+   "generatorCount" -> 8,
+   "maxExpandedSeedCount" -> 512,
+   "sampleDiscreteRules" -> {},
+   "numericRules" -> {},
+   "zExprs" -> {
+     Global`qq[1, 1],
+     Global`qq[2, 2],
+     Global`qq[1, 1] - 2 Global`qq[1, 2] + Global`qq[2, 2]
+     },
+   "spToZRules" -> {
+     Global`qq[1, 1] -> Global`z[1],
+     Global`qq[2, 2] -> Global`z[2],
+     Global`qq[1, 2] -> (Global`z[1] + Global`z[2] - Global`z[3])/2
+     },
+   "dotCoefficients" -> <|
+     {"q", 1, 1} -> Global`z[1],
+     {"q", 1, 2} -> (Global`z[1] + Global`z[2] - Global`z[3])/2,
+     {"q", 1, 3} -> (Global`z[1] - Global`z[2] + Global`z[3])/2,
+     {"q", 2, 1} -> (Global`z[1] + Global`z[2] - Global`z[3])/2,
+     {"q", 2, 2} -> Global`z[2],
+     {"q", 2, 3} -> (Global`z[1] - Global`z[2] - Global`z[3])/2,
+     {"k", 1, 1} -> Global`qk[1, 1],
+     {"k", 1, 2} -> Global`qk[2, 1],
+     {"k", 1, 3} -> Global`qk[1, 1] - Global`qk[2, 1]
+     |>
+   |>;
+
 expectedSeedExamples[] := <|
    "masslessBubble" -> expectedMasslessBubblePerLineMergedTheta[],
    "mixedBubble" -> expectedMixedBubble[],
    "mixedTriangle" -> expectedMixedTriangle[],
    "mixedSunrise" -> expectedMixedSunrisePerLineMergedTheta[],
+   "twoLoopISP" -> expectedTwoLoopISP[],
    "futureBundled" -> <|"masslessBubble" -> expectedMasslessBubbleBundledFuture[], "mixedSunrise" -> expectedMixedSunriseBundledFuture[]|>
    |>;
 
@@ -806,6 +845,38 @@ compareExpectedTopologyValidationReport[] := Module[
     "singularReport" -> singularReport,
     "missingNumericReport" -> missingNumericReport,
     "incompleteDiscreteData" -> incompleteDiscreteData
+   |>
+   ];
+
+
+compareExpectedTwoLoopISPCompleteness[] := Module[
+   {topo, summary, expected, caseCheck, repCheck, validationCodes},
+   topo = Global`parseTopology[Global`twoLoopISPCase];
+   summary = Global`summarizeCase[Global`twoLoopISPCase];
+   expected = expectedTwoLoopISP[];
+   caseCheck = compareExpectedCase[Global`twoLoopISPCase, summary, expected];
+   repCheck = caseCheck["repSP2ZChecks"];
+   validationCodes = Lookup[summary["validationReport", "issues"], "code", {}];
+   <|
+    "name" -> "twoLoopISPtoy_coordinateClosure",
+    "pass" -> TrueQ[
+      caseCheck["pass"] &&
+       summary["nL"] === 2 &&
+       summary["nK"] === 1 &&
+       summary["expectedMomentumGeneratorCount"] === 6 &&
+       summary["structuralNeededISPCount"] === 2 &&
+       TrueQ[summary["ispCountQ"]] &&
+       repCheck["solveVars"] === {Global`qq[1, 1], Global`qq[1, 2], Global`qq[2, 2]} &&
+       repCheck["preservedISPVars"] === {Global`qk[1, 1], Global`qk[2, 1]} &&
+       ! MemberQ[validationCodes, "insufficientISPData"] &&
+       ! MemberQ[validationCodes, "scalarProductCoordinateCountMismatch"] &&
+       ! MemberQ[validationCodes, "scalarProductCoordinateSolveFailed"]
+      ],
+    "caseCheck" -> caseCheck,
+    "validationReport" -> summary["validationReport"],
+    "structuralNeededISPCount" -> summary["structuralNeededISPCount"],
+    "preservedISPVars" -> repCheck["preservedISPVars"],
+    "solveVars" -> repCheck["solveVars"]
     |>
    ];
 
@@ -1236,16 +1307,18 @@ compareExpectedShrunkLineIBP[] := Module[
 
 (* 调用前需先 loadGeneralGenerator[]，或已在当前 kernel 中定义 summarizeCase/mixedBubbleCase/mixedTriangleCase。 *)
 compareExpectedWithCurrentGenerator[] := Module[
-   {bubbleSummary, triangleSummary, masslessBubbleSummary, sunriseSummary},
+   {bubbleSummary, triangleSummary, masslessBubbleSummary, sunriseSummary, twoLoopISPSummary},
    bubbleSummary = Global`summarizeCase[Global`mixedBubbleCase];
    triangleSummary = Global`summarizeCase[Global`mixedTriangleCase];
    masslessBubbleSummary = Global`summarizeCase[Global`bubbleMasslessCase];
    sunriseSummary = Global`summarizeCase[Global`mixedSunriseCase];
+   twoLoopISPSummary = Global`summarizeCase[Global`twoLoopISPCase];
    <|
     "masslessBubble" -> compareExpectedCase[Global`bubbleMasslessCase, masslessBubbleSummary, expectedMasslessBubblePerLineMergedTheta[]],
     "mixedBubble" -> compareExpectedCase[Global`mixedBubbleCase, bubbleSummary, expectedMixedBubble[]],
     "mixedTriangle" -> compareExpectedCase[Global`mixedTriangleCase, triangleSummary, expectedMixedTriangle[]],
     "mixedSunrise" -> compareExpectedCase[Global`mixedSunriseCase, sunriseSummary, expectedMixedSunrisePerLineMergedTheta[]],
+    "twoLoopISP" -> compareExpectedCase[Global`twoLoopISPCase, twoLoopISPSummary, expectedTwoLoopISP[]],
     "momentumSeedMasslessBubble" -> compareExpectedMomentumSeedMasslessBubble[],
     "momentumSeedMixedBubbleBuildingBlock" -> compareExpectedMomentumSeedMixedBubbleBuildingBlock[],
     "momentumSeedSunriseISP" -> compareExpectedMomentumSeedSunriseISP[],
@@ -1260,6 +1333,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "threeVertexMultiShrinkCompactA" -> compareExpectedThreeVertexMultiShrinkCompactA[],
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
     "topologyValidationReport" -> compareExpectedTopologyValidationReport[],
+    "twoLoopISPCompleteness" -> compareExpectedTwoLoopISPCompleteness[],
     "sectorKeyExactMatch" -> compareExpectedSectorKeyExactMatch[],
     "masslessBundleMetadata" -> compareExpectedMasslessBundleMetadata[],
     "masslessCrossTimeSeed" -> compareExpectedMasslessCrossTimeSeed[],
