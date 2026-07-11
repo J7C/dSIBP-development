@@ -53,6 +53,7 @@
 - [x] vertex metadata 语义检查：`topologyValidationReport` 会拦截重复 vertex id、非法 `+/-` 符号，以及 `activeVertexIds` / `fixedAVertexValues` 中不存在的顶点。
 - [x] 外腿与顶点能量输入检查：`extLegs` 和 `vertexEnergies` 的基础形状、顶点引用会在 topology validation 中拦截，避免 time-IBP 顶点能量误用默认符号。
 - [x] line metadata 语义检查：`topologyValidationReport` 会拦截非法 `massType/skType/state`，避免 typo 被默认解释成 massive full 线后继续生成 seed。
+- [x] ISP 输入检查：raw preflight 会拦截 malformed `ispData` 与缺少 `name/expr` 的 Association；topology validation 会拦截重复 ISP 名，避免后续 `z/ISP` 坐标映射含糊。
 
 当前测试分层只覆盖主线逐线 `{b_e,n_e}` 的 merged-two-theta massless 方案；同一顶点对多 massless 线的真实 bundle 合并仍作为 future feature，仅检查 `masslessBundleCandidates` metadata。
 

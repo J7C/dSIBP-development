@@ -91,9 +91,16 @@ lineEntryEndpointValue[_] := Missing["NoEndpoints"];
 validEndpointPairQ[endpoints_] := ListQ[endpoints] && Length[endpoints] == 2;
 
 
+validISPEntryShapeQ[entry_] := AssociationQ[entry] || MatchQ[entry, {_, _, _}];
+
+
+ispEntryAssociationMissingKeys[entry_Association] := Complement[{"name", "expr"}, Keys[entry]];
+ispEntryAssociationMissingKeys[_] := {};
+
+
 caseInputMalformedIssues[case_Association] := Module[
-   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, badVertexPositions,
-    badLineShapePositions, lineMissingKeyData, badEndpointData},
+   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, badVertexPositions,
+    badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData},
    If[KeyExistsQ[case, "vertexData"],
     vertexData = case["vertexData"];
     If[! ListQ[vertexData],
@@ -150,6 +157,29 @@ caseInputMalformedIssues[case_Association] := Module[
     externalMomenta = case["externalMomenta"];
     If[! ListQ[externalMomenta],
      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedExternalMomenta", "reason" -> "externalMomenta must be a list"|>]
+     ]
+    ];
+   If[KeyExistsQ[case, "ispData"],
+    ispData = case["ispData"];
+    If[! ListQ[ispData],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedISPData", "reason" -> "ispData must be a list of ISP associations or {name,expr,range} entries"|>],
+     badISPShapePositions = Flatten @ Position[ispData, entry_ /; ! validISPEntryShapeQ[entry], {1}, Heads -> False];
+     If[badISPShapePositions =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedISPData", "badPositions" -> badISPShapePositions|>]
+      ];
+     ispMissingKeyData = DeleteCases[
+       MapIndexed[
+        If[AssociationQ[#1] && ispEntryAssociationMissingKeys[#1] =!= {},
+          <|"ispPosition" -> First[#2], "missingKeys" -> ispEntryAssociationMissingKeys[#1]|>,
+          Nothing
+          ] &,
+        ispData
+        ],
+       Nothing
+       ];
+     If[ispMissingKeyData =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "ispDataMissingRequiredKeys", "isps" -> ispMissingKeyData|>]
+      ]
      ]
     ];
    issues
@@ -2078,6 +2108,7 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
+    ispNames,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2090,11 +2121,15 @@ topologyValidationReport[topo_Association] := Module[
    fixedAVertexIds = Keys[Lookup[topo, "fixedAVertexValues", <||>]];
    extLegs = Lookup[topo, "extLegs", {}];
    vertexEnergies = Lookup[topo, "vertexEnergies", <||>];
+   ispNames = Lookup[topo["ispData"], "name", {}];
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
    If[! DuplicateFreeQ[lineIds],
     appendIssue["error", "duplicateLineIds", <|"lineIds" -> lineIds|>]
+    ];
+   If[ispNames =!= {} && ! DuplicateFreeQ[ispNames],
+    appendIssue["error", "duplicateISPNames", <|"ispNames" -> ispNames|>]
     ];
    If[! DuplicateFreeQ[vertexIds],
     appendIssue["error", "duplicateVertexIds", <|"vertexIds" -> vertexIds|>]
