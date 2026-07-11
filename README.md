@@ -33,6 +33,7 @@ Get["000_code/005_dS_ibp_general.wl"];
 
 topoData = makeTopologyData[mixedBubbleCase];
 seedBatch = makeCanonicalSeedBatch[mixedBubbleCase];
+seedReport = makeCanonicalSeedCoverageReport[seedBatch];
 
 writeSeedBatchMMA[
   seedBatch,
@@ -57,6 +58,7 @@ kiraData = makeKiraExportData[
 
 - seed 阶段只生成 Mathematica 表达式，不直接导出 Kira。
 - `makeCanonicalSeedBatch` 会合并 momentum/time/shrink-sector seed，并检查 EOM canonical 与 pending features。
+- `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、top-sector 生成元标签、EOM canonical 和 pending/forbidden 数据；`makeIBPWorkflowData` 也会返回这个 report。
 - 数值规则和撒点规则在 linear/Kira 阶段使用；解析 seed 本身保持不撒点。
 - Kira 导出只接受 `makeLinearSystemData` 或 `makeSampledLinearSystemData` 的输出。
 - 默认只写 Kira 输入文件，不运行 Kira reduction。

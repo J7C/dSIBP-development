@@ -735,64 +735,18 @@ compareExpectedCanonicalSeedGateMixedBubble[] := Module[
 
 
 canonicalCoverageCase[case_Association] := Module[
-   {topo, batch, classified, summary, sectorKeys, equations, sectorClassChecks, topEquations,
-    topQGenerators, topTGenerators, expectedQGenerators, expectedTGenerators, generatorStrings, totalClassifiedCount},
+   {topo, batch, report},
    topo = Global`parseTopology[case];
    batch = Global`makeCanonicalSeedBatch[topo];
-   classified = Global`classifyCanonicalSeedBatch[batch];
-   summary = Lookup[classified, "summary", <||>];
-   sectorKeys = Lookup[Lookup[batch, "sectorMetadataList", {}], "sectorKey", {}];
-   equations = Lookup[batch, "equations", {}];
-   generatorStrings[list_] := Sort[ToString[#, InputForm] & /@ list];
-   sectorClassChecks = Association @ Table[
-      sectorKey -> <|
-        "qIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0],
-        "tIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0],
-        "hasBothQAndT" -> TrueQ[
-          Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0] > 0 &&
-           Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0] > 0
-          ]
-        |>,
-      {sectorKey, sectorKeys}
-      ];
-   topEquations = Select[equations, Global`seedEntrySourceSectorKey[#] === "top" &];
-   topQGenerators = DeleteDuplicates @ Lookup[
-      Select[topEquations, Global`seedEntryIBPClass[#] === "qIBP" &],
-      "generator",
-      {}
-      ];
-   topTGenerators = DeleteDuplicates @ Lookup[
-      Select[topEquations, Global`seedEntryIBPClass[#] === "tIBP" &],
-      "generator",
-      {}
-      ];
-   expectedQGenerators = Lookup[Lookup[batch, "momentumSummary", <||>], "generators", {}];
-   expectedTGenerators = Lookup[Lookup[batch, "timeSummary", <||>], "generators", {}];
-   totalClassifiedCount = Total[Cases[summary, _Integer, Infinity]];
+   report = Global`makeCanonicalSeedCoverageReport[batch];
    <|
     "name" -> topo["name"],
     "pass" -> TrueQ[
-      Lookup[batch, "status", Missing["status"]] === "generated" &&
-       TrueQ[Lookup[batch, "completeCanonicalQ", False]] &&
-       Lookup[batch, "pendingFeatures", {"missing"}] === {} &&
-       Lookup[batch, "forbiddenNData", {"missing"}] === {} &&
-       TrueQ[Lookup[batch, "eomCanonicalQ", False]] &&
-       TrueQ[And @@ Lookup[equations, "eomCanonicalQ", {False}]] &&
-       DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null] === {} &&
-       totalClassifiedCount === Lookup[batch, "equationCount", Missing["equationCount"]] &&
-       Sort[Lookup[classified, "sectorKeys", {}]] === Sort[sectorKeys] &&
-       FreeQ[Lookup[classified, "classes", {}], "unknownIBP"] &&
-       And @@ Lookup[Values[sectorClassChecks], "hasBothQAndT", {False}] &&
-       generatorStrings[topQGenerators] === generatorStrings[expectedQGenerators] &&
-       generatorStrings[topTGenerators] === generatorStrings[expectedTGenerators]
+      Lookup[report, "status", Missing["status"]] === "ready" &&
+       TrueQ[Lookup[report, "passQ", False]] &&
+       TrueQ[Lookup[report, "canonicalSeedReadyQ", False]]
       ],
-    "sectorKeys" -> sectorKeys,
-    "classSummary" -> summary,
-    "sectorClassChecks" -> sectorClassChecks,
-    "topQGenerators" -> topQGenerators,
-    "topTGenerators" -> topTGenerators,
-    "expectedQGenerators" -> expectedQGenerators,
-    "expectedTGenerators" -> expectedTGenerators,
+    "coverageReport" -> report,
     "batchSummary" -> KeyDrop[batch, "equations"]
     |>
    ];
@@ -1301,6 +1255,7 @@ compareExpectedIBPWorkflowData[] := Module[
        exportWorkflow["status"] === "ready" &&
        exportWorkflow["stage"] === "kira" &&
        exportWorkflow["seedBatch"]["completeCanonicalQ"] === True &&
+       exportWorkflow["seedCoverageReport"]["status"] === "ready" &&
        exportWorkflow["linearSystem"]["status"] === "generated" &&
        exportWorkflow["kiraExport"]["status"] === "ready" &&
        Length[exportWorkflow["kiraExport"]["filesWritten"]] === 6 &&

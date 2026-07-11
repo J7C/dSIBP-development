@@ -2072,6 +2072,71 @@ classifyCanonicalSeedBatch[batch_Association] := Module[
    ];
 
 
+canonicalGeneratorStrings[list_] := Sort[ToString[#, InputForm] & /@ list];
+
+
+makeCanonicalSeedCoverageReport[batch_Association] := Module[
+   {classified, summary, sectorKeys, equations, sectorClassChecks, topEquations, topQGenerators, topTGenerators,
+    expectedQGenerators, expectedTGenerators, totalClassifiedCount, forbiddenData, reportQ},
+   classified = classifyCanonicalSeedBatch[batch];
+   summary = Lookup[classified, "summary", <||>];
+   sectorKeys = Lookup[Lookup[batch, "sectorMetadataList", {}], "sectorKey", {}];
+   equations = Lookup[batch, "equations", {}];
+   sectorClassChecks = Association @ Table[
+      sectorKey -> <|
+        "qIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0],
+        "tIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0],
+        "hasBothQAndT" -> TrueQ[
+          Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0] > 0 &&
+           Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0] > 0
+          ]
+        |>,
+      {sectorKey, sectorKeys}
+      ];
+   topEquations = Select[equations, seedEntrySourceSectorKey[#] === "top" &];
+   topQGenerators = DeleteDuplicates @ Lookup[Select[topEquations, seedEntryIBPClass[#] === "qIBP" &], "generator", {}];
+   topTGenerators = DeleteDuplicates @ Lookup[Select[topEquations, seedEntryIBPClass[#] === "tIBP" &], "generator", {}];
+   expectedQGenerators = Lookup[Lookup[batch, "momentumSummary", <||>], "generators", {}];
+   expectedTGenerators = Lookup[Lookup[batch, "timeSummary", <||>], "generators", {}];
+   totalClassifiedCount = Total[Cases[summary, _Integer, Infinity]];
+   forbiddenData = DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null];
+   reportQ = TrueQ[
+     Lookup[batch, "status", Missing["status"]] === "generated" &&
+      Lookup[batch, "pendingFeatures", {"missing"}] === {} &&
+      Lookup[batch, "forbiddenNData", {"missing"}] === {} &&
+      TrueQ[Lookup[batch, "eomCanonicalQ", False]] &&
+      TrueQ[And @@ Lookup[equations, "eomCanonicalQ", {False}]] &&
+      forbiddenData === {} &&
+      totalClassifiedCount === Lookup[batch, "equationCount", Missing["equationCount"]] &&
+      Sort[Lookup[classified, "sectorKeys", {}]] === Sort[sectorKeys] &&
+      FreeQ[Lookup[classified, "classes", {}], "unknownIBP"] &&
+      And @@ Lookup[Values[sectorClassChecks], "hasBothQAndT", {False}] &&
+      canonicalGeneratorStrings[topQGenerators] === canonicalGeneratorStrings[expectedQGenerators] &&
+      canonicalGeneratorStrings[topTGenerators] === canonicalGeneratorStrings[expectedTGenerators]
+     ];
+   <|
+    "status" -> If[reportQ, "ready", "notReady"],
+    "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+    "passQ" -> reportQ,
+    "canonicalSeedReadyQ" -> canonicalSeedReadyQ[batch],
+    "sectorKeys" -> sectorKeys,
+    "classes" -> Lookup[classified, "classes", {}],
+    "classSummary" -> summary,
+    "sectorClassChecks" -> sectorClassChecks,
+    "topQGenerators" -> topQGenerators,
+    "topTGenerators" -> topTGenerators,
+    "expectedQGenerators" -> expectedQGenerators,
+    "expectedTGenerators" -> expectedTGenerators,
+    "classifiedEquationCount" -> totalClassifiedCount,
+    "equationCount" -> Lookup[batch, "equationCount", Missing["equationCount"]],
+    "pendingFeatures" -> Lookup[batch, "pendingFeatures", {}],
+    "forbiddenNData" -> Lookup[batch, "forbiddenNData", {}],
+    "entryForbiddenNData" -> forbiddenData,
+    "eomCanonicalQ" -> Lookup[batch, "eomCanonicalQ", False]
+    |>
+   ];
+
+
 
 (* ::Chapter:: *)
 (*seed MMA 保存与读取*)
@@ -2300,12 +2365,13 @@ Options[makeIBPWorkflowData] = Join[
 
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
-    exportQ, kiraCoeffRules, kiraOpts, kiraData},
+    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport},
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    seedOpts = FilterRules[{opts}, Options[makeCanonicalSeedBatch]];
    batch = makeCanonicalSeedBatch[topo, Sequence @@ seedOpts];
+   seedCoverageReport = makeCanonicalSeedCoverageReport[batch];
    If[Lookup[batch, "status", "missing"] =!= "generated" || ! TrueQ[canonicalSeedReadyQ[batch]],
-    Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "seedBatch" -> KeyDrop[batch, "equations"]|>]
+    Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "seedBatch" -> KeyDrop[batch, "equations"], "seedCoverageReport" -> seedCoverageReport|>]
     ];
    linearOpts = FilterRules[{opts}, Options[makeLinearSystemData]];
    linearMode = OptionValue[LinearSystemMode];
@@ -2337,6 +2403,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
     "stage" -> If[exportQ, "kira", "linear"],
     "topology" -> topo,
     "seedBatch" -> batch,
+    "seedCoverageReport" -> seedCoverageReport,
     "linearSystem" -> linearData,
     "kiraExport" -> kiraData
     |>
