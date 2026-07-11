@@ -2475,17 +2475,30 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
     |>
    ];
 compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
-   {topo, batch, linearData, preferred, missingIntegral, customData, reorderedData, badReorderedData,
-    kiraData, exportedLinear, badTargetData, badIntegralOrderData, badKiraOrderingData},
+   {topo, batch, linearData, preferred, shrinkPreferredPair, shrinkPreferred, shrinkPreferredMetadata, missingIntegral,
+    customData, shrinkCustomData, reorderedData, badReorderedData,
+    kiraData, shrinkKiraData, exportedLinear, shrinkExportedLinear,
+    badTargetData, badIntegralOrderData, badKiraOrderingData},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
    preferred = linearData["integralList"][[Min[3, linearData["integralCount"]]]];
+   shrinkPreferredPair = SelectFirst[
+     Transpose[{linearData["integralList"], linearData["integralMetadata"]}],
+     Lookup[#[[2]], "sectorKey", "top"] =!= "top" &
+     ];
+   shrinkPreferred = If[ListQ[shrinkPreferredPair], First[shrinkPreferredPair], Missing["NoShrinkPreferredIntegral"]];
+   shrinkPreferredMetadata = If[ListQ[shrinkPreferredPair], Last[shrinkPreferredPair], <||>];
    missingIntegral = Global`J[{99, 99}, {{99, 0, 0}, {99, 0}}, {}];
    customData = Global`makeLinearSystemData[
      batch,
      topo,
      Global`KiraOrdering -> <|"IntegralOrder" -> {preferred, missingIntegral}, "PreferredPriority" -> "BeforeB"|>
+     ];
+   shrinkCustomData = Global`makeLinearSystemData[
+     batch,
+     topo,
+     Global`KiraOrdering -> <|"PreferredIntegrals" -> {shrinkPreferred}, "PreferredPriority" -> "BeforeB"|>
      ];
    badKiraOrderingData = Global`makeLinearSystemData[
      batch,
@@ -2499,6 +2512,11 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
      Global`KiraIntegralOrder -> {preferred, 999, missingIntegral},
      Global`KiraCoefficientRules -> topo["numericRules"]
      ];
+   shrinkKiraData = Global`makeKiraExportData[
+     linearData,
+     Global`KiraIntegralOrder -> {shrinkPreferred},
+     Global`KiraCoefficientRules -> topo["numericRules"]
+     ];
    badTargetData = Global`makeKiraExportData[
      linearData,
      Global`KiraTargetIntegrals -> {linearData["integralCount"] + 99}
@@ -2508,39 +2526,57 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
      Global`KiraIntegralOrder -> "badOrderSpec"
      ];
    exportedLinear = Lookup[kiraData, "linearSystem", <||>];
+   shrinkExportedLinear = Lookup[shrinkKiraData, "linearSystem", <||>];
    <|
     "name" -> "kiraIntegralOrdering_mixedBubble_globalAllSectors",
     "pass" -> TrueQ[
        linearData["integralCount"] >= 3 &&
-       customData["status"] === "generated" &&
-       First[customData["integralList"]] === preferred &&
-       customData["kiraOrderingReport", "missingIntegralOrderItems"] === {missingIntegral} &&
-       ! TrueQ[customData["kiraOrderingReport", "allRequestedIntegralsMatchedQ"]] &&
-       badKiraOrderingData["status"] === "notReady" &&
+        customData["status"] === "generated" &&
+        First[customData["integralList"]] === preferred &&
+        customData["kiraOrderingReport", "missingIntegralOrderItems"] === {missingIntegral} &&
+        ! TrueQ[customData["kiraOrderingReport", "allRequestedIntegralsMatchedQ"]] &&
+        Head[shrinkPreferred] =!= Missing &&
+        Lookup[shrinkPreferredMetadata, "sectorKey", "top"] =!= "top" &&
+        shrinkCustomData["status"] === "generated" &&
+        First[shrinkCustomData["integralList"]] === shrinkPreferred &&
+        Lookup[First[shrinkCustomData["integralMetadata"]], "sectorKey"] =!= "top" &&
+        shrinkCustomData["kiraOrderingReport", "missingIntegralOrderItems"] === {} &&
+        badKiraOrderingData["status"] === "notReady" &&
        badKiraOrderingData["reason"] === "invalidKiraOrdering" &&
        badKiraOrderingData["kiraOrderingValidationReport", "unknownKiraOrderingKeys"] === {"TypoOrderingKey"} &&
        First[reorderedData["integralList"]] === preferred &&
        badReorderedData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
        Lookup[kiraData, "status", Missing["status"]] === "ready" &&
        AssociationQ[exportedLinear] &&
-       First[exportedLinear["integralList"]] === preferred &&
-       exportedLinear["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
-       kiraData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
-       AssociationQ[kiraData["kiraOrderingReport"]] &&
+        First[exportedLinear["integralList"]] === preferred &&
+        exportedLinear["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
+        kiraData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
+        Lookup[shrinkKiraData, "status", Missing["status"]] === "ready" &&
+        AssociationQ[shrinkExportedLinear] &&
+        First[shrinkExportedLinear["integralList"]] === shrinkPreferred &&
+        Lookup[First[shrinkExportedLinear["integralMetadata"]], "sectorKey"] =!= "top" &&
+        shrinkKiraData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {} &&
+        AssociationQ[kiraData["kiraOrderingReport"]] &&
        Lookup[badTargetData, "status", Missing["status"]] === "notReady" &&
        Lookup[Lookup[badTargetData, "kiraInput", <||>], "status", Missing["status"]] === "invalidTargetIntegrals" &&
        Lookup[badIntegralOrderData, "status", Missing["status"]] === "notReady" &&
        Lookup[Lookup[badIntegralOrderData, "kiraInput", <||>], "status", Missing["status"]] === "invalidKiraIntegralOrder"
       ],
     "preferred" -> preferred,
+    "shrinkPreferred" -> shrinkPreferred,
+    "shrinkPreferredSector" -> Lookup[shrinkPreferredMetadata, "sectorKey", Missing["NoShrinkPreferredSector"]],
     "defaultFirst" -> First[linearData["integralList"]],
     "customFirst" -> If[AssociationQ[customData], First[customData["integralList"]], Missing["customData"]],
+    "shrinkCustomFirst" -> If[AssociationQ[shrinkCustomData], First[shrinkCustomData["integralList"]], Missing["shrinkCustomData"]],
     "badKiraOrderingStatus" -> Lookup[badKiraOrderingData, "status", Missing["status"]],
     "reorderedFirst" -> If[AssociationQ[reorderedData], First[reorderedData["integralList"]], Missing["reorderedData"]],
     "exportedFirst" -> If[AssociationQ[exportedLinear], First[exportedLinear["integralList"]], Missing["exportedLinear"]],
+    "shrinkExportedFirst" -> If[AssociationQ[shrinkExportedLinear], First[shrinkExportedLinear["integralList"]], Missing["shrinkExportedLinear"]],
     "customOrderingReport" -> Lookup[customData, "kiraOrderingReport", <||>],
+    "shrinkOrderingReport" -> Lookup[shrinkCustomData, "kiraOrderingReport", <||>],
     "badManualOrderReport" -> Lookup[badReorderedData, "manualIntegralOrderReport", <||>],
     "exportManualOrderReport" -> If[AssociationQ[exportedLinear], Lookup[exportedLinear, "manualIntegralOrderReport", <||>], <||>],
+    "shrinkExportManualOrderReport" -> If[AssociationQ[shrinkExportedLinear], Lookup[shrinkExportedLinear, "manualIntegralOrderReport", <||>], <||>],
     "kiraExportManualOrderReport" -> Lookup[kiraData, "manualIntegralOrderReport", <||>],
     "badTargetStatus" -> Lookup[badTargetData, "status", Missing["status"]],
     "badIntegralOrderStatus" -> Lookup[badIntegralOrderData, "status", Missing["status"]]
