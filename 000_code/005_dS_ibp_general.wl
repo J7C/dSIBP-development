@@ -98,8 +98,11 @@ ispEntryAssociationMissingKeys[entry_Association] := Complement[{"name", "expr"}
 ispEntryAssociationMissingKeys[_] := {};
 
 
+validIndexRangeSpecQ[spec_] := IntegerQ[spec] || (ListQ[spec] && Length[spec] > 0 && And @@ (IntegerQ /@ spec));
+
+
 caseInputMalformedIssues[case_Association] := Module[
-   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, badVertexPositions,
+   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, seedRanges, badVertexPositions,
     badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData},
    If[KeyExistsQ[case, "vertexData"],
     vertexData = case["vertexData"];
@@ -157,6 +160,12 @@ caseInputMalformedIssues[case_Association] := Module[
     externalMomenta = case["externalMomenta"];
     If[! ListQ[externalMomenta],
      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedExternalMomenta", "reason" -> "externalMomenta must be a list"|>]
+     ]
+    ];
+   If[KeyExistsQ[case, "seedRanges"],
+    seedRanges = case["seedRanges"];
+    If[! AssociationQ[seedRanges],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSeedRanges", "reason" -> "seedRanges must be an Association"|>]
      ]
     ];
    If[KeyExistsQ[case, "ispData"],
@@ -2108,7 +2117,7 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
-    ispNames,
+    ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2122,6 +2131,7 @@ topologyValidationReport[topo_Association] := Module[
    extLegs = Lookup[topo, "extLegs", {}];
    vertexEnergies = Lookup[topo, "vertexEnergies", <||>];
    ispNames = Lookup[topo["ispData"], "name", {}];
+   seedRangeData = KeyDrop[topo["seedRanges"], {"sampleOnly"}];
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
@@ -2130,6 +2140,33 @@ topologyValidationReport[topo_Association] := Module[
     ];
    If[ispNames =!= {} && ! DuplicateFreeQ[ispNames],
     appendIssue["error", "duplicateISPNames", <|"ispNames" -> ispNames|>]
+    ];
+   badSeedRangeData = KeyValueMap[
+     If[! validIndexRangeSpecQ[#2],
+       <|"rangeKey" -> #1, "rangeSpec" -> #2|>,
+       Nothing
+       ] &,
+     seedRangeData
+     ];
+   If[badSeedRangeData =!= {},
+    appendIssue["error", "malformedSeedRangeSpecs", <|"ranges" -> badSeedRangeData, "allowed" -> "integer or nonempty integer list"|>]
+    ];
+   badSeedSampleOnlyQ = KeyExistsQ[topo["seedRanges"], "sampleOnly"] && ! BooleanQ[topo["seedRanges", "sampleOnly"]];
+   If[TrueQ[badSeedSampleOnlyQ],
+    appendIssue["error", "malformedSeedSampleOnly", <|"sampleOnly" -> topo["seedRanges", "sampleOnly"], "allowed" -> {True, False}|>]
+    ];
+   badISPRangeData = DeleteCases[
+     MapIndexed[
+      If[KeyExistsQ[#1, "range"] && ! validIndexRangeSpecQ[#1["range"]],
+        <|"ispPosition" -> First[#2], "name" -> Lookup[#1, "name", Missing["name"]], "rangeSpec" -> #1["range"]|>,
+        Nothing
+        ] &,
+      topo["ispData"]
+      ],
+     Nothing
+     ];
+   If[badISPRangeData =!= {},
+    appendIssue["error", "malformedISPRangeSpecs", <|"isps" -> badISPRangeData, "allowed" -> "integer or nonempty integer list"|>]
     ];
    If[! DuplicateFreeQ[vertexIds],
     appendIssue["error", "duplicateVertexIds", <|"vertexIds" -> vertexIds|>]

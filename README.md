@@ -67,6 +67,7 @@ kiraData = makeKiraExportData[
 - `extLegs` 与 `vertexEnergies` 会检查基础形状和顶点引用，避免 time-IBP 顶点能量从错误输入静默退回默认符号。
 - line metadata 的 `massType`、`skType`、`state` 会在 `topologyValidationReport` 中检查；拼写错误会作为 topology error 阻止 seed/linear/Kira。
 - `ispData` 会在 raw input 阶段检查列表形状、Association 必需键，并在 topology validation 阶段拦截重复 ISP 名，避免同一 family 坐标被静默覆盖。
+- `seedRanges` 与 ISP 自带 `range` 只接受整数或非空整数列表；坏范围会作为 topology error 停止 seed/linear/Kira，避免拼错范围后静默退回 `{0}`。
 - `makeCanonicalSeedBatch` 会合并 momentum/time/shrink-sector seed，并检查 EOM canonical 与 pending features。
 - `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、逐 sector 生成元标签、EOM canonical 和 pending/forbidden 数据；canonical batch 进入 linear/Kira 时会把这个 report 写入 metadata。
 - `topologyValidationReport` 在 topology 初始化、seed batch、linear-system 和 Kira metadata 中都会保留，用来追踪输入拓扑/ISP/numeric rules 是否满足通用生成器前置条件。

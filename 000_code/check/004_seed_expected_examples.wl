@@ -972,6 +972,7 @@ compareExpectedCaseInputPreflight[] := Module[
      "vertexData" -> {{1, "+"}, {2, "-"}},
      "lineData" -> {<|"id" -> 1, "endpoints" -> {1, 2}|>},
      "loopMomenta" -> Global`q1,
+     "seedRanges" -> {"bad"},
      "ispData" -> {
        <|"name" -> Global`badISP|>,
        {"tooShort", Global`qk[1, 1]},
@@ -1008,7 +1009,7 @@ compareExpectedCaseInputPreflight[] := Module[
        malformedData["status"] === "invalidInput" &&
        malformedData["reason"] === "malformedCaseInput" &&
        malformedData["inputRequirementReport", "missingRequiredKeys"] === {} &&
-       Sort[malformedCodes] === {"ispDataMissingRequiredKeys", "lineDataMissingRequiredKeys", "malformedISPData", "malformedLoopMomenta"} &&
+       Sort[malformedCodes] === {"ispDataMissingRequiredKeys", "lineDataMissingRequiredKeys", "malformedISPData", "malformedLoopMomenta", "malformedSeedRanges"} &&
        malformedWorkflow["status"] === "notReady" &&
        malformedWorkflow["stage"] === "topology" &&
        malformedWorkflow["reason"] === "malformedCaseInput" &&
@@ -1031,10 +1032,10 @@ compareExpectedCaseInputPreflight[] := Module[
 
 compareExpectedTopologyValidationReport[] := Module[
    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
-    semanticCase, duplicateISPCase, semanticReport, duplicateISPReport,
+    semanticCase, duplicateISPCase, malformedRangeCase, semanticReport, duplicateISPReport, malformedRangeReport,
     missingNumericCase, missingVertexEnergyCase, missingLineParameterCase,
     missingNumericReport, missingVertexEnergyReport, missingLineParameterReport,
-    badCodes, redundantCodes, singularCodes, semanticCodes, duplicateISPCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
+    badCodes, redundantCodes, singularCodes, semanticCodes, duplicateISPCodes, malformedRangeCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
     badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow,
     missingNumericWorkflow, missingVertexEnergyWorkflow, missingLineParameterWorkflow, missingLineParameterTemplate},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
@@ -1128,11 +1129,22 @@ compareExpectedTopologyValidationReport[] := Module[
         {Global`rho, Global`qk[2, 1], {0, 2}}
         }|>
      ];
+   malformedRangeCase = Join[
+     Global`twoLoopISPCase,
+     <|
+      "seedRanges" -> <|"a" -> {"bad"}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> "yes"|>,
+      "ispData" -> {
+        {Global`ispQ1K, Global`qk[1, 1], {"bad"}},
+        {Global`ispQ2K, Global`qk[2, 1], {0, 2}}
+        }
+      |>
+     ];
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
    redundantReport = Global`topologyValidationReport[Global`parseTopology[redundantCase]];
    singularReport = Global`topologyValidationReport[Global`parseTopology[singularCase]];
    semanticReport = Global`topologyValidationReport[Global`parseTopology[semanticCase]];
    duplicateISPReport = Global`topologyValidationReport[Global`parseTopology[duplicateISPCase]];
+   malformedRangeReport = Global`topologyValidationReport[Global`parseTopology[malformedRangeCase]];
    missingNumericReport = Global`topologyValidationReport[Global`parseTopology[missingNumericCase]];
    missingVertexEnergyReport = Global`topologyValidationReport[Global`parseTopology[missingVertexEnergyCase]];
    missingLineParameterReport = Global`topologyValidationReport[Global`parseTopology[missingLineParameterCase]];
@@ -1141,6 +1153,7 @@ compareExpectedTopologyValidationReport[] := Module[
    singularCodes = Lookup[singularReport["issues"], "code", {}];
    semanticCodes = Lookup[semanticReport["issues"], "code", {}];
    duplicateISPCodes = Lookup[duplicateISPReport["issues"], "code", {}];
+   malformedRangeCodes = Lookup[malformedRangeReport["issues"], "code", {}];
    missingNumericCodes = Lookup[missingNumericReport["issues"], "code", {}];
    missingVertexEnergyCodes = Lookup[missingVertexEnergyReport["issues"], "code", {}];
    missingLineParameterCodes = Lookup[missingLineParameterReport["issues"], "code", {}];
@@ -1193,6 +1206,11 @@ compareExpectedTopologyValidationReport[] := Module[
        duplicateISPReport["status"] === "issues" &&
        duplicateISPReport["errorCount"] === 1 &&
        MemberQ[duplicateISPCodes, "duplicateISPNames"] &&
+       malformedRangeReport["status"] === "issues" &&
+       malformedRangeReport["errorCount"] === 3 &&
+       MemberQ[malformedRangeCodes, "malformedSeedRangeSpecs"] &&
+       MemberQ[malformedRangeCodes, "malformedSeedSampleOnly"] &&
+       MemberQ[malformedRangeCodes, "malformedISPRangeSpecs"] &&
        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 2 &&
@@ -1237,6 +1255,7 @@ compareExpectedTopologyValidationReport[] := Module[
     "singularReport" -> singularReport,
     "semanticReport" -> semanticReport,
     "duplicateISPReport" -> duplicateISPReport,
+    "malformedRangeReport" -> malformedRangeReport,
     "missingNumericReport" -> missingNumericReport,
     "missingVertexEnergyReport" -> missingVertexEnergyReport,
     "missingLineParameterReport" -> missingLineParameterReport,
