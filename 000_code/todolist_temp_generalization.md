@@ -54,6 +54,7 @@
   - canonical seed 覆盖门禁（已加入 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise 的 all-sector qIBP/tIBP 分类、逐 sector 生成元标签和 EOM canonical 扫描，并复用主线 `makeCanonicalSeedCoverageReport`；只看小样本结构，不展开大解析系统）；
   - all-sector 手推 seed 对照（已加入 pure massless bubble、mixed massive/massless bubble、mixed triangle、mixed sunrise；每个 sector 至少有一个 qIBP seed 和一个 tIBP seed 与程序输出逐项比较）；
   - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
+  - 全 sector Kira 排序检查（已加入 mixed bubble 的跨 `top`/shrink sector preferred integral 检查，确认 shrink-sector 积分可排到全局 `integralList` 第一，并在 Kira 导出中保持）。
 - [x] seed preset 初始化：`quickCheck/fullDiscrete/bounded` 统一配置 `seedRanges`、默认离散枚举模式和 seed/batch/shrink-sector 上限；未知 preset 作为 topology error 停止 seed，显式 `seedRanges/seedOptions` 可覆盖，batch 调用的显式 option 优先级最高。
 - [x] raw case 输入 preflight：`caseInputRequirementReport` 检查 `vertexData/lineData/loopMomenta` 必需字段和基础形状，`makeTopologyData`、workflow/readiness 对缺字段或 malformed case 早停并返回 `missingRequiredCaseKeys` / `malformedCaseInput`。
 - [x] 动量基语义检查：`loopMomenta` 与 `externalMomenta` 各自必须无重复，且两组变量不能重叠；坏输入会在 topology validation 阶段早停。
@@ -97,5 +98,5 @@
 - [x] 对已经手推的例子扩展“每个 sector 至少一个 qIBP 和一个 tIBP seed”的小对照，仍禁止大范围解析遍历。
 - [x] 对 time-IBP 在三点/两圈含 ISP 例子上的 seed 结构做小规模对照。
 - [ ] 继续补新的代表 topology 或生成元类型时，必须沿用 all-sector hand-seed 标准，而不是只加单个 seed。
-- [ ] 对 shrink 后 compact `aList`、原始顶点/线映射和全 sector Kira 排序再做一次人工审查。
+- [x] 对 shrink 后 compact `aList`、原始顶点/线映射和全 sector Kira 排序再做一次人工审查。
 - [ ] 视用户取舍，决定是否保留或移除已提交的动量基重复检查。

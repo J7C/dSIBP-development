@@ -87,7 +87,7 @@ kiraData = makeKiraExportData[
 - 直接调用 `makeKiraExportData` 时，`OutputDirectory` 同样必须是 `None`、`Automatic` 或非空字符串；`None/Automatic` 只生成内存字符串，不写文件。
 - `makeIBPWorkflowData[..., ExportKira -> True]` 可只生成内存中的 Kira 字符串；只有同时给出 `OutputDirectory -> "..."` 时才写入文件，返回的 `kiraExport["writeFilesQ"]` 会显式记录是否落盘。
 - `KiraTargetIntegrals -> Automatic` 默认把全部积分编号写入 `list`；也可传 `{1, J[...]}` 这样的 id/积分对象混合列表来只导出指定目标。
-- `KiraOrdering` 必须是 `Automatic` 或 Association；`IntegralOrder` / `PreferredIntegrals` / `SectorOrder` 必须是列表，`PreferredPriority` 只接受 `"BeforeB"` 或 `"AfterB"`。
+- `KiraOrdering` 必须是 `Automatic` 或 Association；`IntegralOrder` / `PreferredIntegrals` / `SectorOrder` 必须是列表，`PreferredPriority` 只接受 `"BeforeB"` 或 `"AfterB"`。排序作用于全局 `integralList`，不是逐 sector 分别排序；轻量检查已覆盖把 shrink-sector 积分指定为 preferred 后排到全局第一。
 - Kira 导出返回值会直接包含 `kiraOrderingReport` 与 `manualIntegralOrderReport`，用于检查用户指定的 master/排序对象是否全部出现在当前全局积分列表中。
 - `KiraIntegralOrder` 必须是 `Automatic` 或积分 id / `J[...]` 对象列表；其它类型会返回 `invalidKiraIntegralOrder`，避免手动 master 排序被静默忽略。
 - Kira 导出和 `kira_export_metadata.m` 会记录系数替换后的 `numericCoefficientSystemQ` 与 `coefficientVariables`；若用户选择符号系数导出，残留参数会显式列出但不强制阻止导出。
