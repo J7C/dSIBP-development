@@ -1347,10 +1347,10 @@ applyTimeGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
 
 Options[makeTimeIBPSeedBatch] = {
    UseSampleOnly -> Automatic,
-   MaxSeedRuleCount -> 200,
+   MaxSeedRuleCount -> Automatic,
    DiscreteMode -> Automatic,
-   MaxDiscreteRuleCount -> 64,
-   MaxEquationCount -> 80,
+   MaxDiscreteRuleCount -> Automatic,
+   MaxEquationCount -> Automatic,
    ApplyNumericRules -> False
    };
 makeTimeIBPSeedBatch::toomany =
@@ -1380,10 +1380,10 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      ];
    If[discreteData["status"] =!= "generated",
     Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
-    ];
+   ];
    timeGenerators = Select[makeIBPGenerators[topo], #["type"] === "time" &];
    equationCount = continuousData["ruleCount"] discreteData["ruleCount"] Length[timeGenerators];
-   maxEquationCount = OptionValue[MaxEquationCount];
+   maxEquationCount = resolveSeedOption[topo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
    If[equationCount > maxEquationCount,
     Message[makeTimeIBPSeedBatch::toomany, topo["name"], equationCount, maxEquationCount];
     Return[<|
@@ -1495,7 +1495,13 @@ resolveDiscreteMode[topo_Association, value_] := If[value === Automatic,
    ];
 
 
-Options[makeContinuousSeedRules] = {UseSampleOnly -> Automatic, MaxSeedRuleCount -> 200};
+resolveSeedOption[topo_Association, key_String, value_, default_] := If[value === Automatic,
+   Lookup[Lookup[topo, "seedOptions", <||>], key, default],
+   value
+   ];
+
+
+Options[makeContinuousSeedRules] = {UseSampleOnly -> Automatic, MaxSeedRuleCount -> Automatic};
 makeContinuousSeedRules::toomany =
    "拓扑 `1` 的连续 seed 规则数为 `2`，超过上限 `3`；未生成规则。";
 
@@ -1507,7 +1513,7 @@ makeContinuousSeedRules[topo_Association, OptionsPattern[]] := Module[
    vars = continuousIndexVariables[baseIntegral];
    valueLists = continuousIndexValueLists[topo, baseIntegral, useSampleOnly];
    ruleCount = Times @@ (Length /@ valueLists);
-   maxCount = OptionValue[MaxSeedRuleCount];
+   maxCount = resolveSeedOption[topo, "MaxSeedRuleCount", OptionValue[MaxSeedRuleCount], 200];
    If[ruleCount > maxCount,
     Message[makeContinuousSeedRules::toomany, topo["name"], ruleCount, maxCount];
     Return[<|
@@ -1536,7 +1542,7 @@ makeContinuousSeedRules[topo_Association, OptionsPattern[]] := Module[
    ];
 
 
-Options[selectedDiscreteSeedRules] = {DiscreteMode -> Automatic, MaxDiscreteRuleCount -> 64};
+Options[selectedDiscreteSeedRules] = {DiscreteMode -> Automatic, MaxDiscreteRuleCount -> Automatic};
 selectedDiscreteSeedRules::toomany =
    "拓扑 `1` 的离散态数为 `2`，超过上限 `3`；未生成 all 离散规则。";
 
@@ -1544,7 +1550,7 @@ selectedDiscreteSeedRules::toomany =
 selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
    {mode, maxCount, rules, count, coverageIssues},
    mode = resolveDiscreteMode[topo, OptionValue[DiscreteMode]];
-   maxCount = OptionValue[MaxDiscreteRuleCount];
+   maxCount = resolveSeedOption[topo, "MaxDiscreteRuleCount", OptionValue[MaxDiscreteRuleCount], 64];
    Switch[mode,
     "none",
     rules = {{}},
@@ -1573,10 +1579,10 @@ momentumGeneratorLabel[gen_Association] := {gen["type"], gen["dLoop"], gen["vect
 
 Options[makeMomentumIBPSeedBatch] = {
    UseSampleOnly -> Automatic,
-   MaxSeedRuleCount -> 200,
+   MaxSeedRuleCount -> Automatic,
    DiscreteMode -> Automatic,
-   MaxDiscreteRuleCount -> 64,
-   MaxEquationCount -> 80,
+   MaxDiscreteRuleCount -> Automatic,
+   MaxEquationCount -> Automatic,
    ApplyNumericRules -> False
    };
 makeMomentumIBPSeedBatch::toomany =
@@ -1606,10 +1612,10 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      ];
    If[discreteData["status"] =!= "generated",
     Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
-    ];
+   ];
    momentumGenerators = Select[makeIBPGenerators[topo], #["type"] === "momentum" &];
    equationCount = continuousData["ruleCount"] discreteData["ruleCount"] Length[momentumGenerators];
-   maxEquationCount = OptionValue[MaxEquationCount];
+   maxEquationCount = resolveSeedOption[topo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
    If[equationCount > maxEquationCount,
     Message[makeMomentumIBPSeedBatch::toomany, topo["name"], equationCount, maxEquationCount];
     Return[<|

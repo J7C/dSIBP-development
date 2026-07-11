@@ -1058,6 +1058,8 @@ compareExpectedTopologyValidationReport[] := Module[
 
 compareExpectedSeedPresetConfig[] := Module[
    {defaultTopo, fullDiscreteCase, fullDiscreteTopo, fullDiscreteRules, fullDiscreteBatch,
+    tightDiscreteCase, tightDiscreteTopo, tightDiscreteRules, overrideDiscreteRules,
+    tightEquationCase, tightEquationTopo, tightEquationBatch, overrideEquationBatch,
     unknownCase, unknownTopo, unknownReport, warningCodes},
    defaultTopo = Global`parseTopology[Global`bubbleMasslessCase];
    fullDiscreteCase = Join[
@@ -1067,6 +1069,20 @@ compareExpectedSeedPresetConfig[] := Module[
    fullDiscreteTopo = Global`parseTopology[fullDiscreteCase];
    fullDiscreteRules = Global`selectedDiscreteSeedRules[fullDiscreteTopo];
    fullDiscreteBatch = Global`makeMomentumIBPSeedBatch[fullDiscreteTopo];
+   tightDiscreteCase = Join[
+     Global`bubbleMasslessCase,
+     <|"seedPreset" -> "fullDiscrete", "sampleDiscreteRules" -> {}, "seedOptions" -> <|"MaxDiscreteRuleCount" -> 1|>|>
+     ];
+   tightDiscreteTopo = Global`parseTopology[tightDiscreteCase];
+   tightDiscreteRules = Global`selectedDiscreteSeedRules[tightDiscreteTopo];
+   overrideDiscreteRules = Global`selectedDiscreteSeedRules[tightDiscreteTopo, Global`MaxDiscreteRuleCount -> 64];
+   tightEquationCase = Join[
+     Global`bubbleMasslessCase,
+     <|"seedPreset" -> "fullDiscrete", "sampleDiscreteRules" -> {}, "seedOptions" -> <|"MaxEquationCount" -> 1|>|>
+     ];
+   tightEquationTopo = Global`parseTopology[tightEquationCase];
+   tightEquationBatch = Global`makeMomentumIBPSeedBatch[tightEquationTopo];
+   overrideEquationBatch = Global`makeMomentumIBPSeedBatch[tightEquationTopo, Global`MaxEquationCount -> 200];
    unknownCase = Join[Global`bubbleMasslessCase, <|"seedPreset" -> "typoPreset"|>];
    unknownTopo = Global`parseTopology[unknownCase];
    unknownReport = Global`topologyValidationReport[unknownTopo];
@@ -1084,12 +1100,21 @@ compareExpectedSeedPresetConfig[] := Module[
        fullDiscreteRules["ruleCount"] === Global`discreteStateCount[fullDiscreteTopo] &&
        fullDiscreteBatch["status"] === "generated" &&
        fullDiscreteBatch["discreteRuleCount"] === Global`discreteStateCount[fullDiscreteTopo] &&
+       tightDiscreteRules["status"] === "tooMany" &&
+       tightDiscreteRules["ruleCount"] === Global`discreteStateCount[tightDiscreteTopo] &&
+       overrideDiscreteRules["status"] === "generated" &&
+       overrideDiscreteRules["ruleCount"] === Global`discreteStateCount[tightDiscreteTopo] &&
+       tightEquationBatch["status"] === "tooMany" &&
+       tightEquationBatch["equationCount"] > tightEquationTopo["seedOptions", "MaxEquationCount"] &&
+       overrideEquationBatch["status"] === "generated" &&
        unknownTopo["unknownSeedPreset"] === "typoPreset" &&
        MemberQ[warningCodes, "unknownSeedPreset"] &&
        unknownReport["errorCount"] === 0
       ],
     "defaultSeedRanges" -> defaultTopo["seedRanges"],
     "fullDiscreteRuleCount" -> Lookup[fullDiscreteRules, "ruleCount", Missing["ruleCount"]],
+    "tightDiscreteStatus" -> KeyTake[tightDiscreteRules, {"status", "ruleCount"}],
+    "tightEquationStatus" -> KeyTake[tightEquationBatch, {"status", "equationCount"}],
     "unknownWarningCodes" -> warningCodes
     |>
    ];

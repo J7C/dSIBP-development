@@ -18,7 +18,7 @@
 - seed 层必须立即应用 EOM 和 massless endpoint canonical，不允许 `n=2` 留到输出 seed。
 - seed 保存为 Mathematica 表达式；Kira 导出只消费 linear-system 数据。
 - 用户输入的传播子平方与直接 ISP 定义共同固定 family 坐标；程序验证这组 `z/ISP` 坐标是否闭合并可反解，不自动从 overcomplete propagator family 中删线或重选 basis。
-- `seedPreset` 可选 `"quickCheck"`、`"fullDiscrete"`、`"bounded"`：分别对应小样本检查、连续指标基点加全离散态、有限连续范围加全离散态；显式 `seedRanges` / `seedOptions` 会覆盖 preset。
+- `seedPreset` 可选 `"quickCheck"`、`"fullDiscrete"`、`"bounded"`：分别对应小样本检查、连续指标基点加全离散态、有限连续范围加全离散态；显式 `seedRanges` / `seedOptions` 会覆盖 preset，batch 调用里的显式 option 又会覆盖 `seedOptions` 默认上限。
 
 ## 轻量检查
 
