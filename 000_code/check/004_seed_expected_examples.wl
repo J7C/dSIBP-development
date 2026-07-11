@@ -920,8 +920,9 @@ compareExpectedThreeVertexMultiShrinkCompactA[] := Module[
    ];
 
 compareExpectedTopologyDataInterface[] := Module[
-   {data},
+   {data, req},
    data = Global`makeTopologyData[Global`mixedBubbleCase, Global`PrecomputeShrinkSectorMetadata -> True];
+   req = data["numericRuleRequirementReport"];
    <|
     "name" -> "topologyDataInterface_mixedBubble_precomputedMetadata",
     "pass" -> TrueQ[
@@ -932,10 +933,17 @@ compareExpectedTopologyDataInterface[] := Module[
        KeyExistsQ[data["indexMaps"], "lineIdToSlot"] &&
        data["seedSummary", "discreteStateCount"] === 8 &&
        data["seedSummary", "momentumGeneratorCount"] === 2 &&
-       data["seedSummary", "timeGeneratorCount"] === 2
+       data["seedSummary", "timeGeneratorCount"] === 2 &&
+       data["seedSummary", "numericRuleRequirementReport"] === req &&
+       req["requiredExternalInvariants"] === {Global`kk[1, 1]} &&
+       Sort[req["requiredVertexEnergies"]] === {Global`p1, Global`p2} &&
+       req["requiredLineParameters"] === {Global`nuM} &&
+       req["missingNumericVariables"] === {} &&
+       TrueQ[req["completeStaticNumericRulesQ"]]
       ],
     "sectorKeys" -> Lookup[data["sectorMetadataList"], "sectorKey"],
     "seedSummary" -> Lookup[data, "seedSummary", <||>],
+    "numericRuleRequirementReport" -> req,
     "indexMapKeys" -> Keys[Lookup[data, "indexMaps", <||>]]
     |>
    ];
@@ -1082,16 +1090,19 @@ compareExpectedTopologyValidationReport[] := Module[
        missingNumericWorkflow["stage"] === "linear" &&
        missingNumericWorkflow["reason"] === "numericRulesMissingExternalInvariants" &&
        missingNumericWorkflow["missingExternalInvariants"] === {Global`kk[1, 1]} &&
+       Sort[missingNumericWorkflow["numericRuleRequirementReport", "missingNumericVariables"]] === Sort[{Global`kk[1, 1], Global`P[1], Global`P[2]}] &&
        ! KeyExistsQ[missingNumericWorkflow, "seedBatch"] &&
        missingVertexEnergyWorkflow["status"] === "notReady" &&
        missingVertexEnergyWorkflow["stage"] === "linear" &&
        missingVertexEnergyWorkflow["reason"] === "numericRulesMissingVertexEnergies" &&
        Sort[missingVertexEnergyWorkflow["missingVertexEnergies"]] === {Global`p1, Global`p2} &&
+       Sort[missingVertexEnergyWorkflow["numericRuleRequirementReport", "missingNumericVariables"]] === {Global`p1, Global`p2} &&
        ! KeyExistsQ[missingVertexEnergyWorkflow, "seedBatch"] &&
        missingLineParameterWorkflow["status"] === "notReady" &&
        missingLineParameterWorkflow["stage"] === "linear" &&
        missingLineParameterWorkflow["reason"] === "numericRulesMissingLineParameters" &&
        missingLineParameterWorkflow["missingLineParameters"] === {Global`nuM} &&
+       missingLineParameterWorkflow["numericRuleRequirementReport", "missingNumericVariables"] === {Global`nuM} &&
        ! KeyExistsQ[missingLineParameterWorkflow, "seedBatch"]
       ],
     "goodReport" -> goodData["validationReport"],
@@ -1102,9 +1113,9 @@ compareExpectedTopologyValidationReport[] := Module[
     "missingNumericReport" -> missingNumericReport,
     "missingVertexEnergyReport" -> missingVertexEnergyReport,
     "missingLineParameterReport" -> missingLineParameterReport,
-    "missingNumericWorkflow" -> KeyTake[missingNumericWorkflow, {"status", "stage", "reason", "missingExternalInvariants"}],
-    "missingVertexEnergyWorkflow" -> KeyTake[missingVertexEnergyWorkflow, {"status", "stage", "reason", "missingVertexEnergies"}],
-    "missingLineParameterWorkflow" -> KeyTake[missingLineParameterWorkflow, {"status", "stage", "reason", "missingLineParameters"}],
+    "missingNumericWorkflow" -> KeyTake[missingNumericWorkflow, {"status", "stage", "reason", "missingExternalInvariants", "numericRuleRequirementReport"}],
+    "missingVertexEnergyWorkflow" -> KeyTake[missingVertexEnergyWorkflow, {"status", "stage", "reason", "missingVertexEnergies", "numericRuleRequirementReport"}],
+    "missingLineParameterWorkflow" -> KeyTake[missingLineParameterWorkflow, {"status", "stage", "reason", "missingLineParameters", "numericRuleRequirementReport"}],
     "incompleteDiscreteData" -> incompleteDiscreteData,
     "badCanonicalStatus" -> Lookup[badCanonicalBatch, "status", Missing["status"]],
     "badWorkflowStage" -> KeyTake[badWorkflow, {"status", "stage"}]
@@ -1525,6 +1536,7 @@ compareExpectedIBPReadinessReport[] := Module[
        linearReport["kiraRequestedQ"] === False &&
        linearReport["readinessByStage", "kira"] === "notRequested" &&
        linearReport["topologyIssueCodes"] === {} &&
+       TrueQ[linearReport["numericRuleRequirementReport", "completeStaticNumericRulesQ"]] &&
        kiraReport["status"] === "ready" &&
        kiraReport["stage"] === "kira" &&
        kiraReport["kiraRequestedQ"] === True &&
@@ -1542,6 +1554,7 @@ compareExpectedIBPReadinessReport[] := Module[
        nonNumericReport["workflowReason"] === "nonNumericCoefficients" &&
        nonNumericReport["linearSystemMode"] === "numeric" &&
        nonNumericReport["numericCoefficientSystemQ"] === False &&
+       TrueQ[nonNumericReport["numericRuleRequirementReport", "completeStaticNumericRulesQ"]] &&
        MemberQ[nonNumericReport["coefficientVariables"], Global`dim]
       ],
     "linearReport" -> KeyDrop[linearReport, "workflowSummary"],

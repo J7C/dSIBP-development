@@ -852,6 +852,28 @@ missingLineParameterNumericRules[topo_Association] := Complement[
    ];
 
 
+(* numeric workflow 的前置规则集中在这里，方便用户初始化时一次看清需要补哪些替换。 *)
+numericRuleRequirementReport[topo_Association] := Module[
+   {provided, external, vertex, line},
+   provided = numericRuleLHSVariables[topo];
+   external = externalInvariantVariables[topo];
+   vertex = vertexEnergyVariables[topo];
+   line = lineParameterVariables[topo];
+   <|
+    "providedNumericVariables" -> provided,
+    "requiredExternalInvariants" -> external,
+    "requiredVertexEnergies" -> vertex,
+    "requiredLineParameters" -> line,
+    "requiredNumericVariables" -> DeleteDuplicates[Join[external, vertex, line]],
+    "missingExternalInvariants" -> Complement[external, provided],
+    "missingVertexEnergies" -> Complement[vertex, provided],
+    "missingLineParameters" -> Complement[line, provided],
+    "missingNumericVariables" -> Complement[DeleteDuplicates[Join[external, vertex, line]], provided],
+    "completeStaticNumericRulesQ" -> TrueQ[Complement[DeleteDuplicates[Join[external, vertex, line]], provided] === {}]
+    |>
+   ];
+
+
 (* 将两个线性动量表达式的点积展开为 qq/qk/kk。 *)
 expandDotExpr[p_, r_, topo_Association] := Module[
    {loops = topo["loopMomenta"], exts = topo["externalMomenta"],
@@ -1839,6 +1861,7 @@ makeTopologySeedSummary[topo_Association] := <|
    "timeGeneratorCount" -> Count[Lookup[makeIBPGenerators[topo], "type"], "time"],
    "seedRanges" -> topo["seedRanges"],
    "numericRules" -> topo["numericRules"],
+   "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
    "sampleDiscreteRules" -> topo["sampleDiscreteRules"]
    |>;
 
@@ -1877,7 +1900,7 @@ topologyValidationReport[topo_Association] := Module[
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
     missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
-    missingLineParameters, pendingFeatures, ruleData},
+    missingLineParameters, numericRequirementReport, pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
    lineIds = Lookup[topo["lines"], "id"];
@@ -1930,7 +1953,8 @@ topologyValidationReport[topo_Association] := Module[
        |>]
      ]
     ];
-   missingExternalInvariants = missingExternalInvariantNumericRules[topo];
+   numericRequirementReport = numericRuleRequirementReport[topo];
+   missingExternalInvariants = numericRequirementReport["missingExternalInvariants"];
    If[missingExternalInvariants =!= {},
     appendIssue["warning", "numericRulesMissingExternalInvariants", <|
       "missingExternalInvariants" -> missingExternalInvariants,
@@ -1938,7 +1962,7 @@ topologyValidationReport[topo_Association] := Module[
       "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need these kk rules"
       |>]
     ];
-   missingVertexEnergies = missingVertexEnergyNumericRules[topo];
+   missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
    If[missingVertexEnergies =!= {},
     appendIssue["warning", "numericRulesMissingVertexEnergies", <|
       "missingVertexEnergies" -> missingVertexEnergies,
@@ -1946,7 +1970,7 @@ topologyValidationReport[topo_Association] := Module[
       "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"
       |>]
     ];
-   missingLineParameters = missingLineParameterNumericRules[topo];
+   missingLineParameters = numericRequirementReport["missingLineParameters"];
    If[missingLineParameters =!= {},
     appendIssue["warning", "numericRulesMissingLineParameters", <|
       "missingLineParameters" -> missingLineParameters,
@@ -1982,6 +2006,7 @@ topologyValidationReport[topo_Association] := Module[
     "errorCount" -> Count[Lookup[issues, "severity", {}], "error"],
     "warningCount" -> Count[Lookup[issues, "severity", {}], "warning"],
     "pendingCount" -> Count[Lookup[issues, "severity", {}], "pending"],
+    "numericRuleRequirementReport" -> numericRequirementReport,
     "pendingFeatures" -> pendingFeatures,
     "issues" -> issues
     |>
@@ -2013,6 +2038,7 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      "indexMaps" -> makeTopologyIndexMaps[topo, topMetadata],
      "seedSummary" -> makeTopologySeedSummary[topo],
      "validationReport" -> topologyValidationReport[topo],
+     "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
      "masslessBundleCandidates" -> masslessBundleCandidates[topo],
      "precomputedShrinkSectorSummary" -> KeyDrop[subsetData, "subsets"],
      "precomputedShrinkSectorKeys" -> Lookup[sectorMetadataList, "sectorKey"]
@@ -2727,9 +2753,10 @@ Options[makeIBPWorkflowData] = Join[
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
     exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport,
-    allowedLinearModes, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
+    allowedLinearModes, numericRequirementReport, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    topologyReport = topologyValidationReport[topo];
+   numericRequirementReport = numericRuleRequirementReport[topo];
    linearMode = OptionValue[LinearSystemMode];
    allowedLinearModes = {"symbolic", "sampled", "numeric"};
    If[! MemberQ[allowedLinearModes, linearMode],
@@ -2740,10 +2767,11 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "linearSystemMode" -> linearMode,
       "allowedLinearSystemModes" -> allowedLinearModes,
       "topology" -> topo,
-      "topologyValidationReport" -> topologyReport
+      "topologyValidationReport" -> topologyReport,
+      "numericRuleRequirementReport" -> numericRequirementReport
       |>]
     ];
-   missingExternalInvariants = missingExternalInvariantNumericRules[topo];
+   missingExternalInvariants = numericRequirementReport["missingExternalInvariants"];
    If[linearMode === "numeric" && missingExternalInvariants =!= {},
     Return[<|
       "status" -> "notReady",
@@ -2751,10 +2779,11 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "reason" -> "numericRulesMissingExternalInvariants",
       "missingExternalInvariants" -> missingExternalInvariants,
       "topology" -> topo,
-      "topologyValidationReport" -> topologyReport
+      "topologyValidationReport" -> topologyReport,
+      "numericRuleRequirementReport" -> numericRequirementReport
       |>]
     ];
-   missingVertexEnergies = missingVertexEnergyNumericRules[topo];
+   missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
    If[linearMode === "numeric" && missingVertexEnergies =!= {},
     Return[<|
       "status" -> "notReady",
@@ -2762,10 +2791,11 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "reason" -> "numericRulesMissingVertexEnergies",
       "missingVertexEnergies" -> missingVertexEnergies,
       "topology" -> topo,
-      "topologyValidationReport" -> topologyReport
+      "topologyValidationReport" -> topologyReport,
+      "numericRuleRequirementReport" -> numericRequirementReport
       |>]
     ];
-   missingLineParameters = missingLineParameterNumericRules[topo];
+   missingLineParameters = numericRequirementReport["missingLineParameters"];
    If[linearMode === "numeric" && missingLineParameters =!= {},
     Return[<|
       "status" -> "notReady",
@@ -2773,14 +2803,15 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "reason" -> "numericRulesMissingLineParameters",
       "missingLineParameters" -> missingLineParameters,
       "topology" -> topo,
-      "topologyValidationReport" -> topologyReport
+      "topologyValidationReport" -> topologyReport,
+      "numericRuleRequirementReport" -> numericRequirementReport
       |>]
     ];
    seedOpts = FilterRules[{opts}, Options[makeCanonicalSeedBatch]];
    batch = makeCanonicalSeedBatch[topo, Sequence @@ seedOpts];
    seedCoverageReport = makeCanonicalSeedCoverageReport[batch];
    If[Lookup[batch, "status", "missing"] =!= "generated" || ! TrueQ[canonicalSeedReadyQ[batch]],
-    Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "topologyValidationReport" -> topologyReport, "seedBatch" -> KeyDrop[batch, "equations"], "seedCoverageReport" -> seedCoverageReport|>]
+    Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "topologyValidationReport" -> topologyReport, "numericRuleRequirementReport" -> numericRequirementReport, "seedBatch" -> KeyDrop[batch, "equations"], "seedCoverageReport" -> seedCoverageReport|>]
    ];
    linearOpts = FilterRules[{opts}, Options[makeLinearSystemData]];
    coeffRules = OptionValue[CoefficientRules];
@@ -2789,7 +2820,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
      makeLinearSystemData[batch, topo, Sequence @@ linearOpts]
      ];
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[linearData, "linearQ", False]],
-    Return[<|"status" -> "notReady", "stage" -> "linear", "topology" -> topo, "topologyValidationReport" -> topologyReport, "seedBatch" -> KeyDrop[batch, "equations"], "linearSystem" -> linearData|>]
+    Return[<|"status" -> "notReady", "stage" -> "linear", "topology" -> topo, "topologyValidationReport" -> topologyReport, "numericRuleRequirementReport" -> numericRequirementReport, "seedBatch" -> KeyDrop[batch, "equations"], "linearSystem" -> linearData|>]
     ];
    If[linearMode === "numeric" && ! TrueQ[Lookup[linearData, "numericCoefficientSystemQ", False]],
     Return[<|
@@ -2799,6 +2830,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "coefficientVariables" -> Lookup[linearData, "coefficientVariables", {}],
       "topology" -> topo,
       "topologyValidationReport" -> topologyReport,
+      "numericRuleRequirementReport" -> numericRequirementReport,
       "seedBatch" -> KeyDrop[batch, "equations"],
       "linearSystem" -> linearData
       |>]
@@ -2824,6 +2856,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
     "stage" -> If[exportQ, "kira", "linear"],
     "topology" -> topo,
     "topologyValidationReport" -> topologyReport,
+    "numericRuleRequirementReport" -> numericRequirementReport,
     "seedBatch" -> batch,
     "seedCoverageReport" -> seedCoverageReport,
     "linearSystem" -> linearData,
@@ -2843,9 +2876,10 @@ Options[makeIBPReadinessReport] = Options[makeIBPWorkflowData];
 
 makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {workflow, topologyReport, seedBatch, seedReport, linearData, kiraData, exportQ, topologyReadyQ, seedReadyQ,
-    linearReadyQ, kiraReadyQ},
+    linearReadyQ, kiraReadyQ, numericRequirementReport},
    workflow = makeIBPWorkflowData[caseOrTopo, opts];
    topologyReport = Lookup[workflow, "topologyValidationReport", <||>];
+   numericRequirementReport = Lookup[workflow, "numericRuleRequirementReport", Lookup[topologyReport, "numericRuleRequirementReport", <||>]];
    seedBatch = Lookup[workflow, "seedBatch", <||>];
    seedReport = Lookup[workflow, "seedCoverageReport", <||>];
    linearData = Lookup[workflow, "linearSystem", <||>];
@@ -2880,6 +2914,7 @@ makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Modul
         Lookup[workflow, "coefficientVariables", {}],
         Lookup[linearData, "coefficientVariables", {}]
         }]],
+    "numericRuleRequirementReport" -> numericRequirementReport,
     "missingExternalInvariants" -> Lookup[workflow, "missingExternalInvariants", {}],
     "missingVertexEnergies" -> Lookup[workflow, "missingVertexEnergies", {}],
     "missingLineParameters" -> Lookup[workflow, "missingLineParameters", {}],
