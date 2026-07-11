@@ -1308,6 +1308,9 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousData, discreteData, timeGenerators, equationCount,
     maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
    topologyReport = topologyValidationReport[topo];
+   If[topologyValidationErrorQ[topologyReport],
+    Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]
+    ];
    baseIntegral = makeBaseIntegral[topo];
    continuousData = makeContinuousSeedRules[
      topo,
@@ -1525,6 +1528,9 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousData, discreteData, momentumGenerators, equationCount,
     maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
    topologyReport = topologyValidationReport[topo];
+   If[topologyValidationErrorQ[topologyReport],
+    Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]
+    ];
    baseIntegral = makeBaseIntegral[topo];
    continuousData = makeContinuousSeedRules[
      topo,
@@ -1875,6 +1881,10 @@ topologyValidationReport[topo_Association] := Module[
    ];
 
 
+topologyValidationErrorQ[report_Association] := TrueQ[Lookup[report, "errorCount", 0] > 0];
+topologyValidationErrorQ[_] := False;
+
+
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
    {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList},
    topo = parseTopology[case];
@@ -1991,6 +2001,9 @@ Options[makeCanonicalSeedBatch] = Join[
 makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
    {momentumBatch, timeBatch, shrinkBatch, seedOpts, shrinkOpts, pendingFeatures, equations, eomCanonicalQ, sectorMetadataList, topologyReport},
    topologyReport = topologyValidationReport[topo];
+   If[topologyValidationErrorQ[topologyReport],
+    Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> False, "forbiddenNData" -> {}, "pendingFeatures" -> {}, "equations" -> {}|>]
+    ];
    seedOpts = FilterRules[{opts}, Options[makeMomentumIBPSeedBatch]];
    shrinkOpts = FilterRules[{opts}, Options[makeShrinkSectorSeedBatch]];
    momentumBatch = makeMomentumIBPSeedBatch[topo, Sequence @@ seedOpts];

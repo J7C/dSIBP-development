@@ -921,7 +921,7 @@ compareExpectedTopologyDataInterface[] := Module[
 compareExpectedTopologyValidationReport[] := Module[
    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
     missingNumericCase, missingNumericReport, badCodes, redundantCodes, singularCodes, missingNumericCodes,
-    badSeverities, incompleteDiscreteData},
+    badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -991,7 +991,10 @@ compareExpectedTopologyValidationReport[] := Module[
    singularCodes = Lookup[singularReport["issues"], "code", {}];
    missingNumericCodes = Lookup[missingNumericReport["issues"], "code", {}];
    badSeverities = Lookup[badReport["issues"], "severity", {}];
-   incompleteDiscreteData = Global`selectedDiscreteSeedRules[Global`parseTopology[badCase]];
+   badTopo = Global`parseTopology[badCase];
+   incompleteDiscreteData = Global`selectedDiscreteSeedRules[badTopo];
+   badCanonicalBatch = Global`makeCanonicalSeedBatch[badTopo];
+   badWorkflow = Global`makeIBPWorkflowData[badCase];
    <|
     "name" -> "topologyValidationReport_goodPendingBad",
     "pass" -> TrueQ[
@@ -1020,7 +1023,12 @@ compareExpectedTopologyValidationReport[] := Module[
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 1 &&
        MemberQ[missingNumericCodes, "numericRulesMissingExternalInvariants"] &&
-       incompleteDiscreteData["status"] === "incompleteSampleDiscreteRules"
+       incompleteDiscreteData["status"] === "incompleteSampleDiscreteRules" &&
+       badCanonicalBatch["status"] === "invalidTopology" &&
+       badCanonicalBatch["topologyValidationReport"]["errorCount"] === badReport["errorCount"] &&
+       badWorkflow["status"] === "notReady" &&
+       badWorkflow["stage"] === "seed" &&
+       badWorkflow["seedBatch"]["status"] === "invalidTopology"
       ],
     "goodReport" -> goodData["validationReport"],
     "crossReport" -> crossData["validationReport"],
@@ -1028,7 +1036,9 @@ compareExpectedTopologyValidationReport[] := Module[
     "redundantReport" -> redundantReport,
     "singularReport" -> singularReport,
     "missingNumericReport" -> missingNumericReport,
-    "incompleteDiscreteData" -> incompleteDiscreteData
+    "incompleteDiscreteData" -> incompleteDiscreteData,
+    "badCanonicalStatus" -> Lookup[badCanonicalBatch, "status", Missing["status"]],
+    "badWorkflowStage" -> KeyTake[badWorkflow, {"status", "stage"}]
    |>
    ];
 
