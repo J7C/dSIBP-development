@@ -2752,6 +2752,13 @@ makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Modul
     "linearEquationCount" -> Lookup[linearData, "equationCount", Missing["notGenerated"]],
     "integralCount" -> Lookup[linearData, "integralCount", Missing["notGenerated"]],
     "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["notGenerated"]],
+    "linearSystemMode" -> OptionValue[LinearSystemMode],
+    "numericCoefficientSystemQ" -> Lookup[linearData, "numericCoefficientSystemQ", Missing["notGenerated"]],
+    "coefficientVariables" -> DeleteDuplicates[Flatten[{
+        Lookup[workflow, "coefficientVariables", {}],
+        Lookup[linearData, "coefficientVariables", {}]
+        }]],
+    "missingExternalInvariants" -> Lookup[workflow, "missingExternalInvariants", {}],
     "pendingFeatures" -> DeleteDuplicates[Flatten[{
         Lookup[topologyReport, "pendingFeatures", {}],
         Lookup[seedBatch, "pendingFeatures", {}],

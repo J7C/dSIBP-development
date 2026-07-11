@@ -1453,7 +1453,7 @@ compareExpectedIBPWorkflowData[] := Module[
 
 
 compareExpectedIBPReadinessReport[] := Module[
-   {linearReport, kiraReport, invalidModeReport},
+   {linearReport, kiraReport, invalidModeReport, nonNumericCase, nonNumericReport},
    linearReport = Global`makeIBPReadinessReport[
      Global`masslessBoxCase,
      Global`LinearSystemMode -> "sampled"
@@ -1466,6 +1466,14 @@ compareExpectedIBPReadinessReport[] := Module[
    invalidModeReport = Global`makeIBPReadinessReport[
      Global`mixedBubbleCase,
      Global`LinearSystemMode -> "sample"
+     ];
+   nonNumericCase = Join[
+     Global`mixedBubbleCase,
+     <|"numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5}|>
+     ];
+   nonNumericReport = Global`makeIBPReadinessReport[
+     nonNumericCase,
+     Global`LinearSystemMode -> "numeric"
      ];
    <|
     "name" -> "ibpReadinessReport_stageSummary",
@@ -1488,11 +1496,19 @@ compareExpectedIBPReadinessReport[] := Module[
        invalidModeReport["topologyReadyQ"] === True &&
        invalidModeReport["seedReadyQ"] === False &&
        invalidModeReport["linearReadyQ"] === False &&
-       invalidModeReport["workflowReason"] === "invalidLinearSystemMode"
+       invalidModeReport["workflowReason"] === "invalidLinearSystemMode" &&
+       invalidModeReport["linearSystemMode"] === "sample" &&
+       nonNumericReport["status"] === "notReady" &&
+       nonNumericReport["stage"] === "linear" &&
+       nonNumericReport["workflowReason"] === "nonNumericCoefficients" &&
+       nonNumericReport["linearSystemMode"] === "numeric" &&
+       nonNumericReport["numericCoefficientSystemQ"] === False &&
+       MemberQ[nonNumericReport["coefficientVariables"], Global`nuM]
       ],
     "linearReport" -> KeyDrop[linearReport, "workflowSummary"],
     "kiraReport" -> KeyDrop[kiraReport, "workflowSummary"],
-    "invalidModeReport" -> KeyDrop[invalidModeReport, "workflowSummary"]
+    "invalidModeReport" -> KeyDrop[invalidModeReport, "workflowSummary"],
+    "nonNumericReport" -> KeyDrop[nonNumericReport, "workflowSummary"]
     |>
    ];
 
