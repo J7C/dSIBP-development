@@ -3299,10 +3299,24 @@ Options[makeIBPWorkflowData] = Join[
    ];
 
 
+validWorkflowOutputDirectoryQ[value_] := value === None || value === Automatic || (StringQ[value] && StringLength[value] > 0);
+
+
+validateIBPWorkflowOptions[exportKira_, outputDirectory_] := Module[{issues = {}},
+   If[! BooleanQ[exportKira],
+    AppendTo[issues, <|"code" -> "invalidExportKiraValue", "optionKey" -> "ExportKira", "value" -> exportKira, "allowed" -> {True, False}|>]
+    ];
+   If[! validWorkflowOutputDirectoryQ[outputDirectory],
+    AppendTo[issues, <|"code" -> "invalidOutputDirectory", "optionKey" -> "OutputDirectory", "value" -> outputDirectory, "allowed" -> {"None", "Automatic", "non-empty string"}|>]
+    ];
+   <|"status" -> If[issues === {}, "ok", "invalidWorkflowOptions"], "issues" -> issues|>
+   ];
+
+
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
-    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport,
-    allowedLinearModes, inputReport, numericRequirementReport, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
+     exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport,
+     allowedLinearModes, workflowOptionReport, inputReport, numericRequirementReport, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
    If[! parsedTopologyQ[caseOrTopo] && caseInputPreflightErrorQ[caseOrTopo],
     inputReport = caseInputRequirementReport[caseOrTopo];
     topologyReport = caseInputErrorReport[caseOrTopo];
@@ -3322,12 +3336,24 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    linearMode = OptionValue[LinearSystemMode];
    allowedLinearModes = {"symbolic", "sampled", "numeric"};
    If[! MemberQ[allowedLinearModes, linearMode],
-    Return[<|
-      "status" -> "notReady",
-      "stage" -> "linear",
+     Return[<|
+       "status" -> "notReady",
+       "stage" -> "linear",
       "reason" -> "invalidLinearSystemMode",
       "linearSystemMode" -> linearMode,
       "allowedLinearSystemModes" -> allowedLinearModes,
+      "topology" -> topo,
+      "topologyValidationReport" -> topologyReport,
+      "numericRuleRequirementReport" -> numericRequirementReport
+       |>]
+     ];
+   workflowOptionReport = validateIBPWorkflowOptions[OptionValue[ExportKira], OptionValue[OutputDirectory]];
+   If[workflowOptionReport["status"] =!= "ok",
+    Return[<|
+      "status" -> "notReady",
+      "stage" -> "workflow",
+      "reason" -> "invalidWorkflowOptions",
+      "workflowOptionValidationReport" -> workflowOptionReport,
       "topology" -> topo,
       "topologyValidationReport" -> topologyReport,
       "numericRuleRequirementReport" -> numericRequirementReport
@@ -3438,15 +3464,16 @@ Options[makeIBPReadinessReport] = Options[makeIBPWorkflowData];
 
 makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {workflow, topologyReport, seedBatch, seedReport, linearData, kiraData, exportQ, topologyReadyQ, seedReadyQ,
-    linearReadyQ, kiraReadyQ, numericRequirementReport},
+     linearReadyQ, kiraReadyQ, numericRequirementReport, workflowOptionReport},
    workflow = makeIBPWorkflowData[caseOrTopo, opts];
+   workflowOptionReport = Lookup[workflow, "workflowOptionValidationReport", validateIBPWorkflowOptions[OptionValue[ExportKira], OptionValue[OutputDirectory]]];
    topologyReport = Lookup[workflow, "topologyValidationReport", <||>];
    numericRequirementReport = Lookup[workflow, "numericRuleRequirementReport", Lookup[topologyReport, "numericRuleRequirementReport", <||>]];
    seedBatch = Lookup[workflow, "seedBatch", <||>];
    seedReport = Lookup[workflow, "seedCoverageReport", <||>];
    linearData = Lookup[workflow, "linearSystem", <||>];
    kiraData = Lookup[workflow, "kiraExport", <|"status" -> "skipped"|>];
-   exportQ = TrueQ[OptionValue[ExportKira]] || StringQ[OptionValue[OutputDirectory]];
+   exportQ = workflowOptionReport["status"] === "ok" && (TrueQ[OptionValue[ExportKira]] || (StringQ[OptionValue[OutputDirectory]] && StringLength[OptionValue[OutputDirectory]] > 0));
    topologyReadyQ = AssociationQ[topologyReport] && ! topologyValidationErrorQ[topologyReport];
    seedReadyQ = AssociationQ[seedReport] && Lookup[seedReport, "status", Missing["status"]] === "ready";
    linearReadyQ = AssociationQ[linearData] && Lookup[linearData, "status", Missing["status"]] === "generated" && TrueQ[Lookup[linearData, "linearQ", False]];
@@ -3473,8 +3500,9 @@ makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Modul
     "linearEquationCount" -> Lookup[linearData, "equationCount", Missing["notGenerated"]],
     "integralCount" -> Lookup[linearData, "integralCount", Missing["notGenerated"]],
     "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["notGenerated"]],
-    "linearSystemMode" -> OptionValue[LinearSystemMode],
-    "numericCoefficientSystemQ" -> Lookup[linearData, "numericCoefficientSystemQ", Missing["notGenerated"]],
+     "linearSystemMode" -> OptionValue[LinearSystemMode],
+     "workflowOptionValidationReport" -> workflowOptionReport,
+     "numericCoefficientSystemQ" -> Lookup[linearData, "numericCoefficientSystemQ", Missing["notGenerated"]],
     "coefficientVariables" -> DeleteDuplicates[Flatten[{
         Lookup[workflow, "coefficientVariables", {}],
         Lookup[linearData, "coefficientVariables", {}]

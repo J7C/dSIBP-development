@@ -79,6 +79,7 @@ kiraData = makeKiraExportData[
 - 若 workflow 使用 `LinearSystemMode -> "numeric"`，`numericRules` 必须覆盖所有外部不变量 `kk[i,j]`、time-IBP 顶点外部能量和 massive line 参数（如 `nu`）；`numericRuleRequirementReport` 会集中列出 required/provided/missing 变量，`makeNumericRuleTemplate[case]` 会生成缺失项的替换规则骨架。缺失时会在 seed 生成前返回 `numericRulesMissingExternalInvariants`、`numericRulesMissingVertexEnergies` 或 `numericRulesMissingLineParameters`。线性系统生成后还会检查系数是否已全数值化，若仍残留 `dim` 等其它参数则返回 `nonNumericCoefficients` 并列出 `coefficientVariables`。
 - `makeLinearSystemData` / `makeSampledLinearSystemData` / `makeMomentumIBPLinearSystem` 的 topology 参数可传 raw case 或 `parseTopology` 后的 topology；内部会统一规范化。
 - workflow 的 `LinearSystemMode` 只接受 `"symbolic"`、`"sampled"`、`"numeric"`；拼写错误会在 seed 生成前返回 `invalidLinearSystemMode`。
+- workflow 的 `ExportKira` 必须是 `True/False`；`OutputDirectory` 必须是 `None`、`Automatic` 或非空字符串，坏值会返回 `invalidWorkflowOptions`。
 - Kira 导出只接受 `makeLinearSystemData` 或 `makeSampledLinearSystemData` 的完整输出；手工拼出的残缺 linear-system association 会返回 `notLinearSystem`。
 - `makeIBPWorkflowData[..., ExportKira -> True]` 可只生成内存中的 Kira 字符串；只有同时给出 `OutputDirectory -> "..."` 时才写入文件，返回的 `kiraExport["writeFilesQ"]` 会显式记录是否落盘。
 - `KiraTargetIntegrals -> Automatic` 默认把全部积分编号写入 `list`；也可传 `{1, J[...]}` 这样的 id/积分对象混合列表来只导出指定目标。

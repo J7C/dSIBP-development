@@ -1587,16 +1587,21 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
 
 compareExpectedIBPWorkflowData[] := Module[
    {sampledWorkflow, invalidModeWorkflow, nonNumericCase, nonNumericWorkflow,
-    inMemoryExportWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
+    invalidWorkflowOptions, inMemoryExportWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
    sampledWorkflow = Global`makeIBPWorkflowData[
      Global`masslessBoxCase,
      Global`LinearSystemMode -> "sampled",
      Global`ExportKira -> False
      ];
-   invalidModeWorkflow = Global`makeIBPWorkflowData[
-     Global`mixedBubbleCase,
-     Global`LinearSystemMode -> "sample"
-     ];
+    invalidModeWorkflow = Global`makeIBPWorkflowData[
+      Global`mixedBubbleCase,
+      Global`LinearSystemMode -> "sample"
+      ];
+    invalidWorkflowOptions = Global`makeIBPWorkflowData[
+      Global`mixedBubbleCase,
+      Global`ExportKira -> "yes",
+      Global`OutputDirectory -> ""
+      ];
    nonNumericCase = Join[
      Global`mixedBubbleCase,
      <|"numericRules" -> {Global`kk[1, 1] -> 5, Global`nuM -> 2, Global`p1 -> 7, Global`p2 -> 11}|>
@@ -1634,10 +1639,15 @@ compareExpectedIBPWorkflowData[] := Module[
        sampledWorkflow["linearSystem"]["topologyValidationReport"]["status"] === "ok" &&
        invalidModeWorkflow["status"] === "notReady" &&
        invalidModeWorkflow["stage"] === "linear" &&
-       invalidModeWorkflow["reason"] === "invalidLinearSystemMode" &&
-       invalidModeWorkflow["allowedLinearSystemModes"] === {"symbolic", "sampled", "numeric"} &&
-       ! KeyExistsQ[invalidModeWorkflow, "seedBatch"] &&
-       nonNumericWorkflow["status"] === "notReady" &&
+        invalidModeWorkflow["reason"] === "invalidLinearSystemMode" &&
+        invalidModeWorkflow["allowedLinearSystemModes"] === {"symbolic", "sampled", "numeric"} &&
+        ! KeyExistsQ[invalidModeWorkflow, "seedBatch"] &&
+        invalidWorkflowOptions["status"] === "notReady" &&
+        invalidWorkflowOptions["stage"] === "workflow" &&
+        invalidWorkflowOptions["reason"] === "invalidWorkflowOptions" &&
+        Lookup[invalidWorkflowOptions["workflowOptionValidationReport", "issues"], "code"] === {"invalidExportKiraValue", "invalidOutputDirectory"} &&
+        ! KeyExistsQ[invalidWorkflowOptions, "seedBatch"] &&
+        nonNumericWorkflow["status"] === "notReady" &&
        nonNumericWorkflow["stage"] === "linear" &&
        nonNumericWorkflow["reason"] === "nonNumericCoefficients" &&
        MemberQ[nonNumericWorkflow["coefficientVariables"], Global`dim] &&
@@ -1670,9 +1680,10 @@ compareExpectedIBPWorkflowData[] := Module[
        metadata["kiraJobOptions"]["RunFirefly"] === False &&
        metadata["kiraJobOptions"]["WriteKira2MathJob"] === False
       ],
-    "sampledSummary" -> KeyTake[sampledWorkflow, {"status", "stage"}],
-    "invalidModeSummary" -> KeyTake[invalidModeWorkflow, {"status", "stage", "reason", "linearSystemMode"}],
-    "nonNumericSummary" -> KeyTake[nonNumericWorkflow, {"status", "stage", "reason", "coefficientVariables"}],
+     "sampledSummary" -> KeyTake[sampledWorkflow, {"status", "stage"}],
+     "invalidModeSummary" -> KeyTake[invalidModeWorkflow, {"status", "stage", "reason", "linearSystemMode"}],
+     "invalidWorkflowOptionsSummary" -> KeyTake[invalidWorkflowOptions, {"status", "stage", "reason", "workflowOptionValidationReport"}],
+     "nonNumericSummary" -> KeyTake[nonNumericWorkflow, {"status", "stage", "reason", "coefficientVariables"}],
     "inMemoryExportSummary" -> KeyTake[inMemoryExportWorkflow["kiraExport"], {"status", "writeFilesQ", "filesWritten"}],
     "exportSummary" -> KeyTake[exportWorkflow, {"status", "stage"}],
     "filesWritten" -> Lookup[Lookup[exportWorkflow, "kiraExport", <||>], "filesWritten", {}],
@@ -1682,7 +1693,7 @@ compareExpectedIBPWorkflowData[] := Module[
 
 
 compareExpectedIBPReadinessReport[] := Module[
-   {linearReport, kiraReport, invalidModeReport, nonNumericCase, nonNumericReport},
+   {linearReport, kiraReport, invalidModeReport, invalidWorkflowOptionReport, nonNumericCase, nonNumericReport},
    linearReport = Global`makeIBPReadinessReport[
      Global`masslessBoxCase,
      Global`LinearSystemMode -> "sampled"
@@ -1692,10 +1703,15 @@ compareExpectedIBPReadinessReport[] := Module[
      Global`ExportKira -> True,
      Global`KiraJobOptions -> <|"RunFirefly" -> False, "WriteKira2MathJob" -> False|>
      ];
-   invalidModeReport = Global`makeIBPReadinessReport[
-     Global`mixedBubbleCase,
-     Global`LinearSystemMode -> "sample"
-     ];
+    invalidModeReport = Global`makeIBPReadinessReport[
+      Global`mixedBubbleCase,
+      Global`LinearSystemMode -> "sample"
+      ];
+    invalidWorkflowOptionReport = Global`makeIBPReadinessReport[
+      Global`mixedBubbleCase,
+      Global`ExportKira -> "yes",
+      Global`OutputDirectory -> ""
+      ];
    nonNumericCase = Join[
      Global`mixedBubbleCase,
      <|"numericRules" -> {Global`kk[1, 1] -> 5, Global`nuM -> 2, Global`p1 -> 7, Global`p2 -> 11}|>
@@ -1726,9 +1742,16 @@ compareExpectedIBPReadinessReport[] := Module[
        invalidModeReport["topologyReadyQ"] === True &&
        invalidModeReport["seedReadyQ"] === False &&
        invalidModeReport["linearReadyQ"] === False &&
-       invalidModeReport["workflowReason"] === "invalidLinearSystemMode" &&
-       invalidModeReport["linearSystemMode"] === "sample" &&
-       nonNumericReport["status"] === "notReady" &&
+        invalidModeReport["workflowReason"] === "invalidLinearSystemMode" &&
+        invalidModeReport["linearSystemMode"] === "sample" &&
+        invalidWorkflowOptionReport["status"] === "notReady" &&
+        invalidWorkflowOptionReport["stage"] === "workflow" &&
+        invalidWorkflowOptionReport["workflowReason"] === "invalidWorkflowOptions" &&
+        invalidWorkflowOptionReport["seedReadyQ"] === False &&
+        invalidWorkflowOptionReport["linearReadyQ"] === False &&
+        invalidWorkflowOptionReport["kiraRequestedQ"] === False &&
+        Lookup[invalidWorkflowOptionReport["workflowOptionValidationReport", "issues"], "code"] === {"invalidExportKiraValue", "invalidOutputDirectory"} &&
+        nonNumericReport["status"] === "notReady" &&
        nonNumericReport["stage"] === "linear" &&
        nonNumericReport["workflowReason"] === "nonNumericCoefficients" &&
        nonNumericReport["linearSystemMode"] === "numeric" &&
@@ -1737,9 +1760,10 @@ compareExpectedIBPReadinessReport[] := Module[
        MemberQ[nonNumericReport["coefficientVariables"], Global`dim]
       ],
     "linearReport" -> KeyDrop[linearReport, "workflowSummary"],
-    "kiraReport" -> KeyDrop[kiraReport, "workflowSummary"],
-    "invalidModeReport" -> KeyDrop[invalidModeReport, "workflowSummary"],
-    "nonNumericReport" -> KeyDrop[nonNumericReport, "workflowSummary"]
+     "kiraReport" -> KeyDrop[kiraReport, "workflowSummary"],
+     "invalidModeReport" -> KeyDrop[invalidModeReport, "workflowSummary"],
+     "invalidWorkflowOptionReport" -> KeyDrop[invalidWorkflowOptionReport, "workflowSummary"],
+     "nonNumericReport" -> KeyDrop[nonNumericReport, "workflowSummary"]
     |>
    ];
 
