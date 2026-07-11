@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMasslessBubbleAllSectorHandSeeds, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedMixedTriangleCore, compareExpectedTimeSeedMixedSunriseCore, compareExpectedMixedBubbleAllSectorHandSeeds, compareExpectedMixedSunriseAllSectorHandSeeds, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedCaseInputPreflight, compareExpectedTopologyValidationReport, compareExpectedSeedPresetConfig, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMasslessBubbleAllSectorHandSeeds, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMixedTriangleAllSectorHandSeeds, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedMixedTriangleCore, compareExpectedTimeSeedMixedSunriseCore, compareExpectedMixedBubbleAllSectorHandSeeds, compareExpectedMixedSunriseAllSectorHandSeeds, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedCaseInputPreflight, compareExpectedTopologyValidationReport, compareExpectedSeedPresetConfig, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement, canonicalCoverageCase, compareExpectedCanonicalCoverageSmallCases,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -697,6 +697,121 @@ compareExpectedTimeSeedMixedTriangleCore[] := Module[
     "pass" -> TrueQ[got === expected],
     "got" -> got,
     "expected" -> expected
+    |>
+   ];
+
+
+expectedMixedTriangleShrinkMomentumQ1DotQ1[subset_List] := Module[
+   {int0, pref = 1},
+   Switch[subset,
+    {1},
+    int0 = Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}];
+    Expand[
+     Global`dim int0 - Global`bS[1] int0 - (Global`b[2]/2) int0 - (Global`b[3]/2) int0 -
+      (Global`b[3]/2) Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1] - 2}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}, {Global`b[3] + 2, Global`n[3]}}, {}] -
+      (Global`b[2]/2) Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1] - 2}, {Global`b[2] + 2, Global`n[2, 1], Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}] +
+      (1/2) Global`J[{Global`a[1], Global`a[3] + 1}, {{Global`bS[1] - 2}, {Global`b[2] + 1, Global`n[2, 1], Global`n[2, 2] + 1}, {Global`b[3], Global`n[3]}}, {}] +
+      (1/2) Global`J[{Global`a[1], Global`a[3] + 1}, {{Global`bS[1]}, {Global`b[2] - 1, Global`n[2, 1], Global`n[2, 2] + 1}, {Global`b[3], Global`n[3]}}, {}] +
+      (1/2) Global`J[{Global`a[1] + 1, Global`a[3]}, {{Global`bS[1] - 2}, {Global`b[2] + 1, Global`n[2, 1] + 1, Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}] +
+      (1/2) Global`J[{Global`a[1] + 1, Global`a[3]}, {{Global`bS[1]}, {Global`b[2] - 1, Global`n[2, 1] + 1, Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}] +
+      (Global`b[2] Global`kk[1, 1]/2) Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1]}, {Global`b[2] + 2, Global`n[2, 1], Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}] -
+      (Global`kk[1, 1]/2) Global`J[{Global`a[1], Global`a[3] + 1}, {{Global`bS[1]}, {Global`b[2] + 1, Global`n[2, 1], Global`n[2, 2] + 1}, {Global`b[3], Global`n[3]}}, {}] -
+      (Global`kk[1, 1]/2) Global`J[{Global`a[1] + 1, Global`a[3]}, {{Global`bS[1]}, {Global`b[2] + 1, Global`n[2, 1] + 1, Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}] +
+      (Global`b[3] Global`kk[2, 2]/2) Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}, {Global`b[3] + 2, Global`n[3]}}, {}]
+     ],
+    {2},
+    int0 = Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}];
+    Expand[
+     Global`dim int0 - Global`b[1] int0 - (Global`bS[2]/2) int0 - (Global`b[3]/2) int0 -
+      (Global`b[3]/2) Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1] - 2, Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3] + 2, Global`n[3]}}, {}] -
+      (Global`bS[2]/2) Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1] - 2, Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2] + 2}, {Global`b[3], Global`n[3]}}, {}] +
+      Global`J[{Global`a[1], Global`a[2] + 1}, {{Global`b[1] - 1, Global`n[1, 1], Global`n[1, 2] + 1}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}] +
+      Global`J[{Global`a[1] + 1, Global`a[2]}, {{Global`b[1] - 1, Global`n[1, 1] + 1, Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}] +
+      (Global`bS[2] Global`kk[1, 1]/2) Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2] + 2}, {Global`b[3], Global`n[3]}}, {}] +
+      (Global`b[3] Global`kk[2, 2]/2) Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3] + 2, Global`n[3]}}, {}]
+     ],
+    {1, 2},
+    int0 = Global`J[{Global`a[1]}, {{Global`bS[1]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}];
+    Expand[
+     Global`dim int0 - Global`bS[1] int0 - (Global`bS[2]/2) int0 - (Global`b[3]/2) int0 -
+      (Global`b[3]/2) Global`J[{Global`a[1]}, {{Global`bS[1] - 2}, {Global`bS[2]}, {Global`b[3] + 2, Global`n[3]}}, {}] -
+      (Global`bS[2]/2) Global`J[{Global`a[1]}, {{Global`bS[1] - 2}, {Global`bS[2] + 2}, {Global`b[3], Global`n[3]}}, {}] +
+      (Global`bS[2] Global`kk[1, 1]/2) Global`J[{Global`a[1]}, {{Global`bS[1]}, {Global`bS[2] + 2}, {Global`b[3], Global`n[3]}}, {}] +
+      (Global`b[3] Global`kk[2, 2]/2) Global`J[{Global`a[1]}, {{Global`bS[1]}, {Global`bS[2]}, {Global`b[3] + 2, Global`n[3]}}, {}]
+     ]
+    ]
+   ];
+
+
+expectedMixedTriangleShrinkTimeFirst[subset_List] := Module[
+   {int0, pref = (4 I/Pi) Exp[Pi Im[Global`nuM]]},
+   Switch[subset,
+    {1},
+    int0 = Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}];
+    Expand[
+     -Global`a[1] Global`J[{Global`a[1] - 1, Global`a[3]}, {{Global`bS[1]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}] -
+      Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1]}, {Global`b[2] - 1, Global`n[2, 1] + 1, Global`n[2, 2]}, {Global`b[3], Global`n[3]}}, {}] -
+      I Global`J[{Global`a[1], Global`a[3]}, {{Global`bS[1]}, {Global`b[2], Global`n[2, 1], Global`n[2, 2]}, {Global`b[3] - 1, 1 - Global`n[3]}}, {}] -
+      I Global`p1 int0 - I Global`p2 int0 +
+      pref (-1)^Global`n[2, 1] KroneckerDelta[1, Global`n[2, 1] + Global`n[2, 2]] Global`J[{Global`a[1] + Global`a[3] - 1}, {{Global`bS[1]}, {Global`b[2] + 1}, {Global`b[3], Global`n[3]}}, {}]
+     ],
+    {2},
+    int0 = Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}];
+    Expand[
+     -Global`a[1] Global`J[{Global`a[1] - 1, Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}] -
+      Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1] - 1, Global`n[1, 1] + 1, Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}] -
+      I Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1, 1], Global`n[1, 2]}, {Global`bS[2]}, {Global`b[3] - 1, 1 - Global`n[3]}}, {}] -
+      I Global`p1 int0 +
+      pref (-1)^Global`n[1, 1] KroneckerDelta[1, Global`n[1, 1] + Global`n[1, 2]] Global`J[{Global`a[1] + Global`a[2] - 1}, {{Global`b[1] + 1}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}]
+     ],
+    {1, 2},
+    int0 = Global`J[{Global`a[1]}, {{Global`bS[1]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}];
+    Expand[
+     -Global`a[1] Global`J[{Global`a[1] - 1}, {{Global`bS[1]}, {Global`bS[2]}, {Global`b[3], Global`n[3]}}, {}] +
+      I Global`J[{Global`a[1]}, {{Global`bS[1]}, {Global`bS[2]}, {Global`b[3] - 1, 1 - Global`n[3]}}, {}] -
+      I Global`p1 int0 - I Global`p2 int0 - I Global`p3 int0
+     ]
+    ]
+   ];
+
+
+compareExpectedMixedTriangleAllSectorHandSeeds[] := Module[
+   {topo, topQ, topT, sectorKeys, shrinkChecks},
+   topo = Global`parseTopology[Global`mixedTriangleCase];
+   topQ = compareExpectedMomentumSeedMixedTriangleBuildingBlock[];
+   topT = compareExpectedTimeSeedMixedTriangleCore[];
+   sectorKeys = Lookup[Global`makeCanonicalSeedBatch[topo]["sectorMetadataList"], "sectorKey"];
+   shrinkChecks = Table[
+     Module[{shrinkTopo, int0, qgen, tgen, gotQ, gotT, expectedQ, expectedT},
+      shrinkTopo = Global`shrinkSectorTopology[topo, subset];
+      int0 = Global`makeBaseIntegral[shrinkTopo];
+      qgen = SelectFirst[Global`makeIBPGenerators[shrinkTopo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
+      tgen = SelectFirst[Global`makeIBPGenerators[shrinkTopo], #["type"] === "time" &];
+      gotQ = Expand[Global`applyMomentumGeneratorSeed[shrinkTopo, int0, qgen]];
+      gotT = Expand[Global`applyTimeGeneratorSeed[shrinkTopo, int0, tgen]];
+      expectedQ = expectedMixedTriangleShrinkMomentumQ1DotQ1[subset];
+      expectedT = expectedMixedTriangleShrinkTimeFirst[subset];
+      <|"subset" -> subset, "qPass" -> TrueQ[gotQ === expectedQ], "tPass" -> TrueQ[gotT === expectedT],
+        "gotQ" -> gotQ, "expectedQ" -> expectedQ, "gotT" -> gotT, "expectedT" -> expectedT|>
+      ],
+     {subset, {{1}, {2}, {1, 2}}}
+     ];
+   <|
+    "name" -> "mixedTriangle_allSectorHandSeeds_qAndT",
+    "pass" -> TrueQ[
+      topQ["pass"] &&
+       topT["pass"] &&
+       sectorKeys === {"top", "e1", "e2", "e1_e2"} &&
+       And @@ Flatten[Lookup[shrinkChecks, {"qPass", "tPass"}]]
+      ],
+    "coverage" -> <|
+      "top" -> {"qIBP" -> topQ["name"], "tIBP" -> topT["name"]},
+      "e1" -> {"qIBP" -> "mixedTriangleShrinkE1_dq1Dotq1", "tIBP" -> "mixedTriangleShrinkE1_firstTime"},
+      "e2" -> {"qIBP" -> "mixedTriangleShrinkE2_dq1Dotq1", "tIBP" -> "mixedTriangleShrinkE2_firstTime"},
+      "e1_e2" -> {"qIBP" -> "mixedTriangleShrinkE1E2_dq1Dotq1", "tIBP" -> "mixedTriangleShrinkE1E2_firstTime"}
+      |>,
+    "sectorKeys" -> sectorKeys,
+    "shrinkChecks" -> shrinkChecks
     |>
    ];
 
@@ -2571,6 +2686,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "momentumSeedMassiveBubbleReference" -> compareExpectedMomentumSeedMassiveBubbleReference[],
     "momentumSeedMixedBubbleBuildingBlock" -> compareExpectedMomentumSeedMixedBubbleBuildingBlock[],
     "momentumSeedMixedTriangleBuildingBlock" -> compareExpectedMomentumSeedMixedTriangleBuildingBlock[],
+    "mixedTriangleAllSectorHandSeeds" -> compareExpectedMixedTriangleAllSectorHandSeeds[],
     "momentumSeedSunriseISP" -> compareExpectedMomentumSeedSunriseISP[],
     "eomCanonical" -> compareExpectedEOMCanonical[],
     "timeSeedMixedBubbleCore" -> compareExpectedTimeSeedMixedBubbleCore[],
