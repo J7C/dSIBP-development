@@ -1973,7 +1973,8 @@ Options[makeCanonicalSeedBatch] = Join[
 
 
 makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
-   {momentumBatch, timeBatch, shrinkBatch, seedOpts, shrinkOpts, pendingFeatures, equations, eomCanonicalQ, sectorMetadataList},
+   {momentumBatch, timeBatch, shrinkBatch, seedOpts, shrinkOpts, pendingFeatures, equations, eomCanonicalQ, sectorMetadataList, topologyReport},
+   topologyReport = topologyValidationReport[topo];
    seedOpts = FilterRules[{opts}, Options[makeMomentumIBPSeedBatch]];
    shrinkOpts = FilterRules[{opts}, Options[makeShrinkSectorSeedBatch]];
    momentumBatch = makeMomentumIBPSeedBatch[topo, Sequence @@ seedOpts];
@@ -1986,6 +1987,7 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
     Return[<|
       "status" -> "notGenerated",
       "caseName" -> topo["name"],
+      "topologyValidationReport" -> topologyReport,
       "momentumStatus" -> Lookup[momentumBatch, "status", Missing["momentumStatus"]],
       "timeStatus" -> Lookup[timeBatch, "status", Missing["timeStatus"]],
       "momentumBatch" -> KeyDrop[momentumBatch, "equations"],
@@ -2010,6 +2012,7 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
+    "topologyValidationReport" -> topologyReport,
     "momentumEquationCount" -> momentumBatch["equationCount"],
     "timeEquationCount" -> timeBatch["equationCount"],
     "shrinkSectorEquationCount" -> Lookup[shrinkBatch, "equationCount", 0],
@@ -2365,13 +2368,14 @@ Options[makeIBPWorkflowData] = Join[
 
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
-    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport},
+    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport},
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
+   topologyReport = topologyValidationReport[topo];
    seedOpts = FilterRules[{opts}, Options[makeCanonicalSeedBatch]];
    batch = makeCanonicalSeedBatch[topo, Sequence @@ seedOpts];
    seedCoverageReport = makeCanonicalSeedCoverageReport[batch];
    If[Lookup[batch, "status", "missing"] =!= "generated" || ! TrueQ[canonicalSeedReadyQ[batch]],
-    Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "seedBatch" -> KeyDrop[batch, "equations"], "seedCoverageReport" -> seedCoverageReport|>]
+    Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "topologyValidationReport" -> topologyReport, "seedBatch" -> KeyDrop[batch, "equations"], "seedCoverageReport" -> seedCoverageReport|>]
     ];
    linearOpts = FilterRules[{opts}, Options[makeLinearSystemData]];
    linearMode = OptionValue[LinearSystemMode];
@@ -2381,7 +2385,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
      makeLinearSystemData[batch, topo, Sequence @@ linearOpts]
      ];
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[linearData, "linearQ", False]],
-    Return[<|"status" -> "notReady", "stage" -> "linear", "topology" -> topo, "seedBatch" -> KeyDrop[batch, "equations"], "linearSystem" -> linearData|>]
+    Return[<|"status" -> "notReady", "stage" -> "linear", "topology" -> topo, "topologyValidationReport" -> topologyReport, "seedBatch" -> KeyDrop[batch, "equations"], "linearSystem" -> linearData|>]
     ];
    exportQ = TrueQ[OptionValue[ExportKira]] || StringQ[OptionValue[OutputDirectory]];
    kiraCoeffRules = If[OptionValue[KiraCoefficientRules] === Automatic,
@@ -2402,6 +2406,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
     "status" -> If[exportQ, Lookup[kiraData, "status", "missing"], "ready"],
     "stage" -> If[exportQ, "kira", "linear"],
     "topology" -> topo,
+    "topologyValidationReport" -> topologyReport,
     "seedBatch" -> batch,
     "seedCoverageReport" -> seedCoverageReport,
     "linearSystem" -> linearData,
@@ -2515,7 +2520,7 @@ Options[makeLinearSystemData] = {KiraOrdering -> Automatic};
 
 
 makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] := Module[
-   {integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec, seedCoverageReport},
+   {integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec, seedCoverageReport, topologyReport},
    If[Lookup[batch, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "sourceStatus" -> Lookup[batch, "status", Missing["status"]]|>]
     ];
@@ -2546,6 +2551,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
      makeCanonicalSeedCoverageReport[batch],
      Missing["NotCanonicalSeedBatch"]
      ];
+   topologyReport = Lookup[batch, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    <|
     "status" -> "generated",
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
@@ -2559,6 +2565,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     "integralMetadata" -> integralMetadataList[integrals, metadataList, orderingSpec],
     "sectorMetadata" -> metadata,
     "sectorMetadataList" -> metadataList,
+    "topologyValidationReport" -> topologyReport,
     "seedCoverageReport" -> seedCoverageReport,
     "linearEquations" -> linearEquations,
     "linearQ" -> And @@ (Lookup[linearEquations, "linearQ"]),

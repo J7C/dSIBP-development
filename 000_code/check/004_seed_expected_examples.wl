@@ -1253,15 +1253,22 @@ compareExpectedIBPWorkflowData[] := Module[
        sampledWorkflow["stage"] === "linear" &&
        sampledWorkflow["kiraExport"]["status"] === "skipped" &&
        sampledWorkflow["linearSystem"]["coefficientRulesApplied"] === Global`parseTopology[Global`masslessBoxCase]["numericRules"] &&
+       sampledWorkflow["topologyValidationReport"]["status"] === "ok" &&
+       sampledWorkflow["seedBatch"]["topologyValidationReport"]["status"] === "ok" &&
+       sampledWorkflow["linearSystem"]["topologyValidationReport"]["status"] === "ok" &&
        exportWorkflow["status"] === "ready" &&
        exportWorkflow["stage"] === "kira" &&
+       exportWorkflow["topologyValidationReport"]["status"] === "ok" &&
        exportWorkflow["seedBatch"]["completeCanonicalQ"] === True &&
+       exportWorkflow["seedBatch"]["topologyValidationReport"]["status"] === "ok" &&
        exportWorkflow["seedCoverageReport"]["status"] === "ready" &&
        exportWorkflow["linearSystem"]["status"] === "generated" &&
+       exportWorkflow["linearSystem"]["topologyValidationReport"]["status"] === "ok" &&
        exportWorkflow["linearSystem"]["seedCoverageReport"]["status"] === "ready" &&
        exportWorkflow["kiraExport"]["status"] === "ready" &&
        Length[exportWorkflow["kiraExport"]["filesWritten"]] === 6 &&
        FileExistsQ[metadataFile] &&
+       metadata["topologyValidationReport"]["status"] === "ok" &&
        metadata["seedCoverageReport"]["status"] === "ready" &&
        metadata["kiraCoefficientRules"] === Global`parseTopology[Global`mixedBubbleCase]["numericRules"] &&
        metadata["kiraJobOptions"]["RunFirefly"] === False &&
@@ -1350,6 +1357,8 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        metadata["integralCount"] === linearData["integralCount"] &&
        metadata["equationCount"] === linearData["equationCount"] &&
        metadata["exportedEquationCount"] === kiraData["exportedEquationCount"] &&
+       metadata["topologyValidationReport"]["status"] === "ok" &&
+       linearData["topologyValidationReport"]["status"] === "ok" &&
        metadata["seedCoverageReport"]["status"] === "ready" &&
        metadata["kiraCoefficientRules"] === topo["numericRules"] &&
        metadata["kiraJobOptions"]["RunFirefly"] === True &&
