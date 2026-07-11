@@ -101,8 +101,23 @@ ispEntryAssociationMissingKeys[_] := {};
 validIndexRangeSpecQ[spec_] := IntegerQ[spec] || (ListQ[spec] && Length[spec] > 0 && And @@ (IntegerQ /@ spec));
 
 
+validNonNegativeIntegerQ[value_] := IntegerQ[value] && value >= 0;
+
+
+allowedSeedOptionKeys[] := {
+   "DiscreteMode", "MaxSeedRuleCount", "MaxDiscreteRuleCount", "MaxEquationCount",
+   "MaxShrinkSectorDepth", "MaxShrinkSectorCount"
+   };
+
+
+validSeedOptionValueQ["DiscreteMode", value_] := MemberQ[{"sample", "all", "none"}, value];
+validSeedOptionValueQ["MaxShrinkSectorDepth", value_] := value === Automatic || validNonNegativeIntegerQ[value];
+validSeedOptionValueQ[key_, value_] /; MemberQ[{"MaxSeedRuleCount", "MaxDiscreteRuleCount", "MaxEquationCount", "MaxShrinkSectorCount"}, key] := validNonNegativeIntegerQ[value];
+validSeedOptionValueQ[_, _] := False;
+
+
 caseInputMalformedIssues[case_Association] := Module[
-   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, seedRanges, badVertexPositions,
+   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, seedRanges, seedOptions, badVertexPositions,
     badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData},
    If[KeyExistsQ[case, "vertexData"],
     vertexData = case["vertexData"];
@@ -166,6 +181,12 @@ caseInputMalformedIssues[case_Association] := Module[
     seedRanges = case["seedRanges"];
     If[! AssociationQ[seedRanges],
      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSeedRanges", "reason" -> "seedRanges must be an Association"|>]
+     ]
+    ];
+   If[KeyExistsQ[case, "seedOptions"],
+    seedOptions = case["seedOptions"];
+    If[! AssociationQ[seedOptions],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSeedOptions", "reason" -> "seedOptions must be an Association"|>]
      ]
     ];
    If[KeyExistsQ[case, "ispData"],
@@ -2117,7 +2138,8 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
-    ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData,
+    ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData, seedOptions,
+    unknownSeedOptionKeys, badSeedOptionData,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2132,6 +2154,7 @@ topologyValidationReport[topo_Association] := Module[
    vertexEnergies = Lookup[topo, "vertexEnergies", <||>];
    ispNames = Lookup[topo["ispData"], "name", {}];
    seedRangeData = KeyDrop[topo["seedRanges"], {"sampleOnly"}];
+   seedOptions = Lookup[topo, "seedOptions", <||>];
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
@@ -2167,6 +2190,20 @@ topologyValidationReport[topo_Association] := Module[
      ];
    If[badISPRangeData =!= {},
     appendIssue["error", "malformedISPRangeSpecs", <|"isps" -> badISPRangeData, "allowed" -> "integer or nonempty integer list"|>]
+    ];
+   unknownSeedOptionKeys = Complement[Keys[seedOptions], allowedSeedOptionKeys[]];
+   If[unknownSeedOptionKeys =!= {},
+    appendIssue["error", "unknownSeedOptionKeys", <|"keys" -> unknownSeedOptionKeys, "allowedKeys" -> allowedSeedOptionKeys[]|>]
+    ];
+   badSeedOptionData = KeyValueMap[
+     If[MemberQ[allowedSeedOptionKeys[], #1] && ! validSeedOptionValueQ[#1, #2],
+       <|"optionKey" -> #1, "optionValue" -> #2|>,
+       Nothing
+       ] &,
+     seedOptions
+     ];
+   If[badSeedOptionData =!= {},
+    appendIssue["error", "malformedSeedOptionValues", <|"options" -> badSeedOptionData|>]
     ];
    If[! DuplicateFreeQ[vertexIds],
     appendIssue["error", "duplicateVertexIds", <|"vertexIds" -> vertexIds|>]

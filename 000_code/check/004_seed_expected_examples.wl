@@ -973,6 +973,7 @@ compareExpectedCaseInputPreflight[] := Module[
      "lineData" -> {<|"id" -> 1, "endpoints" -> {1, 2}|>},
      "loopMomenta" -> Global`q1,
      "seedRanges" -> {"bad"},
+     "seedOptions" -> {"bad"},
      "ispData" -> {
        <|"name" -> Global`badISP|>,
        {"tooShort", Global`qk[1, 1]},
@@ -1009,7 +1010,7 @@ compareExpectedCaseInputPreflight[] := Module[
        malformedData["status"] === "invalidInput" &&
        malformedData["reason"] === "malformedCaseInput" &&
        malformedData["inputRequirementReport", "missingRequiredKeys"] === {} &&
-       Sort[malformedCodes] === {"ispDataMissingRequiredKeys", "lineDataMissingRequiredKeys", "malformedISPData", "malformedLoopMomenta", "malformedSeedRanges"} &&
+       Sort[malformedCodes] === {"ispDataMissingRequiredKeys", "lineDataMissingRequiredKeys", "malformedISPData", "malformedLoopMomenta", "malformedSeedOptions", "malformedSeedRanges"} &&
        malformedWorkflow["status"] === "notReady" &&
        malformedWorkflow["stage"] === "topology" &&
        malformedWorkflow["reason"] === "malformedCaseInput" &&
@@ -1133,6 +1134,15 @@ compareExpectedTopologyValidationReport[] := Module[
      Global`twoLoopISPCase,
      <|
       "seedRanges" -> <|"a" -> {"bad"}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> "yes"|>,
+      "seedOptions" -> <|
+        "DiscreteMode" -> "typo",
+        "MaxSeedRuleCount" -> -1,
+        "MaxDiscreteRuleCount" -> "many",
+        "MaxEquationCount" -> 1,
+        "MaxShrinkSectorDepth" -> -2,
+        "MaxShrinkSectorCount" -> 0,
+        "TypoOption" -> 1
+        |>,
       "ispData" -> {
         {Global`ispQ1K, Global`qk[1, 1], {"bad"}},
         {Global`ispQ2K, Global`qk[2, 1], {0, 2}}
@@ -1207,10 +1217,12 @@ compareExpectedTopologyValidationReport[] := Module[
        duplicateISPReport["errorCount"] === 1 &&
        MemberQ[duplicateISPCodes, "duplicateISPNames"] &&
        malformedRangeReport["status"] === "issues" &&
-       malformedRangeReport["errorCount"] === 3 &&
+       malformedRangeReport["errorCount"] === 5 &&
        MemberQ[malformedRangeCodes, "malformedSeedRangeSpecs"] &&
        MemberQ[malformedRangeCodes, "malformedSeedSampleOnly"] &&
        MemberQ[malformedRangeCodes, "malformedISPRangeSpecs"] &&
+       MemberQ[malformedRangeCodes, "unknownSeedOptionKeys"] &&
+       MemberQ[malformedRangeCodes, "malformedSeedOptionValues"] &&
        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 2 &&
