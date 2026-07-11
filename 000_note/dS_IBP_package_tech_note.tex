@@ -561,10 +561,11 @@ ispData = {
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}
   \item 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
-  \item ISP 之间线性无关
-  \item ISP 数目 $= N_{\text{sp}} - E_{\text{prop}}$（$E_{\text{prop}}$ 为独立传播子数）
+  \item ISP 之间线性无关，且当前主线要求 ISP 直接是某个 \texttt{qq[i,j]} 或 \texttt{qk[i,j]} 标量积变量
+  \item \texttt{zExprs} 数量等于非 ISP 标量积数量，即 $\# z_e = N_{\text{sp}}-\#\text{ISP}_{\text{direct}}$
 \end{enumerate}
 
+这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合；程序不自动从冗余传播子中选择独立子集，也不替用户重定义 family。
 验证通过后，才进入 IBP 生成步骤。
 
 \subsection{分 Sector IBP 生成流程}
@@ -660,15 +661,15 @@ ispData = {
   \vec{z} = M \vec{s} + \vec{c},
   \label{zLinear}
 \end{equation}
-其中 $M$ 是 $E_{\text{prop}} \times N_{\text{sp}}$ 矩阵（$E_{\text{prop}}$ 为内线数），$\vec{c}$ 的分量为各 $P_e^2$（用 $k_{ij}$ 表示）。
+其中 $M$ 是 $N_z \times N_{\text{sp}}$ 矩阵（$N_z$ 为用户输入的传播子平方方程数），$\vec{c}$ 的分量为各 $P_e^2$（用 $k_{ij}$ 表示）。
 
-当传播子数等于独立标量积数（$E_{\text{prop}} = N_{\text{sp}}$，即无 ISP）时，$M$ 为方阵且可逆，逆变换为
+当 \texttt{zExprs} 数等于独立标量积数（$N_z = N_{\text{sp}}$，即无 ISP）时，$M$ 为方阵且可逆，逆变换为
 \begin{equation}
   \vec{s} = M^{-1}(\vec{z} - \vec{c}).
   \label{zInverse}
 \end{equation}
 
-当存在 ISP 时，$M$ 不是方阵，逆变换需补充 ISP 的定义关系（ISP 直接用 $\vec{s}$ 中的分量表示）。
+当存在 ISP 时，逆变换需补充 ISP 的定义关系（ISP 直接用 $\vec{s}$ 中的分量表示）。当前实现要求补充后得到方阵闭合系统；若用户给出的传播子平方方程相对 ISP 过多或不足，validation 报告会要求修正输入，而不是自动挑选子集。
 
 \subsection{Bubble 拓扑的显式计算}
 
@@ -818,4 +819,3 @@ ispData = {
 \end{itemize}
 
 \end{document}
-

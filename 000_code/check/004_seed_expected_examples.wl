@@ -695,7 +695,7 @@ compareExpectedTopologyDataInterface[] := Module[
 
 
 compareExpectedTopologyValidationReport[] := Module[
-   {goodData, crossData, badCase, badReport, badCodes, badSeverities},
+   {goodData, crossData, badCase, overCase, badReport, overReport, badCodes, overCodes, badSeverities},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -712,8 +712,25 @@ compareExpectedTopologyValidationReport[] := Module[
      "sampleDiscreteRules" -> {{Global`n[99] -> 1, Global`n[1] -> 2}},
      "seedRanges" -> <|"sampleOnly" -> True|>
      |>;
+   overCase = <|
+     "name" -> "redundantZCoordinateToy",
+     "vertexData" -> {{1, "+"}, {2, "+"}},
+     "lineData" -> {
+       <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>,
+       <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> Global`q1 - Global`k, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>,
+       <|"id" -> 3, "endpoints" -> {1, 2}, "momentum" -> Global`q1 + Global`k, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
+       },
+     "extLegs" -> {},
+     "loopMomenta" -> {Global`q1},
+     "externalMomenta" -> {Global`k},
+     "ispData" -> {},
+     "sampleDiscreteRules" -> {{Global`n[1] -> 0, Global`n[2] -> 0, Global`n[3] -> 0}},
+     "seedRanges" -> <|"sampleOnly" -> True|>
+     |>;
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
+   overReport = Global`topologyValidationReport[Global`parseTopology[overCase]];
    badCodes = Lookup[badReport["issues"], "code", {}];
+   overCodes = Lookup[overReport["issues"], "code", {}];
    badSeverities = Lookup[badReport["issues"], "severity", {}];
    <|
     "name" -> "topologyValidationReport_goodPendingBad",
@@ -731,11 +748,15 @@ compareExpectedTopologyValidationReport[] := Module[
        MemberQ[badCodes, "sampleDiscreteRulesContainUnknownVariables"] &&
        MemberQ[badCodes, "sampleDiscreteRulesContainNonBinaryValues"] &&
        Count[badSeverities, "error"] === 2 &&
-       Count[badSeverities, "warning"] === 2
+       Count[badSeverities, "warning"] === 2 &&
+       overReport["status"] === "issues" &&
+       overReport["errorCount"] === 1 &&
+       MemberQ[overCodes, "scalarProductCoordinateCountMismatch"]
       ],
     "goodReport" -> goodData["validationReport"],
     "crossReport" -> crossData["validationReport"],
-    "badReport" -> badReport
+    "badReport" -> badReport,
+    "overReport" -> overReport
     |>
    ];
 
@@ -1108,13 +1129,4 @@ runSeedExpectedStructureCheck[] := Module[{},
 End[];
 
 EndPackage[];
-
-
-
-
-
-
-
-
-
 

@@ -273,7 +273,7 @@ IBP seed 包括：
 
 Kira 编号必须对所有 sector 的积分一起做全局排序，不能先按 sector 追加。当前 `sortIntegralsForKira` 的第一优先级是所有线第一幂次指标的复杂度，随后再看 `a`、ISP、离散 `n` 和稳定字符串序；后续可在此基础上叠加用户指定 master/weight。
 
-`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。它只做轻量结构检查：线编号、端点、声明的圈/外动量基、ISP 数量、sampleDiscreteRules 和当前未实现的 seed feature；不做解析 rank、全局求解或大规模 IBP 展开。
+`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。它只做轻量结构检查：线编号、端点、声明的圈/外动量基、ISP 数量、z/ISP 坐标数是否闭合、sampleDiscreteRules 和当前未实现的 seed feature；不做解析 rank、全局求解或大规模 IBP 展开。
 
 ## 9. 外腿与传播子统一约定
 
@@ -312,11 +312,13 @@ $$J[\{a_v\}; \{\text{pack}_e\}; \{n_{\text{isp}_j}\}]$$
 
 在生成 IBP 前，必须验证 ISP 集合的完备性：
 
-1. **覆盖性**：所有标量积 $\{q_i \cdot q_j, q_i \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{ISP}_j\}$ 的线性组合
-2. **独立性**：ISP 之间线性无关
-3. **数目检查**：$\text{num}(\text{ISP}) = N_{\text{sp}} - E_{\text{prop}}$
+1. **覆盖性**：所有标量积 $\{q_i \cdot q_j, q_i \cdot k_j\}$ 均可表示为用户给出的 $\{\xi_e^2\}$ 和 $\{\text{ISP}_j\}$ 的线性组合。
+2. **独立性**：直接作为 ISP 给出的标量积之间线性无关，并且不应再由传播子平方线性表示。
+3. **数目检查**：当前实现要求 `zExprs` 的数量等于“非 ISP 标量积”的数量，即 $\#z_e = N_{\text{sp}} - \#\text{ISP}_{\text{direct}}$。这里的计数是用户定义的 `z/ISP` 坐标闭合条件，不是程序自动选择 propagator 子集。
 
-其中 $N_{\text{sp}} = L(L+1)/2 + L(E-1)$ 为独立标量积总数，$E_{\text{prop}}$ 为独立传播子数。
+其中 $N_{\text{sp}} = L(L+1)/2 + L K$，$K$ 是初始化中 `externalMomenta` 的独立外动量基个数。
+
+本 package 的设计边界是：用户在初始化阶段给出完整的传播子动量和 ISP 定义，程序验证这组输入是否能闭合 IBP 中出现的 loop-scalar-products。若某个 topology 的传播子平方方程相对所选 ISP 是冗余或不足，当前主线不会自动丢弃某些传播子、也不会替用户重新选一组独立 propagator basis；validation 会报告 `scalarProductCoordinateCountMismatch` 或 `insufficientISPData`，由用户修正 family 输入。
 
 ### 10.4 IBP 生成元
 

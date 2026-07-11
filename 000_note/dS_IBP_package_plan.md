@@ -241,7 +241,7 @@ $$\boxed{\mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \qua
 
 **交叉 IBP 的必要性**：$L \geq 2$ 时，仅对角 IBP 不足以将所有积分约化到 master integrals。交叉 IBP $\partial_{q_l} \cdot q_m$ 提供不同圈动量之间的关系，是完备约化系统所必需的。
 
-**验证**：独立标量积数目 $N_{\text{sp}} = L(L+1)/2 + L(E-1)$ 恰好等于 $N_{\text{IBP}}$，确认生成元集合与标量积空间维度匹配。
+**验证**：独立标量积数目 $N_{\text{sp}} = L(L+1)/2 + L K$（$K$ 为 `externalMomenta` 的独立外动量基个数）恰好等于 $N_{\text{IBP}}$，确认生成元集合与标量积空间维度匹配。
 
 #### 4.3.4 ISP（不可约标量积）处理
 
@@ -265,8 +265,10 @@ ispData = {
 
 **完备性验证**：`verifyISP[topology, ispData]` 检查：
 1. 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
-2. ISP 之间线性无关
-3. ISP 数目 = $N_{\text{sp}} - E_{\text{prop}}$（$E_{\text{prop}}$ 为独立传播子数）
+2. ISP 之间线性无关，并且当前主线要求 ISP 表达式直接是某个 `qq[i,j]` 或 `qk[i,j]` 标量积变量
+3. `zExprs` 数量等于非 ISP 标量积数量，即 $\#z_e = N_{\text{sp}} - \#\text{ISP}_{\text{direct}}$
+
+这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不自动从冗余传播子中挑选独立子集，也不替用户重定义 family；若计数不闭合或 ISP 不足，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 
 验证通过后，才进入 IBP 生成步骤。
 

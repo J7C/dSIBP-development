@@ -739,15 +739,28 @@ coefficientMatrix[exprs_List, vars_List] := Table[
 
 
 
-(* 小规模线性规则生成：直接作为 ISP 给出的标量积会被保留，不强行改写成 rho。 *)
+(* 小规模线性规则生成：直接作为 ISP 给出的标量积会被保留，不强行改写成 rho。
+   本 package 假设用户输入的 z_e 与直接 ISP 已经构成闭合坐标；这里不自动挑选
+   冗余 propagator 子集，避免改变用户定义的函数族。 *)
 makeScalarProductRules[topo_Association] := Module[
-   {spVars, zVars, zExprs, ispExprs, directISPVars, solveVars,
+   {spVars, zVars, zExprs, ispExprs, directISPVars, unsupportedISPExprs, solveVars,
     mat, const, rhs, solVec},
    spVars = scalarProductVariables[topo];
    zVars = Table[z[e], {e, topo["nE"]}];
    zExprs = expandZList[topo];
    ispExprs = Lookup[#, "expr"] & /@ topo["ispData"];
    directISPVars = Select[ispExprs, MemberQ[spVars, #] &] // DeleteDuplicates;
+   unsupportedISPExprs = Select[ispExprs, ! MemberQ[spVars, #] &] // DeleteDuplicates;
+   If[unsupportedISPExprs =!= {},
+    Return[<|
+      "status" -> "notComputed",
+      "reason" -> "ISP expressions must be direct qq/qk scalar-product variables",
+      "repSP2Z" -> Missing["NotComputedUnsupportedISP"],
+      "solveVars" -> Missing["NotComputedUnsupportedISP"],
+      "preservedISPVars" -> directISPVars,
+      "unsupportedISPExprs" -> unsupportedISPExprs
+      |>]
+    ];
    solveVars = Complement[spVars, directISPVars];
    If[Length[zExprs] =!= Length[solveVars],
     Return[<|
@@ -755,20 +768,24 @@ makeScalarProductRules[topo_Association] := Module[
       "reason" -> "z equation count does not match non-ISP scalar-product count",
       "repSP2Z" -> Missing["NotComputedCountMismatch"],
       "solveVars" -> solveVars,
-      "preservedISPVars" -> directISPVars
+      "preservedISPVars" -> directISPVars,
+      "zCount" -> Length[zExprs],
+      "nonISPScalarProductCount" -> Length[solveVars]
       |>]
     ];
    mat = coefficientMatrix[zExprs, solveVars];
    const = zExprs /. Thread[solveVars -> 0];
    rhs = zVars - const;
-   solVec = Quiet[Check[LinearSolve[mat, rhs], $Failed]];
+   solVec = Check[LinearSolve[mat, rhs], $Failed];
    If[solVec === $Failed,
     Return[<|
       "status" -> "notComputed",
       "reason" -> "LinearSolve failed",
       "repSP2Z" -> Missing["LinearSolveFailed"],
       "solveVars" -> solveVars,
-      "preservedISPVars" -> directISPVars
+      "preservedISPVars" -> directISPVars,
+      "zCount" -> Length[zExprs],
+      "nonISPScalarProductCount" -> Length[solveVars]
       |>]
     ];
    <|
@@ -776,21 +793,27 @@ makeScalarProductRules[topo_Association] := Module[
     "repSP2Z" -> Thread[solveVars -> (Expand /@ solVec)],
     "repZ2SP" -> Thread[zVars -> zExprs],
     "solveVars" -> solveVars,
-    "preservedISPVars" -> directISPVars
+    "preservedISPVars" -> directISPVars,
+    "zCount" -> Length[zExprs],
+    "nonISPScalarProductCount" -> Length[solveVars]
     |>
    ];
 
 makeScalarProductData[topo_Association] := Module[
-   {spVars, zVars, zExprs, ispExprs, ispSymbols, nSP, structuralNeededISPCount,
-    structuralCountQ},
+   {spVars, zVars, zExprs, ispExprs, ispSymbols, directISPVars, unsupportedISPExprs,
+    solveVars, nSP, structuralNeededISPCount, structuralCountQ, coordinateCountQ},
    spVars = scalarProductVariables[topo];
    zVars = Table[z[e], {e, topo["nE"]}];
    zExprs = expandZList[topo];
    ispExprs = Lookup[#, "expr"] & /@ topo["ispData"];
    ispSymbols = Table[rho[j], {j, Length[ispExprs]}];
+   directISPVars = Select[ispExprs, MemberQ[spVars, #] &] // DeleteDuplicates;
+   unsupportedISPExprs = Select[ispExprs, ! MemberQ[spVars, #] &] // DeleteDuplicates;
+   solveVars = Complement[spVars, directISPVars];
    nSP = Length[spVars];
    structuralNeededISPCount = Max[0, nSP - Length[zExprs]];
-   structuralCountQ = Length[ispExprs] >= structuralNeededISPCount;
+   structuralCountQ = Length[directISPVars] >= structuralNeededISPCount;
+   coordinateCountQ = Length[zExprs] === Length[solveVars];
    <|
     "scalarProducts" -> spVars,
     "externalInvariants" -> externalInvariantVariables[topo],
@@ -798,11 +821,17 @@ makeScalarProductData[topo_Association] := Module[
     "zExprs" -> zExprs,
     "ispSymbols" -> ispSymbols,
     "ispExprs" -> ispExprs,
+    "directISPVars" -> directISPVars,
+    "unsupportedISPExprs" -> unsupportedISPExprs,
+    "solveVars" -> solveVars,
     "zCount" -> Length[zExprs],
     "spCount" -> nSP,
     "ispCount" -> Length[ispExprs],
+    "directISPCount" -> Length[directISPVars],
+    "nonISPScalarProductCount" -> Length[solveVars],
     "structuralNeededISPCount" -> structuralNeededISPCount,
     "structuralCountQ" -> structuralCountQ,
+    "coordinateCountQ" -> coordinateCountQ,
     "coverageQ" -> Missing["NotCheckedSeedOnly"],
     "independentQ" -> Missing["NotCheckedSeedOnly"],
     "repSP2Z" -> Missing["NotComputedSeedOnly"]
@@ -1690,8 +1719,18 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["error", "undeclaredMomentumVariables", <|"variables" -> undeclaredMomentumVars, "declared" -> declaredMomentumVars|>]
     ];
    spData = makeScalarProductData[topo];
+   If[spData["unsupportedISPExprs"] =!= {},
+    appendIssue["error", "unsupportedISPExpressions", <|"expressions" -> spData["unsupportedISPExprs"], "allowedScalarProducts" -> spData["scalarProducts"]|>]
+    ];
    If[! TrueQ[spData["structuralCountQ"]],
-    appendIssue["error", "insufficientISPData", <|"needed" -> spData["structuralNeededISPCount"], "provided" -> spData["ispCount"]|>]
+    appendIssue["error", "insufficientISPData", <|"needed" -> spData["structuralNeededISPCount"], "providedDirect" -> spData["directISPCount"], "provided" -> spData["ispCount"]|>]
+    ];
+   If[spData["unsupportedISPExprs"] === {} && TrueQ[spData["structuralCountQ"]] && ! TrueQ[spData["coordinateCountQ"]],
+    appendIssue["error", "scalarProductCoordinateCountMismatch", <|
+      "zCount" -> spData["zCount"],
+      "nonISPScalarProductCount" -> spData["nonISPScalarProductCount"],
+      "assumption" -> "topology input must provide a closed z/ISP coordinate system; no automatic redundant propagator subset is selected"
+      |>]
     ];
    discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
    sampleRulePairs = Cases[topo["sampleDiscreteRules"], Rule[l_, r_] :> {l, r}, {0, Infinity}];
