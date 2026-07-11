@@ -77,3 +77,23 @@
 - [x] 将 sub-sector 的 `J` 从兼容模式 `originalSlotsWithInactiveZero` 迁移为真实 compact `aList`；`makeBaseIntegral`、`shiftVertexA`、`shrinkLineIntegral` 和 mixed-bubble canonical check 已切换到 `compactActiveSlots`。
 - [x] 增加 double-shrink compact `aList` 小检查：双 massive-line bubble toy 覆盖 `{e1}`、`{e2}`、`{e1,e2}` sectors，确认多重缩并后 `J` 只保留一个 active `a`。
 - [x] 增加更一般多顶点 multi-shrink 检查：三顶点/两条不同边缩并后仍剩两个 active compact `a` 的例子，验证不是只覆盖两点图。
+
+
+## 2026-07-11 主线审计
+
+当前 `005_dS_ibp_general.wl` 的主体链路已经打通：topology 输入、统一 `J`、massive/massless line pack、momentum seed、time seed、EOM/massless endpoint canonical、shrink sector、linear-system、sampled/numeric coefficient layer、Kira user-defined system 导出都已有实现和轻量检查。
+
+但以下内容仍不能宣称为“任意拓扑已完全证明”：
+
+- 代表性手推 seed 对照仍偏少。已有 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise/two-loop ISP 等小检查，但还需要继续用小例子覆盖更多生成元和 sector，尤其是非 bubble 的 time-IBP 与 shrink-sector 联动。
+- 同一顶点对多条 massless 线的 bundle 合并仍是 future feature。当前只记录 `masslessBundleCandidates`，主线仍采用逐线 `{b_e,n_e}` 的 double-theta merged 方案。
+- Kira 导出只验证文件结构和映射一致性，不运行 Kira reduction，也不确认 master 数。
+- `loopMomenta/externalMomenta` 重复检查只是更早的语义报错；若后续决定减少 bespoke validation，可以改为主要依赖 scalar-product/ISP 坐标求解失败来报告。
+
+下一步优先级：
+
+- [ ] 暂停新增零散输入检查，除非直接保护 topology/IBP 主链路。
+- [ ] 对已经手推的例子扩展“每类生成元至少一个代表 seed”的小对照，仍禁止大范围解析遍历。
+- [ ] 对 time-IBP 在三点/两圈含 ISP 例子上的 seed 结构做小规模对照。
+- [ ] 对 shrink 后 compact `aList`、原始顶点/线映射和全 sector Kira 排序再做一次人工审查。
+- [ ] 视用户取舍，决定是否保留或移除已提交的动量基重复检查。

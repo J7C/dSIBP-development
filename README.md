@@ -100,6 +100,15 @@ kiraData = makeKiraExportData[
 
 已纳入轻量检查的例子包括 pure massless bubble、mixed massive/massless bubble、mixed triangle、mixed sunrise、pure massive bubble 参考对照、two-loop ISP toy 和 massless box topology replacement。它们覆盖的是逐线 `{b_e,n_e}` 的 massless double-theta merged 主线；同一顶点对多条 massless 线的真实 bundle 合并目前只记录 `masslessBundleCandidates`，暂不作为默认 seed canonical。
 
+这些检查证明当前主线接口可以生成小规模 seed、linear-system 和 Kira 文件结构；它们不等价于对任意拓扑的完整数学证明。后续工作应优先补充核心 seed 公式的代表性手推/程序对照，而不是继续增加零散输入检查。
+
+当前不默认实现的内容：
+
+- 同一顶点对多条 massless 线的真实 bundle canonical 合并；目前只记录候选 metadata。
+- 自动选择或删除冗余 propagator basis；用户输入的 propagator 与 ISP 坐标应已构成可反解 family。
+- 运行 Kira reduction 或确认最终 master integral 数；本 package 只导出输入文件。
+- 大范围解析 IBP 生成；验证应保持 seed 层或数值/撒点小范围。
+
 ## 笔记
 
 - `000_note/dS_IBP_package_plan.md`
