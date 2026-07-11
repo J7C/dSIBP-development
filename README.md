@@ -26,6 +26,45 @@
 
 该检查只做小型 seed/metadata/linear/Kira 文件结构验证，不运行 Kira reduction，不做大范围解析生成。
 
+## 推荐调用顺序
+
+```wl
+Get["000_code/005_dS_ibp_general.wl"];
+
+topoData = makeTopologyData[mixedBubbleCase];
+seedBatch = makeCanonicalSeedBatch[mixedBubbleCase];
+
+writeSeedBatchMMA[
+  seedBatch,
+  OutputDirectory -> "path/to/seed_output",
+  SeedFileBaseName -> "mixed_bubble_canonical_seed"
+];
+
+linearData = makeSampledLinearSystemData[
+  seedBatch,
+  mixedBubbleCase,
+  CoefficientRules -> mixedBubbleCase["numericRules"]
+];
+
+kiraData = makeKiraExportData[
+  linearData,
+  OutputDirectory -> "path/to/kira_input",
+  KiraCoefficientRules -> mixedBubbleCase["numericRules"]
+];
+```
+
+流程约束：
+
+- seed 阶段只生成 Mathematica 表达式，不直接导出 Kira。
+- `makeCanonicalSeedBatch` 会合并 momentum/time/shrink-sector seed，并检查 EOM canonical 与 pending features。
+- 数值规则和撒点规则在 linear/Kira 阶段使用；解析 seed 本身保持不撒点。
+- Kira 导出只接受 `makeLinearSystemData` 或 `makeSampledLinearSystemData` 的输出。
+- 默认只写 Kira 输入文件，不运行 Kira reduction。
+
+## 当前验证覆盖
+
+已纳入轻量检查的例子包括 pure massless bubble、mixed massive/massless bubble、mixed triangle、mixed sunrise、pure massive bubble 参考对照、two-loop ISP toy 和 massless box topology replacement。它们覆盖的是逐线 `{b_e,n_e}` 的 massless double-theta merged 主线；同一顶点对多条 massless 线的真实 bundle 合并目前只记录 `masslessBundleCandidates`，暂不作为默认 seed canonical。
+
 ## 笔记
 
 - `000_note/dS_IBP_package_plan.md`
