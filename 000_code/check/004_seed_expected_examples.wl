@@ -707,7 +707,8 @@ compareExpectedMomentumSeedBatchMixedBubbleEOM[] := Module[
 
 compareExpectedCanonicalSeedGateMixedBubble[] := Module[
    {topo, batch, linearData, sectorKeys, integralSectorKeys, aSlotModes, shrinkAListLengths,
-    noShrinkBatch, noShrinkLinear, blockedBatch, blockedLinear},
+    noShrinkBatch, noShrinkLinear, blockedBatch, blockedLinear, badTopologyReport,
+    invalidTopologyLinear},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
@@ -715,6 +716,8 @@ compareExpectedCanonicalSeedGateMixedBubble[] := Module[
    noShrinkLinear = Global`makeLinearSystemData[noShrinkBatch, topo];
    blockedBatch = Global`makeMomentumIBPSeedBatch[topo, Global`UseSampleOnly -> False, Global`MaxSeedRuleCount -> 1];
    blockedLinear = Global`makeLinearSystemData[blockedBatch, topo];
+   badTopologyReport = <|"status" -> "issues", "errorCount" -> 1, "warningCount" -> 0, "pendingCount" -> 0, "pendingFeatures" -> {}, "issues" -> {<|"severity" -> "error", "code" -> "checkInvalidTopology"|>}|>;
+   invalidTopologyLinear = Global`makeLinearSystemData[Join[batch, <|"topologyValidationReport" -> badTopologyReport|>], topo];
    sectorKeys = Lookup[linearData["sectorMetadataList"], "sectorKey"];
    integralSectorKeys = DeleteDuplicates[Lookup[linearData["integralMetadata"], "sectorKey"]];
    aSlotModes = Lookup[linearData["sectorMetadataList"], "aSlotMode"];
@@ -743,12 +746,15 @@ compareExpectedCanonicalSeedGateMixedBubble[] := Module[
        noShrinkLinear["topologyValidationReport"]["status"] === "ok" &&
        blockedLinear["status"] === "notGenerated" &&
        blockedLinear["sourceStatus"] === "tooMany" &&
-       blockedLinear["topologyValidationReport"]["status"] === "ok"
+       blockedLinear["topologyValidationReport"]["status"] === "ok" &&
+       invalidTopologyLinear["status"] === "invalidTopology" &&
+       invalidTopologyLinear["topologyValidationReport"]["errorCount"] === 1
       ],
     "summary" -> KeyDrop[batch, "equations"],
     "linearData" -> KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}],
     "noShrinkLinear" -> noShrinkLinear,
-    "blockedLinear" -> blockedLinear
+    "blockedLinear" -> blockedLinear,
+    "invalidTopologyLinear" -> invalidTopologyLinear
     |>
    ];
 

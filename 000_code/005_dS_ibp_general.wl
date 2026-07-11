@@ -2567,6 +2567,9 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    If[Lookup[batch, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "sourceStatus" -> Lookup[batch, "status", Missing["status"]], "topologyValidationReport" -> topologyReport|>]
     ];
+   If[topologyValidationErrorQ[topologyReport],
+    Return[<|"status" -> "invalidTopology", "caseName" -> Lookup[batch, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport|>]
+    ];
    If[Lookup[batch, "pendingFeatures", {}] =!= {},
     Return[<|
       "status" -> "notReady",
