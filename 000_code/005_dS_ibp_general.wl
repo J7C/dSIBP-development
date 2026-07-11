@@ -2341,7 +2341,7 @@ topologyValidationReport[topo_Association] := Module[
      ]
     ];
    If[Lookup[topo, "unknownSeedPreset", None] =!= None,
-    appendIssue["warning", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "fallback" -> "quickCheck"|>]
+    appendIssue["error", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "allowedSeedPresets" -> {"quickCheck", "fullDiscrete", "bounded"}|>]
     ];
    badEndpointLines = Select[
      MapIndexed[Join[#1, <|"lineIndex" -> First[#2]|>] &, topo["lines"]],

@@ -1299,9 +1299,9 @@ compareExpectedTopologyValidationReport[] := Module[
 
 compareExpectedSeedPresetConfig[] := Module[
    {defaultTopo, fullDiscreteCase, fullDiscreteTopo, fullDiscreteRules, fullDiscreteBatch,
-    tightDiscreteCase, tightDiscreteTopo, tightDiscreteRules, overrideDiscreteRules,
-    tightEquationCase, tightEquationTopo, tightEquationBatch, overrideEquationBatch,
-    unknownCase, unknownTopo, unknownReport, warningCodes},
+     tightDiscreteCase, tightDiscreteTopo, tightDiscreteRules, overrideDiscreteRules,
+     tightEquationCase, tightEquationTopo, tightEquationBatch, overrideEquationBatch,
+     unknownCase, unknownTopo, unknownReport, unknownBatch, issueCodes},
    defaultTopo = Global`parseTopology[Global`bubbleMasslessCase];
    fullDiscreteCase = Join[
      Global`bubbleMasslessCase,
@@ -1327,7 +1327,8 @@ compareExpectedSeedPresetConfig[] := Module[
    unknownCase = Join[Global`bubbleMasslessCase, <|"seedPreset" -> "typoPreset"|>];
    unknownTopo = Global`parseTopology[unknownCase];
    unknownReport = Global`topologyValidationReport[unknownTopo];
-   warningCodes = Lookup[Select[unknownReport["issues"], #["severity"] === "warning" &], "code", {}];
+   unknownBatch = Global`makeCanonicalSeedBatch[unknownTopo];
+   issueCodes = Lookup[unknownReport["issues"], "code", {}];
    <|
     "name" -> "seedPresetConfig_quickFullDiscreteUnknown",
     "pass" -> TrueQ[
@@ -1347,16 +1348,18 @@ compareExpectedSeedPresetConfig[] := Module[
        overrideDiscreteRules["ruleCount"] === Global`discreteStateCount[tightDiscreteTopo] &&
        tightEquationBatch["status"] === "tooMany" &&
        tightEquationBatch["equationCount"] > tightEquationTopo["seedOptions", "MaxEquationCount"] &&
-       overrideEquationBatch["status"] === "generated" &&
-       unknownTopo["unknownSeedPreset"] === "typoPreset" &&
-       MemberQ[warningCodes, "unknownSeedPreset"] &&
-       unknownReport["errorCount"] === 0
-      ],
+        overrideEquationBatch["status"] === "generated" &&
+        unknownTopo["unknownSeedPreset"] === "typoPreset" &&
+        MemberQ[issueCodes, "unknownSeedPreset"] &&
+        unknownReport["errorCount"] === 1 &&
+        unknownBatch["status"] === "invalidTopology"
+       ],
     "defaultSeedRanges" -> defaultTopo["seedRanges"],
     "fullDiscreteRuleCount" -> Lookup[fullDiscreteRules, "ruleCount", Missing["ruleCount"]],
     "tightDiscreteStatus" -> KeyTake[tightDiscreteRules, {"status", "ruleCount"}],
     "tightEquationStatus" -> KeyTake[tightEquationBatch, {"status", "equationCount"}],
-    "unknownWarningCodes" -> warningCodes
+    "unknownIssueCodes" -> issueCodes,
+    "unknownBatchStatus" -> Lookup[unknownBatch, "status", Missing["status"]]
     |>
    ];
 
