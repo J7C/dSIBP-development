@@ -16,6 +16,7 @@ ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedSeedExamples,
    compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedMasslessBoxTopologyReplacement,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
    ];
@@ -1099,6 +1100,58 @@ compareExpectedMomentumLinearSystem[] := Module[
    ];
 
 
+compareExpectedMasslessBoxTopologyReplacement[] := Module[
+   {topo, summary, spRules, momentumBatch, sampledLinear, expectedZExprs, expectedSPRules},
+   topo = Global`parseTopology[Global`masslessBoxCase];
+   summary = Global`summarizeCase[Global`masslessBoxCase];
+   spRules = Global`makeScalarProductRules[topo];
+   momentumBatch = Global`makeMomentumIBPSeedBatch[topo];
+   sampledLinear = Global`makeSampledLinearSystemData[momentumBatch, topo];
+   expectedZExprs = {
+     Global`qq[1, 1],
+     Global`kk[1, 1] - 2 Global`qk[1, 1] + Global`qq[1, 1],
+     Global`kk[1, 1] + 2 Global`kk[1, 2] + Global`kk[2, 2] - 2 Global`qk[1, 1] - 2 Global`qk[1, 2] + Global`qq[1, 1],
+     Global`kk[3, 3] + 2 Global`qk[1, 3] + Global`qq[1, 1]
+     };
+   expectedSPRules = {
+     Global`qq[1, 1] -> Global`z[1],
+     Global`qk[1, 1] -> (Global`kk[1, 1] + Global`z[1] - Global`z[2])/2,
+     Global`qk[1, 2] -> Global`kk[1, 2] + Global`kk[2, 2]/2 + Global`z[2]/2 - Global`z[3]/2,
+     Global`qk[1, 3] -> (-Global`kk[3, 3] - Global`z[1] + Global`z[4])/2
+     };
+   <|
+    "name" -> "masslessBoxTopologyReplacement_sampleMomentumLinear",
+    "pass" -> TrueQ[
+      summary["validationReport", "status"] === "ok" &&
+       summary["nV"] === 4 &&
+       summary["nE"] === 4 &&
+       summary["nL"] === 1 &&
+       summary["nK"] === 3 &&
+       summary["packTypes"] === ConstantArray["masslessFull", 4] &&
+       summary["linePacks"] === {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}, {Global`b[3], Global`n[3]}, {Global`b[4], Global`n[4]}} &&
+       summary["discreteStateCount"] === 16 &&
+       summary["momentumGeneratorCount"] === 4 &&
+       summary["generatorCount"] === 8 &&
+       summary["zExprs"] === expectedZExprs &&
+       Lookup[spRules, "status", Missing["status"]] === "computed" &&
+       And @@ ((Expand[#[[1]] /. spRules["repSP2Z"]] === Expand[#[[2]]]) & /@ expectedSPRules) &&
+       momentumBatch["status"] === "generated" &&
+       momentumBatch["equationCount"] === 12 &&
+       TrueQ[momentumBatch["completeMomentumIBPQ"]] &&
+       momentumBatch["forbiddenNData"] === {} &&
+       sampledLinear["status"] === "generated" &&
+       sampledLinear["equationCount"] === 12 &&
+       TrueQ[sampledLinear["linearQ"]] &&
+       sampledLinear["coefficientRulesApplied"] === topo["numericRules"]
+      ],
+    "summary" -> KeyDrop[summary, {"generatorList", "sampleIntegrals"}],
+    "repSP2Z" -> Lookup[spRules, "repSP2Z", Missing["repSP2Z"]],
+    "momentumSummary" -> KeyDrop[momentumBatch, "equations"],
+    "linearSummary" -> KeyDrop[sampledLinear, {"integralList", "integralRules", "linearEquations"}]
+    |>
+   ];
+
+
 compareExpectedShrunkLineIBP[] := Module[
    {case, topo, int0, gen, gotMomentum, expectedMomentum, timeBatch},
    case = <|
@@ -1171,6 +1224,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "kiraWorkspaceExportMixedBubble" -> compareExpectedKiraWorkspaceExportMixedBubble[],
     "kiraIntegralOrderingMixedBubble" -> compareExpectedKiraIntegralOrderingMixedBubble[],
     "momentumLinearSystem" -> compareExpectedMomentumLinearSystem[],
+    "masslessBoxTopologyReplacement" -> compareExpectedMasslessBoxTopologyReplacement[],
     "shrunkLineIBP" -> compareExpectedShrunkLineIBP[],
     "futureBundledNotChecked" -> <|"masslessBubble" -> expectedMasslessBubbleBundledFuture[], "mixedSunrise" -> expectedMixedSunriseBundledFuture[]|>
     |>

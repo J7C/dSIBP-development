@@ -34,7 +34,7 @@
 - [ ] 测试分层：
   - bubble massive/h 与参考 code 对比；
   - bubble massless 双 theta `{b,n}` 检查 endpoint 压缩（已加入小样本 check）；
-  - 单圈 triangle/box 检查 topology input 替换；
+  - 单圈 triangle/box 检查 topology input 替换（triangle 已有结构检查；massless box 已加入 sample momentum linear-system 小检查）；
   - 两圈含 ISP toy 拓扑检查生成元数和 ISP 完备性；
   - Kira 文件语法检查（已加入 mixed bubble 的 linear-system 文件导出小检查，不运行 Kira）。
 

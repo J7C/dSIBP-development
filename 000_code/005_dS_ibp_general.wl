@@ -2554,6 +2554,29 @@ mixedTriangleCase = <|
    |>;
 
 
+masslessBoxCase = <|
+   "name" -> "masslessBoxTopologyReplacement",
+   "vertexData" -> {{1, "+"}, {2, "+"}, {3, "+"}, {4, "+"}},
+   "lineData" -> {
+     <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>,
+     <|"id" -> 2, "endpoints" -> {2, 3}, "momentum" -> q1 - k1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>,
+     <|"id" -> 3, "endpoints" -> {3, 4}, "momentum" -> q1 - k1 - k2, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>,
+     <|"id" -> 4, "endpoints" -> {4, 1}, "momentum" -> q1 + k3, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>
+     },
+   "extLegs" -> {{B, 1, p1}, {B, 2, p2}, {B, 3, p3}, {B, 4, p4}},
+   "loopMomenta" -> {q1},
+   "externalMomenta" -> {k1, k2, k3},
+   "ispData" -> {},
+   "numericRules" -> {dim -> 3, kk[1, 1] -> 5, kk[1, 2] -> -1, kk[1, 3] -> 2, kk[2, 2] -> 7, kk[2, 3] -> -3, kk[3, 3] -> 11},
+   "sampleDiscreteRules" -> {
+     {n[1] -> 0, n[2] -> 0, n[3] -> 0, n[4] -> 0},
+     {n[1] -> 1, n[2] -> 0, n[3] -> 1, n[4] -> 0},
+     {n[1] -> 0, n[2] -> 1, n[3] -> 0, n[4] -> 1}
+     },
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   |>;
+
+
 
 mixedSunriseCase = <|
    "name" -> "sunriseOneMassiveTwoMasslessPerLineMergedTheta",
@@ -2652,6 +2675,7 @@ runStructureExamples[] := Module[
       mixedBubbleCase,
       massiveCrossBubbleCase,
       mixedTriangleCase,
+      masslessBoxCase,
       mixedSunriseCase,
       twoLoopISPCase
       };
@@ -2667,11 +2691,14 @@ runStructureExamples[] := Module[
      "massiveCrossDiscreteStateCount" -> (summaryValue[5, "discreteStateCount"] === 16),
      "mixedTriangleDiscreteStateCount" -> (summaryValue[6, "discreteStateCount"] === 32),
      "mixedTriangleMomentumGeneratorCount" -> (summaryValue[6, "momentumGeneratorCount"] === 3),
-     "mixedSunriseDiscreteStateCount" -> (summaryValue[7, "discreteStateCount"] === 16),
-     "mixedSunriseMomentumGeneratorCount" -> (summaryValue[7, "momentumGeneratorCount"] === 6),
-     "mixedSunriseISPCount" -> TrueQ[summaryValue[7, "ispCountQ"]],
-     "twoLoopMomentumGeneratorCount" -> (summaryValue[8, "momentumGeneratorCount"] === 6),
-     "twoLoopISPCount" -> TrueQ[summaryValue[8, "ispCountQ"]]
+     "masslessBoxDiscreteStateCount" -> (summaryValue[7, "discreteStateCount"] === 16),
+     "masslessBoxMomentumGeneratorCount" -> (summaryValue[7, "momentumGeneratorCount"] === 4),
+     "masslessBoxValidationOK" -> (summaryValue[7, "validationReport"]["status"] === "ok"),
+     "mixedSunriseDiscreteStateCount" -> (summaryValue[8, "discreteStateCount"] === 16),
+     "mixedSunriseMomentumGeneratorCount" -> (summaryValue[8, "momentumGeneratorCount"] === 6),
+     "mixedSunriseISPCount" -> TrueQ[summaryValue[8, "ispCountQ"]],
+     "twoLoopMomentumGeneratorCount" -> (summaryValue[9, "momentumGeneratorCount"] === 6),
+     "twoLoopISPCount" -> TrueQ[summaryValue[9, "ispCountQ"]]
      |>;
    summaryFile = FileNameJoin[{baseDir, "004_general_structure_summary.m"}];
    Put[caseSummaries, summaryFile];
