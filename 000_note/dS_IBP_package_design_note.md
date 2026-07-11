@@ -271,7 +271,7 @@ IBP seed 包括：
 
 `J` 的 `aList` 采用 compact active slots：delta 缩并后只保留仍独立的时间变量，不在 `J` 中保留 inactive 原顶点槽。原始顶点编号、外腿、线端点、original slot 与 compact slot 的对应关系全部保存在 `sectorMetadataList` 中。seed batch 通过 `writeSeedBatchMMA` 保存为 MMA 表达式；Kira exporter 不直接读取 seed batch。
 
-Kira 编号必须对所有 sector 的积分一起做全局排序，不能先按 sector 追加。当前 `sortIntegralsForKira` 的第一优先级是所有线第一幂次指标的复杂度，随后再看 `a`、ISP、离散 `n` 和稳定字符串序；后续可在此基础上叠加用户指定 master/weight。
+Kira 编号必须对所有 sector 的积分一起做全局排序，不能先按 sector 追加。当前 `sortIntegralsForKira` 的第一优先级是所有线第一幂次指标的复杂度，随后再看 `a`、ISP、离散 `n` 和稳定字符串序；后续可在此基础上叠加用户指定 master/weight。若用户通过 `IntegralOrder` 或 `PreferredIntegrals` 指定候选主积分，linear-system 会保存 `kiraOrderingReport`；若某个指定对象不在当前全局 `integralList` 中，会出现在 `missingIntegralOrderItems`，避免静默失效。
 
 `makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。它只做轻量结构检查：线编号、端点、声明的圈/外动量基、ISP 数量、z/ISP 坐标数是否闭合、`numericRules` 是否覆盖外动量不变量、sampleDiscreteRules 和当前未实现的 seed feature；不做解析 rank、全局求解或大规模 IBP 展开。`numericRules` 缺少某些 `kk[i,j]` 时只给 warning，因为解析 seed 仍可生成，但 numeric linear/Kira 阶段必须补齐这些规则。若使用 sample 离散模式，`sampleDiscreteRules` 的每条规则必须覆盖该 sector 的全部离散 `n` 变量；否则 seed 中会残留符号 `n`，不能进入即时 EOM canonical。
 
@@ -472,7 +472,7 @@ q_1 · Q_2 = q_1 · (q_1 - k) = q_1² - q_1·k = (z_1 + z_2 - k_s²) / 2
 - `lineSlots`：每条线的 slot、line id、packType、state、endpoints、端点对应的 original/compact `a` 槽和 pack template。
 - `lineIdToSlot`、`bSymbolToLineSlot`：用于导出和人工检查的快速索引。
 
-Kira 排序约定：排序对象是所有 sector 的 `integralList` 全集，不按 sector 分别编号。默认排序以 line pack 第一指标（完整线的 `b_e`，缩并线的 `bS_e`）为主；用户指定的 `IntegralOrder` 或 `PreferredIntegrals` 可插入到排序权重中。若用户已经有 preferred master list，应在 linear-system 阶段或 Kira 导出前一次性应用到全局积分表。
+Kira 排序约定：排序对象是所有 sector 的 `integralList` 全集，不按 sector 分别编号。默认排序以 line pack 第一指标（完整线的 `b_e`，缩并线的 `bS_e`）为主；用户指定的 `IntegralOrder` 或 `PreferredIntegrals` 可插入到排序权重中。若用户已经有 preferred master list，应在 linear-system 阶段或 Kira 导出前一次性应用到全局积分表，并检查 `kiraOrderingReport` / `manualIntegralOrderReport` 中的 `missingIntegralOrderItems` 是否为空。
 
 当前代码状态：sub-sector 的 `J` 已采用 compact `aList`，不再保留 inactive 原顶点槽。原图顶点、缩并代表点、original slot 与 compact slot 的对应关系由 `sectorMetadata` 负责保存，导出和人工检查都应读取 metadata，而不是从 `aList` 长度反推拓扑。
 ### 8.2 v5 用户入口与后端接口

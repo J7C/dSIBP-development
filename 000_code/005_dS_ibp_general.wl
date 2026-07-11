@@ -415,6 +415,46 @@ integralSortKey[J[aList_, linePacks_, ispList_], orderingSpec_: <||>, metadataLi
 sortIntegralsForKira[integrals_List, orderingSpec_: <||>, metadataList_: {}] := SortBy[integrals, integralSortKey[#, orderingSpec, metadataList] &];
 
 
+integralOrderItemToIntegral[item_, integrals_List] := Which[
+   Head[item] === J && MemberQ[integrals, item], item,
+   IntegerQ[item] && 1 <= item <= Length[integrals], integrals[[item]],
+   True, Missing["UnknownIntegralOrderItem", item]
+   ];
+
+
+normaliseIntegralOrder[order_List, integrals_List] := DeleteDuplicates @ DeleteMissing[
+    integralOrderItemToIntegral[#, integrals] & /@ order
+    ];
+
+
+missingIntegralOrderItems[order_List, integrals_List] := Cases[
+   integralOrderItemToIntegral[#, integrals] & /@ order,
+   Missing["UnknownIntegralOrderItem", item_] :> item
+   ];
+
+
+kiraOrderingIntegralRequestList[orderingSpec_Association] := Module[
+   {manual = Lookup[orderingSpec, "IntegralOrder", Lookup[orderingSpec, "ManualIntegralOrder", {}]],
+    preferred = Lookup[orderingSpec, "PreferredIntegrals", {}]},
+   If[! ListQ[manual], manual = {}];
+   If[! ListQ[preferred], preferred = {}];
+   DeleteDuplicates@Join[manual, preferred]
+   ];
+
+
+kiraOrderingMatchReport[orderingSpec_Association, integrals_List] := Module[
+   {requested = kiraOrderingIntegralRequestList[orderingSpec], matched, missing},
+   matched = normaliseIntegralOrder[requested, integrals];
+   missing = DeleteDuplicates @ missingIntegralOrderItems[requested, integrals];
+   <|
+    "requestedIntegrals" -> requested,
+    "matchedIntegrals" -> matched,
+    "missingIntegralOrderItems" -> missing,
+    "allRequestedIntegralsMatchedQ" -> TrueQ[missing === {}]
+    |>
+   ];
+
+
 integralMetadataList[integrals_List, metadataList_List, orderingSpec_: <||>] := Table[
    <|
     "id" -> i,
@@ -2242,12 +2282,6 @@ combineLinearCoefficientRules[linearTerms_List] := Normal @ Merge[
     Total
     ];
 
-normaliseIntegralOrder[order_List, integrals_List] := DeleteDuplicates @ Cases[
-    order,
-    item_ /; ((Head[item] === J && MemberQ[integrals, item]) || (IntegerQ[item] && 1 <= item <= Length[integrals])) :> If[IntegerQ[item], integrals[[item]], item]
-    ];
-
-
 reindexLinearEquation[eq_Association, oldIdToNewId_Association] := Module[
    {rules},
    rules = Select[
@@ -2260,7 +2294,7 @@ reindexLinearEquation[eq_Association, oldIdToNewId_Association] := Module[
 
 reorderLinearSystemIntegrals[linearData_Association, integralOrder_List] := Module[
    {oldIntegrals, requested, newIntegrals, oldRules, oldIdToIntegral, newIndex, oldIdToNewId,
-    newLinearEquations, metadataList, orderingSpec},
+    newLinearEquations, metadataList, orderingSpec, manualOrderReport},
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! KeyExistsQ[linearData, "integralList"], Return[linearData]];
    oldIntegrals = linearData["integralList"];
    requested = normaliseIntegralOrder[integralOrder, oldIntegrals];
@@ -2272,10 +2306,18 @@ reorderLinearSystemIntegrals[linearData_Association, integralOrder_List] := Modu
    newLinearEquations = reindexLinearEquation[#, oldIdToNewId] & /@ linearData["linearEquations"];
    metadataList = Lookup[linearData, "sectorMetadataList", {}];
    orderingSpec = Join[Lookup[linearData, "kiraOrdering", <||>], <|"ManualIntegralOrder" -> requested|>];
+   manualOrderReport = <|
+     "requestedIntegrals" -> integralOrder,
+     "matchedIntegrals" -> requested,
+     "missingIntegralOrderItems" -> DeleteDuplicates @ missingIntegralOrderItems[integralOrder, oldIntegrals],
+     "allRequestedIntegralsMatchedQ" -> TrueQ[missingIntegralOrderItems[integralOrder, oldIntegrals] === {}]
+     |>;
    Join[linearData, <|
      "integralList" -> newIntegrals,
      "integralRules" -> Normal[newIndex],
      "kiraOrdering" -> orderingSpec,
+     "kiraOrderingReport" -> kiraOrderingMatchReport[orderingSpec, newIntegrals],
+     "manualIntegralOrderReport" -> manualOrderReport,
      "integralSortKeys" -> (integralSortKey[#, orderingSpec, metadataList] & /@ newIntegrals),
      "integralMetadata" -> integralMetadataList[newIntegrals, metadataList, orderingSpec],
      "linearEquations" -> newLinearEquations
@@ -2341,6 +2383,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     "integralList" -> integrals,
     "integralRules" -> Normal[integralIndex],
     "kiraOrdering" -> orderingSpec,
+    "kiraOrderingReport" -> kiraOrderingMatchReport[orderingSpec, integrals],
     "integralSortKeys" -> (integralSortKey[#, orderingSpec, metadataList] & /@ integrals),
     "integralMetadata" -> integralMetadataList[integrals, metadataList, orderingSpec],
     "sectorMetadata" -> metadata,

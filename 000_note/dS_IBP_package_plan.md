@@ -545,8 +545,8 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 
 - seed 生成阶段自动完成：按 sector 生成，再按 momentum/time 分类，每类内部枚举该 sector 的离散 `n=0/1` 状态，并立即应用 EOM/massless endpoint canonical。若为验证使用 `DiscreteMode -> "sample"`，`sampleDiscreteRules` 中每条规则也必须覆盖全部离散 `n` 变量；sample 只是减少取样条数，不允许保留符号 `n`。seed 只保存 MMA 表达式，不直接导出 Kira。
 - 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`validationReport` 会提前检查外部不变量 `kk[i,j]` 是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
-- Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。
-- 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。
+- Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。linear-system 会保存 `kiraOrderingReport`，其中 `missingIntegralOrderItems` 用来提示未命中的候选。
+- 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。手动重排会额外保存 `manualIntegralOrderReport`，越界编号或不在系统中的 `J` 不会静默消失。
 - 每个 sector 缓存一份 `sectorMetadata`：包含 `sectorVertexRepresentativeMap`、`compactASlots`、`vertexIdToCompactASlot`、`lineSlots`、`lineIdToSlot`、`bSymbolToLineSlot`。这样导出、排序和人工检查不需要每次从指标形状反推“哪个 a/b 属于哪条线或哪个顶点”。
 - 物理 convention 上，缩并后 delta 已积分掉一个时间变量，因此 sub-sector 的有效 `a` 只有 compact 后的 active slots。当前 `004` 主代码已切换为 `aSlotMode -> "compactActiveSlots"`：sub-sector 的 `J` 本身只保留 delta 积分后仍 active 的 compact `aList`；原顶点、原 slot 与 compact slot 的对应关系全部由 `sectorMetadata` 保存。
 ### v4.1 追加验证：multi-shrink compact aList
@@ -561,7 +561,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - 初始化：`makeTopologyData` 预缓存 sector metadata、index maps 和 seed summary。
 - seed 分类：`classifyCanonicalSeedBatch` 按 sector 与 `qIBP/tIBP` 分类。
 - 撒点后端：`makeSampledLinearSystemData` 在 linear-system 层应用 `numericRules` 或用户显式 `CoefficientRules`，不污染解析 seed。
-- Kira 排序：默认全 sector 排序；用户仍可在 linear 后查看 `integralList` 并重排。
+- Kira 排序：默认全 sector 排序；用户仍可在 linear 后查看 `integralList` 并重排，且排序命中情况会写入 report。
 - Massless bundle metadata：`masslessBundleCandidates` 只预扫描同一顶点对的多条 `masslessFull` 线，当前不把它们合成一个指标包，也不减少离散态枚举。
 
 上传边界：只提交当前两版主脚本、note、check 源脚本、check reference 和必要参考资料；忽略 test/results_test、Kira 输出、旧 stdout/stderr、旧 IBP 方程导出、LaTeX 辅助文件和更旧主线脚本。

@@ -1030,20 +1030,23 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
     |>
    ];
 compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
-   {topo, batch, linearData, preferred, customData, reorderedData, kiraData, exportedLinear},
+   {topo, batch, linearData, preferred, missingIntegral, customData, reorderedData, badReorderedData,
+    kiraData, exportedLinear},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
    preferred = linearData["integralList"][[Min[3, linearData["integralCount"]]]];
+   missingIntegral = Global`J[{99, 99}, {{99, 0, 0}, {99, 0}}, {}];
    customData = Global`makeLinearSystemData[
      batch,
      topo,
-     Global`KiraOrdering -> <|"IntegralOrder" -> {preferred}, "PreferredPriority" -> "BeforeB"|>
+     Global`KiraOrdering -> <|"IntegralOrder" -> {preferred, missingIntegral}, "PreferredPriority" -> "BeforeB"|>
      ];
    reorderedData = Global`reorderLinearSystemIntegrals[linearData, {preferred}];
+   badReorderedData = Global`reorderLinearSystemIntegrals[linearData, {preferred, 999, missingIntegral}];
    kiraData = Global`makeKiraExportData[
      linearData,
-     Global`KiraIntegralOrder -> {preferred},
+     Global`KiraIntegralOrder -> {preferred, 999, missingIntegral},
      Global`KiraCoefficientRules -> topo["numericRules"]
      ];
    exportedLinear = Lookup[kiraData, "linearSystem", <||>];
@@ -1053,16 +1056,23 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
       linearData["integralCount"] >= 3 &&
        customData["status"] === "generated" &&
        First[customData["integralList"]] === preferred &&
+       customData["kiraOrderingReport", "missingIntegralOrderItems"] === {missingIntegral} &&
+       ! TrueQ[customData["kiraOrderingReport", "allRequestedIntegralsMatchedQ"]] &&
        First[reorderedData["integralList"]] === preferred &&
+       badReorderedData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
        Lookup[kiraData, "status", Missing["status"]] === "ready" &&
        AssociationQ[exportedLinear] &&
-       First[exportedLinear["integralList"]] === preferred
+       First[exportedLinear["integralList"]] === preferred &&
+       exportedLinear["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral}
       ],
     "preferred" -> preferred,
     "defaultFirst" -> First[linearData["integralList"]],
     "customFirst" -> If[AssociationQ[customData], First[customData["integralList"]], Missing["customData"]],
     "reorderedFirst" -> If[AssociationQ[reorderedData], First[reorderedData["integralList"]], Missing["reorderedData"]],
-    "exportedFirst" -> If[AssociationQ[exportedLinear], First[exportedLinear["integralList"]], Missing["exportedLinear"]]
+    "exportedFirst" -> If[AssociationQ[exportedLinear], First[exportedLinear["integralList"]], Missing["exportedLinear"]],
+    "customOrderingReport" -> Lookup[customData, "kiraOrderingReport", <||>],
+    "badManualOrderReport" -> Lookup[badReorderedData, "manualIntegralOrderReport", <||>],
+    "exportManualOrderReport" -> If[AssociationQ[exportedLinear], Lookup[exportedLinear, "manualIntegralOrderReport", <||>], <||>]
     |>
    ];
 
