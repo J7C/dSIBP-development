@@ -2676,7 +2676,8 @@ makeSampledLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPatt
    ];
 
 Options[makeMomentumIBPLinearSystem] = Options[makeMomentumIBPSeedBatch];
-makeMomentumIBPLinearSystem[topo_Association, opts : OptionsPattern[]] := Module[{batch},
+makeMomentumIBPLinearSystem[topoSpec_Association, opts : OptionsPattern[]] := Module[{topo, batch},
+   topo = normalizeTopologySpec[topoSpec];
    batch = makeMomentumIBPSeedBatch[topo, opts];
    If[Lookup[batch, "status", "missing"] =!= "generated", Return[batch]];
    makeLinearSystemData[batch, topo]

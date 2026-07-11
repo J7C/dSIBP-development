@@ -1579,9 +1579,10 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
    ];
 
 compareExpectedMomentumLinearSystem[] := Module[
-   {topo, system, firstEquation},
+   {topo, system, rawCaseSystem, firstEquation},
    topo = Global`parseTopology[Global`bubbleMasslessCase];
    system = Global`makeMomentumIBPLinearSystem[topo];
+   rawCaseSystem = Global`makeMomentumIBPLinearSystem[Global`bubbleMasslessCase];
    firstEquation = First[system["linearEquations"]];
    <|
     "name" -> "momentumLinearSystem_masslessBubble_sampleOnly",
@@ -1593,9 +1594,13 @@ compareExpectedMomentumLinearSystem[] := Module[
        system["nonlinearEquationCount"] === 0 &&
        system["topologyValidationReport"]["status"] === "ok" &&
        firstEquation["coefficientRules"] === {1 -> Global`dim} &&
-       firstEquation["constantTerm"] === 0
+       firstEquation["constantTerm"] === 0 &&
+       rawCaseSystem["status"] === "generated" &&
+       rawCaseSystem["integralRules"] === system["integralRules"] &&
+       rawCaseSystem["equationCount"] === system["equationCount"]
       ],
     "summary" -> KeyDrop[system, {"integralList", "integralRules", "linearEquations"}],
+    "rawCaseSummary" -> KeyDrop[rawCaseSystem, {"integralList", "integralRules", "linearEquations"}],
     "firstEquation" -> firstEquation,
     "integralRules" -> system["integralRules"]
     |>
