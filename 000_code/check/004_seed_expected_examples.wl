@@ -1263,11 +1263,15 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
 
 
 compareExpectedIBPWorkflowData[] := Module[
-   {sampledWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
+   {sampledWorkflow, invalidModeWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
    sampledWorkflow = Global`makeIBPWorkflowData[
      Global`masslessBoxCase,
      Global`LinearSystemMode -> "sampled",
      Global`ExportKira -> False
+     ];
+   invalidModeWorkflow = Global`makeIBPWorkflowData[
+     Global`mixedBubbleCase,
+     Global`LinearSystemMode -> "sample"
      ];
    exportDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "workflow_mixed_bubble"}];
    exportWorkflow = Global`makeIBPWorkflowData[
@@ -1291,6 +1295,11 @@ compareExpectedIBPWorkflowData[] := Module[
        sampledWorkflow["topologyValidationReport"]["status"] === "ok" &&
        sampledWorkflow["seedBatch"]["topologyValidationReport"]["status"] === "ok" &&
        sampledWorkflow["linearSystem"]["topologyValidationReport"]["status"] === "ok" &&
+       invalidModeWorkflow["status"] === "notReady" &&
+       invalidModeWorkflow["stage"] === "linear" &&
+       invalidModeWorkflow["reason"] === "invalidLinearSystemMode" &&
+       invalidModeWorkflow["allowedLinearSystemModes"] === {"symbolic", "sampled", "numeric"} &&
+       ! KeyExistsQ[invalidModeWorkflow, "seedBatch"] &&
        exportWorkflow["status"] === "ready" &&
        exportWorkflow["stage"] === "kira" &&
        exportWorkflow["topologyValidationReport"]["status"] === "ok" &&
@@ -1313,6 +1322,7 @@ compareExpectedIBPWorkflowData[] := Module[
        metadata["kiraJobOptions"]["WriteKira2MathJob"] === False
       ],
     "sampledSummary" -> KeyTake[sampledWorkflow, {"status", "stage"}],
+    "invalidModeSummary" -> KeyTake[invalidModeWorkflow, {"status", "stage", "reason", "linearSystemMode"}],
     "exportSummary" -> KeyTake[exportWorkflow, {"status", "stage"}],
     "filesWritten" -> Lookup[Lookup[exportWorkflow, "kiraExport", <||>], "filesWritten", {}],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}]

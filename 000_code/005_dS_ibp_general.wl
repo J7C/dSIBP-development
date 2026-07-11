@@ -2407,17 +2407,29 @@ Options[makeIBPWorkflowData] = Join[
 
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
-    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport},
+    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport, allowedLinearModes},
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    topologyReport = topologyValidationReport[topo];
+   linearMode = OptionValue[LinearSystemMode];
+   allowedLinearModes = {"symbolic", "sampled", "numeric"};
+   If[! MemberQ[allowedLinearModes, linearMode],
+    Return[<|
+      "status" -> "notReady",
+      "stage" -> "linear",
+      "reason" -> "invalidLinearSystemMode",
+      "linearSystemMode" -> linearMode,
+      "allowedLinearSystemModes" -> allowedLinearModes,
+      "topology" -> topo,
+      "topologyValidationReport" -> topologyReport
+      |>]
+    ];
    seedOpts = FilterRules[{opts}, Options[makeCanonicalSeedBatch]];
    batch = makeCanonicalSeedBatch[topo, Sequence @@ seedOpts];
    seedCoverageReport = makeCanonicalSeedCoverageReport[batch];
    If[Lookup[batch, "status", "missing"] =!= "generated" || ! TrueQ[canonicalSeedReadyQ[batch]],
     Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "topologyValidationReport" -> topologyReport, "seedBatch" -> KeyDrop[batch, "equations"], "seedCoverageReport" -> seedCoverageReport|>]
-    ];
+   ];
    linearOpts = FilterRules[{opts}, Options[makeLinearSystemData]];
-   linearMode = OptionValue[LinearSystemMode];
    coeffRules = OptionValue[CoefficientRules];
    linearData = If[linearMode === "sampled" || linearMode === "numeric",
      makeSampledLinearSystemData[batch, topo, Sequence @@ linearOpts, CoefficientRules -> coeffRules],
