@@ -562,6 +562,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - 初始化：`makeTopologyData` 预缓存 sector metadata、index maps 和 seed summary。
 - seed 分类：`classifyCanonicalSeedBatch` 按 sector 与 `qIBP/tIBP` 分类。
 - 撒点后端：`makeSampledLinearSystemData` 在 linear-system 层应用 `numericRules` 或用户显式 `CoefficientRules`，不污染解析 seed。
+- 端到端入口：`makeIBPWorkflowData` 只串联现有 gate，返回 topology、seed、linear-system 和可选 Kira export；没有 `OutputDirectory` 或 `ExportKira -> True` 时不写 Kira 文件。
 - Kira 排序：默认全 sector 排序；用户仍可在 linear 后查看 `integralList` 并重排，且排序命中情况会写入 report。
 - Massless bundle metadata：`masslessBundleCandidates` 只预扫描同一顶点对的多条 `masslessFull` 线，当前不把它们合成一个指标包，也不减少离散态枚举。
 

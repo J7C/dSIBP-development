@@ -482,6 +482,7 @@ Kira 排序约定：排序对象是所有 sector 的 `integralList` 全集，不
 - `makeTopologyData[case, PrecomputeShrinkSectorMetadata -> ...]`：读取用户输入并缓存 `sectorMetadataList`、`indexMaps`、`seedSummary`，避免后端每次重新反推 a/b/line/vertex 对应关系。
 - `classifyCanonicalSeedBatch[batch]`：把 canonical seed 按 sector 再按 `qIBP`/`tIBP` 分类，方便检查和后续分块保存。
 - `makeSampledLinearSystemData[batch, topo, CoefficientRules -> ...]`：seed 保持解析，进入 linear/Kira 前再代入用户给定的数值/撒点规则。
+- `makeIBPWorkflowData[caseOrTopo, ...]`：最小端到端入口，按 topology、canonical seed、linear/sample linear、可选 Kira export 的顺序调用现有 gate；默认不运行 Kira reduction。
 - `integralSectorKey` 已改为按 compact `aList` 长度、逐线 pack 位置、`b/bS` 符号和 ISP 槽精确匹配 sector，不再只用 pack 长度判断。
 
 Kira 导出流程仍是：先 `makeCanonicalSeedBatch`，必要时保存 seed `.m`；再 `makeLinearSystemData` 或 `makeSampledLinearSystemData`；最后用户可查看/重排 `integralList`，用 `reorderLinearSystemIntegrals` 或 `makeKiraExportData[..., KiraIntegralOrder -> order]` 导出。

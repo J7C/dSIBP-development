@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -1191,6 +1191,51 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
    ];
 
 
+compareExpectedIBPWorkflowData[] := Module[
+   {sampledWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
+   sampledWorkflow = Global`makeIBPWorkflowData[
+     Global`masslessBoxCase,
+     Global`LinearSystemMode -> "sampled",
+     Global`ExportKira -> False
+     ];
+   exportDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "workflow_mixed_bubble"}];
+   exportWorkflow = Global`makeIBPWorkflowData[
+     Global`mixedBubbleCase,
+     Global`LinearSystemMode -> "symbolic",
+     Global`OutputDirectory -> exportDir,
+     Global`KiraJobOptions -> <|"RunFirefly" -> False, "WriteKira2MathJob" -> False|>
+     ];
+   metadataFile = FileNameJoin[{exportDir, "result", "kira_export_metadata.m"}];
+   metadata = If[FileExistsQ[metadataFile],
+     Block[{$Context = "Global`", $ContextPath = {"System`", "Global`"}}, Get[metadataFile]],
+     <||>
+     ];
+   <|
+    "name" -> "ibpWorkflowData_seedLinearKiraGated",
+    "pass" -> TrueQ[
+      sampledWorkflow["status"] === "ready" &&
+       sampledWorkflow["stage"] === "linear" &&
+       sampledWorkflow["kiraExport"]["status"] === "skipped" &&
+       sampledWorkflow["linearSystem"]["coefficientRulesApplied"] === Global`parseTopology[Global`masslessBoxCase]["numericRules"] &&
+       exportWorkflow["status"] === "ready" &&
+       exportWorkflow["stage"] === "kira" &&
+       exportWorkflow["seedBatch"]["completeCanonicalQ"] === True &&
+       exportWorkflow["linearSystem"]["status"] === "generated" &&
+       exportWorkflow["kiraExport"]["status"] === "ready" &&
+       Length[exportWorkflow["kiraExport"]["filesWritten"]] === 6 &&
+       FileExistsQ[metadataFile] &&
+       metadata["kiraCoefficientRules"] === Global`parseTopology[Global`mixedBubbleCase]["numericRules"] &&
+       metadata["kiraJobOptions"]["RunFirefly"] === False &&
+       metadata["kiraJobOptions"]["WriteKira2MathJob"] === False
+      ],
+    "sampledSummary" -> KeyTake[sampledWorkflow, {"status", "stage"}],
+    "exportSummary" -> KeyTake[exportWorkflow, {"status", "stage"}],
+    "filesWritten" -> Lookup[Lookup[exportWorkflow, "kiraExport", <||>], "filesWritten", {}],
+    "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}]
+    |>
+   ];
+
+
 compareExpectedKiraExporterRejectsSeedBatch[] := Module[
    {topo, batch, outDir, inputStrings, exportData, writtenFiles},
    topo = Global`parseTopology[Global`mixedBubbleCase];
@@ -1526,6 +1571,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "massiveCrossGate" -> compareExpectedMassiveCrossGate[],
     "seedClassificationAndSampledLinear" -> compareExpectedSeedClassificationAndSampledLinear[],
     "seedMMASaveMixedBubble" -> compareExpectedSeedMMASaveMixedBubble[],
+    "ibpWorkflowData" -> compareExpectedIBPWorkflowData[],
     "kiraExporterRejectsSeedBatch" -> compareExpectedKiraExporterRejectsSeedBatch[],
     "kiraWorkspaceExportMixedBubble" -> compareExpectedKiraWorkspaceExportMixedBubble[],
     "kiraWorkspaceExportMasslessBox" -> compareExpectedKiraWorkspaceExportMasslessBox[],

@@ -2275,6 +2275,72 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
     "filesWritten" -> filesWritten
     |>
    ];
+
+
+(* ::Chapter:: *)
+(*端到端轻量工作流入口*)
+
+(* 本章只把 topology、canonical seed、linear-system 和 Kira 文件导出按 gate 串起来。
+   它不运行 Kira reduction，也不改变底层 seed/linear/export 函数的物理逻辑。 *)
+
+Options[makeIBPWorkflowData] = Join[
+   Options[makeCanonicalSeedBatch],
+   {
+    LinearSystemMode -> "symbolic",
+    CoefficientRules -> Automatic,
+    KiraOrdering -> Automatic,
+    OutputDirectory -> None,
+    ExportKira -> False,
+    KiraCoefficientRules -> Automatic,
+    KiraIntegralOrder -> Automatic,
+    KiraJobOptions -> Automatic
+    }
+   ];
+
+
+makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
+   {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
+    exportQ, kiraCoeffRules, kiraOpts, kiraData},
+   topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
+   seedOpts = FilterRules[{opts}, Options[makeCanonicalSeedBatch]];
+   batch = makeCanonicalSeedBatch[topo, Sequence @@ seedOpts];
+   If[Lookup[batch, "status", "missing"] =!= "generated" || ! TrueQ[canonicalSeedReadyQ[batch]],
+    Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "seedBatch" -> KeyDrop[batch, "equations"]|>]
+    ];
+   linearOpts = FilterRules[{opts}, Options[makeLinearSystemData]];
+   linearMode = OptionValue[LinearSystemMode];
+   coeffRules = OptionValue[CoefficientRules];
+   linearData = If[linearMode === "sampled" || linearMode === "numeric",
+     makeSampledLinearSystemData[batch, topo, Sequence @@ linearOpts, CoefficientRules -> coeffRules],
+     makeLinearSystemData[batch, topo, Sequence @@ linearOpts]
+     ];
+   If[Lookup[linearData, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[linearData, "linearQ", False]],
+    Return[<|"status" -> "notReady", "stage" -> "linear", "topology" -> topo, "seedBatch" -> KeyDrop[batch, "equations"], "linearSystem" -> linearData|>]
+    ];
+   exportQ = TrueQ[OptionValue[ExportKira]] || StringQ[OptionValue[OutputDirectory]];
+   kiraCoeffRules = If[OptionValue[KiraCoefficientRules] === Automatic,
+     If[linearMode === "sampled" || linearMode === "numeric", {}, topo["numericRules"]],
+     OptionValue[KiraCoefficientRules]
+     ];
+   kiraOpts = FilterRules[
+     {
+      OutputDirectory -> OptionValue[OutputDirectory],
+      KiraCoefficientRules -> kiraCoeffRules,
+      KiraIntegralOrder -> OptionValue[KiraIntegralOrder],
+      KiraJobOptions -> OptionValue[KiraJobOptions]
+      },
+     Options[makeKiraExportData]
+     ];
+   kiraData = If[exportQ, makeKiraExportData[linearData, Sequence @@ kiraOpts], <|"status" -> "skipped"|>];
+   <|
+    "status" -> If[exportQ, Lookup[kiraData, "status", "missing"], "ready"],
+    "stage" -> If[exportQ, "kira", "linear"],
+    "topology" -> topo,
+    "seedBatch" -> batch,
+    "linearSystem" -> linearData,
+    "kiraExport" -> kiraData
+    |>
+   ];
 (* ::Chapter:: *)
 (*线性系统中间格式*)
 
