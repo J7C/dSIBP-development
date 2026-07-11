@@ -1215,11 +1215,12 @@ compareExpectedMassiveCrossGate[] := Module[
 
 
 compareExpectedSeedClassificationAndSampledLinear[] := Module[
-   {topo, batch, classified, sampled, firstCoeffRules},
+   {topo, batch, classified, sampled, sampledFromRawCase, firstCoeffRules},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    classified = Global`classifyCanonicalSeedBatch[batch];
    sampled = Global`makeSampledLinearSystemData[batch, topo];
+   sampledFromRawCase = Global`makeSampledLinearSystemData[batch, Global`mixedBubbleCase];
    firstCoeffRules = Lookup[First[Lookup[sampled, "linearEquations", {<||>}]], "coefficientRules", {}];
    <|
     "name" -> "seedClassificationAndSampledLinear_mixedBubble",
@@ -1232,10 +1233,15 @@ compareExpectedSeedClassificationAndSampledLinear[] := Module[
        sampled["coefficientRulesApplied"] === topo["numericRules"] &&
        sampled["seedCoverageReport"]["status"] === "ready" &&
        TrueQ[sampled["linearQ"]] &&
-       FreeQ[firstCoeffRules, Global`dim | Global`kk[1, 1] | Global`nuM]
+       FreeQ[firstCoeffRules, Global`dim | Global`kk[1, 1] | Global`nuM] &&
+       sampledFromRawCase["status"] === "generated" &&
+       sampledFromRawCase["coefficientRulesApplied"] === topo["numericRules"] &&
+       sampledFromRawCase["integralCount"] === sampled["integralCount"] &&
+       Lookup[sampledFromRawCase["sectorMetadataList"], "sectorKey"] === Lookup[sampled["sectorMetadataList"], "sectorKey"]
       ],
     "classificationSummary" -> Lookup[classified, "summary", <||>],
     "coefficientRulesApplied" -> Lookup[sampled, "coefficientRulesApplied", Missing["rules"]],
+    "rawCaseCoefficientRulesApplied" -> Lookup[sampledFromRawCase, "coefficientRulesApplied", Missing["rules"]],
     "firstCoeffRules" -> firstCoeffRules
     |>
    ];

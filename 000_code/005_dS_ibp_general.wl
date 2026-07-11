@@ -294,6 +294,14 @@ sectorMetadataKey[metadata_Association] := Lookup[metadata, "sectorKey", sectorK
 sectorMetadataLinePackLengths[metadata_Association] := Length /@ Lookup[Lookup[metadata, "lineSlots", {}], "packTemplate", {}];
 
 
+parsedTopologyQ[spec_Association] := TrueQ[KeyExistsQ[spec, "lines"] && KeyExistsQ[spec, "nL"]];
+parsedTopologyQ[_] := False;
+
+
+normalizeTopologySpec[spec_Association] := If[parsedTopologyQ[spec], spec, parseTopology[spec]];
+normalizeTopologySpec[spec_] := spec;
+
+
 indexContainsLineSymbolQ[index_, symbol_] := ! FreeQ[index, symbol];
 
 
@@ -334,11 +342,12 @@ integralSectorKey[J[aList_, linePacks_, ispList_], metadataList_List] := Module[
 
 
 batchSectorMetadataList[batch_Association, topoSpec_: Automatic] := Module[
-   {fromBatch, topMetadata},
+   {fromBatch, topo, topMetadata},
    fromBatch = Lookup[batch, "sectorMetadataList", Missing["NoSectorMetadataList"]];
    If[ListQ[fromBatch], Return[fromBatch]];
    If[AssociationQ[Lookup[batch, "sectorMetadata", Missing["NoSectorMetadata"]]], Return[{batch["sectorMetadata"]}]];
-   topMetadata = If[AssociationQ[topoSpec], makeSectorMetadata[topoSpec], Missing["NoSectorMetadata"]];
+   topo = normalizeTopologySpec[topoSpec];
+   topMetadata = If[parsedTopologyQ[topo], makeSectorMetadata[topo], Missing["NoSectorMetadata"]];
    If[Head[topMetadata] === Missing, {}, {topMetadata}]
    ];
 
@@ -349,10 +358,11 @@ normaliseKiraOrderingSpec[spec_] := Which[
    ];
 
 
-resolveKiraOrderingSpec[batch_Association, topoSpec_, optSpec_] := Module[{spec},
+resolveKiraOrderingSpec[batch_Association, topoSpec_, optSpec_] := Module[{topo, spec},
+   topo = normalizeTopologySpec[topoSpec];
    spec = Which[
      optSpec =!= Automatic, optSpec,
-     AssociationQ[topoSpec], Lookup[topoSpec, "kiraOrdering", <||>],
+     parsedTopologyQ[topo], Lookup[topo, "kiraOrdering", <||>],
      AssociationQ[Lookup[batch, "kiraOrdering", Missing["NoKiraOrdering"]]], batch["kiraOrdering"],
      True, <||>
      ];
@@ -2571,12 +2581,11 @@ Options[makeLinearSystemData] = {KiraOrdering -> Automatic};
 
 
 makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] := Module[
-   {integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec, seedCoverageReport, topologyReport},
+   {topo, integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec, seedCoverageReport, topologyReport},
+   topo = normalizeTopologySpec[topoSpec];
    topologyReport = Lookup[batch, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
-   If[MatchQ[topologyReport, _Missing] && AssociationQ[topoSpec],
-    topologyReport = topologyValidationReport[
-      If[KeyExistsQ[topoSpec, "lines"] && KeyExistsQ[topoSpec, "nL"], topoSpec, parseTopology[topoSpec]]
-      ]
+   If[MatchQ[topologyReport, _Missing] && parsedTopologyQ[topo],
+    topologyReport = topologyValidationReport[topo]
     ];
    If[Lookup[batch, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "sourceStatus" -> Lookup[batch, "status", Missing["status"]], "topologyValidationReport" -> topologyReport|>]
@@ -2602,8 +2611,8 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
       "forbiddenNData" -> Lookup[batch, "forbiddenNData", {}]
       |>]
     ];
-   metadataList = batchSectorMetadataList[batch, topoSpec];
-   orderingSpec = resolveKiraOrderingSpec[batch, topoSpec, OptionValue[KiraOrdering]];
+   metadataList = batchSectorMetadataList[batch, topo];
+   orderingSpec = resolveKiraOrderingSpec[batch, topo, OptionValue[KiraOrdering]];
    integrals = sortIntegralsForKira[integralObjectsInBatch[batch], orderingSpec, metadataList];
    integralIndex = makeIntegralIndex[integrals];
    equations = Lookup[batch, "equations", {}];
@@ -2655,11 +2664,12 @@ Options[makeSampledLinearSystemData] = Join[Options[makeLinearSystemData], {Coef
 
 
 makeSampledLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] := Module[
-   {linearData, rules},
-   linearData = makeLinearSystemData[batch, topoSpec, KiraOrdering -> OptionValue[KiraOrdering]];
+   {topo, linearData, rules},
+   topo = normalizeTopologySpec[topoSpec];
+   linearData = makeLinearSystemData[batch, topo, KiraOrdering -> OptionValue[KiraOrdering]];
    If[Lookup[linearData, "status", "missing"] =!= "generated", Return[linearData]];
    rules = If[OptionValue[CoefficientRules] === Automatic,
-     If[AssociationQ[topoSpec], Lookup[topoSpec, "numericRules", {}], {}],
+     If[parsedTopologyQ[topo], Lookup[topo, "numericRules", {}], {}],
      OptionValue[CoefficientRules]
      ];
    applyCoefficientRulesToLinearSystem[linearData, CoefficientRules -> rules]
