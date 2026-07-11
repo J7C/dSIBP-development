@@ -124,6 +124,8 @@ Massive 线的 Hankel building block `h[\nu, n, q_e \tau]` 在端点导数下产
 - 具体映射关系由 H/h 转换给出（§4）
 - EOM 递推与 `G^{++}/G^{--}` 型相同
 
+当前代码状态：`005` 已把这类线显式分派为 `massiveCross`，指标包为 `{b_e,n_e}`，并纳入离散态枚举与 forbidden-n 扫描；但对应的 momentum/time building-block seed 尚未实现。因此含 `massiveCross` 的 topology 会带 `pendingFeatures -> {"massiveCrossSeed"}`，只能停在 seed/metadata 检查层，不能进入 linear-system 或 Kira 导出。
+
 ## 4. h 函数与 H/h 转换
 
 ### 4.1 h 函数定义

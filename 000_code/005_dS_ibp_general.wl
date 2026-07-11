@@ -73,6 +73,7 @@ inferSKType[endpoints_, vertexSignAssoc_] := StringJoin[
 (* packType 是后续统一 J 表示的核心分派键。massless 统一走双 theta 合并路线。 *)
 inferPackType[massType_, skType_, state_] := Which[
    state === "shrunk", "shrunk",
+   massType === "massive" && MemberQ[{"+-", "-+"}, skType], "massiveCross",
    massType === "massless" && MemberQ[{"++", "--"}, skType], "masslessFull",
    massType === "massless" && MemberQ[{"+-", "-+"}, skType], "masslessCross",
    True, "massiveFull"
@@ -185,6 +186,7 @@ parseTopology[case_Association] := Module[
 makeLinePack[line_Association] := Module[{id = line["id"]},
    Switch[line["packType"],
     "massiveFull", {b[id], n[id, 1], n[id, 2]},
+    "massiveCross", {b[id], n[id]},
     "masslessFull", {b[id], n[id]},
     "masslessCross", {b[id]},
     "shrunk", {bS[id]},
@@ -428,6 +430,7 @@ integralMetadataList[integrals_List, metadataList_List, orderingSpec_: <||>] := 
 discreteVarsForLine[line_Association] := Module[{id = line["id"]},
    Switch[line["packType"],
     "massiveFull", {n[id, 1], n[id, 2]},
+    "massiveCross", {n[id]},
     "masslessFull", {n[id]},
     _, {}
     ]
@@ -455,6 +458,7 @@ enumerateDiscreteStates[expr_, topo_Association] := Module[
 (* 大拓扑下不要为了 summary 展开所有离散态；计数只用逐线状态数相乘。 *)
 discreteStateCountForLine[line_Association] := Switch[line["packType"],
    "massiveFull", 4,
+   "massiveCross", 2,
    "masslessFull", 2,
    _, 1
    ];
@@ -651,6 +655,10 @@ forbiddenNDataForIntegral[topo_Association, J[aList_, linePacks_, ispList_]] := 
      "masslessFull",
      If[Length[pack] >= 2 && IntegerQ[pack[[2]]] && ! MemberQ[{0, 1}, pack[[2]]],
       AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "nValue" -> pack[[2]]|>]
+      ],
+     "massiveCross",
+     If[Length[pack] >= 2 && IntegerQ[pack[[2]]] && pack[[2]] >= 2,
+      AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "nValue" -> pack[[2]], "reason" -> "massiveCrossEOMNotImplemented"|>]
       ],
      _, Null
      ],
@@ -1125,7 +1133,16 @@ timeThetaBoundaryShrinkTerms[topo_Association, J[aList_, linePacks_, ispList_], 
    ];
 
 
+seedUnsupportedPendingFeatures[topo_Association] := DeleteDuplicates@Join[
+    If[MemberQ[Lookup[topo["lines"], "packType"], "massiveCross"], {"massiveCrossSeed"}, {}]
+    ];
+
+
+momentumIBPPendingFeatures[topo_Association] := seedUnsupportedPendingFeatures[topo];
+
+
 timeIBPPendingFeatures[topo_Association] := DeleteDuplicates@Join[
+    seedUnsupportedPendingFeatures[topo],
     If[MemberQ[Lookup[topo["lines"], "packType"], "massiveFull"], {"shrinkSectorSeedGeneration"}, {}]
     ];
 
@@ -1373,7 +1390,7 @@ makeMomentumIBPSeedBatch::toomany =
 
 makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousData, discreteData, momentumGenerators, equationCount,
-    maxEquationCount, genTemplates, equations},
+    maxEquationCount, genTemplates, equations, pendingFeatures},
    baseIntegral = makeBaseIntegral[topo];
    continuousData = makeContinuousSeedRules[
      topo,
@@ -1404,6 +1421,7 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     ];
    genTemplates = ({#, applyMomentumGeneratorSeed[topo, baseIntegral, #]} &) /@ momentumGenerators;
    If[MemberQ[genTemplates[[All, 2]], $Failed], Return[<|"status" -> "failed", "caseName" -> topo["name"]|>]];
+   pendingFeatures = momentumIBPPendingFeatures[topo];
    equations = Flatten[
      Table[
       Module[{rules = Join[continuousRule, discreteRule], expr},
@@ -1437,6 +1455,8 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     "generators" -> momentumGeneratorLabel /@ momentumGenerators,
     "continuousSeedRules" -> continuousData["rules"],
     "discreteRules" -> discreteData["rules"],
+    "pendingFeatures" -> pendingFeatures,
+    "completeMomentumIBPQ" -> TrueQ[pendingFeatures === {}],
     "equations" -> equations
     |>
    ];
@@ -1769,7 +1789,7 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
     "eomCanonicalQ" -> eomCanonicalQ,
     "forbiddenNData" -> DeleteCases[Flatten[{momentumBatch["forbiddenNData"], timeBatch["forbiddenNData"], Lookup[shrinkBatch, "forbiddenNData", {}]}], Null],
     "pendingFeatures" -> pendingFeatures,
-    "completeMomentumIBPQ" -> TrueQ[momentumBatch["eomCanonicalQ"]],
+    "completeMomentumIBPQ" -> TrueQ[momentumBatch["eomCanonicalQ"] && Lookup[momentumBatch, "pendingFeatures", {}] === {}],
     "completeTimeIBPQ" -> TrueQ[pendingFeatures === {}],
     "completeCanonicalQ" -> TrueQ[eomCanonicalQ && pendingFeatures === {}],
     "sectorMetadata" -> First[sectorMetadataList],
@@ -2102,6 +2122,22 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    If[Lookup[batch, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "sourceStatus" -> Lookup[batch, "status", Missing["status"]]|>]
     ];
+   If[Lookup[batch, "pendingFeatures", {}] =!= {},
+    Return[<|
+      "status" -> "notReady",
+      "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+      "reason" -> "pendingFeatures",
+      "pendingFeatures" -> Lookup[batch, "pendingFeatures", {}]
+      |>]
+    ];
+   If[Lookup[batch, "forbiddenNData", {}] =!= {},
+    Return[<|
+      "status" -> "notReady",
+      "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+      "reason" -> "forbiddenNData",
+      "forbiddenNData" -> Lookup[batch, "forbiddenNData", {}]
+      |>]
+    ];
    metadataList = batchSectorMetadataList[batch, topoSpec];
    orderingSpec = resolveKiraOrderingSpec[batch, topoSpec, OptionValue[KiraOrdering]];
    integrals = sortIntegralsForKira[integralObjectsInBatch[batch], orderingSpec, metadataList];
@@ -2228,6 +2264,26 @@ mixedBubbleCase = <|
    |>;
 
 
+massiveCrossBubbleCase = <|
+   "name" -> "massiveCrossBubbleGate",
+   "vertexData" -> {{1, "+"}, {2, "-"}},
+   "lineData" -> {
+     <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> q1, "nu" -> nuM, "bbType" -> "h", "massType" -> "massive"|>,
+     <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> q1 - k, "nu" -> nuM, "bbType" -> "h", "massType" -> "massive"|>
+     },
+   "extLegs" -> {{B, 1, p1}, {B, 2, p2}},
+   "loopMomenta" -> {q1},
+   "externalMomenta" -> {k},
+   "ispData" -> {},
+   "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2},
+   "sampleDiscreteRules" -> {
+     {n[1] -> 0, n[2] -> 0},
+     {n[1] -> 1, n[2] -> 0}
+     },
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   |>;
+
+
 mixedTriangleCase = <|
    "name" -> "mixedTriangleTwoMassiveOneMassless",
    "vertexData" -> {{1, "+"}, {2, "+"}, {3, "+"}},
@@ -2344,6 +2400,7 @@ runStructureExamples[] := Module[
       bubbleMassiveCase,
       bubbleMasslessCase,
       mixedBubbleCase,
+      massiveCrossBubbleCase,
       mixedTriangleCase,
       mixedSunriseCase,
       twoLoopISPCase
@@ -2354,13 +2411,15 @@ runStructureExamples[] := Module[
      "bubbleMasslessDiscreteStateCount" -> (summaryValue[2, "discreteStateCount"] === 4),
      "mixedBubbleDiscreteStateCount" -> (summaryValue[3, "discreteStateCount"] === 8),
      "mixedBubbleMomentumGeneratorCount" -> (summaryValue[3, "momentumGeneratorCount"] === 2),
-     "mixedTriangleDiscreteStateCount" -> (summaryValue[4, "discreteStateCount"] === 32),
-     "mixedTriangleMomentumGeneratorCount" -> (summaryValue[4, "momentumGeneratorCount"] === 3),
-     "mixedSunriseDiscreteStateCount" -> (summaryValue[5, "discreteStateCount"] === 16),
-     "mixedSunriseMomentumGeneratorCount" -> (summaryValue[5, "momentumGeneratorCount"] === 6),
-     "mixedSunriseISPCount" -> TrueQ[summaryValue[5, "ispCountQ"]],
-     "twoLoopMomentumGeneratorCount" -> (summaryValue[6, "momentumGeneratorCount"] === 6),
-     "twoLoopISPCount" -> TrueQ[summaryValue[6, "ispCountQ"]]
+     "massiveCrossPackTypes" -> (summaryValue[4, "packTypes"] === {"massiveCross", "massiveCross"}),
+     "massiveCrossDiscreteStateCount" -> (summaryValue[4, "discreteStateCount"] === 4),
+     "mixedTriangleDiscreteStateCount" -> (summaryValue[5, "discreteStateCount"] === 32),
+     "mixedTriangleMomentumGeneratorCount" -> (summaryValue[5, "momentumGeneratorCount"] === 3),
+     "mixedSunriseDiscreteStateCount" -> (summaryValue[6, "discreteStateCount"] === 16),
+     "mixedSunriseMomentumGeneratorCount" -> (summaryValue[6, "momentumGeneratorCount"] === 6),
+     "mixedSunriseISPCount" -> TrueQ[summaryValue[6, "ispCountQ"]],
+     "twoLoopMomentumGeneratorCount" -> (summaryValue[7, "momentumGeneratorCount"] === 6),
+     "twoLoopISPCount" -> TrueQ[summaryValue[7, "ispCountQ"]]
      |>;
    summaryFile = FileNameJoin[{baseDir, "004_general_structure_summary.m"}];
    Put[caseSummaries, summaryFile];
@@ -2369,12 +2428,6 @@ runStructureExamples[] := Module[
 
 
 (* 默认加载只定义函数和示例输入；需要检查时显式调用 runStructureExamples[]。 *)
-
-
-
-
-
-
 
 
 

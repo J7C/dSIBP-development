@@ -508,6 +508,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - 奇偶性筛选自动生成（reppowerselection）
 - 多圈动量 IBP 的标量积展开（Gram 矩阵）
 - massless G^{+-}/G^{-+} 的特殊简化
+- massive G^{+-}/G^{-+} 的完整 seed：当前 `005` 已用 `massiveCross -> {b_e,n_e}` 修正结构分派，并用 `massiveCrossSeed` pending gate 阻止进入 linear/Kira；尚需补 momentum/time building-block 公式后才能声明支持这类线的完整 IBP。
 - 同一顶点对多条 massless 传播子的 bundle theta 合并。当前先使用逐线 `{b_e,n_e}` 的 merged-two-theta 表示，保证任意拓扑输入不出错；`005` 已在 `makeTopologyData` / `summarizeCase` 中记录 `masslessBundleCandidates`，用于提示未来可合并的同顶点对 massless 线组，但不改变当前 seed 生成和 canonical 逻辑。
 
 ## 9. 验证与性能红线

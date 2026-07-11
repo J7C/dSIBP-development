@@ -6,6 +6,7 @@
 - [x] 增加 line metadata：至少包含 `massType`、`bbType`、`skType`、`thetaConvention -> "mergedTwoTheta"`、`packType`。
 - [x] 实现 `makeLinePack[e]`：
   - massive `G^{++}/G^{--}` -> `{b_e,n_{e,1},n_{e,2}}`
+  - massive `G^{+-}/G^{-+}` -> `{b_e,n_e}`，当前只做结构表示和 pending gate
   - massless `G^{++}/G^{--}` -> `{b_e,n_e}`
   - massless `G^{+-}/G^{-+}` -> `{b_e}`
   - shrunk line -> `{bS_e}`
@@ -27,6 +28,7 @@
 - [x] 统一 canonical seed/linear-system 门禁：合并 momentum/time-core/shrink-sector seed；pending features 未清空时不能进入后端导出。
 - [x] Kira user-defined system 文件导出：`makeKiraExportData` 只接受 `makeLinearSystemData` 的输出，不直接消费 seed batch；seed 可用 `writeSeedBatchMMA` 保存；可写 `userSystem/ibp.kira`、`list`、`jobs.yaml` 和 `J <-> id` 映射文件，并跳过零方程。
 - [x] 后端排序与 master 优先级接口：支持全 sector 的 `KiraOrdering["IntegralOrder"/"PreferredIntegrals"]`、`reorderLinearSystemIntegrals` 和 `makeKiraExportData[..., KiraIntegralOrder -> ...]`，默认仍以 b/bS 幂次复杂度为主。
+- [x] massive `G^{+-}/G^{-+}` 不再误落入 `massiveFull`：`005` 已加入 `massiveCross -> {b_e,n_e}`、离散态枚举、forbidden-n 扫描和 `massiveCrossSeed` pending gate。真实 momentum/time building-block seed 仍未实现，因此 canonical batch 不能进入 linear/Kira。
 - [ ] 测试分层：
   - bubble massive/h 与参考 code 对比；
   - bubble massless 双 theta `{b,n}` 检查 endpoint 压缩（已加入小样本 check）；

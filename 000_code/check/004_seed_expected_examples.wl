@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
    ];
@@ -757,6 +757,36 @@ compareExpectedMasslessBundleMetadata[] := Module[
    ];
 
 
+compareExpectedMassiveCrossGate[] := Module[
+   {summary, topo, baseIntegral, momentumBatch, canonicalBatch, linearData},
+   summary = Global`summarizeCase[Global`massiveCrossBubbleCase];
+   topo = Global`parseTopology[Global`massiveCrossBubbleCase];
+   baseIntegral = Global`makeBaseIntegral[topo];
+   momentumBatch = Global`makeMomentumIBPSeedBatch[topo];
+   canonicalBatch = Global`makeCanonicalSeedBatch[topo];
+   linearData = Global`makeLinearSystemData[canonicalBatch, topo];
+   <|
+    "name" -> "massiveCross_packAndPendingGate",
+    "pass" -> TrueQ[
+      summary["packTypes"] === {"massiveCross", "massiveCross"} &&
+       summary["linePacks"] === {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}} &&
+       summary["discreteStateCount"] === 4 &&
+       baseIntegral === Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}}, {}] &&
+       Lookup[momentumBatch, "pendingFeatures", {}] === {"massiveCrossSeed"} &&
+       Lookup[canonicalBatch, "pendingFeatures", {}] === {"massiveCrossSeed"} &&
+       Lookup[canonicalBatch, "completeCanonicalQ", True] === False &&
+       Global`canonicalSeedReadyQ[canonicalBatch] === False &&
+       Lookup[linearData, "status", Missing["status"]] === "notReady" &&
+       Lookup[linearData, "reason", Missing["reason"]] === "pendingFeatures"
+      ],
+    "summary" -> KeyTake[summary, {"packTypes", "linePacks", "discreteStateCount"}],
+    "momentumSummary" -> KeyDrop[momentumBatch, "equations"],
+    "canonicalSummary" -> KeyDrop[canonicalBatch, "equations"],
+    "linearData" -> linearData
+    |>
+   ];
+
+
 compareExpectedSeedClassificationAndSampledLinear[] := Module[
    {topo, batch, classified, sampled, firstCoeffRules},
    topo = Global`parseTopology[Global`mixedBubbleCase];
@@ -968,6 +998,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
     "sectorKeyExactMatch" -> compareExpectedSectorKeyExactMatch[],
     "masslessBundleMetadata" -> compareExpectedMasslessBundleMetadata[],
+    "massiveCrossGate" -> compareExpectedMassiveCrossGate[],
     "seedClassificationAndSampledLinear" -> compareExpectedSeedClassificationAndSampledLinear[],
     "seedMMASaveMixedBubble" -> compareExpectedSeedMMASaveMixedBubble[],
     "kiraWorkspaceExportMixedBubble" -> compareExpectedKiraWorkspaceExportMixedBubble[],
@@ -989,7 +1020,6 @@ runSeedExpectedStructureCheck[] := Module[{},
 End[];
 
 EndPackage[];
-
 
 
 
