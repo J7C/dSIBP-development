@@ -1195,6 +1195,7 @@ compareExpectedSeedClassificationAndSampledLinear[] := Module[
        Total[Flatten[Values /@ Values[classified["summary"]]]] === batch["equationCount"] &&
        sampled["status"] === "generated" &&
        sampled["coefficientRulesApplied"] === topo["numericRules"] &&
+       sampled["seedCoverageReport"]["status"] === "ready" &&
        TrueQ[sampled["linearQ"]] &&
        FreeQ[firstCoeffRules, Global`dim | Global`kk[1, 1] | Global`nuM]
       ],
@@ -1257,9 +1258,11 @@ compareExpectedIBPWorkflowData[] := Module[
        exportWorkflow["seedBatch"]["completeCanonicalQ"] === True &&
        exportWorkflow["seedCoverageReport"]["status"] === "ready" &&
        exportWorkflow["linearSystem"]["status"] === "generated" &&
+       exportWorkflow["linearSystem"]["seedCoverageReport"]["status"] === "ready" &&
        exportWorkflow["kiraExport"]["status"] === "ready" &&
        Length[exportWorkflow["kiraExport"]["filesWritten"]] === 6 &&
        FileExistsQ[metadataFile] &&
+       metadata["seedCoverageReport"]["status"] === "ready" &&
        metadata["kiraCoefficientRules"] === Global`parseTopology[Global`mixedBubbleCase]["numericRules"] &&
        metadata["kiraJobOptions"]["RunFirefly"] === False &&
        metadata["kiraJobOptions"]["WriteKira2MathJob"] === False
@@ -1347,6 +1350,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        metadata["integralCount"] === linearData["integralCount"] &&
        metadata["equationCount"] === linearData["equationCount"] &&
        metadata["exportedEquationCount"] === kiraData["exportedEquationCount"] &&
+       metadata["seedCoverageReport"]["status"] === "ready" &&
        metadata["kiraCoefficientRules"] === topo["numericRules"] &&
        metadata["kiraJobOptions"]["RunFirefly"] === True &&
        Lookup[metadata["sectorMetadataList"], "sectorKey"] === Lookup[linearData["sectorMetadataList"], "sectorKey"] &&

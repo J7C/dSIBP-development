@@ -26,7 +26,7 @@
 - [x] 记录同一顶点对多 massless 线的 bundle 合并候选：`005` 已实现 `vertexPairBundleKey` / `masslessBundleCandidates` metadata，并在 massless bubble、mixed sunrise check 中验证候选线组；当前仍不改变逐线 `{b_e,n_e}` 的 merged-two-theta 主线，真实 bundle canonical 作为后续优化。
 - [x] 自动 shrink-sector seed 生成：在 `MaxShrinkSectorCount` 保护内从 massive Wronskian 缩并项派生 `{bS_e}` sector，重映射端点/外腿/active 顶点，并生成对应 time/momentum seed；massless 双 theta 的 bundle 合并仍单独作为未来优化。
 - [x] 统一 canonical seed/linear-system 门禁：合并 momentum/time-core/shrink-sector seed；pending features 未清空时不能进入后端导出。
-- [x] 正式 canonical seed coverage report：`makeCanonicalSeedCoverageReport` 返回 all-sector `qIBP/tIBP` 分类、top-sector 生成元覆盖、EOM canonical、pending/forbidden 扫描；workflow 入口同步返回 `seedCoverageReport`。
+- [x] 正式 canonical seed coverage report：`makeCanonicalSeedCoverageReport` 返回 all-sector `qIBP/tIBP` 分类、top-sector 生成元覆盖、EOM canonical、pending/forbidden 扫描；workflow、linear-system 和 Kira metadata 同步保留 `seedCoverageReport`。
 - [x] Kira user-defined system 文件导出：`makeKiraExportData` 只接受 `makeLinearSystemData` 的输出，不直接消费 seed batch；seed 可用 `writeSeedBatchMMA` 保存；可写 `userSystem/ibp.kira`、`list`、`jobs.yaml` 和 `J <-> id` 映射文件，并跳过零方程。
 - [x] 后端排序与 master 优先级接口：支持全 sector 的 `KiraOrdering["IntegralOrder"/"PreferredIntegrals"]`、`reorderLinearSystemIntegrals` 和 `makeKiraExportData[..., KiraIntegralOrder -> ...]`，默认仍以 b/bS 幂次复杂度为主。
 - [x] Kira 导出可复现 metadata：`kira_export_metadata.m` 记录实际使用的 `KiraCoefficientRules` 和 `KiraJobOptions`；`jobs.yaml` 的 `run_initiate`、`run_firefly`、`kira2math` 默认开启但可由用户覆盖。

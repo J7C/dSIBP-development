@@ -2515,7 +2515,7 @@ Options[makeLinearSystemData] = {KiraOrdering -> Automatic};
 
 
 makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] := Module[
-   {integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec},
+   {integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec, seedCoverageReport},
    If[Lookup[batch, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "sourceStatus" -> Lookup[batch, "status", Missing["status"]]|>]
     ];
@@ -2542,6 +2542,10 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    equations = Lookup[batch, "equations", {}];
    linearEquations = linearizeSeedEquation[#, integralIndex] & /@ equations;
    metadata = If[metadataList === {}, Missing["NoSectorMetadata"], First[metadataList]];
+   seedCoverageReport = If[KeyExistsQ[batch, "completeCanonicalQ"],
+     makeCanonicalSeedCoverageReport[batch],
+     Missing["NotCanonicalSeedBatch"]
+     ];
    <|
     "status" -> "generated",
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
@@ -2555,6 +2559,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     "integralMetadata" -> integralMetadataList[integrals, metadataList, orderingSpec],
     "sectorMetadata" -> metadata,
     "sectorMetadataList" -> metadataList,
+    "seedCoverageReport" -> seedCoverageReport,
     "linearEquations" -> linearEquations,
     "linearQ" -> And @@ (Lookup[linearEquations, "linearQ"]),
     "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False]
