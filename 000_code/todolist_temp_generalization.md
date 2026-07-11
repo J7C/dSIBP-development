@@ -55,6 +55,7 @@
   - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
 - [x] seed preset 初始化：`quickCheck/fullDiscrete/bounded` 统一配置 `seedRanges`、默认离散枚举模式和 seed/batch/shrink-sector 上限；未知 preset 作为 topology error 停止 seed，显式 `seedRanges/seedOptions` 可覆盖，batch 调用的显式 option 优先级最高。
 - [x] raw case 输入 preflight：`caseInputRequirementReport` 检查 `vertexData/lineData/loopMomenta` 必需字段和基础形状，`makeTopologyData`、workflow/readiness 对缺字段或 malformed case 早停并返回 `missingRequiredCaseKeys` / `malformedCaseInput`。
+- [x] 动量基语义检查：`loopMomenta` 与 `externalMomenta` 各自必须无重复，且两组变量不能重叠；坏输入会在 topology validation 阶段早停。
 - [x] vertex metadata 语义检查：`topologyValidationReport` 会拦截重复 vertex id、非法 `+/-` 符号，以及 `activeVertexIds` / `fixedAVertexValues` 中不存在的顶点。
 - [x] 外腿与顶点能量输入检查：`extLegs` 和 `vertexEnergies` 的基础形状、顶点引用会在 topology validation 中拦截，避免 time-IBP 顶点能量误用默认符号。
 - [x] line metadata 语义检查：`topologyValidationReport` 会拦截非法 `massType/skType/state`，避免 typo 被默认解释成 massive full 线后继续生成 seed。

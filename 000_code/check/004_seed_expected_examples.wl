@@ -1033,12 +1033,12 @@ compareExpectedCaseInputPreflight[] := Module[
 
 
 compareExpectedTopologyValidationReport[] := Module[
-    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
-     semanticCase, duplicateISPCase, malformedRangeCase, semanticReport, duplicateISPReport, malformedRangeReport,
-     malformedSampleTopo, malformedSampleReport,
-     missingNumericCase, missingVertexEnergyCase, missingLineParameterCase,
-     missingNumericReport, missingVertexEnergyReport, missingLineParameterReport,
-     badCodes, redundantCodes, singularCodes, semanticCodes, duplicateISPCodes, malformedRangeCodes, malformedSampleCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
+     {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
+      semanticCase, duplicateISPCase, malformedRangeCase, semanticReport, duplicateISPReport, malformedRangeReport,
+      malformedSampleTopo, malformedSampleReport, duplicateMomentumCase, duplicateMomentumReport, duplicateMomentumBatch,
+      missingNumericCase, missingVertexEnergyCase, missingLineParameterCase,
+      missingNumericReport, missingVertexEnergyReport, missingLineParameterReport,
+      badCodes, redundantCodes, singularCodes, semanticCodes, duplicateISPCodes, malformedRangeCodes, malformedSampleCodes, duplicateMomentumCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
     badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow,
     missingNumericWorkflow, missingVertexEnergyWorkflow, missingLineParameterWorkflow, missingLineParameterTemplate},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
@@ -1159,6 +1159,10 @@ compareExpectedTopologyValidationReport[] := Module[
       Global`parseTopology[Global`mixedBubbleCase],
       <|"sampleDiscreteRules" -> {Global`n[1, 1] -> 0, {Global`n[1, 2], Global`n[2, 1] -> 1}}|>
       ];
+   duplicateMomentumCase = Join[
+     Global`bubbleMasslessCase,
+     <|"loopMomenta" -> {Global`q1, Global`q1}, "externalMomenta" -> {Global`q1, Global`k, Global`k}|>
+     ];
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
    redundantReport = Global`topologyValidationReport[Global`parseTopology[redundantCase]];
    singularReport = Global`topologyValidationReport[Global`parseTopology[singularCase]];
@@ -1166,6 +1170,8 @@ compareExpectedTopologyValidationReport[] := Module[
     duplicateISPReport = Global`topologyValidationReport[Global`parseTopology[duplicateISPCase]];
     malformedRangeReport = Global`topologyValidationReport[Global`parseTopology[malformedRangeCase]];
     malformedSampleReport = Global`topologyValidationReport[malformedSampleTopo];
+   duplicateMomentumReport = Global`topologyValidationReport[Global`parseTopology[duplicateMomentumCase]];
+   duplicateMomentumBatch = Global`makeCanonicalSeedBatch[Global`parseTopology[duplicateMomentumCase]];
    missingNumericReport = Global`topologyValidationReport[Global`parseTopology[missingNumericCase]];
    missingVertexEnergyReport = Global`topologyValidationReport[Global`parseTopology[missingVertexEnergyCase]];
    missingLineParameterReport = Global`topologyValidationReport[Global`parseTopology[missingLineParameterCase]];
@@ -1176,6 +1182,7 @@ compareExpectedTopologyValidationReport[] := Module[
     duplicateISPCodes = Lookup[duplicateISPReport["issues"], "code", {}];
     malformedRangeCodes = Lookup[malformedRangeReport["issues"], "code", {}];
     malformedSampleCodes = Lookup[malformedSampleReport["issues"], "code", {}];
+   duplicateMomentumCodes = Lookup[duplicateMomentumReport["issues"], "code", {}];
    missingNumericCodes = Lookup[missingNumericReport["issues"], "code", {}];
    missingVertexEnergyCodes = Lookup[missingVertexEnergyReport["issues"], "code", {}];
    missingLineParameterCodes = Lookup[missingLineParameterReport["issues"], "code", {}];
@@ -1239,10 +1246,15 @@ compareExpectedTopologyValidationReport[] := Module[
         MemberQ[malformedRangeCodes, "invalidNumericRules"] &&
         MemberQ[malformedRangeCodes, "invalidZeroPointRules"] &&
         MemberQ[malformedRangeCodes, "invalidShrinkPrefactorRules"] &&
-       malformedSampleReport["status"] === "issues" &&
-       malformedSampleReport["errorCount"] === 1 &&
-       MemberQ[malformedSampleCodes, "malformedSampleDiscreteRules"] &&
-       missingNumericReport["status"] === "ok" &&
+        malformedSampleReport["status"] === "issues" &&
+        malformedSampleReport["errorCount"] === 1 &&
+        MemberQ[malformedSampleCodes, "malformedSampleDiscreteRules"] &&
+        duplicateMomentumReport["status"] === "issues" &&
+        MemberQ[duplicateMomentumCodes, "duplicateLoopMomenta"] &&
+        MemberQ[duplicateMomentumCodes, "duplicateExternalMomenta"] &&
+        MemberQ[duplicateMomentumCodes, "loopExternalMomentumOverlap"] &&
+        duplicateMomentumBatch["status"] === "invalidTopology" &&
+        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 2 &&
        MemberQ[missingNumericCodes, "numericRulesMissingExternalInvariants"] &&

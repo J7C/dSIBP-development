@@ -2215,7 +2215,8 @@ unsupportedSeedFeaturesForTopology[topo_Association] := DeleteDuplicates@Join[
 
 topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
-    vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
+     duplicateLoopMomenta, duplicateExternalMomenta, loopExternalMomentumOverlap,
+     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
     ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData, seedOptions,
      unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport, numericRuleValidationReport,
@@ -2238,6 +2239,18 @@ topologyValidationReport[topo_Association] := Module[
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
+   duplicateLoopMomenta = Cases[Tally[topo["loopMomenta"]], {mom_, count_} /; count > 1 :> mom];
+   If[duplicateLoopMomenta =!= {},
+    appendIssue["error", "duplicateLoopMomenta", <|"loopMomenta" -> topo["loopMomenta"], "duplicates" -> duplicateLoopMomenta|>]
+    ];
+   duplicateExternalMomenta = Cases[Tally[topo["externalMomenta"]], {mom_, count_} /; count > 1 :> mom];
+   If[duplicateExternalMomenta =!= {},
+    appendIssue["error", "duplicateExternalMomenta", <|"externalMomenta" -> topo["externalMomenta"], "duplicates" -> duplicateExternalMomenta|>]
+    ];
+   loopExternalMomentumOverlap = Intersection[topo["loopMomenta"], topo["externalMomenta"]];
+   If[loopExternalMomentumOverlap =!= {},
+    appendIssue["error", "loopExternalMomentumOverlap", <|"overlap" -> loopExternalMomentumOverlap, "loopMomenta" -> topo["loopMomenta"], "externalMomenta" -> topo["externalMomenta"]|>]
+    ];
    If[! DuplicateFreeQ[lineIds],
     appendIssue["error", "duplicateLineIds", <|"lineIds" -> lineIds|>]
     ];
