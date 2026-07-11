@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedSeedPresetConfig, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement, canonicalCoverageCase, compareExpectedCanonicalCoverageSmallCases,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -1056,6 +1056,45 @@ compareExpectedTopologyValidationReport[] := Module[
    ];
 
 
+compareExpectedSeedPresetConfig[] := Module[
+   {defaultTopo, fullDiscreteCase, fullDiscreteTopo, fullDiscreteRules, fullDiscreteBatch,
+    unknownCase, unknownTopo, unknownReport, warningCodes},
+   defaultTopo = Global`parseTopology[Global`bubbleMasslessCase];
+   fullDiscreteCase = Join[
+     Global`bubbleMasslessCase,
+     <|"seedPreset" -> "fullDiscrete", "sampleDiscreteRules" -> {}|>
+     ];
+   fullDiscreteTopo = Global`parseTopology[fullDiscreteCase];
+   fullDiscreteRules = Global`selectedDiscreteSeedRules[fullDiscreteTopo];
+   fullDiscreteBatch = Global`makeMomentumIBPSeedBatch[fullDiscreteTopo];
+   unknownCase = Join[Global`bubbleMasslessCase, <|"seedPreset" -> "typoPreset"|>];
+   unknownTopo = Global`parseTopology[unknownCase];
+   unknownReport = Global`topologyValidationReport[unknownTopo];
+   warningCodes = Lookup[Select[unknownReport["issues"], #["severity"] === "warning" &], "code", {}];
+   <|
+    "name" -> "seedPresetConfig_quickFullDiscreteUnknown",
+    "pass" -> TrueQ[
+      defaultTopo["seedPreset"] === "quickCheck" &&
+       defaultTopo["seedRanges", "sampleOnly"] === True &&
+       defaultTopo["seedOptions", "DiscreteMode"] === "sample" &&
+       fullDiscreteTopo["seedPreset"] === "fullDiscrete" &&
+       fullDiscreteTopo["seedOptions", "DiscreteMode"] === "all" &&
+       fullDiscreteRules["status"] === "generated" &&
+       fullDiscreteRules["mode"] === "all" &&
+       fullDiscreteRules["ruleCount"] === Global`discreteStateCount[fullDiscreteTopo] &&
+       fullDiscreteBatch["status"] === "generated" &&
+       fullDiscreteBatch["discreteRuleCount"] === Global`discreteStateCount[fullDiscreteTopo] &&
+       unknownTopo["unknownSeedPreset"] === "typoPreset" &&
+       MemberQ[warningCodes, "unknownSeedPreset"] &&
+       unknownReport["errorCount"] === 0
+      ],
+    "defaultSeedRanges" -> defaultTopo["seedRanges"],
+    "fullDiscreteRuleCount" -> Lookup[fullDiscreteRules, "ruleCount", Missing["ruleCount"]],
+    "unknownWarningCodes" -> warningCodes
+    |>
+   ];
+
+
 compareExpectedTwoLoopISPCompleteness[] := Module[
    {topo, summary, expected, caseCheck, repCheck, validationCodes},
    topo = Global`parseTopology[Global`twoLoopISPCase];
@@ -1837,6 +1876,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "threeVertexMultiShrinkCompactA" -> compareExpectedThreeVertexMultiShrinkCompactA[],
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
     "topologyValidationReport" -> compareExpectedTopologyValidationReport[],
+    "seedPresetConfig" -> compareExpectedSeedPresetConfig[],
     "twoLoopISPCompleteness" -> compareExpectedTwoLoopISPCompleteness[],
     "sectorKeyExactMatch" -> compareExpectedSectorKeyExactMatch[],
     "masslessBundleMetadata" -> compareExpectedMasslessBundleMetadata[],

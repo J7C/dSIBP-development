@@ -63,6 +63,45 @@ normalizeISP[{name_, expr_, range_}] := <|
    |>;
 
 
+seedPresetAssociation[preset_] := Switch[preset,
+   "quickCheck" | Automatic | Missing["NotSet"],
+   <|
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
+    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80|>
+    |>,
+   "fullDiscrete",
+   <|
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
+    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200|>
+    |>,
+   "bounded",
+   <|
+    "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}, "sampleOnly" -> False|>,
+    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200|>
+    |>,
+   _,
+   <|
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
+    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80|>,
+    "unknownPreset" -> preset
+    |>
+   ];
+
+
+normalizeSeedConfig[case_Association] := Module[
+   {preset = Lookup[case, "seedPreset", "quickCheck"], presetData, seedRanges, seedOptions},
+   presetData = seedPresetAssociation[preset];
+   seedRanges = Join[Lookup[presetData, "seedRanges", <||>], Lookup[case, "seedRanges", <||>]];
+   seedOptions = Join[Lookup[presetData, "seedOptions", <||>], Lookup[case, "seedOptions", <||>]];
+   <|
+    "seedPreset" -> preset,
+    "seedRanges" -> seedRanges,
+    "seedOptions" -> seedOptions,
+    "unknownSeedPreset" -> Lookup[presetData, "unknownPreset", None]
+    |>
+   ];
+
+
 (* 由端点顶点的 +/- 标记推断 SK 类型。 *)
 inferSKType[endpoints_, vertexSignAssoc_] := StringJoin[
    ToString[Lookup[vertexSignAssoc, endpoints[[1]], "+"]],
@@ -105,7 +144,7 @@ completeLineMetadata[line_, vertexSignAssoc_] := Module[
 parseTopology[case_Association] := Module[
    {vertexData, vertexIds, vertexSignAssoc, rawLines, lines, loopMomenta,
    externalMomenta, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
-    eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList},
+    eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig},
    vertexData = case["vertexData"];
    vertexIds = vertexData[[All, 1]];
    vertexSignAssoc = Association[Rule @@@ vertexData];
@@ -143,6 +182,7 @@ parseTopology[case_Association] := Module[
      eMomenta[[e]] - Sum[loopCoeffMatrix[[e, l]] loopMomenta[[l]], {l, nL}],
      {e, nE}
      ];
+   seedConfig = normalizeSeedConfig[case];
    <|
     "name" -> Lookup[case, "name", "unnamed"],
     "vertexData" -> vertexData,
@@ -167,7 +207,10 @@ parseTopology[case_Association] := Module[
     "externalPartList" -> externalPartList,
     "numericRules" -> Lookup[case, "numericRules", {}],
     "sampleDiscreteRules" -> Lookup[case, "sampleDiscreteRules", {}],
-    "seedRanges" -> Lookup[case, "seedRanges", <||>],
+    "seedPreset" -> seedConfig["seedPreset"],
+    "seedRanges" -> seedConfig["seedRanges"],
+    "seedOptions" -> seedConfig["seedOptions"],
+    "unknownSeedPreset" -> seedConfig["unknownSeedPreset"],
     "zeroPointRules" -> Lookup[case, "zeroPointRules", {}],
     "shrinkPrefactorRules" -> Lookup[case, "shrinkPrefactorRules", {}],
     "kiraOrdering" -> Lookup[case, "kiraOrdering", <||>],
@@ -1305,7 +1348,7 @@ applyTimeGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
 Options[makeTimeIBPSeedBatch] = {
    UseSampleOnly -> Automatic,
    MaxSeedRuleCount -> 200,
-   DiscreteMode -> "sample",
+   DiscreteMode -> Automatic,
    MaxDiscreteRuleCount -> 64,
    MaxEquationCount -> 80,
    ApplyNumericRules -> False
@@ -1446,6 +1489,12 @@ resolveUseSampleOnly[topo_Association, value_] := If[value === Automatic,
    ];
 
 
+resolveDiscreteMode[topo_Association, value_] := If[value === Automatic,
+   Lookup[Lookup[topo, "seedOptions", <||>], "DiscreteMode", "sample"],
+   value
+   ];
+
+
 Options[makeContinuousSeedRules] = {UseSampleOnly -> Automatic, MaxSeedRuleCount -> 200};
 makeContinuousSeedRules::toomany =
    "拓扑 `1` 的连续 seed 规则数为 `2`，超过上限 `3`；未生成规则。";
@@ -1487,14 +1536,14 @@ makeContinuousSeedRules[topo_Association, OptionsPattern[]] := Module[
    ];
 
 
-Options[selectedDiscreteSeedRules] = {DiscreteMode -> "sample", MaxDiscreteRuleCount -> 64};
+Options[selectedDiscreteSeedRules] = {DiscreteMode -> Automatic, MaxDiscreteRuleCount -> 64};
 selectedDiscreteSeedRules::toomany =
    "拓扑 `1` 的离散态数为 `2`，超过上限 `3`；未生成 all 离散规则。";
 
 
 selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
    {mode, maxCount, rules, count, coverageIssues},
-   mode = OptionValue[DiscreteMode];
+   mode = resolveDiscreteMode[topo, OptionValue[DiscreteMode]];
    maxCount = OptionValue[MaxDiscreteRuleCount];
    Switch[mode,
     "none",
@@ -1525,7 +1574,7 @@ momentumGeneratorLabel[gen_Association] := {gen["type"], gen["dLoop"], gen["vect
 Options[makeMomentumIBPSeedBatch] = {
    UseSampleOnly -> Automatic,
    MaxSeedRuleCount -> 200,
-   DiscreteMode -> "sample",
+   DiscreteMode -> Automatic,
    MaxDiscreteRuleCount -> 64,
    MaxEquationCount -> 80,
    ApplyNumericRules -> False
@@ -1807,6 +1856,9 @@ topologyValidationReport[topo_Association] := Module[
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
    If[! DuplicateFreeQ[lineIds],
     appendIssue["error", "duplicateLineIds", <|"lineIds" -> lineIds|>]
+    ];
+   If[Lookup[topo, "unknownSeedPreset", None] =!= None,
+    appendIssue["warning", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "fallback" -> "quickCheck"|>]
     ];
    badEndpointLines = Select[
      MapIndexed[Join[#1, <|"lineIndex" -> First[#2]|>] &, topo["lines"]],
