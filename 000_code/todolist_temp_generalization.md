@@ -22,7 +22,7 @@
 - [x] momentum seed 中加入 massive building-block 导数项，并在 batch 层立即接入 EOM canonical。
 - [x] time-IBP core seed：实现顶点幂次、外部相位、massive 端点导数、massless 端点翻转项、massive theta boundary shrink 项，并在 batch 层立即接入 EOM/massless endpoint canonical。
 - [x] massless endpoint canonical 规则：实现 `{10}=-{01}`、`{11}=q^2{00}` 对 `{b_e,n_e}` 的压缩。
-- [ ] 记录但暂不强制实现同一顶点对多 massless 线的 bundle 合并；代码中预留 `vertexPairBundleKey[e]`。当前 check 同时保留 per-line merged theta 和 future bundled sketch。
+- [x] 记录同一顶点对多 massless 线的 bundle 合并候选：`005` 已实现 `vertexPairBundleKey` / `masslessBundleCandidates` metadata，并在 massless bubble、mixed sunrise check 中验证候选线组；当前仍不改变逐线 `{b_e,n_e}` 的 merged-two-theta 主线，真实 bundle canonical 作为后续优化。
 - [x] 自动 shrink-sector seed 生成：在 `MaxShrinkSectorCount` 保护内从 massive Wronskian 缩并项派生 `{bS_e}` sector，重映射端点/外腿/active 顶点，并生成对应 time/momentum seed；massless 双 theta 的 bundle 合并仍单独作为未来优化。
 - [x] 统一 canonical seed/linear-system 门禁：合并 momentum/time-core/shrink-sector seed；pending features 未清空时不能进入后端导出。
 - [x] Kira user-defined system 文件导出：`makeKiraExportData` 只接受 `makeLinearSystemData` 的输出，不直接消费 seed batch；seed 可用 `writeSeedBatchMMA` 保存；可写 `userSystem/ibp.kira`、`list`、`jobs.yaml` 和 `J <-> id` 映射文件，并跳过零方程。
@@ -38,5 +38,6 @@
 
 
 - [x] sector metadata 缓存 original/compact 两套 a-slot 映射：`sectorVertexRepresentativeMap`、`compactASlots`、`vertexIdToCompactASlot`、`lineSlots` 等已进入 seed/linear metadata。
-- [x] 将 sub-sector 的 `J` 从兼容模式 `originalSlotsWithInactiveZero` 迁移为真实 compact `aList`；`makeBaseIntegral`、`shiftVertexA`、`shrinkLineIntegral` 和 mixed-bubble canonical check 已切换到 `compactActiveSlots`。- [x] 增加 double-shrink compact `aList` 小检查：双 massive-line bubble toy 覆盖 `{e1}`、`{e2}`、`{e1,e2}` sectors，确认多重缩并后 `J` 只保留一个 active `a`。
-- [ ] 后续增加更一般多顶点 multi-shrink 检查：至少一个三顶点/两条不同边缩并后仍剩两个 active compact `a` 的例子，验证不是只覆盖两点图。
+- [x] 将 sub-sector 的 `J` 从兼容模式 `originalSlotsWithInactiveZero` 迁移为真实 compact `aList`；`makeBaseIntegral`、`shiftVertexA`、`shrinkLineIntegral` 和 mixed-bubble canonical check 已切换到 `compactActiveSlots`。
+- [x] 增加 double-shrink compact `aList` 小检查：双 massive-line bubble toy 覆盖 `{e1}`、`{e2}`、`{e1,e2}` sectors，确认多重缩并后 `J` 只保留一个 active `a`。
+- [x] 增加更一般多顶点 multi-shrink 检查：三顶点/两条不同边缩并后仍剩两个 active compact `a` 的例子，验证不是只覆盖两点图。

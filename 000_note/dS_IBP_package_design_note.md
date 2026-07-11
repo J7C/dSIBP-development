@@ -206,7 +206,7 @@ massless 简化关系：
 
 本 package 的主线只采用两 theta 合并方案作为 massive/massless 混合与纯 massless 的统一表示。原因是本项目目标是任意 case 通用，而不是专门为纯 massless 最小化方程数；只有在两 theta 合并路线中，massless 端点导数关系才能自然压缩为逐线指标包 `{b_e, n_e}`，并与 massive 的 `{b_e, n_{e,1}, n_{e,2}}` 放在同一套 `J` 表示中。
 
-特别地，若同一对顶点之间有多条 massless 传播子，它们的 Heaviside 结构不是逐线独立的 \(2^N\) 个分支。因为同一对时间变量只有 `\tau_u>\tau_v` 与 `\tau_v>\tau_u` 两个互斥区域，混合 theta 支撑为空。实现上可先逐线保留 `{b_e,n_e}`，但设计上必须允许后续按顶点对 bundle 合并，进一步减少冗余状态。
+特别地，若同一对顶点之间有多条 massless 传播子，它们的 Heaviside 结构不是逐线独立的 \(2^N\) 个分支。因为同一对时间变量只有 `\tau_u>\tau_v` 与 `\tau_v>\tau_u` 两个互斥区域，混合 theta 支撑为空。实现上当前逐线保留 `{b_e,n_e}`，但 `005` 会在 topology metadata 中记录 `masslessBundleCandidates`，指出未来可按顶点对 bundle 合并的线组；这一步只是提示与检查信息，不改变 seed 生成、EOM/time-IBP canonical 或 Kira 导出。
 
 ### 6.2 非主线参考：单 theta 分支
 
@@ -262,6 +262,7 @@ IBP seed 包括：
 - `activeASlots`：缩并后仍活跃的 `a` 槽。缩并线的 delta 会把两个端点的时间积分合并，因此只有代表顶点的 `a` 保持可变，另一个端点在 `J` 中固定为 `0`。
 - `lineSlots`：每条线的原始 line id、当前端点、packType、massType/state、第一幂次指标（`b` 或当前代码中的 `bS`）和完整 pack 模板。
 - `ispSlots`：ISP 指标和对应定义。
+- `masslessBundleCandidates`：同一顶点对上多条 `masslessFull` 线的候选合并组。当前只用于提示 future bundle 简化，不作为生成 seed 的输入。
 
 `J` 的 `aList` 采用 compact active slots：delta 缩并后只保留仍独立的时间变量，不在 `J` 中保留 inactive 原顶点槽。原始顶点编号、外腿、线端点、original slot 与 compact slot 的对应关系全部保存在 `sectorMetadataList` 中。seed batch 通过 `writeSeedBatchMMA` 保存为 MMA 表达式；Kira exporter 不直接读取 seed batch。
 

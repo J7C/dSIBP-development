@@ -1590,6 +1590,30 @@ makeTopologySeedSummary[topo_Association] := <|
    |>;
 
 
+vertexPairBundleKey[line_Association] := Sort[Lookup[line, "originalEndpoints", line["endpoints"]]];
+
+
+masslessBundleCandidates[topo_Association] := Module[
+   {indexedLines, masslessFullLines, grouped},
+   indexedLines = MapIndexed[Join[#1, <|"lineIndex" -> First[#2]|>] &, topo["lines"]];
+   masslessFullLines = Select[indexedLines, #["packType"] === "masslessFull" &];
+   grouped = GroupBy[masslessFullLines, vertexPairBundleKey];
+   KeyValueMap[
+    If[Length[#2] > 1,
+      <|
+       "vertexPair" -> #1,
+       "lineIndices" -> Lookup[#2, "lineIndex"],
+       "lineIds" -> Lookup[#2, "id"],
+       "packTemplates" -> (makeLinePack /@ #2),
+       "bundleMode" -> "futureOptionalTwoThetaSharedPair"
+       |>,
+      Nothing
+      ] &,
+    grouped
+    ]
+   ];
+
+
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
    {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList},
    topo = parseTopology[case];
@@ -1608,6 +1632,7 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      "sectorMetadataList" -> sectorMetadataList,
      "indexMaps" -> makeTopologyIndexMaps[topo, topMetadata],
      "seedSummary" -> makeTopologySeedSummary[topo],
+     "masslessBundleCandidates" -> masslessBundleCandidates[topo],
      "precomputedShrinkSectorSummary" -> KeyDrop[subsetData, "subsets"],
      "precomputedShrinkSectorKeys" -> Lookup[sectorMetadataList, "sectorKey"]
      |>]
@@ -2303,6 +2328,7 @@ summarizeCase[case_Association] := Module[
     "numericRules" -> topo["numericRules"],
     "numericZExprs" -> (spData["zExprs"] /. topo["numericRules"]),
     "seedRanges" -> topo["seedRanges"],
+    "masslessBundleCandidates" -> masslessBundleCandidates[topo],
     "structuralNeededISPCount" -> spData["structuralNeededISPCount"],
     "ispCoverageQ" -> spData["coverageQ"],
     "ispIndependentQ" -> spData["independentQ"],

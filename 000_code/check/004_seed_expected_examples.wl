@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedSectorKeyExactMatch, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
    ];
@@ -729,6 +729,34 @@ compareExpectedSectorKeyExactMatch[] := Module[
    ];
 
 
+compareExpectedMasslessBundleMetadata[] := Module[
+   {bubbleData, sunriseData, bubbleSummary, sunriseSummary, bubbleCandidates, sunriseCandidates},
+   bubbleData = Global`makeTopologyData[Global`bubbleMasslessCase];
+   sunriseData = Global`makeTopologyData[Global`mixedSunriseCase];
+   bubbleSummary = Global`summarizeCase[Global`bubbleMasslessCase];
+   sunriseSummary = Global`summarizeCase[Global`mixedSunriseCase];
+   bubbleCandidates = Lookup[bubbleData, "masslessBundleCandidates", {}];
+   sunriseCandidates = Lookup[sunriseData, "masslessBundleCandidates", {}];
+   <|
+    "name" -> "masslessBundleMetadata_perLineMainFutureBundle",
+    "pass" -> TrueQ[
+      Length[bubbleCandidates] === 1 &&
+       First[bubbleCandidates]["vertexPair"] === {1, 2} &&
+       First[bubbleCandidates]["lineIds"] === {1, 2} &&
+       First[bubbleCandidates]["packTemplates"] === {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}} &&
+       Length[sunriseCandidates] === 1 &&
+       First[sunriseCandidates]["vertexPair"] === {1, 2} &&
+       First[sunriseCandidates]["lineIds"] === {2, 3} &&
+       First[sunriseCandidates]["packTemplates"] === {{Global`b[2], Global`n[2]}, {Global`b[3], Global`n[3]}} &&
+       Lookup[bubbleSummary, "masslessBundleCandidates", {}] === bubbleCandidates &&
+       Lookup[sunriseSummary, "masslessBundleCandidates", {}] === sunriseCandidates
+      ],
+    "bubbleCandidates" -> bubbleCandidates,
+    "sunriseCandidates" -> sunriseCandidates
+    |>
+   ];
+
+
 compareExpectedSeedClassificationAndSampledLinear[] := Module[
    {topo, batch, classified, sampled, firstCoeffRules},
    topo = Global`parseTopology[Global`mixedBubbleCase];
@@ -939,6 +967,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "threeVertexMultiShrinkCompactA" -> compareExpectedThreeVertexMultiShrinkCompactA[],
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
     "sectorKeyExactMatch" -> compareExpectedSectorKeyExactMatch[],
+    "masslessBundleMetadata" -> compareExpectedMasslessBundleMetadata[],
     "seedClassificationAndSampledLinear" -> compareExpectedSeedClassificationAndSampledLinear[],
     "seedMMASaveMixedBubble" -> compareExpectedSeedMMASaveMixedBubble[],
     "kiraWorkspaceExportMixedBubble" -> compareExpectedKiraWorkspaceExportMixedBubble[],

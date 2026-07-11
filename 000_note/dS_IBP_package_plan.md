@@ -508,7 +508,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - 奇偶性筛选自动生成（reppowerselection）
 - 多圈动量 IBP 的标量积展开（Gram 矩阵）
 - massless G^{+-}/G^{-+} 的特殊简化
-- 同一顶点对多条 massless 传播子的 bundle theta 合并。当前先使用逐线 `{b_e,n_e}` 的 merged-two-theta 表示，保证任意拓扑输入不出错；专门减少冗余状态作为后续优化。
+- 同一顶点对多条 massless 传播子的 bundle theta 合并。当前先使用逐线 `{b_e,n_e}` 的 merged-two-theta 表示，保证任意拓扑输入不出错；`005` 已在 `makeTopologyData` / `summarizeCase` 中记录 `masslessBundleCandidates`，用于提示未来可合并的同顶点对 massless 线组，但不改变当前 seed 生成和 canonical 逻辑。
 
 ## 9. 验证与性能红线
 
@@ -557,5 +557,6 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - seed 分类：`classifyCanonicalSeedBatch` 按 sector 与 `qIBP/tIBP` 分类。
 - 撒点后端：`makeSampledLinearSystemData` 在 linear-system 层应用 `numericRules` 或用户显式 `CoefficientRules`，不污染解析 seed。
 - Kira 排序：默认全 sector 排序；用户仍可在 linear 后查看 `integralList` 并重排。
+- Massless bundle metadata：`masslessBundleCandidates` 只预扫描同一顶点对的多条 `masslessFull` 线，当前不把它们合成一个指标包，也不减少离散态枚举。
 
 上传边界：只提交当前两版主脚本、note、check 源脚本、check reference 和必要参考资料；忽略 test/results_test、Kira 输出、旧 stdout/stderr、旧 IBP 方程导出、LaTeX 辅助文件和更旧主线脚本。
