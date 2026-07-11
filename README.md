@@ -100,7 +100,14 @@ kiraData = makeKiraExportData[
 
 已纳入轻量检查的例子包括 pure massless bubble、mixed massive/massless bubble、mixed triangle、mixed sunrise、pure massive bubble 参考对照、two-loop ISP toy 和 massless box topology replacement。它们覆盖的是逐线 `{b_e,n_e}` 的 massless double-theta merged 主线；同一顶点对多条 massless 线的真实 bundle 合并目前只记录 `masslessBundleCandidates`，暂不作为默认 seed canonical。
 
-这些检查证明当前主线接口可以生成小规模 seed、linear-system 和 Kira 文件结构；它们不等价于对任意拓扑的完整数学证明。后续工作应优先补充核心 seed 公式的代表性手推/程序对照，而不是继续增加零散输入检查。
+其中以下函数族已经按 sector 做了手推 seed 对照：每个 sector 至少有一个 qIBP seed 和一个 tIBP seed 与程序输出逐项比较。
+
+- pure massless bubble：`top`
+- mixed massive/massless bubble：`top`, `e1`
+- mixed triangle：`top`, `e1`, `e2`, `e1_e2`
+- mixed sunrise：`top`, `e1`
+
+这些检查证明当前主线接口可以生成小规模 seed、linear-system 和 Kira 文件结构，并且上述代表函数族的 sector-level q/t seed 公式已做手推对照；它们仍不等价于对任意拓扑的完整数学证明。后续工作应优先补充新的代表 topology 或生成元类型，而不是继续增加零散输入检查。
 
 当前不默认实现的内容：
 

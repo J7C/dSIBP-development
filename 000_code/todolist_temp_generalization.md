@@ -52,6 +52,7 @@
   - 单圈 triangle/box 检查 topology input 替换（triangle 已有结构检查，并加入 `∂q1·k1` 单 seed 手推对照；massless box 已加入 sample momentum linear-system 小检查）；
   - 两圈含 ISP toy 拓扑检查生成元数和 ISP 完备性（已加入 twoLoopISP / twoLoopISPCompleteness 小检查）；
   - canonical seed 覆盖门禁（已加入 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise 的 all-sector qIBP/tIBP 分类、逐 sector 生成元标签和 EOM canonical 扫描，并复用主线 `makeCanonicalSeedCoverageReport`；只看小样本结构，不展开大解析系统）；
+  - all-sector 手推 seed 对照（已加入 pure massless bubble、mixed massive/massless bubble、mixed triangle、mixed sunrise；每个 sector 至少有一个 qIBP seed 和一个 tIBP seed 与程序输出逐项比较）；
   - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
 - [x] seed preset 初始化：`quickCheck/fullDiscrete/bounded` 统一配置 `seedRanges`、默认离散枚举模式和 seed/batch/shrink-sector 上限；未知 preset 作为 topology error 停止 seed，显式 `seedRanges/seedOptions` 可覆盖，batch 调用的显式 option 优先级最高。
 - [x] raw case 输入 preflight：`caseInputRequirementReport` 检查 `vertexData/lineData/loopMomenta` 必需字段和基础形状，`makeTopologyData`、workflow/readiness 对缺字段或 malformed case 早停并返回 `missingRequiredCaseKeys` / `malformedCaseInput`。
@@ -85,7 +86,7 @@
 
 但以下内容仍不能宣称为“任意拓扑已完全证明”：
 
-- 代表性手推 seed 对照仍偏少。已有 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise/two-loop ISP 等小检查，但还需要继续用小例子覆盖更多生成元和 sector，尤其是非 bubble 的 time-IBP 与 shrink-sector 联动。
+- 代表性手推 seed 对照已经覆盖 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise 的所有当前 sector，且每个 sector 至少包含一个 qIBP seed 和一个 tIBP seed；但这仍只是代表 family 的局部证明，不能替代任意拓扑的完整数学证明。
 - 同一顶点对多条 massless 线的 bundle 合并仍是 future feature。当前只记录 `masslessBundleCandidates`，主线仍采用逐线 `{b_e,n_e}` 的 double-theta merged 方案。
 - Kira 导出只验证文件结构和映射一致性，不运行 Kira reduction，也不确认 master 数。
 - `loopMomenta/externalMomenta` 重复检查只是更早的语义报错；若后续决定减少 bespoke validation，可以改为主要依赖 scalar-product/ISP 坐标求解失败来报告。
@@ -93,7 +94,8 @@
 下一步优先级：
 
 - [ ] 暂停新增零散输入检查，除非直接保护 topology/IBP 主链路。
-- [ ] 对已经手推的例子扩展“每类生成元至少一个代表 seed”的小对照，仍禁止大范围解析遍历。
-- [ ] 对 time-IBP 在三点/两圈含 ISP 例子上的 seed 结构做小规模对照。
+- [x] 对已经手推的例子扩展“每个 sector 至少一个 qIBP 和一个 tIBP seed”的小对照，仍禁止大范围解析遍历。
+- [x] 对 time-IBP 在三点/两圈含 ISP 例子上的 seed 结构做小规模对照。
+- [ ] 继续补新的代表 topology 或生成元类型时，必须沿用 all-sector hand-seed 标准，而不是只加单个 seed。
 - [ ] 对 shrink 后 compact `aList`、原始顶点/线映射和全 sector Kira 排序再做一次人工审查。
 - [ ] 视用户取舍，决定是否保留或移除已提交的动量基重复检查。
