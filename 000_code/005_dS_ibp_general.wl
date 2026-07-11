@@ -874,6 +874,37 @@ numericRuleRequirementReport[topo_Association] := Module[
    ];
 
 
+numericRuleTemplateVariables[report_Association, scope_] := Switch[scope,
+   "missing", report["missingNumericVariables"],
+   "required", report["requiredNumericVariables"],
+   "externalInvariants", report["requiredExternalInvariants"],
+   "vertexEnergies", report["requiredVertexEnergies"],
+   "lineParameters", report["requiredLineParameters"],
+   list_List, list,
+   _, report["missingNumericVariables"]
+   ];
+
+
+numericRuleTemplateValue[var_, valueSpec_] := If[valueSpec === Automatic, numericValue[var], valueSpec];
+
+
+Options[makeNumericRuleTemplate] = {
+   NumericRuleTemplateScope -> "missing",
+   NumericRuleTemplateValue -> Automatic
+   };
+
+
+(* 生成可直接复制到 case["numericRules"] 的替换规则骨架；默认只列当前缺失项。 *)
+makeNumericRuleTemplate[caseOrTopo_Association, OptionsPattern[]] := Module[
+   {topo, report, vars, valueSpec},
+   topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
+   report = numericRuleRequirementReport[topo];
+   vars = numericRuleTemplateVariables[report, OptionValue[NumericRuleTemplateScope]];
+   valueSpec = OptionValue[NumericRuleTemplateValue];
+   (Rule[#, numericRuleTemplateValue[#, valueSpec]] &) /@ vars
+   ];
+
+
 (* 将两个线性动量表达式的点积展开为 qq/qk/kk。 *)
 expandDotExpr[p_, r_, topo_Association] := Module[
    {loops = topo["loopMomenta"], exts = topo["externalMomenta"],
@@ -2039,6 +2070,7 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      "seedSummary" -> makeTopologySeedSummary[topo],
      "validationReport" -> topologyValidationReport[topo],
      "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
+     "numericRuleTemplate" -> makeNumericRuleTemplate[topo],
      "masslessBundleCandidates" -> masslessBundleCandidates[topo],
      "precomputedShrinkSectorSummary" -> KeyDrop[subsetData, "subsets"],
      "precomputedShrinkSectorKeys" -> Lookup[sectorMetadataList, "sectorKey"]

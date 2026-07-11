@@ -920,9 +920,13 @@ compareExpectedThreeVertexMultiShrinkCompactA[] := Module[
    ];
 
 compareExpectedTopologyDataInterface[] := Module[
-   {data, req},
+   {data, req, fullTemplate},
    data = Global`makeTopologyData[Global`mixedBubbleCase, Global`PrecomputeShrinkSectorMetadata -> True];
    req = data["numericRuleRequirementReport"];
+   fullTemplate = Global`makeNumericRuleTemplate[
+     Global`mixedBubbleCase,
+     Global`NumericRuleTemplateScope -> "required"
+     ];
    <|
     "name" -> "topologyDataInterface_mixedBubble_precomputedMetadata",
     "pass" -> TrueQ[
@@ -939,11 +943,19 @@ compareExpectedTopologyDataInterface[] := Module[
        Sort[req["requiredVertexEnergies"]] === {Global`p1, Global`p2} &&
        req["requiredLineParameters"] === {Global`nuM} &&
        req["missingNumericVariables"] === {} &&
-       TrueQ[req["completeStaticNumericRulesQ"]]
+       TrueQ[req["completeStaticNumericRulesQ"]] &&
+       data["numericRuleTemplate"] === {} &&
+       fullTemplate === {
+         Global`kk[1, 1] -> Global`numericValue[Global`kk[1, 1]],
+         Global`p1 -> Global`numericValue[Global`p1],
+         Global`p2 -> Global`numericValue[Global`p2],
+         Global`nuM -> Global`numericValue[Global`nuM]
+         }
       ],
     "sectorKeys" -> Lookup[data["sectorMetadataList"], "sectorKey"],
     "seedSummary" -> Lookup[data, "seedSummary", <||>],
     "numericRuleRequirementReport" -> req,
+    "fullNumericRuleTemplate" -> fullTemplate,
     "indexMapKeys" -> Keys[Lookup[data, "indexMaps", <||>]]
     |>
    ];
@@ -955,7 +967,7 @@ compareExpectedTopologyValidationReport[] := Module[
     missingNumericReport, missingVertexEnergyReport, missingLineParameterReport,
     badCodes, redundantCodes, singularCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
     badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow,
-    missingNumericWorkflow, missingVertexEnergyWorkflow, missingLineParameterWorkflow},
+    missingNumericWorkflow, missingVertexEnergyWorkflow, missingLineParameterWorkflow, missingLineParameterTemplate},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -1044,6 +1056,7 @@ compareExpectedTopologyValidationReport[] := Module[
    missingNumericWorkflow = Global`makeIBPWorkflowData[missingNumericCase, Global`LinearSystemMode -> "numeric"];
    missingVertexEnergyWorkflow = Global`makeIBPWorkflowData[missingVertexEnergyCase, Global`LinearSystemMode -> "numeric"];
    missingLineParameterWorkflow = Global`makeIBPWorkflowData[missingLineParameterCase, Global`LinearSystemMode -> "numeric"];
+   missingLineParameterTemplate = Global`makeNumericRuleTemplate[missingLineParameterCase];
    <|
     "name" -> "topologyValidationReport_goodPendingBad",
     "pass" -> TrueQ[
@@ -1103,6 +1116,7 @@ compareExpectedTopologyValidationReport[] := Module[
        missingLineParameterWorkflow["reason"] === "numericRulesMissingLineParameters" &&
        missingLineParameterWorkflow["missingLineParameters"] === {Global`nuM} &&
        missingLineParameterWorkflow["numericRuleRequirementReport", "missingNumericVariables"] === {Global`nuM} &&
+       missingLineParameterTemplate === {Global`nuM -> Global`numericValue[Global`nuM]} &&
        ! KeyExistsQ[missingLineParameterWorkflow, "seedBatch"]
       ],
     "goodReport" -> goodData["validationReport"],
@@ -1116,6 +1130,7 @@ compareExpectedTopologyValidationReport[] := Module[
     "missingNumericWorkflow" -> KeyTake[missingNumericWorkflow, {"status", "stage", "reason", "missingExternalInvariants", "numericRuleRequirementReport"}],
     "missingVertexEnergyWorkflow" -> KeyTake[missingVertexEnergyWorkflow, {"status", "stage", "reason", "missingVertexEnergies", "numericRuleRequirementReport"}],
     "missingLineParameterWorkflow" -> KeyTake[missingLineParameterWorkflow, {"status", "stage", "reason", "missingLineParameters", "numericRuleRequirementReport"}],
+    "missingLineParameterTemplate" -> missingLineParameterTemplate,
     "incompleteDiscreteData" -> incompleteDiscreteData,
     "badCanonicalStatus" -> Lookup[badCanonicalBatch, "status", Missing["status"]],
     "badWorkflowStage" -> KeyTake[badWorkflow, {"status", "stage"}]

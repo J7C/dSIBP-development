@@ -35,6 +35,7 @@
 - [x] 数值 Kira 系统 dummy 保护：当导出系数全数值化时，自动追加 `(N+1)*(ccc)` dummy block，并在 metadata 中记录 `targetIntegralCount` 与 dummy id。
 - [x] numeric workflow 残留参数门禁：`makeLinearSystemData`/`makeSampledLinearSystemData` 记录 `numericCoefficientSystemQ` 与 `coefficientVariables`；`LinearSystemMode -> "numeric"` 若仍有符号系数则停在 linear 阶段并返回 `nonNumericCoefficients`。
 - [x] numeric 初始化需求汇总：`numericRuleRequirementReport` 集中列出外部不变量、time-IBP 顶点能量和 massive line 参数的 required/provided/missing 变量，并接入 `makeTopologyData`、`topologyValidationReport`、workflow/readiness。
+- [x] numericRules 模板接口：`makeNumericRuleTemplate[case]` 默认给出缺失数值规则的可编辑骨架，也可用 `NumericRuleTemplateScope -> "required"` 列出全量静态需求。
 - [x] 最小端到端 workflow 入口：`makeIBPWorkflowData` 按 topology -> canonical seed -> linear/sample linear -> optional Kira export 串联现有 gate；默认不运行 Kira reduction。
 - [x] 分阶段 readiness report：`makeIBPReadinessReport` 汇总 topology/seed/linear/Kira 的 ready 状态、计数、pending features 和 issue codes，方便任意拓扑输入先做轻量体检。
 - [x] massive `G^{+-}/G^{-+}` 不再误落入 `massiveFull`：`005` 已加入 `massiveCross` 分派，但按 massive convention 保持 `{b_e,n_{e,1},n_{e,2}}`；momentum/time building-block seed 与 EOM canonical 已接入，且不产生 theta boundary shrink。
