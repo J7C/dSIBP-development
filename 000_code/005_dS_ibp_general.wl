@@ -2026,6 +2026,18 @@ Options[makeShrinkSectorSeedBatch] = Join[
 makeShrinkSectorSeedBatch::toomany = "拓扑 `1` 的 shrink sector 数为 `2`，超过上限 `3`；未展开 shrink sectors。";
 
 
+(* shrink sector 的摘要要保留各自的生成元列表；coverage report 依赖它判断每个子 sector 是否同时生成完整 q/t seed。 *)
+shrinkSectorBatchSummary[batch_Association] := Module[
+   {metadata = Lookup[batch["topology"], "sectorMetadata", makeSectorMetadata[batch["topology"]]]},
+   <|
+    "sectorShrunkLines" -> batch["sectorShrunkLines"],
+    "sectorKey" -> metadata["sectorKey"],
+    "momentumSummary" -> KeyDrop[batch["momentumBatch"], "equations"],
+    "timeSummary" -> KeyDrop[batch["timeBatch"], "equations"]
+    |>
+   ];
+
+
 makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport, maxShrinkDepth, maxShrinkCount},
    topologyReport = topologyValidationReport[topo];
@@ -2083,7 +2095,7 @@ makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
     "pendingFeatures" -> If[completeQ, {}, DeleteDuplicates[Join[pendingFeatures, {"shrinkSectorSeedGeneration"}]]],
     "completeShrinkSectorGenerationQ" -> completeQ,
     "sectorMetadataList" -> (Lookup[#["topology"], "sectorMetadata", makeSectorMetadata[#["topology"]]] & /@ sectorBatches),
-    "sectorSummaries" -> (KeyDrop[#, {"topology", "momentumBatch", "timeBatch"}] & /@ sectorBatches),
+    "sectorSummaries" -> (shrinkSectorBatchSummary /@ sectorBatches),
     "equations" -> equations
     |>
    ];
@@ -2218,9 +2230,47 @@ classifyCanonicalSeedBatch[batch_Association] := Module[
 canonicalGeneratorStrings[list_] := Sort[ToString[#, InputForm] & /@ list];
 
 
+expectedGeneratorsBySector[batch_Association] := Module[
+   {topEntry, shrinkSummaries, shrinkEntries},
+   topEntry = "top" -> <|
+      "qIBP" -> Lookup[Lookup[batch, "momentumSummary", <||>], "generators", {}],
+      "tIBP" -> Lookup[Lookup[batch, "timeSummary", <||>], "generators", {}]
+      |>;
+   shrinkSummaries = Lookup[Lookup[batch, "shrinkSectorSummary", <||>], "sectorSummaries", {}];
+   shrinkEntries = Table[
+     Lookup[summary, "sectorKey", sectorKeyFromShrunkLines[Lookup[summary, "sectorShrunkLines", {}]]] -> <|
+       "qIBP" -> Lookup[Lookup[summary, "momentumSummary", <||>], "generators", {}],
+       "tIBP" -> Lookup[Lookup[summary, "timeSummary", <||>], "generators", {}]
+       |>,
+     {summary, shrinkSummaries}
+     ];
+   Association[Join[{topEntry}, shrinkEntries]]
+   ];
+
+
+sectorGeneratorCoverageChecks[equations_List, expectedBySector_Association, sectorKeys_List] := Association @ Table[
+    Module[
+     {sectorEquations, actualQ, actualT, expected = Lookup[expectedBySector, sectorKey, <|"qIBP" -> {}, "tIBP" -> {}|>]},
+     sectorEquations = Select[equations, seedEntrySourceSectorKey[#] === sectorKey &];
+     actualQ = DeleteDuplicates @ Lookup[Select[sectorEquations, seedEntryIBPClass[#] === "qIBP" &], "generator", {}];
+     actualT = DeleteDuplicates @ Lookup[Select[sectorEquations, seedEntryIBPClass[#] === "tIBP" &], "generator", {}];
+     sectorKey -> <|
+       "actualQGenerators" -> actualQ,
+       "actualTGenerators" -> actualT,
+       "expectedQGenerators" -> expected["qIBP"],
+       "expectedTGenerators" -> expected["tIBP"],
+       "qGeneratorCoverageQ" -> TrueQ[canonicalGeneratorStrings[actualQ] === canonicalGeneratorStrings[expected["qIBP"]]],
+       "tGeneratorCoverageQ" -> TrueQ[canonicalGeneratorStrings[actualT] === canonicalGeneratorStrings[expected["tIBP"]]]
+       |>
+     ],
+    {sectorKey, sectorKeys}
+    ];
+
+
 makeCanonicalSeedCoverageReport[batch_Association] := Module[
    {classified, summary, sectorKeys, equations, sectorClassChecks, topEquations, topQGenerators, topTGenerators,
-    expectedQGenerators, expectedTGenerators, totalClassifiedCount, forbiddenData, reportQ},
+    expectedQGenerators, expectedTGenerators, expectedBySector, sectorGeneratorChecks,
+    totalClassifiedCount, forbiddenData, reportQ},
    classified = classifyCanonicalSeedBatch[batch];
    summary = Lookup[classified, "summary", <||>];
    sectorKeys = Lookup[Lookup[batch, "sectorMetadataList", {}], "sectorKey", {}];
@@ -2241,6 +2291,8 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
    topTGenerators = DeleteDuplicates @ Lookup[Select[topEquations, seedEntryIBPClass[#] === "tIBP" &], "generator", {}];
    expectedQGenerators = Lookup[Lookup[batch, "momentumSummary", <||>], "generators", {}];
    expectedTGenerators = Lookup[Lookup[batch, "timeSummary", <||>], "generators", {}];
+   expectedBySector = expectedGeneratorsBySector[batch];
+   sectorGeneratorChecks = sectorGeneratorCoverageChecks[equations, expectedBySector, sectorKeys];
    totalClassifiedCount = Total[Cases[summary, _Integer, Infinity]];
    forbiddenData = DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null];
    reportQ = TrueQ[
@@ -2254,6 +2306,7 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
       Sort[Lookup[classified, "sectorKeys", {}]] === Sort[sectorKeys] &&
       FreeQ[Lookup[classified, "classes", {}], "unknownIBP"] &&
       And @@ Lookup[Values[sectorClassChecks], "hasBothQAndT", {False}] &&
+      And @@ Flatten[Lookup[Values[sectorGeneratorChecks], {"qGeneratorCoverageQ", "tGeneratorCoverageQ"}, {False}]] &&
       canonicalGeneratorStrings[topQGenerators] === canonicalGeneratorStrings[expectedQGenerators] &&
       canonicalGeneratorStrings[topTGenerators] === canonicalGeneratorStrings[expectedTGenerators]
      ];
@@ -2266,6 +2319,7 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
     "classes" -> Lookup[classified, "classes", {}],
     "classSummary" -> summary,
     "sectorClassChecks" -> sectorClassChecks,
+    "sectorGeneratorChecks" -> sectorGeneratorChecks,
     "topQGenerators" -> topQGenerators,
     "topTGenerators" -> topTGenerators,
     "expectedQGenerators" -> expectedQGenerators,

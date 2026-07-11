@@ -26,7 +26,7 @@
 - [x] 记录同一顶点对多 massless 线的 bundle 合并候选：`005` 已实现 `vertexPairBundleKey` / `masslessBundleCandidates` metadata，并在 massless bubble、mixed sunrise check 中验证候选线组；当前仍不改变逐线 `{b_e,n_e}` 的 merged-two-theta 主线，真实 bundle canonical 作为后续优化。
 - [x] 自动 shrink-sector seed 生成：在 `MaxShrinkSectorCount` 保护内从 massive Wronskian 缩并项派生 `{bS_e}` sector，重映射端点/外腿/active 顶点，并生成对应 time/momentum seed；massless 双 theta 的 bundle 合并仍单独作为未来优化。
 - [x] 统一 canonical seed/linear-system 门禁：合并 momentum/time-core/shrink-sector seed；pending features 未清空时不能进入后端导出。
-- [x] 正式 canonical seed coverage report：`makeCanonicalSeedCoverageReport` 返回 all-sector `qIBP/tIBP` 分类、top-sector 生成元覆盖、EOM canonical、pending/forbidden 扫描；workflow、linear-system 和 Kira metadata 同步保留 `seedCoverageReport`。
+- [x] 正式 canonical seed coverage report：`makeCanonicalSeedCoverageReport` 返回 all-sector `qIBP/tIBP` 分类、逐 sector 生成元覆盖、EOM canonical、pending/forbidden 扫描；workflow、linear-system 和 Kira metadata 同步保留 `seedCoverageReport`。
 - [x] Kira user-defined system 文件导出：`makeKiraExportData` 只接受 `makeLinearSystemData` 的输出，不直接消费 seed batch；seed 可用 `writeSeedBatchMMA` 保存；可写 `userSystem/ibp.kira`、`list`、`jobs.yaml` 和 `J <-> id` 映射文件，并跳过零方程。
 - [x] 后端排序与 master 优先级接口：支持全 sector 的 `KiraOrdering["IntegralOrder"/"PreferredIntegrals"]`、`reorderLinearSystemIntegrals` 和 `makeKiraExportData[..., KiraIntegralOrder -> ...]`，默认仍以 b/bS 幂次复杂度为主。
 - [x] Kira 目标列表接口：`KiraTargetIntegrals -> Automatic` 默认导出全量目标，也支持 id 与 `J[...]` 混合列表；数值 dummy 会自动附加到目标列表。
@@ -44,7 +44,7 @@
   - bubble massless 双 theta `{b,n}` 检查 endpoint 压缩（已加入小样本 check）；
   - 单圈 triangle/box 检查 topology input 替换（triangle 已有结构检查，并加入 `∂q1·k1` 单 seed 手推对照；massless box 已加入 sample momentum linear-system 小检查）；
   - 两圈含 ISP toy 拓扑检查生成元数和 ISP 完备性（已加入 twoLoopISP / twoLoopISPCompleteness 小检查）；
-  - canonical seed 覆盖门禁（已加入 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise 的 all-sector qIBP/tIBP 分类、top-sector 生成元标签和 EOM canonical 扫描，并复用主线 `makeCanonicalSeedCoverageReport`；只看小样本结构，不展开大解析系统）；
+  - canonical seed 覆盖门禁（已加入 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise 的 all-sector qIBP/tIBP 分类、逐 sector 生成元标签和 EOM canonical 扫描，并复用主线 `makeCanonicalSeedCoverageReport`；只看小样本结构，不展开大解析系统）；
   - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
 - [x] seed preset 初始化：`quickCheck/fullDiscrete/bounded` 统一配置 `seedRanges`、默认离散枚举模式和 seed/batch/shrink-sector 上限，未知 preset 只给 warning，显式 `seedRanges/seedOptions` 可覆盖，batch 调用的显式 option 优先级最高。
 
