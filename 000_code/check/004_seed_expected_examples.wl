@@ -1564,7 +1564,7 @@ compareExpectedSeedClassificationAndSampledLinear[] := Module[
    ];
 
 compareExpectedSeedMMASaveMixedBubble[] := Module[
-   {topo, batch, outDir, saveData, loaded, noWriteData, badOutputData, badBaseNameData},
+   {topo, batch, outDir, saveData, loaded, noWriteData, badOutputData, badBaseNameData, badBatchData, missingReadData},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    outDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "seed_mma_mixed_bubble"}];
@@ -1573,6 +1573,8 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
    noWriteData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> None];
    badOutputData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> ""];
    badBaseNameData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> outDir, Global`SeedFileBaseName -> {}];
+   badBatchData = Global`writeSeedBatchMMA[<|"status" -> "notGenerated", "caseName" -> "badSeed"|>, Global`OutputDirectory -> outDir];
+   missingReadData = Global`readSeedBatchMMA[FileNameJoin[{outDir, "missing_seed_file.m"}]];
    <|
     "name" -> "seedMMASave_mixedBubble_canonicalBatch",
     "pass" -> TrueQ[
@@ -1586,12 +1588,19 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
        badOutputData["status"] === "notWritten" &&
        Lookup[badOutputData["outputOptionValidationReport", "issues"], "code"] === {"invalidOutputDirectory"} &&
        badBaseNameData["status"] === "notWritten" &&
-       Lookup[badBaseNameData["outputOptionValidationReport", "issues"], "code"] === {"invalidSeedFileBaseName"}
+       Lookup[badBaseNameData["outputOptionValidationReport", "issues"], "code"] === {"invalidSeedFileBaseName"} &&
+       badBatchData["status"] === "notWritten" &&
+       badBatchData["reason"] === "invalidSeedBatch" &&
+       Sort[Lookup[badBatchData["seedBatchValidationReport", "issues"], "code"]] === {"seedBatchMissingEquationCount", "seedBatchMissingEquations", "seedBatchNotGenerated"} &&
+       missingReadData["status"] === "notRead" &&
+       missingReadData["reason"] === "fileNotFound"
        ],
     "saveData" -> saveData,
     "noWriteData" -> noWriteData,
     "badOutputData" -> badOutputData,
     "badBaseNameData" -> badBaseNameData,
+    "badBatchData" -> badBatchData,
+    "missingReadData" -> missingReadData,
     "loadedSummary" -> If[AssociationQ[loaded], KeyDrop[loaded, "equations"], loaded]
     |>
    ];

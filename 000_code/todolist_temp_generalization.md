@@ -34,6 +34,7 @@
 - [x] Kira run script 文件产物：默认写参考式 `run.sh`（清理、dos2unix、kira 命令），但 package 不自动执行；命令、并行数和是否写出均可由 `KiraJobOptions` 控制。
 - [x] 数值 Kira 系统 dummy 保护：当导出系数全数值化时，自动追加 `(N+1)*(ccc)` dummy block，并在 metadata 中记录 `targetIntegralCount` 与 dummy id。
 - [x] 文件输出选项门禁：`writeSeedBatchMMA` 检查 `OutputDirectory` 和 `SeedFileBaseName`；`makeKiraExportData` 直接调用时也检查 `OutputDirectory`，坏路径不写文件。
+- [x] seed MMA 保存/读取门禁：只保存已生成且含 `equations/equationCount` 的 seed batch；读取缺失文件返回结构化 `notRead`。
 - [x] numeric workflow 残留参数门禁：`makeLinearSystemData`/`makeSampledLinearSystemData` 记录 `numericCoefficientSystemQ` 与 `coefficientVariables`；`LinearSystemMode -> "numeric"` 若仍有符号系数则停在 linear 阶段并返回 `nonNumericCoefficients`。
 - [x] numeric 初始化需求汇总：`numericRuleRequirementReport` 集中列出外部不变量、time-IBP 顶点能量和 massive line 参数的 required/provided/missing 变量，并接入 `makeTopologyData`、`topologyValidationReport`、workflow/readiness。
 - [x] numericRules 模板接口：`makeNumericRuleTemplate[case]` 默认给出缺失数值规则的可编辑骨架，也可用 `NumericRuleTemplateScope -> "required"` 列出全量静态需求。

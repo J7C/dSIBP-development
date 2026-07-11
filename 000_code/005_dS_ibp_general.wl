@@ -2861,11 +2861,29 @@ validateSeedMMAOutputOptions[outputDir_, fileBaseName_] := Module[{issues = {}},
    ];
 
 
+validateSeedBatchForSave[batch_Association] := Module[{issues = {}},
+   If[Lookup[batch, "status", Missing["status"]] =!= "generated",
+    AppendTo[issues, <|"code" -> "seedBatchNotGenerated", "status" -> Lookup[batch, "status", Missing["status"]]|>]
+    ];
+   If[! KeyExistsQ[batch, "equations"] || ! ListQ[Lookup[batch, "equations", Missing["equations"]]],
+    AppendTo[issues, <|"code" -> "seedBatchMissingEquations"|>]
+    ];
+   If[! KeyExistsQ[batch, "equationCount"],
+    AppendTo[issues, <|"code" -> "seedBatchMissingEquationCount"|>]
+    ];
+   <|"status" -> If[issues === {}, "ok", "invalidSeedBatch"], "issues" -> issues|>
+   ];
+
+
 writeSeedBatchMMA[batch_Association, OptionsPattern[]] := Module[
-   {outputDir = OptionValue[OutputDirectory], fileBaseName = OptionValue[SeedFileBaseName], outputOptionReport, file},
+   {outputDir = OptionValue[OutputDirectory], fileBaseName = OptionValue[SeedFileBaseName], outputOptionReport, batchReport, file},
    outputOptionReport = validateSeedMMAOutputOptions[outputDir, fileBaseName];
    If[outputOptionReport["status"] =!= "ok",
     Return[<|"status" -> "notWritten", "reason" -> "invalidSeedMMAOutputOptions", "outputOptionValidationReport" -> outputOptionReport|>]
+    ];
+   batchReport = validateSeedBatchForSave[batch];
+   If[batchReport["status"] =!= "ok",
+    Return[<|"status" -> "notWritten", "reason" -> "invalidSeedBatch", "seedBatchValidationReport" -> batchReport, "outputOptionValidationReport" -> outputOptionReport|>]
     ];
    If[! StringQ[outputDir], Return[<|"status" -> "notWritten", "reason" -> "OutputDirectory was not requested", "outputOptionValidationReport" -> outputOptionReport|>]];
    If[! DirectoryQ[outputDir], CreateDirectory[outputDir, CreateIntermediateDirectories -> True]];
@@ -2876,7 +2894,10 @@ writeSeedBatchMMA[batch_Association, OptionsPattern[]] := Module[
    ];
 
 
-readSeedBatchMMA[file_String] := Get[file];
+readSeedBatchMMA[file_String] := If[FileExistsQ[file],
+   Get[file],
+   <|"status" -> "notRead", "reason" -> "fileNotFound", "file" -> file|>
+   ];
 
 
 (* ::Chapter:: *)
