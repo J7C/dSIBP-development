@@ -1314,13 +1314,17 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      UseSampleOnly -> OptionValue[UseSampleOnly],
      MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
      ];
-   If[continuousData["status"] =!= "generated", Return[continuousData]];
+   If[continuousData["status"] =!= "generated",
+    Return[Join[continuousData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
+    ];
    discreteData = selectedDiscreteSeedRules[
      topo,
      DiscreteMode -> OptionValue[DiscreteMode],
      MaxDiscreteRuleCount -> OptionValue[MaxDiscreteRuleCount]
      ];
-   If[discreteData["status"] =!= "generated", Return[discreteData]];
+   If[discreteData["status"] =!= "generated",
+    Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
+    ];
    timeGenerators = Select[makeIBPGenerators[topo], #["type"] === "time" &];
    equationCount = continuousData["ruleCount"] discreteData["ruleCount"] Length[timeGenerators];
    maxEquationCount = OptionValue[MaxEquationCount];
@@ -1527,13 +1531,17 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      UseSampleOnly -> OptionValue[UseSampleOnly],
      MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
      ];
-   If[continuousData["status"] =!= "generated", Return[continuousData]];
+   If[continuousData["status"] =!= "generated",
+    Return[Join[continuousData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
+    ];
    discreteData = selectedDiscreteSeedRules[
      topo,
      DiscreteMode -> OptionValue[DiscreteMode],
      MaxDiscreteRuleCount -> OptionValue[MaxDiscreteRuleCount]
      ];
-   If[discreteData["status"] =!= "generated", Return[discreteData]];
+   If[discreteData["status"] =!= "generated",
+    Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
+    ];
    momentumGenerators = Select[makeIBPGenerators[topo], #["type"] === "momentum" &];
    equationCount = continuousData["ruleCount"] discreteData["ruleCount"] Length[momentumGenerators];
    maxEquationCount = OptionValue[MaxEquationCount];

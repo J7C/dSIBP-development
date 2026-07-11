@@ -652,13 +652,11 @@ compareExpectedTimeSeedBatchMixedBubbleEOM[] := Module[
    ];
 
 compareExpectedMomentumSeedBatch[] := Module[
-   {topo, batch, blocked},
+   {topo, batch, blockedContinuousBatch, blockedDiscreteBatch},
    topo = Global`parseTopology[Global`bubbleMasslessCase];
    batch = Global`makeMomentumIBPSeedBatch[topo];
-   blocked = Quiet[
-    Global`makeContinuousSeedRules[topo, Global`UseSampleOnly -> False, Global`MaxSeedRuleCount -> 1],
-    Global`makeContinuousSeedRules::toomany
-    ];
+   blockedContinuousBatch = Global`makeMomentumIBPSeedBatch[topo, Global`UseSampleOnly -> False, Global`MaxSeedRuleCount -> 1];
+   blockedDiscreteBatch = Global`makeMomentumIBPSeedBatch[topo, Global`DiscreteMode -> "all", Global`MaxDiscreteRuleCount -> 1];
    <|
     "name" -> "momentumSeedBatch_masslessBubble_sampleOnly_guard",
     "pass" -> TrueQ[
@@ -669,11 +667,19 @@ compareExpectedMomentumSeedBatch[] := Module[
        batch["equationCount"] === 6 &&
        TrueQ[batch["eomCanonicalQ"]] &&
        batch["forbiddenNData"] === {} &&
-       blocked["status"] === "tooMany" &&
-       blocked["ruleCount"] === 225
+       batch["topologyValidationReport"]["status"] === "ok" &&
+       blockedContinuousBatch["status"] === "tooMany" &&
+       blockedContinuousBatch["ruleCount"] === 225 &&
+       blockedContinuousBatch["topologyValidationReport"]["status"] === "ok" &&
+       blockedContinuousBatch["equations"] === {} &&
+       blockedDiscreteBatch["status"] === "tooMany" &&
+       blockedDiscreteBatch["ruleCount"] === 4 &&
+       blockedDiscreteBatch["topologyValidationReport"]["status"] === "ok" &&
+       blockedDiscreteBatch["equations"] === {}
       ],
     "batchSummary" -> KeyDrop[batch, "equations"],
-    "blockedSummary" -> KeyDrop[blocked, "rules"]
+    "blockedContinuousSummary" -> KeyDrop[blockedContinuousBatch, "rules"],
+    "blockedDiscreteSummary" -> KeyDrop[blockedDiscreteBatch, "rules"]
     |>
    ];
 
