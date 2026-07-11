@@ -2863,6 +2863,22 @@ applyKiraCoefficientRulesToLinearEquation[linearEquation_Association, coeffRules
    ];
 
 
+validReplacementRuleQ[rule_] := MatchQ[Unevaluated[rule], _Rule | _RuleDelayed];
+
+
+validateCoefficientRules[coeffRules_] := Module[
+   {badPositions},
+   If[! ListQ[coeffRules],
+    Return[<|"status" -> "invalidCoefficientRules", "reason" -> "coefficient rules must be a list of Rule or RuleDelayed entries", "coefficientRules" -> coeffRules|>]
+    ];
+   badPositions = Flatten @ Position[Unevaluated[coeffRules], rule_ /; ! validReplacementRuleQ[rule], {1}, Heads -> False];
+   If[badPositions === {},
+    <|"status" -> "ok", "coefficientRules" -> coeffRules|>,
+    <|"status" -> "invalidCoefficientRules", "reason" -> "coefficient rules contain non-rule entries", "badPositions" -> badPositions, "coefficientRules" -> coeffRules|>
+    ]
+   ];
+
+
 defaultKiraJobOptions[] := <|
    "RunInitiate" -> True,
    "RunFirefly" -> True,
@@ -2986,9 +3002,9 @@ kiraRunScript[jobOptions_: Automatic] := Module[
    ];
 
 
-makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic, targetSpec_: Automatic] := Module[
+makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Automatic, targetSpec_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, runScriptText, repKira2JText, repJ2KiraText, metadataText,
-    normalizedJobOptions, jobOptionReport, topologyReport, requiredKeys, missingKeys, coefficientDiagnostics, numericCoefficientSystemQ, appendNumericDummyQ,
+    normalizedJobOptions, jobOptionReport, coefficientRuleReport, topologyReport, requiredKeys, missingKeys, coefficientDiagnostics, numericCoefficientSystemQ, appendNumericDummyQ,
     numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
@@ -3005,6 +3021,10 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
    jobOptionReport = validateKiraJobOptions[jobOptions];
    If[Lookup[jobOptionReport, "status", "ok"] =!= "ok",
     Return[Join[jobOptionReport, <|"topologyValidationReport" -> topologyReport|>]]
+    ];
+   coefficientRuleReport = validateCoefficientRules[coeffRules];
+   If[Lookup[coefficientRuleReport, "status", "ok"] =!= "ok",
+    Return[Join[coefficientRuleReport, <|"topologyValidationReport" -> topologyReport|>]]
     ];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, coeffRules] & /@ linearData["linearEquations"];
    badEquations = Select[linearEquations, ! TrueQ[#["linearQ"]] || ! TrueQ[#["constantTerm"] === 0] &];
@@ -3129,7 +3149,7 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
    linearForExport = If[ListQ[OptionValue[KiraIntegralOrder]], reorderLinearSystemIntegrals[linearData, OptionValue[KiraIntegralOrder]], linearData];
    strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions], OptionValue[KiraTargetIntegrals]];
    If[Lookup[strings, "status", "missing"] =!= "generated",
-    If[Lookup[strings, "status", Missing["status"]] =!= "invalidKiraJobOptions",
+    If[! MemberQ[{"invalidKiraJobOptions", "invalidCoefficientRules"}, Lookup[strings, "status", Missing["status"]]],
      Message[makeKiraExportData::badlinear, Lookup[strings, "status", Missing["status"]]]
      ];
     Return[<|"status" -> "notReady", "caseName" -> linearForExport["caseName"], "topologyValidationReport" -> Lookup[linearForExport, "topologyValidationReport", topologyReport], "reason" -> "linear system is not exportable", "linearSystem" -> linearForExport, "kiraInput" -> strings|>]

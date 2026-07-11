@@ -1728,7 +1728,7 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
    {topo, batch, outDir, inputStrings, exportData, writtenFiles, topologyReport,
     notGeneratedStrings, emptyLinearData, emptyStrings, badTopologyReport, badLinearData,
     invalidTopologyStrings, invalidTopologyExport, malformedLinearData, malformedStrings,
-    badJobOptionStrings, badJobOptionExport},
+    badJobOptionStrings, badJobOptionExport, badCoeffRuleStrings, badCoeffRuleExport},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    topologyReport = batch["topologyValidationReport"];
@@ -1769,6 +1769,12 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
      Global`OutputDirectory -> outDir,
      Global`KiraJobOptions -> <|"RunFirefly" -> "no", "KiraParallelJobs" -> 0, "UnknownJobOption" -> True|>
      ];
+   badCoeffRuleStrings = Global`makeKiraInputStrings[emptyLinearData, <||>];
+   badCoeffRuleExport = Global`makeKiraExportData[
+     emptyLinearData,
+     Global`OutputDirectory -> outDir,
+     Global`KiraCoefficientRules -> {Global`dim, Global`nuM -> 2}
+     ];
    writtenFiles = If[DirectoryQ[outDir], FileNames["*", outDir, Infinity], {}];
    <|
     "name" -> "kiraExporter_rejectsRawSeedBatch",
@@ -1790,6 +1796,11 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
        Lookup[badJobOptionStrings["malformedKiraJobOptionValues"], "optionKey"] === {"RunFirefly", "KiraParallelJobs"} &&
        badJobOptionExport["status"] === "notReady" &&
        badJobOptionExport["kiraInput"]["status"] === "invalidKiraJobOptions" &&
+       badCoeffRuleStrings["status"] === "invalidCoefficientRules" &&
+       badCoeffRuleStrings["reason"] === "coefficient rules must be a list of Rule or RuleDelayed entries" &&
+       badCoeffRuleExport["status"] === "notReady" &&
+       badCoeffRuleExport["kiraInput"]["status"] === "invalidCoefficientRules" &&
+       badCoeffRuleExport["kiraInput"]["badPositions"] === {1} &&
        exportData["status"] === "notReady" &&
        exportData["topologyValidationReport"]["status"] === "ok" &&
        StringContainsQ[exportData["reason"], "linear-system"] &&
@@ -1803,6 +1814,8 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
     "invalidTopologyExportStatus" -> Lookup[invalidTopologyExport, "status", Missing["status"]],
     "badJobOptionStringStatus" -> Lookup[badJobOptionStrings, "status", Missing["status"]],
     "badJobOptionExportStatus" -> Lookup[badJobOptionExport, "status", Missing["status"]],
+    "badCoeffRuleStringStatus" -> Lookup[badCoeffRuleStrings, "status", Missing["status"]],
+    "badCoeffRuleExportStatus" -> Lookup[badCoeffRuleExport, "status", Missing["status"]],
     "exportStatus" -> Lookup[exportData, "status", Missing["status"]],
     "exportReason" -> Lookup[exportData, "reason", Missing["reason"]],
     "writtenFiles" -> writtenFiles

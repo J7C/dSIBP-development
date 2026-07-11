@@ -57,6 +57,7 @@
 - [x] seed/ISP range 输入检查：`seedRanges` 必须是 Association，`a/b/isp` 和 ISP 自带 `range` 必须是整数或非空整数列表，避免错误范围被静默当作 `{0}`。
 - [x] seedOptions 输入检查：`DiscreteMode`、seed/batch/shrink 上限和未知 option key 会在 topology validation 中检查，避免 typo 后意外退回 sample 或无效上限。
 - [x] KiraJobOptions 输入检查：Kira 导出前会拦截未知 job option key、非法布尔开关、非法并行数和空字符串命令/文件名，避免坏后端配置静默回默认值。
+- [x] KiraCoefficientRules 输入检查：Kira 导出前会拦截非列表或混入非替换规则的系数规则，避免参数替换阶段出现不清楚的模式失败或静默无效。
 
 当前测试分层只覆盖主线逐线 `{b_e,n_e}` 的 merged-two-theta massless 方案；同一顶点对多 massless 线的真实 bundle 合并仍作为 future feature，仅检查 `masslessBundleCandidates` metadata。
 
