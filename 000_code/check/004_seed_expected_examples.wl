@@ -795,7 +795,8 @@ compareExpectedCanonicalCoverageSmallCases[] := Module[
 
 
 compareExpectedDoubleShrinkCompactA[] := Module[
-   {case, topo, batch, linearData, sectorKeys, doubleMetadata, doubleIntegrals, doubleAListLengths},
+   {case, topo, batch, linearData, sectorKeys, doubleMetadata, doubleIntegrals, doubleAListLengths,
+    tightCase, tightTopo, tightBatch, overrideBatch, tightTopologyData},
    case = <|
      "name" -> "doubleMassiveBubbleShrinkToy",
      "vertexData" -> {{1, "+"}, {2, "+"}},
@@ -815,6 +816,11 @@ compareExpectedDoubleShrinkCompactA[] := Module[
    topo = Global`parseTopology[case];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
+   tightCase = Join[case, <|"seedOptions" -> <|"MaxShrinkSectorCount" -> 1|>|>];
+   tightTopo = Global`parseTopology[tightCase];
+   tightBatch = Global`makeCanonicalSeedBatch[tightTopo];
+   overrideBatch = Global`makeCanonicalSeedBatch[tightTopo, Global`MaxShrinkSectorCount -> 3];
+   tightTopologyData = Global`makeTopologyData[tightCase, Global`PrecomputeShrinkSectorMetadata -> True];
    sectorKeys = Lookup[linearData["sectorMetadataList"], "sectorKey"];
    doubleMetadata = SelectFirst[linearData["sectorMetadataList"], # ["sectorKey"] === "e1_e2" &, <||>];
    doubleIntegrals = Cases[linearData["integralList"], j : Global`J[a_, packs_, isp_] /; (Length /@ packs) === {1, 1} :> j];
@@ -832,9 +838,20 @@ compareExpectedDoubleShrinkCompactA[] := Module[
        doubleMetadata["aSlotMode"] === "compactActiveSlots" &&
        Length[doubleMetadata["compactASlots"]] === 1 &&
        doubleMetadata["activeASlots"] === {1} &&
-       doubleAListLengths === {1}
+       doubleAListLengths === {1} &&
+       tightBatch["status"] === "generated" &&
+       tightBatch["pendingFeatures"] === {"shrinkSectorSeedGeneration"} &&
+       tightBatch["completeCanonicalQ"] === False &&
+       tightBatch["shrinkSectorSummary", "status"] === "tooMany" &&
+       tightBatch["shrinkSectorSummary", "requestedSubsetCount"] === 3 &&
+       overrideBatch["completeCanonicalQ"] === True &&
+       Lookup[overrideBatch, "pendingFeatures", {"missing"}] === {} &&
+       tightTopologyData["precomputedShrinkSectorSummary", "status"] === "tooMany" &&
+       tightTopologyData["precomputedShrinkSectorSummary", "requestedSubsetCount"] === 3
       ],
     "sectorKeys" -> sectorKeys,
+    "tightShrinkSummary" -> KeyTake[tightBatch["shrinkSectorSummary"], {"status", "requestedSubsetCount", "maxCount"}],
+    "overrideShrinkSummary" -> KeyTake[overrideBatch["shrinkSectorSummary"], {"status", "sectorCount", "completeShrinkSectorGenerationQ"}],
     "doubleMetadata" -> doubleMetadata,
     "doubleAListLengths" -> doubleAListLengths,
     "summary" -> KeyDrop[batch, "equations"],

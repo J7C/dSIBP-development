@@ -67,22 +67,22 @@ seedPresetAssociation[preset_] := Switch[preset,
    "quickCheck" | Automatic | Missing["NotSet"],
    <|
     "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80|>
+    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
     |>,
    "fullDiscrete",
    <|
     "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200|>
+    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
     |>,
    "bounded",
    <|
     "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}, "sampleOnly" -> False|>,
-    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200|>
+    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
     |>,
    _,
    <|
     "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80|>,
+    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
     "unknownPreset" -> preset
     |>
    ];
@@ -1795,7 +1795,7 @@ shrinkSectorSubsets[topo_Association, maxDepthSpec_, maxCount_Integer] := Module
    ];
 
 
-Options[makeTopologyData] = {PrecomputeShrinkSectorMetadata -> False, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> 16};
+Options[makeTopologyData] = {PrecomputeShrinkSectorMetadata -> False, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic};
 
 
 makeTopologyIndexMaps[topo_Association, metadata_Association] := <|
@@ -1954,11 +1954,13 @@ topologyValidationErrorQ[_] := False;
 
 
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
-   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList},
+   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, maxShrinkDepth, maxShrinkCount},
    topo = parseTopology[case];
    topMetadata = makeSectorMetadata[topo];
+   maxShrinkDepth = resolveSeedOption[topo, "MaxShrinkSectorDepth", OptionValue[MaxShrinkSectorDepth], Automatic];
+   maxShrinkCount = resolveSeedOption[topo, "MaxShrinkSectorCount", OptionValue[MaxShrinkSectorCount], 16];
    subsetData = If[TrueQ[OptionValue[PrecomputeShrinkSectorMetadata]],
-     shrinkSectorSubsets[topo, OptionValue[MaxShrinkSectorDepth], OptionValue[MaxShrinkSectorCount]],
+     shrinkSectorSubsets[topo, maxShrinkDepth, maxShrinkCount],
      <|"status" -> "skipped", "subsets" -> {}, "completeCoverageQ" -> False|>
      ];
    sectorTopos = If[Lookup[subsetData, "status", "skipped"] === "generated",
@@ -1980,15 +1982,17 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
 
 Options[makeShrinkSectorSeedBatch] = Join[
    Options[makeMomentumIBPSeedBatch],
-   {MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> 16}
+   {MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic}
    ];
 makeShrinkSectorSeedBatch::toomany = "拓扑 `1` 的 shrink sector 数为 `2`，超过上限 `3`；未展开 shrink sectors。";
 
 
 makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
-   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport},
+   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport, maxShrinkDepth, maxShrinkCount},
    topologyReport = topologyValidationReport[topo];
-   subsetData = shrinkSectorSubsets[topo, OptionValue[MaxShrinkSectorDepth], OptionValue[MaxShrinkSectorCount]];
+   maxShrinkDepth = resolveSeedOption[topo, "MaxShrinkSectorDepth", OptionValue[MaxShrinkSectorDepth], Automatic];
+   maxShrinkCount = resolveSeedOption[topo, "MaxShrinkSectorCount", OptionValue[MaxShrinkSectorCount], 16];
+   subsetData = shrinkSectorSubsets[topo, maxShrinkDepth, maxShrinkCount];
    If[subsetData["status"] === "tooMany",
     Message[makeShrinkSectorSeedBatch::toomany, topo["name"], subsetData["requestedSubsetCount"], subsetData["maxCount"]];
     Return[Join[subsetData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equations" -> {}, "pendingFeatures" -> {"shrinkSectorSeedGeneration"}|>]]
@@ -2062,7 +2066,7 @@ canonicalPendingFeatures[momentumBatch_Association, timeBatch_Association] := De
 
 Options[makeCanonicalSeedBatch] = Join[
    Options[makeMomentumIBPSeedBatch],
-   {GenerateShrinkSectors -> True, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> 16}
+   {GenerateShrinkSectors -> True, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic}
    ];
 
 
