@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedMixedTriangleCore, compareExpectedTimeSeedMixedSunriseCore, compareExpectedMixedBubbleAllSectorHandSeeds, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedCaseInputPreflight, compareExpectedTopologyValidationReport, compareExpectedSeedPresetConfig, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMasslessBubbleAllSectorHandSeeds, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedMixedTriangleCore, compareExpectedTimeSeedMixedSunriseCore, compareExpectedMixedBubbleAllSectorHandSeeds, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedCaseInputPreflight, compareExpectedTopologyValidationReport, compareExpectedSeedPresetConfig, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedIBPReadinessReport, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    compareExpectedMasslessBoxTopologyReplacement, canonicalCoverageCase, compareExpectedCanonicalCoverageSmallCases,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
@@ -366,6 +366,45 @@ compareExpectedMomentumSeedMasslessBubble[] := Module[
     "pass" -> TrueQ[got === expected],
     "got" -> got,
     "expected" -> expected
+    |>
+   ];
+
+
+expectedTimeSeedMasslessBubbleTau1[] := Module[
+   {aList, int0, intA1Down, intLine1Flip, intLine2Flip},
+   aList = {Global`a[1], Global`a[2]};
+   int0 = Global`J[aList, {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}}, {}];
+   intA1Down = Global`J[{Global`a[1] - 1, Global`a[2]}, {{Global`b[1], Global`n[1]}, {Global`b[2], Global`n[2]}}, {}];
+   intLine1Flip = Global`J[aList, {{Global`b[1] - 1, 1 - Global`n[1]}, {Global`b[2], Global`n[2]}}, {}];
+   intLine2Flip = Global`J[aList, {{Global`b[1], Global`n[1]}, {Global`b[2] - 1, 1 - Global`n[2]}}, {}];
+   Expand[-Global`a[1] intA1Down - I Global`p1 int0 + I intLine1Flip + I intLine2Flip]
+   ];
+
+
+compareExpectedMasslessBubbleAllSectorHandSeeds[] := Module[
+   {topo, int0, qgen, tgen, gotQ, gotT, expectedQ, expectedT, qCheck, sectorKeys},
+   topo = Global`parseTopology[Global`bubbleMasslessCase];
+   int0 = Global`makeBaseIntegral[topo];
+   qgen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
+   tgen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" && #["vertex"] === 1 &];
+   gotQ = Expand[Global`applyMomentumGeneratorSeed[topo, int0, qgen]];
+   gotT = Expand[Global`applyTimeGeneratorSeed[topo, int0, tgen]];
+   expectedQ = expectedMomentumSeedMasslessBubbleQ[];
+   expectedT = expectedTimeSeedMasslessBubbleTau1[];
+   qCheck = compareExpectedMomentumSeedMasslessBubble[];
+   sectorKeys = Lookup[Global`makeCanonicalSeedBatch[topo]["sectorMetadataList"], "sectorKey"];
+   <|
+    "name" -> "masslessBubble_allSectorHandSeeds_qAndT",
+    "pass" -> TrueQ[
+      qCheck["pass"] &&
+       gotQ === expectedQ &&
+       gotT === expectedT &&
+       sectorKeys === {"top"}
+      ],
+    "coverage" -> <|"top" -> {"qIBP" -> qCheck["name"], "tIBP" -> "masslessBubble_tau1"}|>,
+    "gotT" -> gotT,
+    "expectedT" -> expectedT,
+    "sectorKeys" -> sectorKeys
     |>
    ];
 
@@ -2461,6 +2500,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "mixedSunrise" -> compareExpectedCase[Global`mixedSunriseCase, sunriseSummary, expectedMixedSunrisePerLineMergedTheta[]],
     "twoLoopISP" -> compareExpectedCase[Global`twoLoopISPCase, twoLoopISPSummary, expectedTwoLoopISP[]],
     "momentumSeedMasslessBubble" -> compareExpectedMomentumSeedMasslessBubble[],
+    "masslessBubbleAllSectorHandSeeds" -> compareExpectedMasslessBubbleAllSectorHandSeeds[],
     "momentumSeedMassiveBubbleReference" -> compareExpectedMomentumSeedMassiveBubbleReference[],
     "momentumSeedMixedBubbleBuildingBlock" -> compareExpectedMomentumSeedMixedBubbleBuildingBlock[],
     "momentumSeedMixedTriangleBuildingBlock" -> compareExpectedMomentumSeedMixedTriangleBuildingBlock[],
