@@ -38,6 +38,7 @@
   - bubble massless 双 theta `{b,n}` 检查 endpoint 压缩（已加入小样本 check）；
   - 单圈 triangle/box 检查 topology input 替换（triangle 已有结构检查，并加入 `∂q1·k1` 单 seed 手推对照；massless box 已加入 sample momentum linear-system 小检查）；
   - 两圈含 ISP toy 拓扑检查生成元数和 ISP 完备性（已加入 twoLoopISP / twoLoopISPCompleteness 小检查）；
+  - canonical seed 覆盖门禁（已加入 pure massless bubble、mixed bubble、mixed triangle、mixed sunrise 的 all-sector qIBP/tIBP 分类、top-sector 生成元标签和 EOM canonical 扫描；只看小样本结构，不展开大解析系统）；
   - Kira 文件语法检查（已加入 mixed bubble 的 canonical linear-system 与 massless box sampled momentum linear-system 文件导出小检查，并加入 raw seed batch 拒绝导出门禁；不运行 Kira）。
 
 当前测试分层只覆盖主线逐线 `{b_e,n_e}` 的 merged-two-theta massless 方案；同一顶点对多 massless 线的真实 bundle 合并仍作为 future feature，仅检查 `masslessBundleCandidates` metadata。

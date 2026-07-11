@@ -16,7 +16,7 @@ ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedTwoLoopISP, expectedSeedExamples,
    compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMassiveBubbleReference, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedMixedTriangleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedTwoLoopISPCompleteness, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedIBPWorkflowData, compareExpectedKiraExporterRejectsSeedBatch, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraWorkspaceExportMasslessBox, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
-   compareExpectedMasslessBoxTopologyReplacement,
+   compareExpectedMasslessBoxTopologyReplacement, canonicalCoverageCase, compareExpectedCanonicalCoverageSmallCases,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
    ];
@@ -730,6 +730,87 @@ compareExpectedCanonicalSeedGateMixedBubble[] := Module[
       ],
     "summary" -> KeyDrop[batch, "equations"],
     "linearData" -> KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}]
+    |>
+   ];
+
+
+canonicalCoverageCase[case_Association] := Module[
+   {topo, batch, classified, summary, sectorKeys, equations, sectorClassChecks, topEquations,
+    topQGenerators, topTGenerators, expectedQGenerators, expectedTGenerators, generatorStrings, totalClassifiedCount},
+   topo = Global`parseTopology[case];
+   batch = Global`makeCanonicalSeedBatch[topo];
+   classified = Global`classifyCanonicalSeedBatch[batch];
+   summary = Lookup[classified, "summary", <||>];
+   sectorKeys = Lookup[Lookup[batch, "sectorMetadataList", {}], "sectorKey", {}];
+   equations = Lookup[batch, "equations", {}];
+   generatorStrings[list_] := Sort[ToString[#, InputForm] & /@ list];
+   sectorClassChecks = Association @ Table[
+      sectorKey -> <|
+        "qIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0],
+        "tIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0],
+        "hasBothQAndT" -> TrueQ[
+          Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0] > 0 &&
+           Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0] > 0
+          ]
+        |>,
+      {sectorKey, sectorKeys}
+      ];
+   topEquations = Select[equations, Global`seedEntrySourceSectorKey[#] === "top" &];
+   topQGenerators = DeleteDuplicates @ Lookup[
+      Select[topEquations, Global`seedEntryIBPClass[#] === "qIBP" &],
+      "generator",
+      {}
+      ];
+   topTGenerators = DeleteDuplicates @ Lookup[
+      Select[topEquations, Global`seedEntryIBPClass[#] === "tIBP" &],
+      "generator",
+      {}
+      ];
+   expectedQGenerators = Lookup[Lookup[batch, "momentumSummary", <||>], "generators", {}];
+   expectedTGenerators = Lookup[Lookup[batch, "timeSummary", <||>], "generators", {}];
+   totalClassifiedCount = Total[Cases[summary, _Integer, Infinity]];
+   <|
+    "name" -> topo["name"],
+    "pass" -> TrueQ[
+      Lookup[batch, "status", Missing["status"]] === "generated" &&
+       TrueQ[Lookup[batch, "completeCanonicalQ", False]] &&
+       Lookup[batch, "pendingFeatures", {"missing"}] === {} &&
+       Lookup[batch, "forbiddenNData", {"missing"}] === {} &&
+       TrueQ[Lookup[batch, "eomCanonicalQ", False]] &&
+       TrueQ[And @@ Lookup[equations, "eomCanonicalQ", {False}]] &&
+       DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null] === {} &&
+       totalClassifiedCount === Lookup[batch, "equationCount", Missing["equationCount"]] &&
+       Sort[Lookup[classified, "sectorKeys", {}]] === Sort[sectorKeys] &&
+       FreeQ[Lookup[classified, "classes", {}], "unknownIBP"] &&
+       And @@ Lookup[Values[sectorClassChecks], "hasBothQAndT", {False}] &&
+       generatorStrings[topQGenerators] === generatorStrings[expectedQGenerators] &&
+       generatorStrings[topTGenerators] === generatorStrings[expectedTGenerators]
+      ],
+    "sectorKeys" -> sectorKeys,
+    "classSummary" -> summary,
+    "sectorClassChecks" -> sectorClassChecks,
+    "topQGenerators" -> topQGenerators,
+    "topTGenerators" -> topTGenerators,
+    "expectedQGenerators" -> expectedQGenerators,
+    "expectedTGenerators" -> expectedTGenerators,
+    "batchSummary" -> KeyDrop[batch, "equations"]
+    |>
+   ];
+
+
+compareExpectedCanonicalCoverageSmallCases[] := Module[
+   {cases, results},
+   cases = {
+     Global`bubbleMasslessCase,
+     Global`mixedBubbleCase,
+     Global`mixedTriangleCase,
+     Global`mixedSunriseCase
+     };
+   results = canonicalCoverageCase /@ cases;
+   <|
+    "name" -> "canonicalCoverage_smallCases_allSectors_qAndT",
+    "pass" -> TrueQ[And @@ Lookup[results, "pass", {False}]],
+    "caseResults" -> results
     |>
    ];
 
@@ -1560,6 +1641,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "momentumSeedBatch" -> compareExpectedMomentumSeedBatch[],
     "momentumSeedBatchMixedBubbleEOM" -> compareExpectedMomentumSeedBatchMixedBubbleEOM[],
     "canonicalSeedGateMixedBubble" -> compareExpectedCanonicalSeedGateMixedBubble[],
+    "canonicalCoverageSmallCases" -> compareExpectedCanonicalCoverageSmallCases[],
     "doubleShrinkCompactA" -> compareExpectedDoubleShrinkCompactA[],
     "threeVertexMultiShrinkCompactA" -> compareExpectedThreeVertexMultiShrinkCompactA[],
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
