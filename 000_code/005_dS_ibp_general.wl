@@ -2417,7 +2417,7 @@ Options[makeIBPWorkflowData] = Join[
 
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
-    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport, allowedLinearModes},
+    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport, allowedLinearModes, missingExternalInvariants},
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    topologyReport = topologyValidationReport[topo];
    linearMode = OptionValue[LinearSystemMode];
@@ -2429,6 +2429,17 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "reason" -> "invalidLinearSystemMode",
       "linearSystemMode" -> linearMode,
       "allowedLinearSystemModes" -> allowedLinearModes,
+      "topology" -> topo,
+      "topologyValidationReport" -> topologyReport
+      |>]
+    ];
+   missingExternalInvariants = missingExternalInvariantNumericRules[topo];
+   If[linearMode === "numeric" && missingExternalInvariants =!= {},
+    Return[<|
+      "status" -> "notReady",
+      "stage" -> "linear",
+      "reason" -> "numericRulesMissingExternalInvariants",
+      "missingExternalInvariants" -> missingExternalInvariants,
       "topology" -> topo,
       "topologyValidationReport" -> topologyReport
       |>]

@@ -927,7 +927,7 @@ compareExpectedTopologyDataInterface[] := Module[
 compareExpectedTopologyValidationReport[] := Module[
    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
     missingNumericCase, missingNumericReport, badCodes, redundantCodes, singularCodes, missingNumericCodes,
-    badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow},
+    badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow, missingNumericWorkflow},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -1001,6 +1001,7 @@ compareExpectedTopologyValidationReport[] := Module[
    incompleteDiscreteData = Global`selectedDiscreteSeedRules[badTopo];
    badCanonicalBatch = Global`makeCanonicalSeedBatch[badTopo];
    badWorkflow = Global`makeIBPWorkflowData[badCase];
+   missingNumericWorkflow = Global`makeIBPWorkflowData[missingNumericCase, Global`LinearSystemMode -> "numeric"];
    <|
     "name" -> "topologyValidationReport_goodPendingBad",
     "pass" -> TrueQ[
@@ -1034,7 +1035,12 @@ compareExpectedTopologyValidationReport[] := Module[
        badCanonicalBatch["topologyValidationReport"]["errorCount"] === badReport["errorCount"] &&
        badWorkflow["status"] === "notReady" &&
        badWorkflow["stage"] === "seed" &&
-       badWorkflow["seedBatch"]["status"] === "invalidTopology"
+       badWorkflow["seedBatch"]["status"] === "invalidTopology" &&
+       missingNumericWorkflow["status"] === "notReady" &&
+       missingNumericWorkflow["stage"] === "linear" &&
+       missingNumericWorkflow["reason"] === "numericRulesMissingExternalInvariants" &&
+       missingNumericWorkflow["missingExternalInvariants"] === {Global`kk[1, 1]} &&
+       ! KeyExistsQ[missingNumericWorkflow, "seedBatch"]
       ],
     "goodReport" -> goodData["validationReport"],
     "crossReport" -> crossData["validationReport"],
@@ -1042,6 +1048,7 @@ compareExpectedTopologyValidationReport[] := Module[
     "redundantReport" -> redundantReport,
     "singularReport" -> singularReport,
     "missingNumericReport" -> missingNumericReport,
+    "missingNumericWorkflow" -> KeyTake[missingNumericWorkflow, {"status", "stage", "reason", "missingExternalInvariants"}],
     "incompleteDiscreteData" -> incompleteDiscreteData,
     "badCanonicalStatus" -> Lookup[badCanonicalBatch, "status", Missing["status"]],
     "badWorkflowStage" -> KeyTake[badWorkflow, {"status", "stage"}]
