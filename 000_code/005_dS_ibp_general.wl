@@ -606,6 +606,32 @@ normaliseKiraOrderingSpec[spec_] := Which[
    ];
 
 
+allowedKiraOrderingKeys[] := {"IntegralOrder", "ManualIntegralOrder", "PreferredIntegrals", "PreferredPriority", "SectorRank", "SectorOrder"};
+
+
+validateKiraOrderingSpec[Automatic] := <|"status" -> "ok", "issues" -> {}|>;
+validateKiraOrderingSpec[spec_] /; ! AssociationQ[spec] := <|"status" -> "invalidKiraOrdering", "reason" -> "KiraOrdering must be Automatic or an Association", "kiraOrdering" -> spec|>;
+validateKiraOrderingSpec[spec_Association] := Module[
+   {unknownKeys, badValueData},
+   unknownKeys = Complement[Keys[spec], allowedKiraOrderingKeys[]];
+   badValueData = DeleteCases[
+     {
+      If[KeyExistsQ[spec, "IntegralOrder"] && ! ListQ[spec["IntegralOrder"]], <|"optionKey" -> "IntegralOrder", "optionValue" -> spec["IntegralOrder"]|>, Nothing],
+      If[KeyExistsQ[spec, "ManualIntegralOrder"] && ! ListQ[spec["ManualIntegralOrder"]], <|"optionKey" -> "ManualIntegralOrder", "optionValue" -> spec["ManualIntegralOrder"]|>, Nothing],
+      If[KeyExistsQ[spec, "PreferredIntegrals"] && ! ListQ[spec["PreferredIntegrals"]], <|"optionKey" -> "PreferredIntegrals", "optionValue" -> spec["PreferredIntegrals"]|>, Nothing],
+      If[KeyExistsQ[spec, "PreferredPriority"] && ! MemberQ[{"BeforeB", "AfterB"}, spec["PreferredPriority"]], <|"optionKey" -> "PreferredPriority", "optionValue" -> spec["PreferredPriority"]|>, Nothing],
+      If[KeyExistsQ[spec, "SectorRank"] && ! AssociationQ[spec["SectorRank"]], <|"optionKey" -> "SectorRank", "optionValue" -> spec["SectorRank"]|>, Nothing],
+      If[KeyExistsQ[spec, "SectorOrder"] && ! ListQ[spec["SectorOrder"]], <|"optionKey" -> "SectorOrder", "optionValue" -> spec["SectorOrder"]|>, Nothing]
+      },
+     Nothing
+     ];
+   If[unknownKeys === {} && badValueData === {},
+    <|"status" -> "ok", "issues" -> {}|>,
+    <|"status" -> "invalidKiraOrdering", "reason" -> "KiraOrdering contains unknown keys or invalid values", "unknownKiraOrderingKeys" -> unknownKeys, "malformedKiraOrderingValues" -> badValueData, "allowedKiraOrderingKeys" -> allowedKiraOrderingKeys[]|>
+    ]
+   ];
+
+
 resolveKiraOrderingSpec[batch_Association, topoSpec_, optSpec_] := Module[{topo, spec},
    topo = normalizeTopologySpec[topoSpec];
    spec = Which[
@@ -2145,7 +2171,7 @@ topologyValidationReport[topo_Association] := Module[
     vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
     ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData, seedOptions,
-    unknownSeedOptionKeys, badSeedOptionData,
+    unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
@@ -2210,6 +2236,10 @@ topologyValidationReport[topo_Association] := Module[
      ];
    If[badSeedOptionData =!= {},
     appendIssue["error", "malformedSeedOptionValues", <|"options" -> badSeedOptionData|>]
+    ];
+   kiraOrderingReport = validateKiraOrderingSpec[Lookup[topo, "kiraOrdering", <||>]];
+   If[Lookup[kiraOrderingReport, "status", "ok"] =!= "ok",
+    appendIssue["error", "invalidKiraOrdering", KeyDrop[kiraOrderingReport, {"status"}]]
     ];
    If[! DuplicateFreeQ[vertexIds],
     appendIssue["error", "duplicateVertexIds", <|"vertexIds" -> vertexIds|>]
@@ -3524,7 +3554,7 @@ Options[makeLinearSystemData] = {KiraOrdering -> Automatic};
 
 makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] := Module[
    {topo, integrals, integralIndex, equations, linearEquations, coefficientDiagnostics,
-    metadataList, metadata, orderingSpec, seedCoverageReport, topologyReport},
+    metadataList, metadata, orderingSpec, orderingReport, seedCoverageReport, topologyReport},
    topo = normalizeTopologySpec[topoSpec];
    topologyReport = Lookup[batch, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[MatchQ[topologyReport, _Missing] && parsedTopologyQ[topo],
@@ -3553,6 +3583,10 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
       "reason" -> "forbiddenNData",
       "forbiddenNData" -> Lookup[batch, "forbiddenNData", {}]
       |>]
+    ];
+   orderingReport = validateKiraOrderingSpec[OptionValue[KiraOrdering]];
+   If[Lookup[orderingReport, "status", "ok"] =!= "ok",
+    Return[<|"status" -> "notReady", "caseName" -> Lookup[batch, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalidKiraOrdering", "kiraOrderingValidationReport" -> orderingReport|>]
     ];
    metadataList = batchSectorMetadataList[batch, topo];
    orderingSpec = resolveKiraOrderingSpec[batch, topo, OptionValue[KiraOrdering]];

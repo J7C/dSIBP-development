@@ -1143,6 +1143,7 @@ compareExpectedTopologyValidationReport[] := Module[
         "MaxShrinkSectorCount" -> 0,
         "TypoOption" -> 1
         |>,
+      "kiraOrdering" -> <|"PreferredPriority" -> "Middle", "PreferredIntegrals" -> Global`J[{}, {}, {}], "TypoOrderingKey" -> 1|>,
       "ispData" -> {
         {Global`ispQ1K, Global`qk[1, 1], {"bad"}},
         {Global`ispQ2K, Global`qk[2, 1], {0, 2}}
@@ -1217,12 +1218,13 @@ compareExpectedTopologyValidationReport[] := Module[
        duplicateISPReport["errorCount"] === 1 &&
        MemberQ[duplicateISPCodes, "duplicateISPNames"] &&
        malformedRangeReport["status"] === "issues" &&
-       malformedRangeReport["errorCount"] === 5 &&
+       malformedRangeReport["errorCount"] === 6 &&
        MemberQ[malformedRangeCodes, "malformedSeedRangeSpecs"] &&
        MemberQ[malformedRangeCodes, "malformedSeedSampleOnly"] &&
        MemberQ[malformedRangeCodes, "malformedISPRangeSpecs"] &&
        MemberQ[malformedRangeCodes, "unknownSeedOptionKeys"] &&
        MemberQ[malformedRangeCodes, "malformedSeedOptionValues"] &&
+       MemberQ[malformedRangeCodes, "invalidKiraOrdering"] &&
        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 2 &&
@@ -1996,7 +1998,7 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
    ];
 compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
    {topo, batch, linearData, preferred, missingIntegral, customData, reorderedData, badReorderedData,
-    kiraData, exportedLinear, badTargetData, badIntegralOrderData},
+    kiraData, exportedLinear, badTargetData, badIntegralOrderData, badKiraOrderingData},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
@@ -2006,6 +2008,11 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
      batch,
      topo,
      Global`KiraOrdering -> <|"IntegralOrder" -> {preferred, missingIntegral}, "PreferredPriority" -> "BeforeB"|>
+     ];
+   badKiraOrderingData = Global`makeLinearSystemData[
+     batch,
+     topo,
+     Global`KiraOrdering -> <|"PreferredPriority" -> "Middle", "PreferredIntegrals" -> preferred, "TypoOrderingKey" -> 1|>
      ];
    reorderedData = Global`reorderLinearSystemIntegrals[linearData, {preferred}];
    badReorderedData = Global`reorderLinearSystemIntegrals[linearData, {preferred, 999, missingIntegral}];
@@ -2026,11 +2033,14 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
    <|
     "name" -> "kiraIntegralOrdering_mixedBubble_globalAllSectors",
     "pass" -> TrueQ[
-      linearData["integralCount"] >= 3 &&
+       linearData["integralCount"] >= 3 &&
        customData["status"] === "generated" &&
        First[customData["integralList"]] === preferred &&
        customData["kiraOrderingReport", "missingIntegralOrderItems"] === {missingIntegral} &&
        ! TrueQ[customData["kiraOrderingReport", "allRequestedIntegralsMatchedQ"]] &&
+       badKiraOrderingData["status"] === "notReady" &&
+       badKiraOrderingData["reason"] === "invalidKiraOrdering" &&
+       badKiraOrderingData["kiraOrderingValidationReport", "unknownKiraOrderingKeys"] === {"TypoOrderingKey"} &&
        First[reorderedData["integralList"]] === preferred &&
        badReorderedData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
        Lookup[kiraData, "status", Missing["status"]] === "ready" &&
@@ -2047,6 +2057,7 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
     "preferred" -> preferred,
     "defaultFirst" -> First[linearData["integralList"]],
     "customFirst" -> If[AssociationQ[customData], First[customData["integralList"]], Missing["customData"]],
+    "badKiraOrderingStatus" -> Lookup[badKiraOrderingData, "status", Missing["status"]],
     "reorderedFirst" -> If[AssociationQ[reorderedData], First[reorderedData["integralList"]], Missing["reorderedData"]],
     "exportedFirst" -> If[AssociationQ[exportedLinear], First[exportedLinear["integralList"]], Missing["exportedLinear"]],
     "customOrderingReport" -> Lookup[customData, "kiraOrderingReport", <||>],
