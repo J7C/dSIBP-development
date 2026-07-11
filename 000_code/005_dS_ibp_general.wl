@@ -2537,13 +2537,20 @@ Options[makeLinearSystemData] = {KiraOrdering -> Automatic};
 
 makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] := Module[
    {integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec, seedCoverageReport, topologyReport},
+   topologyReport = Lookup[batch, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
+   If[MatchQ[topologyReport, _Missing] && AssociationQ[topoSpec],
+    topologyReport = topologyValidationReport[
+      If[KeyExistsQ[topoSpec, "lines"] && KeyExistsQ[topoSpec, "nL"], topoSpec, parseTopology[topoSpec]]
+      ]
+    ];
    If[Lookup[batch, "status", "missing"] =!= "generated",
-    Return[<|"status" -> "notGenerated", "sourceStatus" -> Lookup[batch, "status", Missing["status"]]|>]
+    Return[<|"status" -> "notGenerated", "sourceStatus" -> Lookup[batch, "status", Missing["status"]], "topologyValidationReport" -> topologyReport|>]
     ];
    If[Lookup[batch, "pendingFeatures", {}] =!= {},
     Return[<|
       "status" -> "notReady",
       "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+      "topologyValidationReport" -> topologyReport,
       "reason" -> "pendingFeatures",
       "pendingFeatures" -> Lookup[batch, "pendingFeatures", {}]
       |>]
@@ -2552,6 +2559,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     Return[<|
       "status" -> "notReady",
       "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+      "topologyValidationReport" -> topologyReport,
       "reason" -> "forbiddenNData",
       "forbiddenNData" -> Lookup[batch, "forbiddenNData", {}]
       |>]
@@ -2567,12 +2575,6 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
      makeCanonicalSeedCoverageReport[batch],
      Missing["NotCanonicalSeedBatch"]
      ];
-   topologyReport = Lookup[batch, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
-   If[MatchQ[topologyReport, _Missing] && AssociationQ[topoSpec],
-    topologyReport = topologyValidationReport[
-      If[KeyExistsQ[topoSpec, "lines"] && KeyExistsQ[topoSpec, "nL"], topoSpec, parseTopology[topoSpec]]
-      ]
-    ];
    <|
     "status" -> "generated",
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],

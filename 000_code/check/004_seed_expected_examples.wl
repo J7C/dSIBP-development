@@ -706,10 +706,15 @@ compareExpectedMomentumSeedBatchMixedBubbleEOM[] := Module[
    ];
 
 compareExpectedCanonicalSeedGateMixedBubble[] := Module[
-   {topo, batch, linearData, sectorKeys, integralSectorKeys, aSlotModes, shrinkAListLengths},
+   {topo, batch, linearData, sectorKeys, integralSectorKeys, aSlotModes, shrinkAListLengths,
+    noShrinkBatch, noShrinkLinear, blockedBatch, blockedLinear},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
+   noShrinkBatch = Global`makeCanonicalSeedBatch[topo, Global`GenerateShrinkSectors -> False];
+   noShrinkLinear = Global`makeLinearSystemData[noShrinkBatch, topo];
+   blockedBatch = Global`makeMomentumIBPSeedBatch[topo, Global`UseSampleOnly -> False, Global`MaxSeedRuleCount -> 1];
+   blockedLinear = Global`makeLinearSystemData[blockedBatch, topo];
    sectorKeys = Lookup[linearData["sectorMetadataList"], "sectorKey"];
    integralSectorKeys = DeleteDuplicates[Lookup[linearData["integralMetadata"], "sectorKey"]];
    aSlotModes = Lookup[linearData["sectorMetadataList"], "aSlotMode"];
@@ -732,10 +737,18 @@ compareExpectedCanonicalSeedGateMixedBubble[] := Module[
        sectorKeys === {"top", "e1"} &&
        aSlotModes === {"compactActiveSlots", "compactActiveSlots"} &&
        shrinkAListLengths === {1} &&
-       Sort[integralSectorKeys] === {"e1", "top"}
+       Sort[integralSectorKeys] === {"e1", "top"} &&
+       noShrinkLinear["status"] === "notReady" &&
+       noShrinkLinear["reason"] === "pendingFeatures" &&
+       noShrinkLinear["topologyValidationReport"]["status"] === "ok" &&
+       blockedLinear["status"] === "notGenerated" &&
+       blockedLinear["sourceStatus"] === "tooMany" &&
+       blockedLinear["topologyValidationReport"]["status"] === "ok"
       ],
     "summary" -> KeyDrop[batch, "equations"],
-    "linearData" -> KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}]
+    "linearData" -> KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}],
+    "noShrinkLinear" -> noShrinkLinear,
+    "blockedLinear" -> blockedLinear
     |>
    ];
 
