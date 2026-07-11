@@ -2227,6 +2227,22 @@ kiraEquationBlock[linearEquation_Association, coefficientRules_List] := Module[
    ];
 
 
+kiraNumericCoefficientSystemQ[linearEquations_List] := Module[
+   {coefficients},
+   coefficients = Last /@ Flatten[kiraNonzeroCoefficientRules[#["coefficientRules"]] & /@ linearEquations];
+   coefficients =!= {} && And @@ (TrueQ[NumericQ[#]] & /@ coefficients)
+   ];
+
+
+kiraAppendNumericDummyQ[setting_, numericSystemQ_] := If[setting === Automatic, TrueQ[numericSystemQ], TrueQ[setting]];
+
+
+kiraDummyCoefficientString[symbol_] := If[StringQ[symbol], symbol, kiraCoefficientString[symbol]];
+
+
+kiraDummyEquationBlock[id_Integer, symbol_] := ToString[id] <> "*(" <> kiraDummyCoefficientString[symbol] <> ")\n\n";
+
+
 applyKiraCoefficientRulesToLinearEquation[linearEquation_Association, coeffRules_List] := Module[
    {rules, const},
    rules = linearEquation["coefficientRules"] /. coeffRules;
@@ -2240,7 +2256,9 @@ defaultKiraJobOptions[] := <|
    "RunInitiate" -> True,
    "RunFirefly" -> True,
    "WriteKira2MathJob" -> True,
-   "Kira2MathTarget" -> "list"
+   "Kira2MathTarget" -> "list",
+   "AppendNumericDummyEquation" -> Automatic,
+   "NumericDummySymbol" -> "ccc"
    |>;
 
 
@@ -2275,7 +2293,8 @@ kiraJobsYAML[jobOptions_: Automatic] := Module[
 
 makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, repKira2JText, repJ2KiraText, metadataText,
-    normalizedJobOptions, topologyReport, requiredKeys, missingKeys},
+    normalizedJobOptions, topologyReport, requiredKeys, missingKeys, numericCoefficientSystemQ, appendNumericDummyQ,
+    numericDummyIntegralId, targetIntegralCount, kiraBlockCount, numericDummySymbol},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "reason" -> "linear data missing", "topologyValidationReport" -> topologyReport|>]
@@ -2297,9 +2316,16 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
    If[exportedEquations === {},
     Return[<|"status" -> "emptySystem", "reason" -> "all linear equations are zero after coefficient rules", "topologyValidationReport" -> topologyReport|>]
     ];
-   ibpText = StringJoin[kiraEquationBlock[#, #["coefficientRules"]] & /@ exportedEquations];
-   listText = StringRiffle[ToString /@ Range[linearData["integralCount"]], "\n"] <> "\n";
    normalizedJobOptions = normalizeKiraJobOptions[jobOptions];
+   numericCoefficientSystemQ = kiraNumericCoefficientSystemQ[exportedEquations];
+   appendNumericDummyQ = kiraAppendNumericDummyQ[Lookup[normalizedJobOptions, "AppendNumericDummyEquation", Automatic], numericCoefficientSystemQ];
+   numericDummyIntegralId = If[appendNumericDummyQ, linearData["integralCount"] + 1, None];
+   targetIntegralCount = linearData["integralCount"] + If[appendNumericDummyQ, 1, 0];
+   kiraBlockCount = Length[exportedEquations] + If[appendNumericDummyQ, 1, 0];
+   numericDummySymbol = Lookup[normalizedJobOptions, "NumericDummySymbol", "ccc"];
+   ibpText = StringJoin[kiraEquationBlock[#, #["coefficientRules"]] & /@ exportedEquations] <>
+     If[appendNumericDummyQ, kiraDummyEquationBlock[numericDummyIntegralId, numericDummySymbol], ""];
+   listText = StringRiffle[ToString /@ Range[targetIntegralCount], "\n"] <> "\n";
    jobsText = kiraJobsYAML[normalizedJobOptions];
    repKira2JText = ToString[InputForm[linearData["integralRules"] /. (j_J -> id_Integer) :> (Tuserweight[id] -> j)]] <> "\n";
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
@@ -2308,6 +2334,11 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
         KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}],
         <|
          "exportedEquationCount" -> Length[exportedEquations],
+         "kiraBlockCount" -> kiraBlockCount,
+         "targetIntegralCount" -> targetIntegralCount,
+         "numericCoefficientSystemQ" -> numericCoefficientSystemQ,
+         "numericDummyAppendedQ" -> appendNumericDummyQ,
+         "numericDummyIntegralId" -> numericDummyIntegralId,
          "kiraCoefficientRules" -> coeffRules,
          "kiraJobOptions" -> normalizedJobOptions
          |>
@@ -2324,7 +2355,12 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
     "result/kira_export_metadata.m" -> metadataText,
     "equationCount" -> linearData["equationCount"],
     "exportedEquationCount" -> Length[exportedEquations],
-    "integralCount" -> linearData["integralCount"]
+    "kiraBlockCount" -> kiraBlockCount,
+    "integralCount" -> linearData["integralCount"],
+    "targetIntegralCount" -> targetIntegralCount,
+    "numericCoefficientSystemQ" -> numericCoefficientSystemQ,
+    "numericDummyAppendedQ" -> appendNumericDummyQ,
+    "numericDummyIntegralId" -> numericDummyIntegralId
     |>
    ];
 
@@ -2388,7 +2424,12 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
     "kiraInput" -> strings,
     "equationCount" -> Lookup[linearForExport, "equationCount", Missing["equationCount"]],
     "exportedEquationCount" -> Lookup[strings, "exportedEquationCount", Missing["exportedEquationCount"]],
+    "kiraBlockCount" -> Lookup[strings, "kiraBlockCount", Missing["kiraBlockCount"]],
     "integralCount" -> Lookup[linearForExport, "integralCount", Missing["integralCount"]],
+    "targetIntegralCount" -> Lookup[strings, "targetIntegralCount", Missing["targetIntegralCount"]],
+    "numericCoefficientSystemQ" -> Lookup[strings, "numericCoefficientSystemQ", Missing["numericCoefficientSystemQ"]],
+    "numericDummyAppendedQ" -> Lookup[strings, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
+    "numericDummyIntegralId" -> Lookup[strings, "numericDummyIntegralId", Missing["numericDummyIntegralId"]],
     "outputDirectory" -> outputDir,
     "writeFilesQ" -> StringQ[outputDir],
     "filesWritten" -> filesWritten

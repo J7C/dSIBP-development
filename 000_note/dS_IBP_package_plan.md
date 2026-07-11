@@ -548,6 +548,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。linear-system 会保存 `kiraOrderingReport`，其中 `missingIntegralOrderItems` 用来提示未命中的候选。
 - 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。手动重排会额外保存 `manualIntegralOrderReport`，越界编号或不在系统中的 `J` 不会静默消失。
 - `makeKiraExportData` 的最后一步规则必须可追溯：`KiraCoefficientRules` 和 `KiraJobOptions` 写入 `result/kira_export_metadata.m`。默认 `jobs.yaml` 开启 `run_initiate`、`run_firefly` 和 `kira2math`；用户可覆盖这些开关，但这只改变后端文件，不改变 seed 或 linear-system。
+- 数值 Kira 输入沿用参考 code 的 dummy 保护：若所有导出系数均为数值，`KiraJobOptions` 中的 `"AppendNumericDummyEquation" -> Automatic` 会在 `ibp.kira` 末尾加入 `(N+1)*(ccc)`，并让 `list` 多包含这个 dummy id；metadata 中记录 `numericDummyAppendedQ`、`numericDummyIntegralId` 和 `targetIntegralCount`。
 - 每个 sector 缓存一份 `sectorMetadata`：包含 `sectorVertexRepresentativeMap`、`compactASlots`、`vertexIdToCompactASlot`、`lineSlots`、`lineIdToSlot`、`bSymbolToLineSlot`。这样导出、排序和人工检查不需要每次从指标形状反推“哪个 a/b 属于哪条线或哪个顶点”。
 - 物理 convention 上，缩并后 delta 已积分掉一个时间变量，因此 sub-sector 的有效 `a` 只有 compact 后的 active slots。当前 `004` 主代码已切换为 `aSlotMode -> "compactActiveSlots"`：sub-sector 的 `J` 本身只保留 delta 积分后仍 active 的 compact `aList`；原顶点、原 slot 与 compact slot 的对应关系全部由 `sectorMetadata` 保存。
 ### v4.1 追加验证：multi-shrink compact aList

@@ -1467,14 +1467,20 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        StringContainsQ[jobsText, "reduce_user_defined_system"] &&
        StringContainsQ[jobsText, "run_firefly: true"] &&
        StringContainsQ[jobsText, "kira2math"] &&
-       blockCount === kiraData["exportedEquationCount"] &&
-       listCount === kiraData["integralCount"] &&
+       blockCount === kiraData["kiraBlockCount"] &&
+       blockCount === kiraData["exportedEquationCount"] + If[TrueQ[kiraData["numericDummyAppendedQ"]], 1, 0] &&
+       listCount === kiraData["targetIntegralCount"] &&
+       kiraData["targetIntegralCount"] === kiraData["integralCount"] + If[TrueQ[kiraData["numericDummyAppendedQ"]], 1, 0] &&
        repJ2Kira === linearData["integralRules"] &&
        Sort[repKira2J /. Global`Tuserweight[id_] -> id] === Sort[Reverse /@ linearData["integralRules"]] &&
        metadata["caseName"] === linearData["caseName"] &&
        metadata["integralCount"] === linearData["integralCount"] &&
        metadata["equationCount"] === linearData["equationCount"] &&
        metadata["exportedEquationCount"] === kiraData["exportedEquationCount"] &&
+       metadata["kiraBlockCount"] === kiraData["kiraBlockCount"] &&
+       metadata["targetIntegralCount"] === kiraData["targetIntegralCount"] &&
+       metadata["numericCoefficientSystemQ"] === kiraData["numericCoefficientSystemQ"] &&
+       metadata["numericDummyAppendedQ"] === kiraData["numericDummyAppendedQ"] &&
        metadata["topologyValidationReport"]["status"] === "ok" &&
        linearData["topologyValidationReport"]["status"] === "ok" &&
        metadata["seedCoverageReport"]["status"] === "ready" &&
@@ -1491,7 +1497,10 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
     "listCount" -> listCount,
     "equationCount" -> Lookup[kiraData, "equationCount", Missing["equationCount"]],
     "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["exportedEquationCount"]],
+    "kiraBlockCount" -> Lookup[kiraData, "kiraBlockCount", Missing["kiraBlockCount"]],
     "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]],
+    "targetIntegralCount" -> Lookup[kiraData, "targetIntegralCount", Missing["targetIntegralCount"]],
+    "numericDummyAppendedQ" -> Lookup[kiraData, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}],
     "sectorKeysInMetadata" -> If[AssociationQ[metadata], Lookup[metadata["sectorMetadataList"], "sectorKey", {}], {}],
     "customJobOptionStatus" -> Lookup[customStrings, "status", Missing["status"]]
@@ -1536,9 +1545,15 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
        And @@ (FileExistsQ /@ requiredFiles) &&
        metadata["topologyValidationReport"]["status"] === "ok" &&
        StringContainsQ[Import[FileNameJoin[{outDir, "jobs.yaml"}], "Text"], "reduce_user_defined_system"] &&
-       blockCount === kiraData["exportedEquationCount"] &&
+       blockCount === kiraData["kiraBlockCount"] &&
        blockCount > 0 &&
-       listCount === kiraData["integralCount"]
+       listCount === kiraData["targetIntegralCount"] &&
+       kiraData["numericCoefficientSystemQ"] === True &&
+       kiraData["numericDummyAppendedQ"] === True &&
+       kiraData["numericDummyIntegralId"] === kiraData["integralCount"] + 1 &&
+       kiraData["targetIntegralCount"] === kiraData["integralCount"] + 1 &&
+       metadata["numericDummyAppendedQ"] === True &&
+       metadata["targetIntegralCount"] === kiraData["targetIntegralCount"]
       ],
     "outputDir" -> outDir,
     "filesWritten" -> Lookup[kiraData, "filesWritten", {}],
@@ -1546,7 +1561,10 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
     "listCount" -> listCount,
     "equationCount" -> Lookup[kiraData, "equationCount", Missing["equationCount"]],
     "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["exportedEquationCount"]],
+    "kiraBlockCount" -> Lookup[kiraData, "kiraBlockCount", Missing["kiraBlockCount"]],
     "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]],
+    "targetIntegralCount" -> Lookup[kiraData, "targetIntegralCount", Missing["targetIntegralCount"]],
+    "numericDummyAppendedQ" -> Lookup[kiraData, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}]
     |>
    ];
