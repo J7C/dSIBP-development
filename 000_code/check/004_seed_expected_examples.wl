@@ -943,8 +943,10 @@ compareExpectedTopologyDataInterface[] := Module[
 
 compareExpectedTopologyValidationReport[] := Module[
    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
-    missingNumericCase, missingNumericReport, badCodes, redundantCodes, singularCodes, missingNumericCodes,
-    badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow, missingNumericWorkflow},
+    missingNumericCase, missingVertexEnergyCase, missingNumericReport, missingVertexEnergyReport,
+    badCodes, redundantCodes, singularCodes, missingNumericCodes, missingVertexEnergyCodes,
+    badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow,
+    missingNumericWorkflow, missingVertexEnergyWorkflow},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
    crossData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
    badCase = <|
@@ -1005,20 +1007,27 @@ compareExpectedTopologyValidationReport[] := Module[
      "sampleDiscreteRules" -> {{Global`n[1] -> 0, Global`n[2] -> 0}},
      "seedRanges" -> <|"sampleOnly" -> True|>
      |>;
+   missingVertexEnergyCase = Join[
+     Global`mixedBubbleCase,
+     <|"numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5, Global`nuM -> 2}|>
+     ];
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
    redundantReport = Global`topologyValidationReport[Global`parseTopology[redundantCase]];
    singularReport = Global`topologyValidationReport[Global`parseTopology[singularCase]];
    missingNumericReport = Global`topologyValidationReport[Global`parseTopology[missingNumericCase]];
+   missingVertexEnergyReport = Global`topologyValidationReport[Global`parseTopology[missingVertexEnergyCase]];
    badCodes = Lookup[badReport["issues"], "code", {}];
    redundantCodes = Lookup[redundantReport["issues"], "code", {}];
    singularCodes = Lookup[singularReport["issues"], "code", {}];
    missingNumericCodes = Lookup[missingNumericReport["issues"], "code", {}];
+   missingVertexEnergyCodes = Lookup[missingVertexEnergyReport["issues"], "code", {}];
    badSeverities = Lookup[badReport["issues"], "severity", {}];
    badTopo = Global`parseTopology[badCase];
    incompleteDiscreteData = Global`selectedDiscreteSeedRules[badTopo];
    badCanonicalBatch = Global`makeCanonicalSeedBatch[badTopo];
    badWorkflow = Global`makeIBPWorkflowData[badCase];
    missingNumericWorkflow = Global`makeIBPWorkflowData[missingNumericCase, Global`LinearSystemMode -> "numeric"];
+   missingVertexEnergyWorkflow = Global`makeIBPWorkflowData[missingVertexEnergyCase, Global`LinearSystemMode -> "numeric"];
    <|
     "name" -> "topologyValidationReport_goodPendingBad",
     "pass" -> TrueQ[
@@ -1029,14 +1038,15 @@ compareExpectedTopologyValidationReport[] := Module[
        crossData["validationReport", "pendingCount"] === 0 &&
        badReport["status"] === "issues" &&
        badReport["errorCount"] === 3 &&
-       badReport["warningCount"] === 2 &&
+       badReport["warningCount"] === 3 &&
        MemberQ[badCodes, "undeclaredMomentumVariables"] &&
        MemberQ[badCodes, "insufficientISPData"] &&
        MemberQ[badCodes, "sampleDiscreteRulesMissingVariables"] &&
        MemberQ[badCodes, "sampleDiscreteRulesContainUnknownVariables"] &&
        MemberQ[badCodes, "sampleDiscreteRulesContainNonBinaryValues"] &&
+       MemberQ[badCodes, "numericRulesMissingVertexEnergies"] &&
        Count[badSeverities, "error"] === 3 &&
-       Count[badSeverities, "warning"] === 2 &&
+       Count[badSeverities, "warning"] === 3 &&
        redundantReport["status"] === "issues" &&
        redundantReport["errorCount"] === 1 &&
        MemberQ[redundantCodes, "scalarProductCoordinateCountMismatch"] &&
@@ -1045,8 +1055,12 @@ compareExpectedTopologyValidationReport[] := Module[
        MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"] &&
        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
-       missingNumericReport["warningCount"] === 1 &&
+       missingNumericReport["warningCount"] === 2 &&
        MemberQ[missingNumericCodes, "numericRulesMissingExternalInvariants"] &&
+       MemberQ[missingNumericCodes, "numericRulesMissingVertexEnergies"] &&
+       missingVertexEnergyReport["status"] === "ok" &&
+       missingVertexEnergyReport["errorCount"] === 0 &&
+       MemberQ[missingVertexEnergyCodes, "numericRulesMissingVertexEnergies"] &&
        incompleteDiscreteData["status"] === "incompleteSampleDiscreteRules" &&
        badCanonicalBatch["status"] === "invalidTopology" &&
        badCanonicalBatch["topologyValidationReport"]["errorCount"] === badReport["errorCount"] &&
@@ -1057,7 +1071,12 @@ compareExpectedTopologyValidationReport[] := Module[
        missingNumericWorkflow["stage"] === "linear" &&
        missingNumericWorkflow["reason"] === "numericRulesMissingExternalInvariants" &&
        missingNumericWorkflow["missingExternalInvariants"] === {Global`kk[1, 1]} &&
-       ! KeyExistsQ[missingNumericWorkflow, "seedBatch"]
+       ! KeyExistsQ[missingNumericWorkflow, "seedBatch"] &&
+       missingVertexEnergyWorkflow["status"] === "notReady" &&
+       missingVertexEnergyWorkflow["stage"] === "linear" &&
+       missingVertexEnergyWorkflow["reason"] === "numericRulesMissingVertexEnergies" &&
+       Sort[missingVertexEnergyWorkflow["missingVertexEnergies"]] === {Global`p1, Global`p2} &&
+       ! KeyExistsQ[missingVertexEnergyWorkflow, "seedBatch"]
       ],
     "goodReport" -> goodData["validationReport"],
     "crossReport" -> crossData["validationReport"],
@@ -1065,7 +1084,9 @@ compareExpectedTopologyValidationReport[] := Module[
     "redundantReport" -> redundantReport,
     "singularReport" -> singularReport,
     "missingNumericReport" -> missingNumericReport,
+    "missingVertexEnergyReport" -> missingVertexEnergyReport,
     "missingNumericWorkflow" -> KeyTake[missingNumericWorkflow, {"status", "stage", "reason", "missingExternalInvariants"}],
+    "missingVertexEnergyWorkflow" -> KeyTake[missingVertexEnergyWorkflow, {"status", "stage", "reason", "missingVertexEnergies"}],
     "incompleteDiscreteData" -> incompleteDiscreteData,
     "badCanonicalStatus" -> Lookup[badCanonicalBatch, "status", Missing["status"]],
     "badWorkflowStage" -> KeyTake[badWorkflow, {"status", "stage"}]
@@ -1370,7 +1391,7 @@ compareExpectedIBPWorkflowData[] := Module[
      ];
    nonNumericCase = Join[
      Global`mixedBubbleCase,
-     <|"numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5}|>
+     <|"numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5, Global`p1 -> 7, Global`p2 -> 11}|>
      ];
    nonNumericWorkflow = Global`makeIBPWorkflowData[
      nonNumericCase,
@@ -1469,7 +1490,7 @@ compareExpectedIBPReadinessReport[] := Module[
      ];
    nonNumericCase = Join[
      Global`mixedBubbleCase,
-     <|"numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5}|>
+     <|"numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5, Global`p1 -> 7, Global`p2 -> 11}|>
      ];
    nonNumericReport = Global`makeIBPReadinessReport[
      nonNumericCase,

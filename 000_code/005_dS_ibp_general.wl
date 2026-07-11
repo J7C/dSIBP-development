@@ -830,6 +830,17 @@ missingExternalInvariantNumericRules[topo_Association] := Complement[
    ];
 
 
+vertexEnergyVariables[topo_Association] := DeleteDuplicates[
+   Variables[vertexExternalEnergy[topo, #] & /@ activeAVertexIds[topo]]
+   ];
+
+
+missingVertexEnergyNumericRules[topo_Association] := Complement[
+   vertexEnergyVariables[topo],
+   numericRuleLHSVariables[topo]
+   ];
+
+
 (* 将两个线性动量表达式的点积展开为 qq/qk/kk。 *)
 expandDotExpr[p_, r_, topo_Association] := Module[
    {loops = topo["loopMomenta"], exts = topo["externalMomenta"],
@@ -1854,7 +1865,7 @@ topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
-    missingDiscreteRuleIssues, missingExternalInvariants, pendingFeatures, ruleData},
+    missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies, pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
    lineIds = Lookup[topo["lines"], "id"];
@@ -1913,6 +1924,14 @@ topologyValidationReport[topo_Association] := Module[
       "missingExternalInvariants" -> missingExternalInvariants,
       "numericRules" -> topo["numericRules"],
       "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need these kk rules"
+      |>]
+    ];
+   missingVertexEnergies = missingVertexEnergyNumericRules[topo];
+   If[missingVertexEnergies =!= {},
+    appendIssue["warning", "numericRulesMissingVertexEnergies", <|
+      "missingVertexEnergies" -> missingVertexEnergies,
+      "numericRules" -> topo["numericRules"],
+      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"
       |>]
     ];
    discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
@@ -2633,7 +2652,8 @@ Options[makeIBPWorkflowData] = Join[
 
 makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
-    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport, allowedLinearModes, missingExternalInvariants},
+    exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport,
+    allowedLinearModes, missingExternalInvariants, missingVertexEnergies},
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
    topologyReport = topologyValidationReport[topo];
    linearMode = OptionValue[LinearSystemMode];
@@ -2656,6 +2676,17 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
       "stage" -> "linear",
       "reason" -> "numericRulesMissingExternalInvariants",
       "missingExternalInvariants" -> missingExternalInvariants,
+      "topology" -> topo,
+      "topologyValidationReport" -> topologyReport
+      |>]
+    ];
+   missingVertexEnergies = missingVertexEnergyNumericRules[topo];
+   If[linearMode === "numeric" && missingVertexEnergies =!= {},
+    Return[<|
+      "status" -> "notReady",
+      "stage" -> "linear",
+      "reason" -> "numericRulesMissingVertexEnergies",
+      "missingVertexEnergies" -> missingVertexEnergies,
       "topology" -> topo,
       "topologyValidationReport" -> topologyReport
       |>]
@@ -2765,6 +2796,7 @@ makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Modul
         Lookup[linearData, "coefficientVariables", {}]
         }]],
     "missingExternalInvariants" -> Lookup[workflow, "missingExternalInvariants", {}],
+    "missingVertexEnergies" -> Lookup[workflow, "missingVertexEnergies", {}],
     "pendingFeatures" -> DeleteDuplicates[Flatten[{
         Lookup[topologyReport, "pendingFeatures", {}],
         Lookup[seedBatch, "pendingFeatures", {}],
@@ -3134,7 +3166,7 @@ masslessBoxCase = <|
    "loopMomenta" -> {q1},
    "externalMomenta" -> {k1, k2, k3},
    "ispData" -> {},
-   "numericRules" -> {dim -> 3, kk[1, 1] -> 5, kk[1, 2] -> -1, kk[1, 3] -> 2, kk[2, 2] -> 7, kk[2, 3] -> -3, kk[3, 3] -> 11},
+   "numericRules" -> {dim -> 3, kk[1, 1] -> 5, kk[1, 2] -> -1, kk[1, 3] -> 2, kk[2, 2] -> 7, kk[2, 3] -> -3, kk[3, 3] -> 11, p1 -> 7, p2 -> 11, p3 -> 13, p4 -> 17},
    "sampleDiscreteRules" -> {
      {n[1] -> 0, n[2] -> 0, n[3] -> 0, n[4] -> 0},
      {n[1] -> 1, n[2] -> 0, n[3] -> 1, n[4] -> 0},
