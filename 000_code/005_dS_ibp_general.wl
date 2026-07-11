@@ -116,9 +116,44 @@ validSeedOptionValueQ[key_, value_] /; MemberQ[{"MaxSeedRuleCount", "MaxDiscrete
 validSeedOptionValueQ[_, _] := False;
 
 
+validDiscreteReplacementRuleQ[rule_] := MatchQ[Unevaluated[rule], _Rule | _RuleDelayed];
+
+
+sampleDiscreteRuleSetShapeIssue[ruleSet_, index_] := Module[{badRulePositions},
+   If[! ListQ[ruleSet],
+    Return[<|"ruleSetIndex" -> index, "reason" -> "each sample entry must be a list of replacement rules", "entry" -> ruleSet|>]
+    ];
+   badRulePositions = Flatten @ Position[ruleSet, rule_ /; ! validDiscreteReplacementRuleQ[rule], {1}, Heads -> False];
+   If[badRulePositions === {},
+    Nothing,
+    <|"ruleSetIndex" -> index, "badRulePositions" -> badRulePositions, "entry" -> ruleSet|>
+    ]
+   ];
+
+
+sampleDiscreteRulesShapeIssues[rules_] := Module[{badEntries},
+   If[! ListQ[rules],
+    Return[{<|"reason" -> "sampleDiscreteRules must be a list of replacement-rule lists", "value" -> rules|>}]
+    ];
+   badEntries = DeleteCases[
+     MapIndexed[sampleDiscreteRuleSetShapeIssue[#1, First[#2]] &, rules],
+     Nothing
+     ];
+   badEntries
+   ];
+
+
+sampleDiscreteRulePairs[rules_] := Cases[
+   rules,
+   (Verbatim[Rule] | Verbatim[RuleDelayed])[lhs_, rhs_] :> {lhs, rhs},
+   {0, Infinity}
+   ];
+
+
 caseInputMalformedIssues[case_Association] := Module[
    {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, seedRanges, seedOptions, badVertexPositions,
-    badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData},
+    badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData,
+    sampleDiscreteRules, sampleRuleShapeIssues},
    If[KeyExistsQ[case, "vertexData"],
     vertexData = case["vertexData"];
     If[! ListQ[vertexData],
@@ -211,9 +246,16 @@ caseInputMalformedIssues[case_Association] := Module[
       AppendTo[issues, <|"severity" -> "error", "code" -> "ispDataMissingRequiredKeys", "isps" -> ispMissingKeyData|>]
       ]
      ]
+     ];
+    If[KeyExistsQ[case, "sampleDiscreteRules"],
+     sampleDiscreteRules = case["sampleDiscreteRules"];
+     sampleRuleShapeIssues = sampleDiscreteRulesShapeIssues[sampleDiscreteRules];
+     If[sampleRuleShapeIssues =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSampleDiscreteRules", "issues" -> sampleRuleShapeIssues|>]
+      ]
+     ];
+    issues
     ];
-   issues
-   ];
 
 
 (* raw case 入口的轻量 preflight；避免缺必需字段时 parser 先抛底层 Part 消息。 *)
@@ -810,14 +852,15 @@ sampleDiscreteIntegrals[expr_, topo_Association] := Module[{rules = topo["sample
 sampleDiscreteRuleCoverageIssues[topo_Association, rules_List] := Module[
    {vars = Flatten[discreteVarsForLine /@ topo["lines"]]},
    If[vars === {}, Return[{}]];
-   DeleteCases[
-    MapIndexed[
-     Module[{ruleVars, missing},
-       ruleVars = DeleteDuplicates[Cases[#1, Rule[l_, _] :> l, {0, Infinity}]];
-       missing = Complement[vars, ruleVars];
-       If[missing === {},
-        Nothing,
-        <|"ruleIndex" -> First[#2], "missingVariables" -> missing, "rule" -> #1|>
+    DeleteCases[
+     MapIndexed[
+      Module[{pairs, ruleVars, missing},
+        pairs = sampleDiscreteRulePairs[#1];
+        ruleVars = If[pairs === {}, {}, DeleteDuplicates[pairs[[All, 1]]]];
+        missing = Complement[vars, ruleVars];
+        If[missing === {},
+         Nothing,
+         <|"ruleIndex" -> First[#2], "missingVariables" -> missing, "rule" -> #1|>
         ]
        ] &,
      rules
@@ -1863,15 +1906,19 @@ selectedDiscreteSeedRules::toomany =
 
 
 selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
-   {mode, maxCount, rules, count, coverageIssues},
+   {mode, maxCount, rules, count, coverageIssues, shapeIssues},
    mode = resolveDiscreteMode[topo, OptionValue[DiscreteMode]];
    maxCount = resolveSeedOption[topo, "MaxDiscreteRuleCount", OptionValue[MaxDiscreteRuleCount], 64];
    Switch[mode,
     "none",
     rules = {{}},
-    "sample",
-    rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}];
-    coverageIssues = sampleDiscreteRuleCoverageIssues[topo, rules];
+     "sample",
+     rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}];
+     shapeIssues = sampleDiscreteRulesShapeIssues[rules];
+     If[shapeIssues =!= {},
+      Return[<|"status" -> "malformedSampleDiscreteRules", "mode" -> mode, "ruleCount" -> 0, "shapeIssues" -> shapeIssues, "rules" -> {}|>]
+      ];
+     coverageIssues = sampleDiscreteRuleCoverageIssues[topo, rules];
     If[coverageIssues =!= {},
      Return[<|"status" -> "incompleteSampleDiscreteRules", "mode" -> mode, "ruleCount" -> Length[rules], "coverageIssues" -> coverageIssues, "rules" -> {}|>]
      ],
@@ -2174,7 +2221,7 @@ topologyValidationReport[topo_Association] := Module[
     unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport, numericRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
-    spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
+    spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
     missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
     missingLineParameters, numericRequirementReport, pendingFeatures, ruleData},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
@@ -2384,22 +2431,26 @@ topologyValidationReport[topo_Association] := Module[
       |>]
     ];
    discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
-   sampleRulePairs = Cases[topo["sampleDiscreteRules"], Rule[l_, r_] :> {l, r}, {0, Infinity}];
-   unknownDiscreteRules = Select[sampleRulePairs, ! MemberQ[discreteVars, #[[1]]] &];
-   If[unknownDiscreteRules =!= {},
-    appendIssue["warning", "sampleDiscreteRulesContainUnknownVariables", <|"rules" -> (Rule @@@ unknownDiscreteRules), "allowedDiscreteVariables" -> discreteVars|>]
-    ];
-   badDiscreteValues = Select[sampleRulePairs, MemberQ[discreteVars, #[[1]]] && ! MemberQ[{0, 1}, #[[2]]] &];
-   If[badDiscreteValues =!= {},
-    appendIssue["warning", "sampleDiscreteRulesContainNonBinaryValues", <|"rules" -> (Rule @@@ badDiscreteValues)|>]
-    ];
-   If[discreteVars =!= {} && topo["sampleDiscreteRules"] === {},
-    appendIssue["warning", "sampleDiscreteRulesMissingForDiscreteVariables", <|"missingVariables" -> discreteVars, "comment" -> "sample seed mode needs complete n=0/1 rules; DiscreteMode -> all can enumerate them automatically"|>]
-    ];
-   If[topo["sampleDiscreteRules"] =!= {},
-    missingDiscreteRuleIssues = sampleDiscreteRuleCoverageIssues[topo, topo["sampleDiscreteRules"]];
-    If[missingDiscreteRuleIssues =!= {},
-     appendIssue["error", "sampleDiscreteRulesMissingVariables", <|"issues" -> missingDiscreteRuleIssues, "allowedDiscreteVariables" -> discreteVars|>]
+   sampleRuleShapeIssues = sampleDiscreteRulesShapeIssues[topo["sampleDiscreteRules"]];
+   If[sampleRuleShapeIssues =!= {},
+    appendIssue["error", "malformedSampleDiscreteRules", <|"issues" -> sampleRuleShapeIssues|>],
+    sampleRulePairs = sampleDiscreteRulePairs[topo["sampleDiscreteRules"]];
+    unknownDiscreteRules = Select[sampleRulePairs, ! MemberQ[discreteVars, #[[1]]] &];
+    If[unknownDiscreteRules =!= {},
+     appendIssue["warning", "sampleDiscreteRulesContainUnknownVariables", <|"rules" -> (Rule @@@ unknownDiscreteRules), "allowedDiscreteVariables" -> discreteVars|>]
+     ];
+    badDiscreteValues = Select[sampleRulePairs, MemberQ[discreteVars, #[[1]]] && ! MemberQ[{0, 1}, #[[2]]] &];
+    If[badDiscreteValues =!= {},
+     appendIssue["warning", "sampleDiscreteRulesContainNonBinaryValues", <|"rules" -> (Rule @@@ badDiscreteValues)|>]
+     ];
+    If[discreteVars =!= {} && topo["sampleDiscreteRules"] === {},
+     appendIssue["warning", "sampleDiscreteRulesMissingForDiscreteVariables", <|"missingVariables" -> discreteVars, "comment" -> "sample seed mode needs complete n=0/1 rules; DiscreteMode -> all can enumerate them automatically"|>]
+     ];
+    If[topo["sampleDiscreteRules"] =!= {},
+     missingDiscreteRuleIssues = sampleDiscreteRuleCoverageIssues[topo, topo["sampleDiscreteRules"]];
+     If[missingDiscreteRuleIssues =!= {},
+      appendIssue["error", "sampleDiscreteRulesMissingVariables", <|"issues" -> missingDiscreteRuleIssues, "allowedDiscreteVariables" -> discreteVars|>]
+      ]
      ]
     ];
    pendingFeatures = unsupportedSeedFeaturesForTopology[topo];

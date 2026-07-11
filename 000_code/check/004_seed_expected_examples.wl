@@ -972,11 +972,12 @@ compareExpectedCaseInputPreflight[] := Module[
      "vertexData" -> {{1, "+"}, {2, "-"}},
      "lineData" -> {<|"id" -> 1, "endpoints" -> {1, 2}|>},
      "loopMomenta" -> Global`q1,
-     "seedRanges" -> {"bad"},
-     "seedOptions" -> {"bad"},
-     "ispData" -> {
-       <|"name" -> Global`badISP|>,
-       {"tooShort", Global`qk[1, 1]},
+      "seedRanges" -> {"bad"},
+      "seedOptions" -> {"bad"},
+      "sampleDiscreteRules" -> {Global`n[1] -> 0, {Global`n[2], Global`n[3] -> 1}},
+      "ispData" -> {
+        <|"name" -> Global`badISP|>,
+        {"tooShort", Global`qk[1, 1]},
        17
        }
      |>;
@@ -1010,7 +1011,7 @@ compareExpectedCaseInputPreflight[] := Module[
        malformedData["status"] === "invalidInput" &&
        malformedData["reason"] === "malformedCaseInput" &&
        malformedData["inputRequirementReport", "missingRequiredKeys"] === {} &&
-       Sort[malformedCodes] === {"ispDataMissingRequiredKeys", "lineDataMissingRequiredKeys", "malformedISPData", "malformedLoopMomenta", "malformedSeedOptions", "malformedSeedRanges"} &&
+        Sort[malformedCodes] === {"ispDataMissingRequiredKeys", "lineDataMissingRequiredKeys", "malformedISPData", "malformedLoopMomenta", "malformedSampleDiscreteRules", "malformedSeedOptions", "malformedSeedRanges"} &&
        malformedWorkflow["status"] === "notReady" &&
        malformedWorkflow["stage"] === "topology" &&
        malformedWorkflow["reason"] === "malformedCaseInput" &&
@@ -1032,11 +1033,12 @@ compareExpectedCaseInputPreflight[] := Module[
 
 
 compareExpectedTopologyValidationReport[] := Module[
-   {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
-    semanticCase, duplicateISPCase, malformedRangeCase, semanticReport, duplicateISPReport, malformedRangeReport,
-    missingNumericCase, missingVertexEnergyCase, missingLineParameterCase,
-    missingNumericReport, missingVertexEnergyReport, missingLineParameterReport,
-    badCodes, redundantCodes, singularCodes, semanticCodes, duplicateISPCodes, malformedRangeCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
+    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
+     semanticCase, duplicateISPCase, malformedRangeCase, semanticReport, duplicateISPReport, malformedRangeReport,
+     malformedSampleTopo, malformedSampleReport,
+     missingNumericCase, missingVertexEnergyCase, missingLineParameterCase,
+     missingNumericReport, missingVertexEnergyReport, missingLineParameterReport,
+     badCodes, redundantCodes, singularCodes, semanticCodes, duplicateISPCodes, malformedRangeCodes, malformedSampleCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
     badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow,
     missingNumericWorkflow, missingVertexEnergyWorkflow, missingLineParameterWorkflow, missingLineParameterTemplate},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
@@ -1151,21 +1153,27 @@ compareExpectedTopologyValidationReport[] := Module[
         }
       |>
      ];
+    malformedSampleTopo = Join[
+      Global`parseTopology[Global`mixedBubbleCase],
+      <|"sampleDiscreteRules" -> {Global`n[1, 1] -> 0, {Global`n[1, 2], Global`n[2, 1] -> 1}}|>
+      ];
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
    redundantReport = Global`topologyValidationReport[Global`parseTopology[redundantCase]];
    singularReport = Global`topologyValidationReport[Global`parseTopology[singularCase]];
-   semanticReport = Global`topologyValidationReport[Global`parseTopology[semanticCase]];
-   duplicateISPReport = Global`topologyValidationReport[Global`parseTopology[duplicateISPCase]];
-   malformedRangeReport = Global`topologyValidationReport[Global`parseTopology[malformedRangeCase]];
+    semanticReport = Global`topologyValidationReport[Global`parseTopology[semanticCase]];
+    duplicateISPReport = Global`topologyValidationReport[Global`parseTopology[duplicateISPCase]];
+    malformedRangeReport = Global`topologyValidationReport[Global`parseTopology[malformedRangeCase]];
+    malformedSampleReport = Global`topologyValidationReport[malformedSampleTopo];
    missingNumericReport = Global`topologyValidationReport[Global`parseTopology[missingNumericCase]];
    missingVertexEnergyReport = Global`topologyValidationReport[Global`parseTopology[missingVertexEnergyCase]];
    missingLineParameterReport = Global`topologyValidationReport[Global`parseTopology[missingLineParameterCase]];
    badCodes = Lookup[badReport["issues"], "code", {}];
    redundantCodes = Lookup[redundantReport["issues"], "code", {}];
    singularCodes = Lookup[singularReport["issues"], "code", {}];
-   semanticCodes = Lookup[semanticReport["issues"], "code", {}];
-   duplicateISPCodes = Lookup[duplicateISPReport["issues"], "code", {}];
-   malformedRangeCodes = Lookup[malformedRangeReport["issues"], "code", {}];
+    semanticCodes = Lookup[semanticReport["issues"], "code", {}];
+    duplicateISPCodes = Lookup[duplicateISPReport["issues"], "code", {}];
+    malformedRangeCodes = Lookup[malformedRangeReport["issues"], "code", {}];
+    malformedSampleCodes = Lookup[malformedSampleReport["issues"], "code", {}];
    missingNumericCodes = Lookup[missingNumericReport["issues"], "code", {}];
    missingVertexEnergyCodes = Lookup[missingVertexEnergyReport["issues"], "code", {}];
    missingLineParameterCodes = Lookup[missingLineParameterReport["issues"], "code", {}];
@@ -1227,6 +1235,9 @@ compareExpectedTopologyValidationReport[] := Module[
        MemberQ[malformedRangeCodes, "malformedSeedOptionValues"] &&
        MemberQ[malformedRangeCodes, "invalidKiraOrdering"] &&
        MemberQ[malformedRangeCodes, "invalidNumericRules"] &&
+       malformedSampleReport["status"] === "issues" &&
+       malformedSampleReport["errorCount"] === 1 &&
+       MemberQ[malformedSampleCodes, "malformedSampleDiscreteRules"] &&
        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 2 &&
