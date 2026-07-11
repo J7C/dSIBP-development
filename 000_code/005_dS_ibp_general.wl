@@ -2590,6 +2590,8 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
     "exportedEquationCount" -> Lookup[strings, "exportedEquationCount", Missing["exportedEquationCount"]],
     "kiraBlockCount" -> Lookup[strings, "kiraBlockCount", Missing["kiraBlockCount"]],
     "integralCount" -> Lookup[linearForExport, "integralCount", Missing["integralCount"]],
+    "kiraOrderingReport" -> Lookup[linearForExport, "kiraOrderingReport", <||>],
+    "manualIntegralOrderReport" -> Lookup[linearForExport, "manualIntegralOrderReport", <||>],
     "targetIntegralCount" -> Lookup[strings, "targetIntegralCount", Missing["targetIntegralCount"]],
     "targetIntegralIDs" -> Lookup[strings, "targetIntegralIDs", Missing["targetIntegralIDs"]],
     "kiraTargetIntegrals" -> Lookup[strings, "kiraTargetIntegrals", Missing["kiraTargetIntegrals"]],

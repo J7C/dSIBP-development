@@ -1783,6 +1783,8 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
        AssociationQ[exportedLinear] &&
        First[exportedLinear["integralList"]] === preferred &&
        exportedLinear["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
+       kiraData["manualIntegralOrderReport", "missingIntegralOrderItems"] === {999, missingIntegral} &&
+       AssociationQ[kiraData["kiraOrderingReport"]] &&
        Lookup[badTargetData, "status", Missing["status"]] === "notReady" &&
        Lookup[Lookup[badTargetData, "kiraInput", <||>], "status", Missing["status"]] === "invalidTargetIntegrals"
       ],
@@ -1794,6 +1796,7 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
     "customOrderingReport" -> Lookup[customData, "kiraOrderingReport", <||>],
     "badManualOrderReport" -> Lookup[badReorderedData, "manualIntegralOrderReport", <||>],
     "exportManualOrderReport" -> If[AssociationQ[exportedLinear], Lookup[exportedLinear, "manualIntegralOrderReport", <||>], <||>],
+    "kiraExportManualOrderReport" -> Lookup[kiraData, "manualIntegralOrderReport", <||>],
     "badTargetStatus" -> Lookup[badTargetData, "status", Missing["status"]]
     |>
    ];
