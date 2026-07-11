@@ -962,17 +962,27 @@ compareExpectedTopologyDataInterface[] := Module[
 
 
 compareExpectedCaseInputPreflight[] := Module[
-   {badCase, data, workflow, readiness, template},
+   {badCase, data, workflow, readiness, template, malformedCase, malformedData, malformedWorkflow, malformedReadiness, malformedCodes},
    badCase = <|
      "name" -> "missingRequiredCaseKeysToy",
      "vertexData" -> {{1, "+"}, {2, "-"}}
+     |>;
+   malformedCase = <|
+     "name" -> "malformedCaseInputToy",
+     "vertexData" -> {{1, "+"}, {2, "-"}},
+     "lineData" -> {<|"id" -> 1, "endpoints" -> {1, 2}|>},
+     "loopMomenta" -> Global`q1
      |>;
    data = Global`makeTopologyData[badCase];
    workflow = Global`makeIBPWorkflowData[badCase];
    readiness = Global`makeIBPReadinessReport[badCase];
    template = Global`makeNumericRuleTemplate[badCase];
+   malformedData = Global`makeTopologyData[malformedCase];
+   malformedWorkflow = Global`makeIBPWorkflowData[malformedCase];
+   malformedReadiness = Global`makeIBPReadinessReport[malformedCase];
+   malformedCodes = Lookup[malformedData["validationReport", "issues"], "code", {}];
    <|
-    "name" -> "caseInputPreflight_missingRequiredKeys",
+    "name" -> "caseInputPreflight_missingAndMalformed",
     "pass" -> TrueQ[
       data["status"] === "invalidInput" &&
        Sort[data["inputRequirementReport", "missingRequiredKeys"]] === {"lineData", "loopMomenta"} &&
@@ -989,12 +999,27 @@ compareExpectedCaseInputPreflight[] := Module[
        readiness["topologyReadyQ"] === False &&
        readiness["workflowReason"] === "missingRequiredCaseKeys" &&
        Sort[readiness["missingRequiredKeys"]] === {"lineData", "loopMomenta"} &&
-       template === {}
+       template === {} &&
+       malformedData["status"] === "invalidInput" &&
+       malformedData["reason"] === "malformedCaseInput" &&
+       malformedData["inputRequirementReport", "missingRequiredKeys"] === {} &&
+       Sort[malformedCodes] === {"lineDataMissingRequiredKeys", "malformedLoopMomenta"} &&
+       malformedWorkflow["status"] === "notReady" &&
+       malformedWorkflow["stage"] === "topology" &&
+       malformedWorkflow["reason"] === "malformedCaseInput" &&
+       malformedWorkflow["missingRequiredKeys"] === {} &&
+       Lookup[malformedWorkflow["malformedInputIssues"], "code", {}] === malformedCodes &&
+       malformedReadiness["status"] === "notReady" &&
+       malformedReadiness["workflowReason"] === "malformedCaseInput" &&
+       Lookup[malformedReadiness["malformedInputIssues"], "code", {}] === malformedCodes
       ],
     "topologyData" -> data,
     "workflow" -> workflow,
     "readiness" -> KeyDrop[readiness, "workflowSummary"],
-    "template" -> template
+    "template" -> template,
+    "malformedData" -> malformedData,
+    "malformedWorkflow" -> malformedWorkflow,
+    "malformedReadiness" -> KeyDrop[malformedReadiness, "workflowSummary"]
     |>
    ];
 

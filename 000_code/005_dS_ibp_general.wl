@@ -73,38 +73,128 @@ optionalCaseInputKeys[] := {
    };
 
 
+validVertexEntryQ[entry_] := ListQ[entry] && Length[entry] >= 2;
+
+
+validLineEntryShapeQ[entry_] := AssociationQ[entry] || MatchQ[entry, {_, _, _, _, _}];
+
+
+lineEntryAssociationMissingKeys[entry_Association] := Complement[{"id", "endpoints", "momentum"}, Keys[entry]];
+lineEntryAssociationMissingKeys[_] := {};
+
+
+lineEntryEndpointValue[entry_Association] := Lookup[entry, "endpoints", Missing["NoEndpoints"]];
+lineEntryEndpointValue[{_, endpoints_, ___}] := endpoints;
+lineEntryEndpointValue[_] := Missing["NoEndpoints"];
+
+
+validEndpointPairQ[endpoints_] := ListQ[endpoints] && Length[endpoints] == 2;
+
+
+caseInputMalformedIssues[case_Association] := Module[
+   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, badVertexPositions,
+    badLineShapePositions, lineMissingKeyData, badEndpointData},
+   If[KeyExistsQ[case, "vertexData"],
+    vertexData = case["vertexData"];
+    If[! ListQ[vertexData],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedVertexData", "reason" -> "vertexData must be a list of {id, sign} entries"|>],
+     badVertexPositions = Flatten @ Position[vertexData, entry_ /; ! validVertexEntryQ[entry], {1}, Heads -> False];
+     If[badVertexPositions =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedVertexData", "badPositions" -> badVertexPositions|>]
+      ]
+     ]
+    ];
+   If[KeyExistsQ[case, "lineData"],
+    lineData = case["lineData"];
+    If[! ListQ[lineData],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedLineData", "reason" -> "lineData must be a list of line associations or {id,endpoints,momentum,nu,bbType} entries"|>],
+     badLineShapePositions = Flatten @ Position[lineData, entry_ /; ! validLineEntryShapeQ[entry], {1}, Heads -> False];
+     If[badLineShapePositions =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedLineData", "badPositions" -> badLineShapePositions|>]
+      ];
+     lineMissingKeyData = DeleteCases[
+       MapIndexed[
+        If[AssociationQ[#1] && lineEntryAssociationMissingKeys[#1] =!= {},
+          <|"linePosition" -> First[#2], "missingKeys" -> lineEntryAssociationMissingKeys[#1]|>,
+          Nothing
+          ] &,
+        lineData
+        ],
+       Nothing
+       ];
+     If[lineMissingKeyData =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "lineDataMissingRequiredKeys", "lines" -> lineMissingKeyData|>]
+      ];
+     badEndpointData = DeleteCases[
+       MapIndexed[
+        If[validLineEntryShapeQ[#1] && lineEntryAssociationMissingKeys[#1] === {} && ! validEndpointPairQ[lineEntryEndpointValue[#1]],
+          <|"linePosition" -> First[#2], "endpoints" -> lineEntryEndpointValue[#1]|>,
+          Nothing
+          ] &,
+        lineData
+        ],
+       Nothing
+       ];
+     If[badEndpointData =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedLineEndpoints", "lines" -> badEndpointData|>]
+      ]
+     ]
+    ];
+   If[KeyExistsQ[case, "loopMomenta"],
+    loopMomenta = case["loopMomenta"];
+    If[! ListQ[loopMomenta],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedLoopMomenta", "reason" -> "loopMomenta must be a list"|>]
+     ]
+    ];
+   If[KeyExistsQ[case, "externalMomenta"],
+    externalMomenta = case["externalMomenta"];
+    If[! ListQ[externalMomenta],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedExternalMomenta", "reason" -> "externalMomenta must be a list"|>]
+     ]
+    ];
+   issues
+   ];
+
+
 (* raw case 入口的轻量 preflight；避免缺必需字段时 parser 先抛底层 Part 消息。 *)
 caseInputRequirementReport[case_Association] := Module[
-   {keys = Keys[case], required = requiredCaseInputKeys[], optional = optionalCaseInputKeys[]},
+   {keys = Keys[case], required = requiredCaseInputKeys[], optional = optionalCaseInputKeys[], malformedIssues},
+   malformedIssues = caseInputMalformedIssues[case];
    <|
     "providedKeys" -> keys,
     "requiredKeys" -> required,
     "optionalKeys" -> optional,
     "missingRequiredKeys" -> Complement[required, keys],
     "unknownKeys" -> Complement[keys, Join[required, optional]],
-    "completeRequiredKeysQ" -> TrueQ[Complement[required, keys] === {}]
+    "malformedInputIssues" -> malformedIssues,
+    "completeRequiredKeysQ" -> TrueQ[Complement[required, keys] === {}],
+    "inputPreflightPassQ" -> TrueQ[Complement[required, keys] === {} && malformedIssues === {}]
     |>
    ];
 
 
 caseInputErrorReport[case_Association] := Module[{report = caseInputRequirementReport[case]},
+   With[{issues = Join[
+       If[report["missingRequiredKeys"] === {}, {}, {<|"severity" -> "error", "code" -> "missingRequiredCaseKeys", "missingRequiredKeys" -> report["missingRequiredKeys"]|>}],
+       report["malformedInputIssues"]
+       ]},
    <|
-    "status" -> If[TrueQ[report["completeRequiredKeysQ"]], "ok", "issues"],
-    "errorCount" -> If[TrueQ[report["completeRequiredKeysQ"]], 0, 1],
+    "status" -> If[issues === {}, "ok", "issues"],
+    "errorCount" -> Length[issues],
     "warningCount" -> 0,
     "pendingCount" -> 0,
     "pendingFeatures" -> {},
     "inputRequirementReport" -> report,
-    "issues" -> If[
-      TrueQ[report["completeRequiredKeysQ"]],
-      {},
-      {<|"severity" -> "error", "code" -> "missingRequiredCaseKeys", "missingRequiredKeys" -> report["missingRequiredKeys"]|>}
-      ]
+    "issues" -> issues
     |>
+    ]
    ];
 
 
 caseInputMissingRequiredKeysQ[case_Association] := ! TrueQ[caseInputRequirementReport[case]["completeRequiredKeysQ"]];
+
+
+caseInputPreflightErrorQ[case_Association] := ! TrueQ[caseInputRequirementReport[case]["inputPreflightPassQ"]];
 
 
 seedPresetAssociation[preset_] := Switch[preset,
@@ -186,14 +276,18 @@ completeLineMetadata[line_, vertexSignAssoc_] := Module[
 
 (* 将一个 case 解析为通用拓扑对象。externalMomenta 必须给出独立外动量基。 *)
 parseTopology::missingkeys = "case 缺少必需字段：`1`。";
+parseTopology::badinput = "case 输入 preflight 失败：`1`。";
 
 
 parseTopology[case_Association] := Module[
    {vertexData, vertexIds, vertexSignAssoc, rawLines, lines, loopMomenta,
    externalMomenta, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
     eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig},
-   If[caseInputMissingRequiredKeysQ[case],
-    Message[parseTopology::missingkeys, caseInputRequirementReport[case]["missingRequiredKeys"]];
+   If[caseInputPreflightErrorQ[case],
+    If[caseInputMissingRequiredKeysQ[case],
+     Message[parseTopology::missingkeys, caseInputRequirementReport[case]["missingRequiredKeys"]],
+     Message[parseTopology::badinput, Lookup[caseInputErrorReport[case], "issues", {}]]
+     ];
     Return[$Failed]
     ];
    vertexData = case["vertexData"];
@@ -948,7 +1042,7 @@ Options[makeNumericRuleTemplate] = {
 (* 生成可直接复制到 case["numericRules"] 的替换规则骨架；默认只列当前缺失项。 *)
 makeNumericRuleTemplate[caseOrTopo_Association, OptionsPattern[]] := Module[
    {topo, report, vars, valueSpec},
-   If[! parsedTopologyQ[caseOrTopo] && caseInputMissingRequiredKeysQ[caseOrTopo],
+   If[! parsedTopologyQ[caseOrTopo] && caseInputPreflightErrorQ[caseOrTopo],
     Return[{}]
     ];
    topo = If[KeyExistsQ[caseOrTopo, "lines"] && KeyExistsQ[caseOrTopo, "nL"], caseOrTopo, parseTopology[caseOrTopo]];
@@ -2104,11 +2198,12 @@ topologyValidationErrorQ[_] := False;
 
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
    {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, maxShrinkDepth, maxShrinkCount, inputReport, validationReport},
-   If[caseInputMissingRequiredKeysQ[case],
+   If[caseInputPreflightErrorQ[case],
     inputReport = caseInputRequirementReport[case];
     validationReport = caseInputErrorReport[case];
     Return[Join[case, <|
        "status" -> "invalidInput",
+       "reason" -> If[inputReport["missingRequiredKeys"] =!= {}, "missingRequiredCaseKeys", "malformedCaseInput"],
        "inputRequirementReport" -> inputReport,
        "validationReport" -> validationReport,
        "sectorMetadataList" -> {},
@@ -2857,14 +2952,15 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    {topo, seedOpts, batch, linearOpts, linearMode, coeffRules, linearData,
     exportQ, kiraCoeffRules, kiraOpts, kiraData, seedCoverageReport, topologyReport,
     allowedLinearModes, inputReport, numericRequirementReport, missingExternalInvariants, missingVertexEnergies, missingLineParameters},
-   If[! parsedTopologyQ[caseOrTopo] && caseInputMissingRequiredKeysQ[caseOrTopo],
+   If[! parsedTopologyQ[caseOrTopo] && caseInputPreflightErrorQ[caseOrTopo],
     inputReport = caseInputRequirementReport[caseOrTopo];
     topologyReport = caseInputErrorReport[caseOrTopo];
     Return[<|
       "status" -> "notReady",
       "stage" -> "topology",
-      "reason" -> "missingRequiredCaseKeys",
+      "reason" -> If[inputReport["missingRequiredKeys"] =!= {}, "missingRequiredCaseKeys", "malformedCaseInput"],
       "missingRequiredKeys" -> inputReport["missingRequiredKeys"],
+      "malformedInputIssues" -> inputReport["malformedInputIssues"],
       "inputRequirementReport" -> inputReport,
       "topologyValidationReport" -> topologyReport
       |>]
@@ -3017,6 +3113,7 @@ makeIBPReadinessReport[caseOrTopo_Association, opts : OptionsPattern[]] := Modul
     "topologyIssueCodes" -> readinessIssueCodes[topologyReport],
     "inputRequirementReport" -> Lookup[workflow, "inputRequirementReport", Lookup[topologyReport, "inputRequirementReport", <||>]],
     "missingRequiredKeys" -> Lookup[workflow, "missingRequiredKeys", {}],
+    "malformedInputIssues" -> Lookup[workflow, "malformedInputIssues", Lookup[Lookup[workflow, "inputRequirementReport", <||>], "malformedInputIssues", {}]],
     "seedStatus" -> Lookup[seedBatch, "status", Missing["notGenerated"]],
     "seedCoverageStatus" -> Lookup[seedReport, "status", Missing["notGenerated"]],
     "linearStatus" -> Lookup[linearData, "status", Missing["notGenerated"]],

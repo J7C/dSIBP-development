@@ -62,7 +62,7 @@ kiraData = makeKiraExportData[
 
 - seed 阶段只生成 Mathematica 表达式，不直接导出 Kira。
 - `makeIBPReadinessReport[case, ...]` 是轻量体检入口，会返回 topology/seed/linear/Kira 各阶段 ready 状态、计数、pending features、issue codes、失败原因、`numericRuleRequirementReport`，以及 numeric workflow 的残留 `coefficientVariables`。
-- raw case 会先经过输入 preflight；若缺少 `vertexData`、`lineData` 或 `loopMomenta`，`makeTopologyData`/workflow/readiness 会返回 `missingRequiredCaseKeys`，不会进入 parser 或 seed 生成。
+- raw case 会先经过输入 preflight；若缺少 `vertexData`、`lineData` 或 `loopMomenta`，`makeTopologyData`/workflow/readiness 会返回 `missingRequiredCaseKeys`。若这些字段形状明显不对，如 line 缺 `momentum` 或 `loopMomenta` 不是列表，会返回 `malformedCaseInput`，不会进入 parser 或 seed 生成。
 - `makeCanonicalSeedBatch` 会合并 momentum/time/shrink-sector seed，并检查 EOM canonical 与 pending features。
 - `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、逐 sector 生成元标签、EOM canonical 和 pending/forbidden 数据；canonical batch 进入 linear/Kira 时会把这个 report 写入 metadata。
 - `topologyValidationReport` 在 topology 初始化、seed batch、linear-system 和 Kira metadata 中都会保留，用来追踪输入拓扑/ISP/numeric rules 是否满足通用生成器前置条件。
