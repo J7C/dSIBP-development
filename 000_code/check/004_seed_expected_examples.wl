@@ -69,7 +69,7 @@ expectedMixedBubble[] := <|
      {Global`n[1, 1] -> 0, Global`n[1, 2] -> 0, Global`n[2] -> 0},
      {Global`n[1, 1] -> 1, Global`n[1, 2] -> 0, Global`n[2] -> 1}
      },
-   "numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5, Global`nuM -> 2},
+   "numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5, Global`nuM -> 2, Global`p1 -> 7, Global`p2 -> 11},
    "zExprs" -> {Global`qq[1, 1], Global`qq[1, 1] - 2 Global`qk[1, 1] + Global`kk[1, 1]},
    "spToZRules" -> {Global`qq[1, 1] -> Global`z[1], Global`qk[1, 1] -> (Global`z[1] + Global`kk[1, 1] - Global`z[2])/2},
    "dotCoefficients" -> <|
@@ -1644,14 +1644,18 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        metadata["kiraBlockCount"] === kiraData["kiraBlockCount"] &&
        metadata["targetIntegralCount"] === kiraData["targetIntegralCount"] &&
        metadata["numericCoefficientSystemQ"] === kiraData["numericCoefficientSystemQ"] &&
+       metadata["coefficientVariables"] === {} &&
        metadata["numericDummyAppendedQ"] === kiraData["numericDummyAppendedQ"] &&
        metadata["topologyValidationReport"]["status"] === "ok" &&
        linearData["topologyValidationReport"]["status"] === "ok" &&
        metadata["seedCoverageReport"]["status"] === "ready" &&
        metadata["kiraCoefficientRules"] === topo["numericRules"] &&
+       kiraData["coefficientVariables"] === {} &&
        metadata["kiraJobOptions"]["RunFirefly"] === True &&
        Lookup[metadata["sectorMetadataList"], "sectorKey"] === Lookup[linearData["sectorMetadataList"], "sectorKey"] &&
        Lookup[customStrings, "status", Missing["status"]] === "generated" &&
+       customStrings["numericCoefficientSystemQ"] === False &&
+       MemberQ[customStrings["coefficientVariables"], Global`nuM] &&
        StringContainsQ[customJobsText, "run_firefly: false"] &&
        ! StringContainsQ[customJobsText, "kira2math"] &&
        ! StringQ[Lookup[customStrings, "run.sh", Missing["run.sh"]]] &&
@@ -1670,9 +1674,11 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
     "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]],
     "targetIntegralCount" -> Lookup[kiraData, "targetIntegralCount", Missing["targetIntegralCount"]],
     "numericDummyAppendedQ" -> Lookup[kiraData, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
+    "coefficientVariables" -> Lookup[kiraData, "coefficientVariables", Missing["coefficientVariables"]],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}],
     "sectorKeysInMetadata" -> If[AssociationQ[metadata], Lookup[metadata["sectorMetadataList"], "sectorKey", {}], {}],
     "customJobOptionStatus" -> Lookup[customStrings, "status", Missing["status"]],
+    "customCoefficientVariables" -> Lookup[customStrings, "coefficientVariables", Missing["coefficientVariables"]],
     "targetedListIDs" -> Lookup[targetedStrings, "targetIntegralIDs", Missing["targetIntegralIDs"]]
     |>
    ];
@@ -1721,6 +1727,7 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
        blockCount > 0 &&
        listCount === kiraData["targetIntegralCount"] &&
        kiraData["numericCoefficientSystemQ"] === True &&
+       kiraData["coefficientVariables"] === {} &&
        kiraData["numericDummyAppendedQ"] === True &&
        kiraData["numericDummyIntegralId"] === kiraData["integralCount"] + 1 &&
        kiraData["targetIntegralIDs"] === {1, kiraData["numericDummyIntegralId"]} &&
@@ -1741,6 +1748,7 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
     "targetIntegralCount" -> Lookup[kiraData, "targetIntegralCount", Missing["targetIntegralCount"]],
     "targetIntegralIDs" -> Lookup[kiraData, "targetIntegralIDs", Missing["targetIntegralIDs"]],
     "numericDummyAppendedQ" -> Lookup[kiraData, "numericDummyAppendedQ", Missing["numericDummyAppendedQ"]],
+    "coefficientVariables" -> Lookup[kiraData, "coefficientVariables", Missing["coefficientVariables"]],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}]
     |>
    ];
