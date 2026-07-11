@@ -17,6 +17,7 @@
 - shrink sector 当前使用 `{bS_e}`；缩并后 `aList` 只保留 compact active slots，原顶点到 compact slot 的映射保存在 `sectorMetadataList`。
 - seed 层必须立即应用 EOM 和 massless endpoint canonical，不允许 `n=2` 留到输出 seed。
 - seed 保存为 Mathematica 表达式；Kira 导出只消费 linear-system 数据。
+- 用户输入的传播子平方与直接 ISP 定义共同固定 family 坐标；程序验证这组 `z/ISP` 坐标是否闭合并可反解，不自动从 overcomplete propagator family 中删线或重选 basis。
 
 ## 轻量检查
 
