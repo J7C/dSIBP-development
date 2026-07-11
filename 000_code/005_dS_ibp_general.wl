@@ -2076,6 +2076,7 @@ unsupportedSeedFeaturesForTopology[topo_Association] := DeleteDuplicates@Join[
 
 topologyValidationReport[topo_Association] := Module[
    {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
+    badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
     missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
@@ -2100,6 +2101,27 @@ topologyValidationReport[topo_Association] := Module[
     ];
    If[Complement[packTypes, allowedPackTypes] =!= {},
     appendIssue["error", "unknownPackTypes", <|"packTypes" -> DeleteDuplicates[Complement[packTypes, allowedPackTypes]]|>]
+    ];
+   badMassTypeLines = Select[
+     MapIndexed[Join[#1, <|"lineIndex" -> First[#2]|>] &, topo["lines"]],
+     ! MemberQ[{"massive", "massless"}, Lookup[#, "massType", "massive"]] &
+     ];
+   If[badMassTypeLines =!= {},
+    appendIssue["error", "unknownLineMassTypes", <|"lineIndices" -> Lookup[badMassTypeLines, "lineIndex"], "massTypes" -> Lookup[badMassTypeLines, "massType"], "allowedMassTypes" -> {"massive", "massless"}|>]
+    ];
+   badSKTypeLines = Select[
+     MapIndexed[Join[#1, <|"lineIndex" -> First[#2]|>] &, topo["lines"]],
+     ! MemberQ[{"++", "--", "+-", "-+"}, Lookup[#, "skType", "++"]] &
+     ];
+   If[badSKTypeLines =!= {},
+    appendIssue["error", "unknownLineSKTypes", <|"lineIndices" -> Lookup[badSKTypeLines, "lineIndex"], "skTypes" -> Lookup[badSKTypeLines, "skType"], "allowedSKTypes" -> {"++", "--", "+-", "-+"}|>]
+    ];
+   badStateLines = Select[
+     MapIndexed[Join[#1, <|"lineIndex" -> First[#2]|>] &, topo["lines"]],
+     ! MemberQ[{"full", "shrunk"}, Lookup[#, "state", "full"]] &
+     ];
+   If[badStateLines =!= {},
+    appendIssue["error", "unknownLineStates", <|"lineIndices" -> Lookup[badStateLines, "lineIndex"], "states" -> Lookup[badStateLines, "state"], "allowedStates" -> {"full", "shrunk"}|>]
     ];
    lineMomentumVars = DeleteDuplicates[Flatten[Variables /@ Lookup[topo["lines"], "momentum"]]];
    declaredMomentumVars = DeleteDuplicates@Join[topo["loopMomenta"], topo["externalMomenta"]];

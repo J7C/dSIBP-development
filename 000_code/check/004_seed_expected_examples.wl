@@ -1026,9 +1026,10 @@ compareExpectedCaseInputPreflight[] := Module[
 
 compareExpectedTopologyValidationReport[] := Module[
    {goodData, crossData, badCase, redundantCase, singularCase, badReport, redundantReport, singularReport,
+    semanticCase, semanticReport,
     missingNumericCase, missingVertexEnergyCase, missingLineParameterCase,
     missingNumericReport, missingVertexEnergyReport, missingLineParameterReport,
-    badCodes, redundantCodes, singularCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
+    badCodes, redundantCodes, singularCodes, semanticCodes, missingNumericCodes, missingVertexEnergyCodes, missingLineParameterCodes,
     badSeverities, incompleteDiscreteData, badTopo, badCanonicalBatch, badWorkflow,
     missingNumericWorkflow, missingVertexEnergyWorkflow, missingLineParameterWorkflow, missingLineParameterTemplate},
    goodData = Global`makeTopologyData[Global`mixedSunriseCase];
@@ -1076,6 +1077,19 @@ compareExpectedTopologyValidationReport[] := Module[
      "sampleDiscreteRules" -> {{Global`n[1] -> 0, Global`n[2] -> 0}},
      "seedRanges" -> <|"sampleOnly" -> True|>
      |>;
+   semanticCase = <|
+     "name" -> "semanticLineMetadataToy",
+     "vertexData" -> {{1, "+"}, {2, "+"}},
+     "lineData" -> {
+       <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massles", "skType" -> "+?", "state" -> "opened"|>
+       },
+     "extLegs" -> {},
+     "loopMomenta" -> {Global`q1},
+     "externalMomenta" -> {},
+     "ispData" -> {},
+     "sampleDiscreteRules" -> {{Global`n[1, 1] -> 0, Global`n[1, 2] -> 0}},
+     "seedRanges" -> <|"sampleOnly" -> True|>
+     |>;
    missingNumericCase = <|
      "name" -> "missingNumericInvariantToy",
      "vertexData" -> {{1, "+"}, {2, "+"}},
@@ -1102,12 +1116,14 @@ compareExpectedTopologyValidationReport[] := Module[
    badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
    redundantReport = Global`topologyValidationReport[Global`parseTopology[redundantCase]];
    singularReport = Global`topologyValidationReport[Global`parseTopology[singularCase]];
+   semanticReport = Global`topologyValidationReport[Global`parseTopology[semanticCase]];
    missingNumericReport = Global`topologyValidationReport[Global`parseTopology[missingNumericCase]];
    missingVertexEnergyReport = Global`topologyValidationReport[Global`parseTopology[missingVertexEnergyCase]];
    missingLineParameterReport = Global`topologyValidationReport[Global`parseTopology[missingLineParameterCase]];
    badCodes = Lookup[badReport["issues"], "code", {}];
    redundantCodes = Lookup[redundantReport["issues"], "code", {}];
    singularCodes = Lookup[singularReport["issues"], "code", {}];
+   semanticCodes = Lookup[semanticReport["issues"], "code", {}];
    missingNumericCodes = Lookup[missingNumericReport["issues"], "code", {}];
    missingVertexEnergyCodes = Lookup[missingVertexEnergyReport["issues"], "code", {}];
    missingLineParameterCodes = Lookup[missingLineParameterReport["issues"], "code", {}];
@@ -1145,6 +1161,11 @@ compareExpectedTopologyValidationReport[] := Module[
        singularReport["status"] === "issues" &&
        singularReport["errorCount"] === 1 &&
        MemberQ[singularCodes, "scalarProductCoordinateSolveFailed"] &&
+       semanticReport["status"] === "issues" &&
+       semanticReport["errorCount"] === 3 &&
+       MemberQ[semanticCodes, "unknownLineMassTypes"] &&
+       MemberQ[semanticCodes, "unknownLineSKTypes"] &&
+       MemberQ[semanticCodes, "unknownLineStates"] &&
        missingNumericReport["status"] === "ok" &&
        missingNumericReport["errorCount"] === 0 &&
        missingNumericReport["warningCount"] === 2 &&
@@ -1187,6 +1208,7 @@ compareExpectedTopologyValidationReport[] := Module[
     "badReport" -> badReport,
     "redundantReport" -> redundantReport,
     "singularReport" -> singularReport,
+    "semanticReport" -> semanticReport,
     "missingNumericReport" -> missingNumericReport,
     "missingVertexEnergyReport" -> missingVertexEnergyReport,
     "missingLineParameterReport" -> missingLineParameterReport,
