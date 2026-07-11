@@ -2270,6 +2270,9 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "reason" -> "linear data missing", "topologyValidationReport" -> topologyReport|>]
     ];
+   If[topologyValidationErrorQ[topologyReport],
+    Return[<|"status" -> "invalidTopology", "reason" -> "topology validation has errors", "topologyValidationReport" -> topologyReport|>]
+    ];
    If[! KeyExistsQ[linearData, "linearEquations"] || ! KeyExistsQ[linearData, "integralRules"],
     Return[<|"status" -> "notLinearSystem", "reason" -> "Kira exporter expects makeLinearSystemData output", "topologyValidationReport" -> topologyReport|>]
     ];
