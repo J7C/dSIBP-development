@@ -30,6 +30,7 @@
 - [x] 后端排序与 master 优先级接口：支持全 sector 的 `KiraOrdering["IntegralOrder"/"PreferredIntegrals"]`、`reorderLinearSystemIntegrals` 和 `makeKiraExportData[..., KiraIntegralOrder -> ...]`，默认仍以 b/bS 幂次复杂度为主。
 - [x] massive `G^{+-}/G^{-+}` 不再误落入 `massiveFull`：`005` 已加入 `massiveCross -> {b_e,n_e}`、离散态枚举、forbidden-n 扫描和 `massiveCrossSeed` pending gate。真实 momentum/time building-block seed 仍未实现，因此 canonical batch 不能进入 linear/Kira。
 - [x] massless `G^{+-}/G^{-+}` time seed：无 theta、无离散态，只保留 `{b_e}`；时间导数按端点 SK 符号产生 `\pm i q_e`，在指标上实现为 `b_e -> b_e-1`，并加入 massless-cross bubble 小检查。
+- [x] topology validation report：`makeTopologyData` / `summarizeCase` 现在返回 `validationReport`，提前报告重复线编号、端点不在顶点表、未声明动量变量、ISP 数量不足、sampleDiscreteRules 异常和当前 unsupported seed feature。
 - [ ] 测试分层：
   - bubble massive/h 与参考 code 对比；
   - bubble massless 双 theta `{b,n}` 检查 endpoint 压缩（已加入小样本 check）；

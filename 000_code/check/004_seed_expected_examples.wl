@@ -15,7 +15,7 @@ Begin["`Private`"];
 ClearAll[
    seedExpectedBaseDir, projectRootFromCheckDir, loadGeneralGenerator,
    expectedMixedBubble, expectedMixedTriangle, expectedSeedExamples,
-   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
+   compareExpectedField, compareExpectedCase, compareExpectedMomentumSeedMasslessBubble, compareExpectedMomentumSeedMixedBubbleBuildingBlock, compareExpectedMomentumSeedSunriseISP, compareExpectedMomentumSeedBatch, compareExpectedMomentumSeedBatchMixedBubbleEOM, compareExpectedTimeSeedMixedBubbleCore, compareExpectedTimeSeedBatchMixedBubbleEOM, compareExpectedMasslessEndpointCanonical, compareExpectedCanonicalSeedGateMixedBubble, compareExpectedDoubleShrinkCompactA, compareExpectedThreeVertexMultiShrinkCompactA, compareExpectedTopologyDataInterface, compareExpectedTopologyValidationReport, compareExpectedSectorKeyExactMatch, compareExpectedMasslessBundleMetadata, compareExpectedMasslessCrossTimeSeed, compareExpectedMassiveCrossGate, compareExpectedSeedClassificationAndSampledLinear, compareExpectedSeedMMASaveMixedBubble, compareExpectedKiraWorkspaceExportMixedBubble, compareExpectedKiraIntegralOrderingMixedBubble, compareExpectedMomentumLinearSystem, compareExpectedShrunkLineIBP, compareExpectedEOMCanonical, compareExpectedWithCurrentGenerator,
    dotVectorFromKey, lineMomentumFromKey, compareExpectedDotCoefficients, compareExpectedRepSP2Z,
    runSeedExpectedStructureCheck
    ];
@@ -694,6 +694,52 @@ compareExpectedTopologyDataInterface[] := Module[
    ];
 
 
+compareExpectedTopologyValidationReport[] := Module[
+   {goodData, pendingData, badCase, badReport, badCodes, badSeverities},
+   goodData = Global`makeTopologyData[Global`mixedSunriseCase];
+   pendingData = Global`makeTopologyData[Global`massiveCrossBubbleCase];
+   badCase = <|
+     "name" -> "badTopologyValidationToy",
+     "vertexData" -> {{1, "+"}, {2, "+"}},
+     "lineData" -> {
+       <|"id" -> 1, "endpoints" -> {1, 2}, "momentum" -> Global`q1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>,
+       <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> Global`q1 - Global`q2 - Global`pBad, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
+       },
+     "extLegs" -> {},
+     "loopMomenta" -> {Global`q1, Global`q2},
+     "externalMomenta" -> {},
+     "ispData" -> {},
+     "sampleDiscreteRules" -> {{Global`n[99] -> 1, Global`n[1] -> 2}},
+     "seedRanges" -> <|"sampleOnly" -> True|>
+     |>;
+   badReport = Global`topologyValidationReport[Global`parseTopology[badCase]];
+   badCodes = Lookup[badReport["issues"], "code", {}];
+   badSeverities = Lookup[badReport["issues"], "severity", {}];
+   <|
+    "name" -> "topologyValidationReport_goodPendingBad",
+    "pass" -> TrueQ[
+      goodData["validationReport", "status"] === "ok" &&
+       goodData["validationReport", "pendingFeatures"] === {} &&
+       pendingData["validationReport", "status"] === "ok" &&
+       pendingData["validationReport", "pendingFeatures"] === {"massiveCrossSeed"} &&
+       pendingData["validationReport", "pendingCount"] === 1 &&
+       badReport["status"] === "issues" &&
+       badReport["errorCount"] === 2 &&
+       badReport["warningCount"] === 2 &&
+       MemberQ[badCodes, "undeclaredMomentumVariables"] &&
+       MemberQ[badCodes, "insufficientISPData"] &&
+       MemberQ[badCodes, "sampleDiscreteRulesContainUnknownVariables"] &&
+       MemberQ[badCodes, "sampleDiscreteRulesContainNonBinaryValues"] &&
+       Count[badSeverities, "error"] === 2 &&
+       Count[badSeverities, "warning"] === 2
+      ],
+    "goodReport" -> goodData["validationReport"],
+    "pendingReport" -> pendingData["validationReport"],
+    "badReport" -> badReport
+    |>
+   ];
+
+
 compareExpectedSectorKeyExactMatch[] := Module[
    {case, topo, meta1, meta2, intE1, intE2, wrongSymbolInt},
    case = <|
@@ -1035,6 +1081,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "doubleShrinkCompactA" -> compareExpectedDoubleShrinkCompactA[],
     "threeVertexMultiShrinkCompactA" -> compareExpectedThreeVertexMultiShrinkCompactA[],
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
+    "topologyValidationReport" -> compareExpectedTopologyValidationReport[],
     "sectorKeyExactMatch" -> compareExpectedSectorKeyExactMatch[],
     "masslessBundleMetadata" -> compareExpectedMasslessBundleMetadata[],
     "masslessCrossTimeSeed" -> compareExpectedMasslessCrossTimeSeed[],
@@ -1060,9 +1107,6 @@ runSeedExpectedStructureCheck[] := Module[{},
 End[];
 
 EndPackage[];
-
-
-
 
 
 

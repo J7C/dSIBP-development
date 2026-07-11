@@ -1152,7 +1152,7 @@ timeThetaBoundaryShrinkTerms[topo_Association, J[aList_, linePacks_, ispList_], 
 
 
 seedUnsupportedPendingFeatures[topo_Association] := DeleteDuplicates@Join[
-    If[MemberQ[Lookup[topo["lines"], "packType"], "massiveCross"], {"massiveCrossSeed"}, {}]
+    unsupportedSeedFeaturesForTopology[topo]
     ];
 
 
@@ -1652,6 +1652,69 @@ masslessBundleCandidates[topo_Association] := Module[
    ];
 
 
+unsupportedSeedFeaturesForTopology[topo_Association] := DeleteDuplicates@Join[
+    If[MemberQ[Lookup[topo["lines"], "packType"], "massiveCross"], {"massiveCrossSeed"}, {}]
+    ];
+
+
+topologyValidationReport[topo_Association] := Module[
+   {issues = {}, appendIssue, vertexIds, lineIds, packTypes, allowedPackTypes,
+    badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
+    spData, discreteVars, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
+    pendingFeatures},
+   appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
+   vertexIds = topo["vertexIds"];
+   lineIds = Lookup[topo["lines"], "id"];
+   packTypes = Lookup[topo["lines"], "packType"];
+   allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
+   If[! DuplicateFreeQ[lineIds],
+    appendIssue["error", "duplicateLineIds", <|"lineIds" -> lineIds|>]
+    ];
+   badEndpointLines = Select[
+     MapIndexed[Join[#1, <|"lineIndex" -> First[#2]|>] &, topo["lines"]],
+     ! SubsetQ[vertexIds, Lookup[#, "endpoints", {}]] &
+     ];
+   If[badEndpointLines =!= {},
+    appendIssue["error", "lineEndpointNotInVertexData", <|"lineIndices" -> Lookup[badEndpointLines, "lineIndex"], "endpoints" -> Lookup[badEndpointLines, "endpoints"]|>]
+    ];
+   If[Complement[packTypes, allowedPackTypes] =!= {},
+    appendIssue["error", "unknownPackTypes", <|"packTypes" -> DeleteDuplicates[Complement[packTypes, allowedPackTypes]]|>]
+    ];
+   lineMomentumVars = DeleteDuplicates[Flatten[Variables /@ Lookup[topo["lines"], "momentum"]]];
+   declaredMomentumVars = DeleteDuplicates@Join[topo["loopMomenta"], topo["externalMomenta"]];
+   undeclaredMomentumVars = Complement[lineMomentumVars, declaredMomentumVars];
+   If[undeclaredMomentumVars =!= {},
+    appendIssue["error", "undeclaredMomentumVariables", <|"variables" -> undeclaredMomentumVars, "declared" -> declaredMomentumVars|>]
+    ];
+   spData = makeScalarProductData[topo];
+   If[! TrueQ[spData["structuralCountQ"]],
+    appendIssue["error", "insufficientISPData", <|"needed" -> spData["structuralNeededISPCount"], "provided" -> spData["ispCount"]|>]
+    ];
+   discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
+   sampleRulePairs = Cases[topo["sampleDiscreteRules"], Rule[l_, r_] :> {l, r}, {0, Infinity}];
+   unknownDiscreteRules = Select[sampleRulePairs, ! MemberQ[discreteVars, #[[1]]] &];
+   If[unknownDiscreteRules =!= {},
+    appendIssue["warning", "sampleDiscreteRulesContainUnknownVariables", <|"rules" -> (Rule @@@ unknownDiscreteRules), "allowedDiscreteVariables" -> discreteVars|>]
+    ];
+   badDiscreteValues = Select[sampleRulePairs, MemberQ[discreteVars, #[[1]]] && ! MemberQ[{0, 1}, #[[2]]] &];
+   If[badDiscreteValues =!= {},
+    appendIssue["warning", "sampleDiscreteRulesContainNonBinaryValues", <|"rules" -> (Rule @@@ badDiscreteValues)|>]
+    ];
+   pendingFeatures = unsupportedSeedFeaturesForTopology[topo];
+   If[pendingFeatures =!= {},
+    appendIssue["pending", "unsupportedSeedFeatures", <|"pendingFeatures" -> pendingFeatures|>]
+    ];
+   <|
+    "status" -> If[Count[Lookup[issues, "severity", {}], "error"] == 0, "ok", "issues"],
+    "errorCount" -> Count[Lookup[issues, "severity", {}], "error"],
+    "warningCount" -> Count[Lookup[issues, "severity", {}], "warning"],
+    "pendingCount" -> Count[Lookup[issues, "severity", {}], "pending"],
+    "pendingFeatures" -> pendingFeatures,
+    "issues" -> issues
+    |>
+   ];
+
+
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
    {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList},
    topo = parseTopology[case];
@@ -1670,6 +1733,7 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      "sectorMetadataList" -> sectorMetadataList,
      "indexMaps" -> makeTopologyIndexMaps[topo, topMetadata],
      "seedSummary" -> makeTopologySeedSummary[topo],
+     "validationReport" -> topologyValidationReport[topo],
      "masslessBundleCandidates" -> masslessBundleCandidates[topo],
      "precomputedShrinkSectorSummary" -> KeyDrop[subsetData, "subsets"],
      "precomputedShrinkSectorKeys" -> Lookup[sectorMetadataList, "sectorKey"]
@@ -2419,6 +2483,7 @@ summarizeCase[case_Association] := Module[
     "numericRules" -> topo["numericRules"],
     "numericZExprs" -> (spData["zExprs"] /. topo["numericRules"]),
     "seedRanges" -> topo["seedRanges"],
+    "validationReport" -> topologyValidationReport[topo],
     "masslessBundleCandidates" -> masslessBundleCandidates[topo],
     "structuralNeededISPCount" -> spData["structuralNeededISPCount"],
     "ispCoverageQ" -> spData["coverageQ"],
@@ -2466,8 +2531,5 @@ runStructureExamples[] := Module[
 
 
 (* 默认加载只定义函数和示例输入；需要检查时显式调用 runStructureExamples[]。 *)
-
-
-
 
 
