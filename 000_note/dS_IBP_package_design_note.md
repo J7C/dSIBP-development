@@ -485,3 +485,5 @@ Kira 排序约定：排序对象是所有 sector 的 `integralList` 全集，不
 - `integralSectorKey` 已改为按 compact `aList` 长度、逐线 pack 位置、`b/bS` 符号和 ISP 槽精确匹配 sector，不再只用 pack 长度判断。
 
 Kira 导出流程仍是：先 `makeCanonicalSeedBatch`，必要时保存 seed `.m`；再 `makeLinearSystemData` 或 `makeSampledLinearSystemData`；最后用户可查看/重排 `integralList`，用 `reorderLinearSystemIntegrals` 或 `makeKiraExportData[..., KiraIntegralOrder -> order]` 导出。
+
+导出时 `KiraCoefficientRules` 属于最后一步的数值/撒点规则，不回写 seed；`makeKiraExportData` 会把实际使用的 coefficient rules 和 `KiraJobOptions` 写入 `result/kira_export_metadata.m`。默认 `jobs.yaml` 保持 `run_initiate -> true`、`run_firefly -> true` 并写 `kira2math` job；用户可通过 `KiraJobOptions` 覆盖这些开关，用于只生成 system、只初始化或调试 Kira 输入格式。

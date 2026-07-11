@@ -2129,8 +2129,46 @@ applyKiraCoefficientRulesToLinearEquation[linearEquation_Association, coeffRules
    ];
 
 
-makeKiraInputStrings[linearData_Association, coeffRules_List : {}] := Module[
-   {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, repKira2JText, repJ2KiraText, metadataText},
+defaultKiraJobOptions[] := <|
+   "RunInitiate" -> True,
+   "RunFirefly" -> True,
+   "WriteKira2MathJob" -> True,
+   "Kira2MathTarget" -> "list"
+   |>;
+
+
+normalizeKiraJobOptions[Automatic] := defaultKiraJobOptions[];
+normalizeKiraJobOptions[opts_Association] := Join[defaultKiraJobOptions[], opts];
+normalizeKiraJobOptions[opts_List] := normalizeKiraJobOptions[Association[opts]];
+normalizeKiraJobOptions[_] := defaultKiraJobOptions[];
+
+
+kiraYAMLBool[value_] := If[TrueQ[value], "true", "false"];
+
+
+kiraJobsYAML[jobOptions_: Automatic] := Module[
+   {opts = normalizeKiraJobOptions[jobOptions], text},
+   text = "jobs:\n" <>
+     "  - reduce_user_defined_system:\n" <>
+     "      input_system: {files: [\"userSystem\"], config: false}\n" <>
+     "      select_integrals:\n" <>
+     "        select_mandatory_list:\n" <>
+     "          - [list]\n" <>
+     "      run_initiate: " <> kiraYAMLBool[Lookup[opts, "RunInitiate", True]] <> "\n" <>
+     "      run_firefly: " <> kiraYAMLBool[Lookup[opts, "RunFirefly", True]] <> "\n";
+   If[TrueQ[Lookup[opts, "WriteKira2MathJob", True]],
+    text = text <>
+      "  - kira2math:\n" <>
+      "      target:\n" <>
+      "       - [" <> ToString[Lookup[opts, "Kira2MathTarget", "list"]] <> "]\n"
+    ];
+   text
+   ];
+
+
+makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic] := Module[
+   {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, repKira2JText, repJ2KiraText, metadataText,
+    normalizedJobOptions},
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "reason" -> "linear data missing"|>]
     ];
@@ -2148,23 +2186,18 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}] := Module[
     ];
    ibpText = StringJoin[kiraEquationBlock[#, #["coefficientRules"]] & /@ exportedEquations];
    listText = StringRiffle[ToString /@ Range[linearData["integralCount"]], "\n"] <> "\n";
-   jobsText = "jobs:\n" <>
-     "  - reduce_user_defined_system:\n" <>
-     "      input_system: {files: [\"userSystem\"], config: false}\n" <>
-     "      select_integrals:\n" <>
-     "        select_mandatory_list:\n" <>
-     "          - [list]\n" <>
-     "      run_initiate: true\n" <>
-     "      run_firefly: true\n" <>
-     "  - kira2math:\n" <>
-     "      target:\n" <>
-     "       - [list]\n";
+   normalizedJobOptions = normalizeKiraJobOptions[jobOptions];
+   jobsText = kiraJobsYAML[normalizedJobOptions];
    repKira2JText = ToString[InputForm[linearData["integralRules"] /. (j_J -> id_Integer) :> (Tuserweight[id] -> j)]] <> "\n";
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
    metadataText = ToString[InputForm[
        Join[
         KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}],
-        <|"exportedEquationCount" -> Length[exportedEquations]|>
+        <|
+         "exportedEquationCount" -> Length[exportedEquations],
+         "kiraCoefficientRules" -> coeffRules,
+         "kiraJobOptions" -> normalizedJobOptions
+         |>
         ]
        ]] <> "\n";
    <|
@@ -2205,7 +2238,8 @@ writeKiraInputFiles[outputDir_String, strings_Association] := Module[
 Options[makeKiraExportData] = {
    OutputDirectory -> None,
    KiraCoefficientRules -> {},
-   KiraIntegralOrder -> Automatic
+   KiraIntegralOrder -> Automatic,
+   KiraJobOptions -> Automatic
    };
 
 makeKiraExportData::notlinearinput = "Kira 导出只接受 linear-system 数据，不直接接受 seed batch：`1`。";
@@ -2223,7 +2257,7 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
       |>]
     ];
    linearForExport = If[ListQ[OptionValue[KiraIntegralOrder]], reorderLinearSystemIntegrals[linearData, OptionValue[KiraIntegralOrder]], linearData];
-   strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules]];
+   strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions]];
    If[Lookup[strings, "status", "missing"] =!= "generated",
     Message[makeKiraExportData::badlinear, Lookup[strings, "status", Missing["status"]]];
     Return[<|"status" -> "notReady", "caseName" -> linearForExport["caseName"], "reason" -> "linear system is not exportable", "linearSystem" -> linearForExport, "kiraInput" -> strings|>]

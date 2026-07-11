@@ -1164,8 +1164,8 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
 
 
 compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
-   {topo, batch, linearData, outDir, kiraData, requiredFiles, ibpText, listText, blocks, blockCount, listCount,
-    roundtripFiles, repJ2Kira, repKira2J, metadata},
+   {topo, batch, linearData, outDir, kiraData, requiredFiles, ibpText, listText, jobsText, blocks, blockCount, listCount,
+    roundtripFiles, repJ2Kira, repKira2J, metadata, customStrings, customJobsText},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
@@ -1181,6 +1181,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
       };
    ibpText = If[FileExistsQ[FileNameJoin[{outDir, "userSystem", "ibp.kira"}]], Import[FileNameJoin[{outDir, "userSystem", "ibp.kira"}], "Text"], ""];
    listText = If[FileExistsQ[FileNameJoin[{outDir, "list"}]], Import[FileNameJoin[{outDir, "list"}], "Text"], ""];
+   jobsText = If[FileExistsQ[FileNameJoin[{outDir, "jobs.yaml"}]], Import[FileNameJoin[{outDir, "jobs.yaml"}], "Text"], ""];
    blocks = Select[StringSplit[StringTrim[ibpText], RegularExpression["\\n\\s*\\n"]], StringTrim[#] =!= "" &];
    blockCount = Length[blocks];
    listCount = Length[StringSplit[StringTrim[listText], WhitespaceCharacter ..]];
@@ -1193,6 +1194,8 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
      {$Context = "Global`", $ContextPath = {"System`", "Global`"}},
      Get /@ roundtripFiles
      ];
+   customStrings = Global`makeKiraInputStrings[linearData, {}, <|"RunFirefly" -> False, "WriteKira2MathJob" -> False|>];
+   customJobsText = Lookup[customStrings, "jobs.yaml", ""];
    <|
     "name" -> "kiraWorkspaceExport_mixedBubble_linearSystemFilesOnly",
     "pass" -> TrueQ[
@@ -1200,7 +1203,9 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        linearData["status"] === "generated" &&
        Length[kiraData["filesWritten"]] === Length[requiredFiles] &&
        And @@ (FileExistsQ /@ requiredFiles) &&
-       StringContainsQ[Import[FileNameJoin[{outDir, "jobs.yaml"}], "Text"], "reduce_user_defined_system"] &&
+       StringContainsQ[jobsText, "reduce_user_defined_system"] &&
+       StringContainsQ[jobsText, "run_firefly: true"] &&
+       StringContainsQ[jobsText, "kira2math"] &&
        blockCount === kiraData["exportedEquationCount"] &&
        listCount === kiraData["integralCount"] &&
        repJ2Kira === linearData["integralRules"] &&
@@ -1209,7 +1214,12 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
        metadata["integralCount"] === linearData["integralCount"] &&
        metadata["equationCount"] === linearData["equationCount"] &&
        metadata["exportedEquationCount"] === kiraData["exportedEquationCount"] &&
-       Lookup[metadata["sectorMetadataList"], "sectorKey"] === Lookup[linearData["sectorMetadataList"], "sectorKey"]
+       metadata["kiraCoefficientRules"] === topo["numericRules"] &&
+       metadata["kiraJobOptions"]["RunFirefly"] === True &&
+       Lookup[metadata["sectorMetadataList"], "sectorKey"] === Lookup[linearData["sectorMetadataList"], "sectorKey"] &&
+       Lookup[customStrings, "status", Missing["status"]] === "generated" &&
+       StringContainsQ[customJobsText, "run_firefly: false"] &&
+       ! StringContainsQ[customJobsText, "kira2math"]
       ],
     "outputDir" -> outDir,
     "filesWritten" -> Lookup[kiraData, "filesWritten", {}],
@@ -1219,7 +1229,8 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
     "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["exportedEquationCount"]],
     "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]],
     "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}],
-    "sectorKeysInMetadata" -> If[AssociationQ[metadata], Lookup[metadata["sectorMetadataList"], "sectorKey", {}], {}]
+    "sectorKeysInMetadata" -> If[AssociationQ[metadata], Lookup[metadata["sectorMetadataList"], "sectorKey", {}], {}],
+    "customJobOptionStatus" -> Lookup[customStrings, "status", Missing["status"]]
     |>
    ];
 
