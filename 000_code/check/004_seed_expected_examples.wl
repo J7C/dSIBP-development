@@ -1382,7 +1382,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
 
 
 compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
-   {topo, batch, sampledLinear, outDir, kiraData, requiredFiles, ibpText, listText, blocks, blockCount, listCount},
+   {topo, batch, sampledLinear, outDir, kiraData, requiredFiles, ibpText, listText, metadataFile, metadata, blocks, blockCount, listCount},
    topo = Global`parseTopology[Global`masslessBoxCase];
    batch = Global`makeMomentumIBPSeedBatch[topo];
    sampledLinear = Global`makeSampledLinearSystemData[batch, topo];
@@ -1398,6 +1398,11 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
       };
    ibpText = If[FileExistsQ[FileNameJoin[{outDir, "userSystem", "ibp.kira"}]], Import[FileNameJoin[{outDir, "userSystem", "ibp.kira"}], "Text"], ""];
    listText = If[FileExistsQ[FileNameJoin[{outDir, "list"}]], Import[FileNameJoin[{outDir, "list"}], "Text"], ""];
+   metadataFile = FileNameJoin[{outDir, "result", "kira_export_metadata.m"}];
+   metadata = If[FileExistsQ[metadataFile],
+     Block[{$Context = "Global`", $ContextPath = {"System`", "Global`"}}, Get[metadataFile]],
+     <||>
+     ];
    blocks = Select[StringSplit[StringTrim[ibpText], RegularExpression["\\n\\s*\\n"]], StringTrim[#] =!= "" &];
    blockCount = Length[blocks];
    listCount = Length[StringSplit[StringTrim[listText], WhitespaceCharacter ..]];
@@ -1407,9 +1412,11 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
       sampledLinear["status"] === "generated" &&
        TrueQ[sampledLinear["linearQ"]] &&
        sampledLinear["coefficientRulesApplied"] === topo["numericRules"] &&
+       sampledLinear["topologyValidationReport"]["status"] === "ok" &&
        kiraData["status"] === "ready" &&
        Length[kiraData["filesWritten"]] === Length[requiredFiles] &&
        And @@ (FileExistsQ /@ requiredFiles) &&
+       metadata["topologyValidationReport"]["status"] === "ok" &&
        StringContainsQ[Import[FileNameJoin[{outDir, "jobs.yaml"}], "Text"], "reduce_user_defined_system"] &&
        blockCount === kiraData["exportedEquationCount"] &&
        blockCount > 0 &&
@@ -1421,7 +1428,8 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
     "listCount" -> listCount,
     "equationCount" -> Lookup[kiraData, "equationCount", Missing["equationCount"]],
     "exportedEquationCount" -> Lookup[kiraData, "exportedEquationCount", Missing["exportedEquationCount"]],
-    "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]]
+    "integralCount" -> Lookup[kiraData, "integralCount", Missing["integralCount"]],
+    "metadataKeys" -> If[AssociationQ[metadata], Keys[metadata], {}]
     |>
    ];
 compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
@@ -1484,6 +1492,7 @@ compareExpectedMomentumLinearSystem[] := Module[
        system["equationCount"] === 6 &&
        TrueQ[system["linearQ"]] &&
        system["nonlinearEquationCount"] === 0 &&
+       system["topologyValidationReport"]["status"] === "ok" &&
        firstEquation["coefficientRules"] === {1 -> Global`dim} &&
        firstEquation["constantTerm"] === 0
       ],

@@ -2552,6 +2552,11 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
      Missing["NotCanonicalSeedBatch"]
      ];
    topologyReport = Lookup[batch, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
+   If[MatchQ[topologyReport, _Missing] && AssociationQ[topoSpec],
+    topologyReport = topologyValidationReport[
+      If[KeyExistsQ[topoSpec, "lines"] && KeyExistsQ[topoSpec, "nL"], topoSpec, parseTopology[topoSpec]]
+      ]
+    ];
    <|
     "status" -> "generated",
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
