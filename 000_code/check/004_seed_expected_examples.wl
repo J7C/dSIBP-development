@@ -1261,6 +1261,9 @@ compareExpectedIBPWorkflowData[] := Module[
        exportWorkflow["topologyValidationReport"]["status"] === "ok" &&
        exportWorkflow["seedBatch"]["completeCanonicalQ"] === True &&
        exportWorkflow["seedBatch"]["topologyValidationReport"]["status"] === "ok" &&
+       exportWorkflow["seedBatch"]["momentumSummary"]["topologyValidationReport"]["status"] === "ok" &&
+       exportWorkflow["seedBatch"]["timeSummary"]["topologyValidationReport"]["status"] === "ok" &&
+       exportWorkflow["seedBatch"]["shrinkSectorSummary"]["topologyValidationReport"]["status"] === "ok" &&
        exportWorkflow["seedCoverageReport"]["status"] === "ready" &&
        exportWorkflow["linearSystem"]["status"] === "generated" &&
        exportWorkflow["linearSystem"]["topologyValidationReport"]["status"] === "ok" &&
@@ -1539,6 +1542,7 @@ compareExpectedMasslessBoxTopologyReplacement[] := Module[
        Lookup[spRules, "status", Missing["status"]] === "computed" &&
        And @@ ((Expand[#[[1]] /. spRules["repSP2Z"]] === Expand[#[[2]]]) & /@ expectedSPRules) &&
        momentumBatch["status"] === "generated" &&
+       momentumBatch["topologyValidationReport"]["status"] === "ok" &&
        momentumBatch["equationCount"] === 12 &&
        TrueQ[momentumBatch["completeMomentumIBPQ"]] &&
        momentumBatch["forbiddenNData"] === {} &&
@@ -1581,6 +1585,7 @@ compareExpectedShrunkLineIBP[] := Module[
     "pass" -> TrueQ[
       gotMomentum === expectedMomentum &&
        timeBatch["status"] === "generated" &&
+       timeBatch["topologyValidationReport"]["status"] === "ok" &&
        timeBatch["pendingFeatures"] === {} &&
        TrueQ[timeBatch["completeTimeIBPQ"]] &&
        timeBatch["forbiddenNData"] === {}

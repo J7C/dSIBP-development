@@ -1306,7 +1306,8 @@ makeTimeIBPSeedBatch::toomany =
 
 makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousData, discreteData, timeGenerators, equationCount,
-    maxEquationCount, genTemplates, equations, pendingFeatures},
+    maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
+   topologyReport = topologyValidationReport[topo];
    baseIntegral = makeBaseIntegral[topo];
    continuousData = makeContinuousSeedRules[
      topo,
@@ -1328,15 +1329,16 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     Return[<|
       "status" -> "tooMany",
       "caseName" -> topo["name"],
+      "topologyValidationReport" -> topologyReport,
       "continuousSeedRuleCount" -> continuousData["ruleCount"],
       "discreteRuleCount" -> discreteData["ruleCount"],
       "timeGeneratorCount" -> Length[timeGenerators],
       "equationCount" -> equationCount,
       "equations" -> {}
       |>]
-    ];
+   ];
    genTemplates = ({#, applyTimeGeneratorSeed[topo, baseIntegral, #]} &) /@ timeGenerators;
-   If[MemberQ[genTemplates[[All, 2]], $Failed], Return[<|"status" -> "failed", "caseName" -> topo["name"]|>]];
+   If[MemberQ[genTemplates[[All, 2]], $Failed], Return[<|"status" -> "failed", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport|>]];
    pendingFeatures = timeIBPPendingFeatures[topo];
    equations = Flatten[
      Table[
@@ -1362,6 +1364,7 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
+    "topologyValidationReport" -> topologyReport,
     "continuousSeedRuleCount" -> continuousData["ruleCount"],
     "discreteRuleCount" -> discreteData["ruleCount"],
     "timeGeneratorCount" -> Length[timeGenerators],
@@ -1516,7 +1519,8 @@ makeMomentumIBPSeedBatch::toomany =
 
 makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousData, discreteData, momentumGenerators, equationCount,
-    maxEquationCount, genTemplates, equations, pendingFeatures},
+    maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
+   topologyReport = topologyValidationReport[topo];
    baseIntegral = makeBaseIntegral[topo];
    continuousData = makeContinuousSeedRules[
      topo,
@@ -1538,15 +1542,16 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     Return[<|
       "status" -> "tooMany",
       "caseName" -> topo["name"],
+      "topologyValidationReport" -> topologyReport,
       "continuousSeedRuleCount" -> continuousData["ruleCount"],
       "discreteRuleCount" -> discreteData["ruleCount"],
       "momentumGeneratorCount" -> Length[momentumGenerators],
       "equationCount" -> equationCount,
       "equations" -> {}
       |>]
-    ];
+   ];
    genTemplates = ({#, applyMomentumGeneratorSeed[topo, baseIntegral, #]} &) /@ momentumGenerators;
-   If[MemberQ[genTemplates[[All, 2]], $Failed], Return[<|"status" -> "failed", "caseName" -> topo["name"]|>]];
+   If[MemberQ[genTemplates[[All, 2]], $Failed], Return[<|"status" -> "failed", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport|>]];
    pendingFeatures = momentumIBPPendingFeatures[topo];
    equations = Flatten[
      Table[
@@ -1572,6 +1577,7 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
+    "topologyValidationReport" -> topologyReport,
     "continuousSeedRuleCount" -> continuousData["ruleCount"],
     "discreteRuleCount" -> discreteData["ruleCount"],
     "momentumGeneratorCount" -> Length[momentumGenerators],
@@ -1894,15 +1900,16 @@ makeShrinkSectorSeedBatch::toomany = "拓扑 `1` 的 shrink sector 数为 `2`，
 
 
 makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
-   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ},
+   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport},
+   topologyReport = topologyValidationReport[topo];
    subsetData = shrinkSectorSubsets[topo, OptionValue[MaxShrinkSectorDepth], OptionValue[MaxShrinkSectorCount]];
    If[subsetData["status"] === "tooMany",
     Message[makeShrinkSectorSeedBatch::toomany, topo["name"], subsetData["requestedSubsetCount"], subsetData["maxCount"]];
-    Return[Join[subsetData, <|"caseName" -> topo["name"], "sectorMetadataList" -> {}, "equations" -> {}, "pendingFeatures" -> {"shrinkSectorSeedGeneration"}|>]]
+    Return[Join[subsetData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equations" -> {}, "pendingFeatures" -> {"shrinkSectorSeedGeneration"}|>]]
     ];
    subsets = subsetData["subsets"];
    If[subsets === {},
-    Return[<|"status" -> "generated", "caseName" -> topo["name"], "sectorCount" -> 0, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> {}, "completeShrinkSectorGenerationQ" -> True, "sectorSummaries" -> {}, "equations" -> {}|>]
+    Return[<|"status" -> "generated", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorCount" -> 0, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> {}, "completeShrinkSectorGenerationQ" -> True, "sectorSummaries" -> {}, "equations" -> {}|>]
     ];
    seedOpts = FilterRules[
      Table[opt -> OptionValue[opt], {opt, First /@ Options[makeMomentumIBPSeedBatch]}],
@@ -1917,7 +1924,7 @@ makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
      ];
    bad = Select[sectorBatches, Lookup[#["momentumBatch"], "status", "missing"] =!= "generated" || Lookup[#["timeBatch"], "status", "missing"] =!= "generated" &];
    If[bad =!= {},
-    Return[<|"status" -> "notGenerated", "caseName" -> topo["name"], "badSectorCount" -> Length[bad], "sectorSummaries" -> KeyDrop[#, {"topology", "momentumBatch", "timeBatch"}] & /@ bad, "equations" -> {}, "pendingFeatures" -> {"shrinkSectorSeedGeneration"}|>]
+    Return[<|"status" -> "notGenerated", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "badSectorCount" -> Length[bad], "sectorSummaries" -> KeyDrop[#, {"topology", "momentumBatch", "timeBatch"}] & /@ bad, "equations" -> {}, "pendingFeatures" -> {"shrinkSectorSeedGeneration"}|>]
     ];
    equations = Flatten[
      Table[
@@ -1937,6 +1944,7 @@ makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
+    "topologyValidationReport" -> topologyReport,
     "sectorCount" -> Length[sectorBatches],
     "sectorSubsets" -> subsets,
     "completeCoverageQ" -> subsetData["completeCoverageQ"],
@@ -1981,7 +1989,7 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
    timeBatch = makeTimeIBPSeedBatch[topo, Sequence @@ seedOpts];
    shrinkBatch = If[TrueQ[OptionValue[GenerateShrinkSectors]],
      makeShrinkSectorSeedBatch[topo, Sequence @@ shrinkOpts],
-     <|"status" -> "skipped", "caseName" -> topo["name"], "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> If[massiveFullLineIndices[topo] === {}, {}, {"shrinkSectorSeedGeneration"}], "equations" -> {}|>
+     <|"status" -> "skipped", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> If[massiveFullLineIndices[topo] === {}, {}, {"shrinkSectorSeedGeneration"}], "equations" -> {}|>
      ];
    If[Lookup[momentumBatch, "status", "missing"] =!= "generated" || Lookup[timeBatch, "status", "missing"] =!= "generated",
     Return[<|
