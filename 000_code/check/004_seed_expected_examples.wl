@@ -1357,7 +1357,8 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
 
 
 compareExpectedIBPWorkflowData[] := Module[
-   {sampledWorkflow, invalidModeWorkflow, inMemoryExportWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
+   {sampledWorkflow, invalidModeWorkflow, nonNumericCase, nonNumericWorkflow,
+    inMemoryExportWorkflow, exportDir, exportWorkflow, metadataFile, metadata},
    sampledWorkflow = Global`makeIBPWorkflowData[
      Global`masslessBoxCase,
      Global`LinearSystemMode -> "sampled",
@@ -1366,6 +1367,14 @@ compareExpectedIBPWorkflowData[] := Module[
    invalidModeWorkflow = Global`makeIBPWorkflowData[
      Global`mixedBubbleCase,
      Global`LinearSystemMode -> "sample"
+     ];
+   nonNumericCase = Join[
+     Global`mixedBubbleCase,
+     <|"numericRules" -> {Global`dim -> 3, Global`kk[1, 1] -> 5}|>
+     ];
+   nonNumericWorkflow = Global`makeIBPWorkflowData[
+     nonNumericCase,
+     Global`LinearSystemMode -> "numeric"
      ];
    inMemoryExportWorkflow = Global`makeIBPWorkflowData[
      Global`bubbleMasslessCase,
@@ -1399,6 +1408,11 @@ compareExpectedIBPWorkflowData[] := Module[
        invalidModeWorkflow["reason"] === "invalidLinearSystemMode" &&
        invalidModeWorkflow["allowedLinearSystemModes"] === {"symbolic", "sampled", "numeric"} &&
        ! KeyExistsQ[invalidModeWorkflow, "seedBatch"] &&
+       nonNumericWorkflow["status"] === "notReady" &&
+       nonNumericWorkflow["stage"] === "linear" &&
+       nonNumericWorkflow["reason"] === "nonNumericCoefficients" &&
+       MemberQ[nonNumericWorkflow["coefficientVariables"], Global`nuM] &&
+       nonNumericWorkflow["linearSystem"]["numericCoefficientSystemQ"] === False &&
        inMemoryExportWorkflow["status"] === "ready" &&
        inMemoryExportWorkflow["stage"] === "kira" &&
        inMemoryExportWorkflow["kiraExport"]["status"] === "ready" &&
@@ -1429,6 +1443,7 @@ compareExpectedIBPWorkflowData[] := Module[
       ],
     "sampledSummary" -> KeyTake[sampledWorkflow, {"status", "stage"}],
     "invalidModeSummary" -> KeyTake[invalidModeWorkflow, {"status", "stage", "reason", "linearSystemMode"}],
+    "nonNumericSummary" -> KeyTake[nonNumericWorkflow, {"status", "stage", "reason", "coefficientVariables"}],
     "inMemoryExportSummary" -> KeyTake[inMemoryExportWorkflow["kiraExport"], {"status", "writeFilesQ", "filesWritten"}],
     "exportSummary" -> KeyTake[exportWorkflow, {"status", "stage"}],
     "filesWritten" -> Lookup[Lookup[exportWorkflow, "kiraExport", <||>], "filesWritten", {}],

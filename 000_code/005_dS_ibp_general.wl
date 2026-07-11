@@ -2296,6 +2296,16 @@ kiraNumericCoefficientSystemQ[linearEquations_List] := Module[
    ];
 
 
+linearCoefficientDiagnostics[linearEquations_List] := Module[
+   {coefficients},
+   coefficients = Last /@ Flatten[kiraNonzeroCoefficientRules[#["coefficientRules"]] & /@ linearEquations];
+   <|
+    "numericCoefficientSystemQ" -> TrueQ[coefficients =!= {} && And @@ (TrueQ[NumericQ[#]] & /@ coefficients)],
+    "coefficientVariables" -> DeleteDuplicates[Variables[coefficients]]
+    |>
+   ];
+
+
 kiraAppendNumericDummyQ[setting_, numericSystemQ_] := If[setting === Automatic, TrueQ[numericSystemQ], TrueQ[setting]];
 
 
@@ -2659,6 +2669,18 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[linearData, "linearQ", False]],
     Return[<|"status" -> "notReady", "stage" -> "linear", "topology" -> topo, "topologyValidationReport" -> topologyReport, "seedBatch" -> KeyDrop[batch, "equations"], "linearSystem" -> linearData|>]
     ];
+   If[linearMode === "numeric" && ! TrueQ[Lookup[linearData, "numericCoefficientSystemQ", False]],
+    Return[<|
+      "status" -> "notReady",
+      "stage" -> "linear",
+      "reason" -> "nonNumericCoefficients",
+      "coefficientVariables" -> Lookup[linearData, "coefficientVariables", {}],
+      "topology" -> topo,
+      "topologyValidationReport" -> topologyReport,
+      "seedBatch" -> KeyDrop[batch, "equations"],
+      "linearSystem" -> linearData
+      |>]
+    ];
    exportQ = TrueQ[OptionValue[ExportKira]] || StringQ[OptionValue[OutputDirectory]];
    kiraCoeffRules = If[OptionValue[KiraCoefficientRules] === Automatic,
      If[linearMode === "sampled" || linearMode === "numeric", {}, topo["numericRules"]],
@@ -2855,7 +2877,8 @@ Options[makeLinearSystemData] = {KiraOrdering -> Automatic};
 
 
 makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] := Module[
-   {topo, integrals, integralIndex, equations, linearEquations, metadataList, metadata, orderingSpec, seedCoverageReport, topologyReport},
+   {topo, integrals, integralIndex, equations, linearEquations, coefficientDiagnostics,
+    metadataList, metadata, orderingSpec, seedCoverageReport, topologyReport},
    topo = normalizeTopologySpec[topoSpec];
    topologyReport = Lookup[batch, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[MatchQ[topologyReport, _Missing] && parsedTopologyQ[topo],
@@ -2891,6 +2914,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    integralIndex = makeIntegralIndex[integrals];
    equations = Lookup[batch, "equations", {}];
    linearEquations = linearizeSeedEquation[#, integralIndex] & /@ equations;
+   coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    metadata = If[metadataList === {}, Missing["NoSectorMetadata"], First[metadataList]];
    seedCoverageReport = If[KeyExistsQ[batch, "completeCanonicalQ"],
      makeCanonicalSeedCoverageReport[batch],
@@ -2913,7 +2937,9 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     "seedCoverageReport" -> seedCoverageReport,
     "linearEquations" -> linearEquations,
     "linearQ" -> And @@ (Lookup[linearEquations, "linearQ"]),
-    "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False]
+    "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False],
+    "numericCoefficientSystemQ" -> coefficientDiagnostics["numericCoefficientSystemQ"],
+    "coefficientVariables" -> coefficientDiagnostics["coefficientVariables"]
     |>
    ];
 
@@ -2922,14 +2948,17 @@ Options[applyCoefficientRulesToLinearSystem] = {CoefficientRules -> {}};
 
 
 applyCoefficientRulesToLinearSystem[linearData_Association, OptionsPattern[]] := Module[
-   {rules = OptionValue[CoefficientRules], linearEquations},
+   {rules = OptionValue[CoefficientRules], linearEquations, coefficientDiagnostics},
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! KeyExistsQ[linearData, "linearEquations"], Return[linearData]];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, rules] & /@ linearData["linearEquations"];
+   coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    Join[linearData, <|
      "coefficientRulesApplied" -> rules,
      "linearEquations" -> linearEquations,
      "linearQ" -> And @@ (Lookup[linearEquations, "linearQ"]),
-     "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False]
+     "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False],
+     "numericCoefficientSystemQ" -> coefficientDiagnostics["numericCoefficientSystemQ"],
+     "coefficientVariables" -> coefficientDiagnostics["coefficientVariables"]
      |>]
    ];
 

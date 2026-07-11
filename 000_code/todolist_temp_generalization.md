@@ -33,6 +33,7 @@
 - [x] Kira 导出可复现 metadata：`kira_export_metadata.m` 记录实际使用的 `KiraCoefficientRules` 和 `KiraJobOptions`；`jobs.yaml` 的 `run_initiate`、`run_firefly`、`kira2math` 默认开启但可由用户覆盖。
 - [x] Kira run script 文件产物：默认写参考式 `run.sh`（清理、dos2unix、kira 命令），但 package 不自动执行；命令、并行数和是否写出均可由 `KiraJobOptions` 控制。
 - [x] 数值 Kira 系统 dummy 保护：当导出系数全数值化时，自动追加 `(N+1)*(ccc)` dummy block，并在 metadata 中记录 `targetIntegralCount` 与 dummy id。
+- [x] numeric workflow 残留参数门禁：`makeLinearSystemData`/`makeSampledLinearSystemData` 记录 `numericCoefficientSystemQ` 与 `coefficientVariables`；`LinearSystemMode -> "numeric"` 若仍有符号系数则停在 linear 阶段并返回 `nonNumericCoefficients`。
 - [x] 最小端到端 workflow 入口：`makeIBPWorkflowData` 按 topology -> canonical seed -> linear/sample linear -> optional Kira export 串联现有 gate；默认不运行 Kira reduction。
 - [x] 分阶段 readiness report：`makeIBPReadinessReport` 汇总 topology/seed/linear/Kira 的 ready 状态、计数、pending features 和 issue codes，方便任意拓扑输入先做轻量体检。
 - [x] massive `G^{+-}/G^{-+}` 不再误落入 `massiveFull`：`005` 已加入 `massiveCross` 分派，但按 massive convention 保持 `{b_e,n_{e,1},n_{e,2}}`；momentum/time building-block seed 与 EOM canonical 已接入，且不产生 theta boundary shrink。
