@@ -1323,7 +1323,7 @@ compareExpectedIBPWorkflowData[] := Module[
 compareExpectedKiraExporterRejectsSeedBatch[] := Module[
    {topo, batch, outDir, inputStrings, exportData, writtenFiles, topologyReport,
     notGeneratedStrings, emptyLinearData, emptyStrings, badTopologyReport, badLinearData,
-    invalidTopologyStrings, invalidTopologyExport},
+    invalidTopologyStrings, invalidTopologyExport, malformedLinearData, malformedStrings},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    topologyReport = batch["topologyValidationReport"];
@@ -1342,9 +1342,12 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
      "topologyValidationReport" -> topologyReport,
      "linearEquations" -> {<|"coefficientRules" -> {1 -> 0}, "constantTerm" -> 0, "linearQ" -> True|>},
      "integralRules" -> {Global`J[{}, {}, {}] -> 1},
-     "integralCount" -> 1
+     "integralCount" -> 1,
+     "equationCount" -> 1
      |>;
    emptyStrings = Global`makeKiraInputStrings[emptyLinearData];
+   malformedLinearData = KeyDrop[emptyLinearData, {"integralCount", "equationCount"}];
+   malformedStrings = Global`makeKiraInputStrings[malformedLinearData];
    badLinearData = Join[emptyLinearData, <|
       "topologyValidationReport" -> badTopologyReport,
       "linearEquations" -> {<|"coefficientRules" -> {1 -> 1}, "constantTerm" -> 0, "linearQ" -> True|>}
@@ -1361,6 +1364,8 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
        notGeneratedStrings["topologyValidationReport"]["status"] === "ok" &&
        emptyStrings["status"] === "emptySystem" &&
        emptyStrings["topologyValidationReport"]["status"] === "ok" &&
+       malformedStrings["status"] === "notLinearSystem" &&
+       Sort[malformedStrings["missingKeys"]] === {"equationCount", "integralCount"} &&
        invalidTopologyStrings["status"] === "invalidTopology" &&
        invalidTopologyStrings["topologyValidationReport"]["errorCount"] === 1 &&
        invalidTopologyExport["status"] === "notReady" &&
@@ -1373,6 +1378,7 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
     "inputStringStatus" -> Lookup[inputStrings, "status", Missing["status"]],
     "notGeneratedStringStatus" -> Lookup[notGeneratedStrings, "status", Missing["status"]],
     "emptyStringStatus" -> Lookup[emptyStrings, "status", Missing["status"]],
+    "malformedStringStatus" -> Lookup[malformedStrings, "status", Missing["status"]],
     "invalidTopologyStringStatus" -> Lookup[invalidTopologyStrings, "status", Missing["status"]],
     "invalidTopologyExportStatus" -> Lookup[invalidTopologyExport, "status", Missing["status"]],
     "exportStatus" -> Lookup[exportData, "status", Missing["status"]],

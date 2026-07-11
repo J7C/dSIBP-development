@@ -2265,7 +2265,7 @@ kiraJobsYAML[jobOptions_: Automatic] := Module[
 
 makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, repKira2JText, repJ2KiraText, metadataText,
-    normalizedJobOptions, topologyReport},
+    normalizedJobOptions, topologyReport, requiredKeys, missingKeys},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "reason" -> "linear data missing", "topologyValidationReport" -> topologyReport|>]
@@ -2273,8 +2273,10 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
    If[topologyValidationErrorQ[topologyReport],
     Return[<|"status" -> "invalidTopology", "reason" -> "topology validation has errors", "topologyValidationReport" -> topologyReport|>]
     ];
-   If[! KeyExistsQ[linearData, "linearEquations"] || ! KeyExistsQ[linearData, "integralRules"],
-    Return[<|"status" -> "notLinearSystem", "reason" -> "Kira exporter expects makeLinearSystemData output", "topologyValidationReport" -> topologyReport|>]
+   requiredKeys = {"linearEquations", "integralRules", "integralCount", "equationCount"};
+   missingKeys = Select[requiredKeys, ! KeyExistsQ[linearData, #] &];
+   If[missingKeys =!= {},
+    Return[<|"status" -> "notLinearSystem", "reason" -> "Kira exporter expects makeLinearSystemData output", "topologyValidationReport" -> topologyReport, "missingKeys" -> missingKeys|>]
     ];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, coeffRules] & /@ linearData["linearEquations"];
    badEquations = Select[linearEquations, ! TrueQ[#["linearQ"]] || ! TrueQ[#["constantTerm"] === 0] &];
