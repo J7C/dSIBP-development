@@ -61,6 +61,7 @@ kiraData = makeKiraExportData[
 流程约束：
 
 - seed 阶段只生成 Mathematica 表达式，不直接导出 Kira。
+- `writeSeedBatchMMA` 只在 `OutputDirectory -> "..."` 为非空字符串时写文件；`SeedFileBaseName` 必须是 `Automatic` 或非空字符串。
 - `makeIBPReadinessReport[case, ...]` 是轻量体检入口，会返回 topology/seed/linear/Kira 各阶段 ready 状态、计数、pending features、issue codes、失败原因、`numericRuleRequirementReport`，以及 numeric workflow 的残留 `coefficientVariables`。
 - raw case 会先经过输入 preflight；若缺少 `vertexData`、`lineData` 或 `loopMomenta`，`makeTopologyData`/workflow/readiness 会返回 `missingRequiredCaseKeys`。若这些字段形状明显不对，如 line 缺 `momentum` 或 `loopMomenta` 不是列表，会返回 `malformedCaseInput`，不会进入 parser 或 seed 生成。
 - `vertexData` 会检查重复顶点、非法 `+/-` 符号，以及 `activeVertexIds` / `fixedAVertexValues` 是否引用了不存在的顶点。
@@ -81,6 +82,7 @@ kiraData = makeKiraExportData[
 - workflow 的 `LinearSystemMode` 只接受 `"symbolic"`、`"sampled"`、`"numeric"`；拼写错误会在 seed 生成前返回 `invalidLinearSystemMode`。
 - workflow 的 `ExportKira` 必须是 `True/False`；`OutputDirectory` 必须是 `None`、`Automatic` 或非空字符串，坏值会返回 `invalidWorkflowOptions`。
 - Kira 导出只接受 `makeLinearSystemData` 或 `makeSampledLinearSystemData` 的完整输出；手工拼出的残缺 linear-system association 会返回 `notLinearSystem`。
+- 直接调用 `makeKiraExportData` 时，`OutputDirectory` 同样必须是 `None`、`Automatic` 或非空字符串；`None/Automatic` 只生成内存字符串，不写文件。
 - `makeIBPWorkflowData[..., ExportKira -> True]` 可只生成内存中的 Kira 字符串；只有同时给出 `OutputDirectory -> "..."` 时才写入文件，返回的 `kiraExport["writeFilesQ"]` 会显式记录是否落盘。
 - `KiraTargetIntegrals -> Automatic` 默认把全部积分编号写入 `list`；也可传 `{1, J[...]}` 这样的 id/积分对象混合列表来只导出指定目标。
 - `KiraOrdering` 必须是 `Automatic` 或 Association；`IntegralOrder` / `PreferredIntegrals` / `SectorOrder` 必须是列表，`PreferredPriority` 只接受 `"BeforeB"` 或 `"AfterB"`。

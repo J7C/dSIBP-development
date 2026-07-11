@@ -2844,9 +2844,30 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
 Options[writeSeedBatchMMA] = {OutputDirectory -> None, SeedFileBaseName -> Automatic};
 
 
+validOutputDirectoryOptionQ[value_] := value === None || value === Automatic || (StringQ[value] && StringLength[value] > 0);
+
+
+validSeedFileBaseNameQ[value_] := value === Automatic || (StringQ[value] && StringLength[value] > 0);
+
+
+validateSeedMMAOutputOptions[outputDir_, fileBaseName_] := Module[{issues = {}},
+   If[! validOutputDirectoryOptionQ[outputDir],
+    AppendTo[issues, <|"code" -> "invalidOutputDirectory", "optionKey" -> "OutputDirectory", "value" -> outputDir, "allowed" -> {"None", "Automatic", "non-empty string"}|>]
+    ];
+   If[! validSeedFileBaseNameQ[fileBaseName],
+    AppendTo[issues, <|"code" -> "invalidSeedFileBaseName", "optionKey" -> "SeedFileBaseName", "value" -> fileBaseName, "allowed" -> {"Automatic", "non-empty string"}|>]
+    ];
+   <|"status" -> If[issues === {}, "ok", "invalidSeedMMAOutputOptions"], "issues" -> issues|>
+   ];
+
+
 writeSeedBatchMMA[batch_Association, OptionsPattern[]] := Module[
-   {outputDir = OptionValue[OutputDirectory], fileBaseName = OptionValue[SeedFileBaseName], file},
-   If[! StringQ[outputDir], Return[<|"status" -> "notWritten", "reason" -> "OutputDirectory must be a string"|>]];
+   {outputDir = OptionValue[OutputDirectory], fileBaseName = OptionValue[SeedFileBaseName], outputOptionReport, file},
+   outputOptionReport = validateSeedMMAOutputOptions[outputDir, fileBaseName];
+   If[outputOptionReport["status"] =!= "ok",
+    Return[<|"status" -> "notWritten", "reason" -> "invalidSeedMMAOutputOptions", "outputOptionValidationReport" -> outputOptionReport|>]
+    ];
+   If[! StringQ[outputDir], Return[<|"status" -> "notWritten", "reason" -> "OutputDirectory was not requested", "outputOptionValidationReport" -> outputOptionReport|>]];
    If[! DirectoryQ[outputDir], CreateDirectory[outputDir, CreateIntermediateDirectories -> True]];
    If[fileBaseName === Automatic, fileBaseName = Lookup[batch, "caseName", "seed_batch"] <> "_canonical_seed"];
    file = FileNameJoin[{outputDir, fileBaseName <> ".m"}];
@@ -3027,6 +3048,12 @@ validateKiraJobOptions[jobOptions_] := Module[
      "allowedKiraJobOptionKeys" -> allowedKiraJobOptionKeys[]
      |>
     ]
+   ];
+
+
+validateKiraOutputDirectory[outputDir_] := If[validOutputDirectoryOptionQ[outputDir],
+   <|"status" -> "ok", "issues" -> {}|>,
+   <|"status" -> "invalidOutputDirectory", "issues" -> {<|"code" -> "invalidOutputDirectory", "optionKey" -> "OutputDirectory", "value" -> outputDir, "allowed" -> {"None", "Automatic", "non-empty string"}|>}|>
    ];
 
 
@@ -3226,8 +3253,19 @@ makeKiraExportData::badlinear = "linear-system 不能导出 Kira：`1`。";
 
 
 makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
-   {linearForExport, strings, outputDir, filesWritten, topologyReport, integralOrderReport},
+   {linearForExport, strings, outputDir, outputDirReport, filesWritten, topologyReport, integralOrderReport},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
+   outputDir = OptionValue[OutputDirectory];
+   outputDirReport = validateKiraOutputDirectory[outputDir];
+   If[outputDirReport["status"] =!= "ok",
+    Return[<|
+      "status" -> "notReady",
+      "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
+      "topologyValidationReport" -> topologyReport,
+      "reason" -> "invalidOutputDirectory",
+      "kiraInput" -> outputDirReport
+      |>]
+    ];
    If[! KeyExistsQ[linearData, "linearEquations"],
     Message[makeKiraExportData::notlinearinput, Lookup[linearData, "caseName", Missing["caseName"]]];
     Return[<|
@@ -3249,7 +3287,6 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
      ];
     Return[<|"status" -> "notReady", "caseName" -> linearForExport["caseName"], "topologyValidationReport" -> Lookup[linearForExport, "topologyValidationReport", topologyReport], "reason" -> "linear system is not exportable", "linearSystem" -> linearForExport, "kiraInput" -> strings|>]
     ];
-   outputDir = OptionValue[OutputDirectory];
    filesWritten = If[StringQ[outputDir], writeKiraInputFiles[outputDir, strings], {}];
    <|
     "status" -> "ready",
@@ -3299,7 +3336,7 @@ Options[makeIBPWorkflowData] = Join[
    ];
 
 
-validWorkflowOutputDirectoryQ[value_] := value === None || value === Automatic || (StringQ[value] && StringLength[value] > 0);
+validWorkflowOutputDirectoryQ[value_] := validOutputDirectoryOptionQ[value];
 
 
 validateIBPWorkflowOptions[exportKira_, outputDirectory_] := Module[{issues = {}},

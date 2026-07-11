@@ -1564,12 +1564,15 @@ compareExpectedSeedClassificationAndSampledLinear[] := Module[
    ];
 
 compareExpectedSeedMMASaveMixedBubble[] := Module[
-   {topo, batch, outDir, saveData, loaded},
+   {topo, batch, outDir, saveData, loaded, noWriteData, badOutputData, badBaseNameData},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    outDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "seed_mma_mixed_bubble"}];
    saveData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> outDir, Global`SeedFileBaseName -> "mixed_bubble_canonical_seed"];
    loaded = If[Lookup[saveData, "status", "missing"] === "written", Global`readSeedBatchMMA[saveData["file"]], <||>];
+   noWriteData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> None];
+   badOutputData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> ""];
+   badBaseNameData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> outDir, Global`SeedFileBaseName -> {}];
    <|
     "name" -> "seedMMASave_mixedBubble_canonicalBatch",
     "pass" -> TrueQ[
@@ -1577,9 +1580,18 @@ compareExpectedSeedMMASaveMixedBubble[] := Module[
        FileExistsQ[saveData["file"]] &&
        loaded["status"] === batch["status"] &&
        loaded["equationCount"] === batch["equationCount"] &&
-       Lookup[loaded["sectorMetadataList"], "sectorKey"] === {"top", "e1"}
-      ],
+       Lookup[loaded["sectorMetadataList"], "sectorKey"] === {"top", "e1"} &&
+       noWriteData["status"] === "notWritten" &&
+       noWriteData["reason"] === "OutputDirectory was not requested" &&
+       badOutputData["status"] === "notWritten" &&
+       Lookup[badOutputData["outputOptionValidationReport", "issues"], "code"] === {"invalidOutputDirectory"} &&
+       badBaseNameData["status"] === "notWritten" &&
+       Lookup[badBaseNameData["outputOptionValidationReport", "issues"], "code"] === {"invalidSeedFileBaseName"}
+       ],
     "saveData" -> saveData,
+    "noWriteData" -> noWriteData,
+    "badOutputData" -> badOutputData,
+    "badBaseNameData" -> badBaseNameData,
     "loadedSummary" -> If[AssociationQ[loaded], KeyDrop[loaded, "equations"], loaded]
     |>
    ];
@@ -1772,7 +1784,7 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
    {topo, batch, outDir, inputStrings, exportData, writtenFiles, topologyReport,
     notGeneratedStrings, emptyLinearData, emptyStrings, badTopologyReport, badLinearData,
     invalidTopologyStrings, invalidTopologyExport, malformedLinearData, malformedStrings,
-    badJobOptionStrings, badJobOptionExport, badCoeffRuleStrings, badCoeffRuleExport},
+    badOutputDirExport, badJobOptionStrings, badJobOptionExport, badCoeffRuleStrings, badCoeffRuleExport},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    topologyReport = batch["topologyValidationReport"];
@@ -1797,6 +1809,7 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
    emptyStrings = Global`makeKiraInputStrings[emptyLinearData];
    malformedLinearData = KeyDrop[emptyLinearData, {"integralCount", "equationCount"}];
    malformedStrings = Global`makeKiraInputStrings[malformedLinearData];
+   badOutputDirExport = Global`makeKiraExportData[emptyLinearData, Global`OutputDirectory -> ""];
    badLinearData = Join[emptyLinearData, <|
       "topologyValidationReport" -> badTopologyReport,
       "linearEquations" -> {<|"coefficientRules" -> {1 -> 1}, "constantTerm" -> 0, "linearQ" -> True|>}
@@ -1828,10 +1841,13 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
        notGeneratedStrings["status"] === "notGenerated" &&
        notGeneratedStrings["topologyValidationReport"]["status"] === "ok" &&
        emptyStrings["status"] === "emptySystem" &&
-       emptyStrings["topologyValidationReport"]["status"] === "ok" &&
-       malformedStrings["status"] === "notLinearSystem" &&
-       Sort[malformedStrings["missingKeys"]] === {"equationCount", "integralCount"} &&
-       invalidTopologyStrings["status"] === "invalidTopology" &&
+        emptyStrings["topologyValidationReport"]["status"] === "ok" &&
+        malformedStrings["status"] === "notLinearSystem" &&
+        Sort[malformedStrings["missingKeys"]] === {"equationCount", "integralCount"} &&
+        badOutputDirExport["status"] === "notReady" &&
+        badOutputDirExport["reason"] === "invalidOutputDirectory" &&
+        Lookup[badOutputDirExport["kiraInput", "issues"], "code"] === {"invalidOutputDirectory"} &&
+        invalidTopologyStrings["status"] === "invalidTopology" &&
        invalidTopologyStrings["topologyValidationReport"]["errorCount"] === 1 &&
        invalidTopologyExport["status"] === "notReady" &&
        invalidTopologyExport["kiraInput"]["status"] === "invalidTopology" &&
@@ -1854,6 +1870,7 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
     "notGeneratedStringStatus" -> Lookup[notGeneratedStrings, "status", Missing["status"]],
     "emptyStringStatus" -> Lookup[emptyStrings, "status", Missing["status"]],
     "malformedStringStatus" -> Lookup[malformedStrings, "status", Missing["status"]],
+    "badOutputDirExport" -> KeyTake[badOutputDirExport, {"status", "reason", "kiraInput"}],
     "invalidTopologyStringStatus" -> Lookup[invalidTopologyStrings, "status", Missing["status"]],
     "invalidTopologyExportStatus" -> Lookup[invalidTopologyExport, "status", Missing["status"]],
     "badJobOptionStringStatus" -> Lookup[badJobOptionStrings, "status", Missing["status"]],
