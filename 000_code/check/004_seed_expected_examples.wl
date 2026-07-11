@@ -1727,7 +1727,8 @@ compareExpectedIBPReadinessReport[] := Module[
 compareExpectedKiraExporterRejectsSeedBatch[] := Module[
    {topo, batch, outDir, inputStrings, exportData, writtenFiles, topologyReport,
     notGeneratedStrings, emptyLinearData, emptyStrings, badTopologyReport, badLinearData,
-    invalidTopologyStrings, invalidTopologyExport, malformedLinearData, malformedStrings},
+    invalidTopologyStrings, invalidTopologyExport, malformedLinearData, malformedStrings,
+    badJobOptionStrings, badJobOptionExport},
    topo = Global`parseTopology[Global`mixedBubbleCase];
    batch = Global`makeCanonicalSeedBatch[topo];
    topologyReport = batch["topologyValidationReport"];
@@ -1758,6 +1759,16 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
       |>];
    invalidTopologyStrings = Global`makeKiraInputStrings[badLinearData];
    invalidTopologyExport = Global`makeKiraExportData[badLinearData, Global`OutputDirectory -> outDir];
+   badJobOptionStrings = Global`makeKiraInputStrings[
+     emptyLinearData,
+     {},
+     <|"RunFirefly" -> "no", "KiraParallelJobs" -> 0, "UnknownJobOption" -> True|>
+     ];
+   badJobOptionExport = Global`makeKiraExportData[
+     emptyLinearData,
+     Global`OutputDirectory -> outDir,
+     Global`KiraJobOptions -> <|"RunFirefly" -> "no", "KiraParallelJobs" -> 0, "UnknownJobOption" -> True|>
+     ];
    writtenFiles = If[DirectoryQ[outDir], FileNames["*", outDir, Infinity], {}];
    <|
     "name" -> "kiraExporter_rejectsRawSeedBatch",
@@ -1774,6 +1785,11 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
        invalidTopologyStrings["topologyValidationReport"]["errorCount"] === 1 &&
        invalidTopologyExport["status"] === "notReady" &&
        invalidTopologyExport["kiraInput"]["status"] === "invalidTopology" &&
+       badJobOptionStrings["status"] === "invalidKiraJobOptions" &&
+       badJobOptionStrings["unknownKiraJobOptionKeys"] === {"UnknownJobOption"} &&
+       Lookup[badJobOptionStrings["malformedKiraJobOptionValues"], "optionKey"] === {"RunFirefly", "KiraParallelJobs"} &&
+       badJobOptionExport["status"] === "notReady" &&
+       badJobOptionExport["kiraInput"]["status"] === "invalidKiraJobOptions" &&
        exportData["status"] === "notReady" &&
        exportData["topologyValidationReport"]["status"] === "ok" &&
        StringContainsQ[exportData["reason"], "linear-system"] &&
@@ -1785,6 +1801,8 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
     "malformedStringStatus" -> Lookup[malformedStrings, "status", Missing["status"]],
     "invalidTopologyStringStatus" -> Lookup[invalidTopologyStrings, "status", Missing["status"]],
     "invalidTopologyExportStatus" -> Lookup[invalidTopologyExport, "status", Missing["status"]],
+    "badJobOptionStringStatus" -> Lookup[badJobOptionStrings, "status", Missing["status"]],
+    "badJobOptionExportStatus" -> Lookup[badJobOptionExport, "status", Missing["status"]],
     "exportStatus" -> Lookup[exportData, "status", Missing["status"]],
     "exportReason" -> Lookup[exportData, "reason", Missing["reason"]],
     "writtenFiles" -> writtenFiles

@@ -2879,6 +2879,50 @@ defaultKiraJobOptions[] := <|
    |>;
 
 
+allowedKiraJobOptionKeys[] := Keys[defaultKiraJobOptions[]];
+
+
+validKiraJobOptionValueQ[key_, value_] /; MemberQ[{"RunInitiate", "RunFirefly", "WriteKira2MathJob", "WriteRunScript", "RunScriptDos2Unix", "RunScriptCleanup"}, key] := BooleanQ[value];
+validKiraJobOptionValueQ["AppendNumericDummyEquation", value_] := value === Automatic || BooleanQ[value];
+validKiraJobOptionValueQ["KiraParallelJobs", value_] := IntegerQ[value] && value > 0;
+validKiraJobOptionValueQ[key_, value_] /; MemberQ[{"Kira2MathTarget", "NumericDummySymbol", "RunScriptName", "KiraCommand"}, key] := StringQ[value] && value =!= "";
+validKiraJobOptionValueQ[_, _] := False;
+
+
+validateKiraJobOptions[jobOptions_] := Module[
+   {raw, unknownKeys, badValueData},
+   If[jobOptions === Automatic,
+    Return[<|"status" -> "ok", "issues" -> {}|>]
+    ];
+   raw = Which[
+     AssociationQ[jobOptions], jobOptions,
+     ListQ[jobOptions], Check[Association[jobOptions], $Failed],
+     True, $Failed
+     ];
+   If[raw === $Failed,
+    Return[<|"status" -> "invalidKiraJobOptions", "reason" -> "KiraJobOptions must be Automatic, Association, or rule list", "issues" -> {<|"code" -> "malformedKiraJobOptions", "jobOptions" -> jobOptions|>}|>]
+    ];
+   unknownKeys = Complement[Keys[raw], allowedKiraJobOptionKeys[]];
+   badValueData = KeyValueMap[
+     If[MemberQ[allowedKiraJobOptionKeys[], #1] && ! validKiraJobOptionValueQ[#1, #2],
+       <|"optionKey" -> #1, "optionValue" -> #2|>,
+       Nothing
+       ] &,
+     raw
+     ];
+   If[unknownKeys === {} && badValueData === {},
+    <|"status" -> "ok", "issues" -> {}|>,
+    <|
+     "status" -> "invalidKiraJobOptions",
+     "reason" -> "KiraJobOptions contain unknown keys or invalid values",
+     "unknownKiraJobOptionKeys" -> unknownKeys,
+     "malformedKiraJobOptionValues" -> badValueData,
+     "allowedKiraJobOptionKeys" -> allowedKiraJobOptionKeys[]
+     |>
+    ]
+   ];
+
+
 normalizeKiraJobOptions[Automatic] := defaultKiraJobOptions[];
 normalizeKiraJobOptions[opts_Association] := Join[defaultKiraJobOptions[], opts];
 normalizeKiraJobOptions[opts_List] := normalizeKiraJobOptions[Association[opts]];
@@ -2944,7 +2988,7 @@ kiraRunScript[jobOptions_: Automatic] := Module[
 
 makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: Automatic, targetSpec_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, runScriptText, repKira2JText, repJ2KiraText, metadataText,
-    normalizedJobOptions, topologyReport, requiredKeys, missingKeys, coefficientDiagnostics, numericCoefficientSystemQ, appendNumericDummyQ,
+    normalizedJobOptions, jobOptionReport, topologyReport, requiredKeys, missingKeys, coefficientDiagnostics, numericCoefficientSystemQ, appendNumericDummyQ,
     numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
@@ -2957,6 +3001,10 @@ makeKiraInputStrings[linearData_Association, coeffRules_List : {}, jobOptions_: 
    missingKeys = Select[requiredKeys, ! KeyExistsQ[linearData, #] &];
    If[missingKeys =!= {},
     Return[<|"status" -> "notLinearSystem", "reason" -> "Kira exporter expects makeLinearSystemData output", "topologyValidationReport" -> topologyReport, "missingKeys" -> missingKeys|>]
+    ];
+   jobOptionReport = validateKiraJobOptions[jobOptions];
+   If[Lookup[jobOptionReport, "status", "ok"] =!= "ok",
+    Return[Join[jobOptionReport, <|"topologyValidationReport" -> topologyReport|>]]
     ];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, coeffRules] & /@ linearData["linearEquations"];
    badEquations = Select[linearEquations, ! TrueQ[#["linearQ"]] || ! TrueQ[#["constantTerm"] === 0] &];
@@ -3081,7 +3129,9 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
    linearForExport = If[ListQ[OptionValue[KiraIntegralOrder]], reorderLinearSystemIntegrals[linearData, OptionValue[KiraIntegralOrder]], linearData];
    strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions], OptionValue[KiraTargetIntegrals]];
    If[Lookup[strings, "status", "missing"] =!= "generated",
-    Message[makeKiraExportData::badlinear, Lookup[strings, "status", Missing["status"]]];
+    If[Lookup[strings, "status", Missing["status"]] =!= "invalidKiraJobOptions",
+     Message[makeKiraExportData::badlinear, Lookup[strings, "status", Missing["status"]]]
+     ];
     Return[<|"status" -> "notReady", "caseName" -> linearForExport["caseName"], "topologyValidationReport" -> Lookup[linearForExport, "topologyValidationReport", topologyReport], "reason" -> "linear system is not exportable", "linearSystem" -> linearForExport, "kiraInput" -> strings|>]
     ];
    outputDir = OptionValue[OutputDirectory];

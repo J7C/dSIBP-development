@@ -84,6 +84,7 @@ kiraData = makeKiraExportData[
 - Kira 导出和 `kira_export_metadata.m` 会记录系数替换后的 `numericCoefficientSystemQ` 与 `coefficientVariables`；若用户选择符号系数导出，残留参数会显式列出但不强制阻止导出。
 - 若导出的 Kira 系数已经全部数值化，`KiraJobOptions` 中的 `"AppendNumericDummyEquation" -> Automatic` 会追加参考代码同款 dummy block `(N+1)*(ccc)`，并把 `list` 扩到 `targetIntegralCount = integralCount + 1`。
 - 默认只写 Kira 输入文件和参考式 `run.sh`，不运行 Kira reduction；`KiraJobOptions` 可覆盖 `"KiraCommand"`、`"KiraParallelJobs"` 或设 `"WriteRunScript" -> False`。
+- `KiraJobOptions` 会在导出前检查未知 key 和非法值；布尔开关必须是 `True/False`，`KiraParallelJobs` 必须是正整数，命令/文件名/符号名必须是非空字符串。
 
 ## 当前验证覆盖
 
