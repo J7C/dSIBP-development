@@ -270,14 +270,15 @@ ispData = {
 };
 ```
 
-`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。它主要用于输入传播子动量相关的标量积与 ISP。外动量-外动量不变量在输出端使用变量名，不保持 `sp[k_i,k_j]` 形式；用户可设 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}`，未设时默认按 `externalMomenta` 的位置输出 `sij`（`i<=j`）。内部仍会把 `sp` 展开到编号坐标做线性代数，但用户不需要输入 `qq/qk/kk`。顶点外腿能量若属于 `externalMomenta` 张成的空间，推荐在 `vertexEnergies` 中写成外部不变量变量名的表达式；若不是，则作为独立 `ke[i]`。不同外腿能量参数之间不做点积，`|ke1+ke2|` 若独立就应另记为 `ke[3]`。
+`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。它主要用于输入传播子动量相关的标量积与 ISP，其中 `p,r` 必须先是 `loopMomenta/externalMomenta` 的线性组合，不能写成 `q1^2` 这类非线性表达式。外动量-外动量不变量在输出端使用变量名，不保持 `sp[k_i,k_j]` 形式；用户可设 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}`，未设时默认按 `externalMomenta` 的位置输出 `sij`（`i<=j`）。内部仍会把 `sp` 展开到编号坐标做线性代数，但用户不需要输入 `qq/qk/kk`。顶点外腿能量若属于 `externalMomenta` 张成的空间，推荐在 `vertexEnergies` 中写成外部不变量变量名的表达式；若不是，则作为独立 `ke[i]`。不同外腿能量参数之间不做点积，`|ke1+ke2|` 若独立就应另记为 `ke[3]`。
 
 **完备性验证**：`verifyISP[topology, ispData]` 检查：
 1. 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
 2. ISP 之间线性无关；`006` 起 ISP 表达式可为 `sp[p,r]` 或其线性组合坐标，不要求直接是某个内部编号变量
 3. `zExprs` 与 ISP 坐标总数等于独立标量积数量，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$
-4. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
-5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量和顶点能量符号；外部不变量的推荐写法是输出变量名规则，如自定义 `sigW -> value` 或默认 `s11 -> value`，`sp[k_i,k_j] -> value` 只作为输入兼容形式；独立顶点能量符号写 `ke[i] -> value`；若 `vertexEnergies` 已写成 `Sqrt[s11]` 这类外部不变量表达式，则只需给对应外部不变量数值
+4. line momentum 与 `sp[p,r]` 参数必须是声明动量基的线性组合；非线性输入会触发 `nonLinearLineMomenta` 或 `nonLinearScalarProductArguments`
+5. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
+6. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量和顶点能量符号；外部不变量的推荐写法是输出变量名规则，如自定义 `sigW -> value` 或默认 `s11 -> value`，`sp[k_i,k_j] -> value` 只作为输入兼容形式；独立顶点能量符号写 `ke[i] -> value`；若 `vertexEnergies` 已写成 `Sqrt[s11]` 这类外部不变量表达式，则只需给对应外部不变量数值
 
 这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动挑选独立传播子子集；若计数不闭合、ISP 不足/过多、传播子动量退化或特殊数值外动量导致不可反解，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 

@@ -101,6 +101,26 @@ spDefaultEnergyCase = Join[
 spDefaultEnergyTopo = parseTopology[spDefaultEnergyCase];
 spDefaultEnergyReport = vertexEnergyNamingReport[spDefaultEnergyTopo];
 
+spKeIndependenceCase = Join[
+   KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
+   <|
+    "vertexEnergies" -> <|1 -> ke[3], 2 -> ke[1] + ke[2]|>,
+    "numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2, ke[1] -> 11, ke[2] -> 13, ke[3] -> 17}
+    |>
+   ];
+spKeIndependenceTopo = parseTopology[spKeIndependenceCase];
+spKeIndependenceReport = vertexEnergyNamingReport[spKeIndependenceTopo];
+
+spNonLinearMomentumCase = Join[
+   spInterfaceCase,
+   <|
+    "lineData" -> ReplacePart[spInterfaceCase["lineData"], {1, "momentum"} -> l3^2],
+    "ispData" -> {{rhoBad, sp[l3^2, wdnmd], {0}}}
+    |>
+   ];
+spNonLinearMomentumReport = topologyValidationReport[parseTopology[spNonLinearMomentumCase]];
+spNonLinearMomentumIssueCodes = Lookup[spNonLinearMomentumReport["issues"], "code", {}];
+
 spCheckResults = <|
    "spOrderless" -> TrueQ[MemberQ[Attributes[sp], Orderless] && sp[l3, wdnmd + l3] === sp[wdnmd + l3, l3]],
    "internalNumericRule" -> TrueQ[MemberQ[spTopo["numericRules"], kk[1, 1] -> 5]],
@@ -127,6 +147,19 @@ spCheckResults = <|
      vertexExternalEnergy[spDefaultEnergyTopo, 1] === ke[1] &&
       vertexExternalEnergy[spDefaultEnergyTopo, 2] === ke[2] &&
       FreeQ[Values[spDefaultEnergyReport["internalVertexEnergies"]], ke[15] | ke[22]]
+     ],
+   "vertexEnergyDependencyReport" -> TrueQ[
+     spEnergyReport["dependencyData"][1]["kind"] === "externalInvariantExpression" &&
+      spEnergyReport["dependencyData"][1]["externalInvariantVariables"] === {sigW} &&
+      spEnergyReport["dependencyData"][2]["kind"] === "independentVertexEnergyParameter" &&
+      spEnergyReport["dependencyData"][2]["independentVertexEnergyParameters"] === {ke[3]}
+     ],
+   "keCombinationKeptIndependent" -> TrueQ[
+     vertexExternalEnergy[spKeIndependenceTopo, 1] === ke[3] &&
+      vertexExternalEnergy[spKeIndependenceTopo, 2] === ke[1] + ke[2] &&
+      vertexExternalEnergy[spKeIndependenceTopo, 1] =!= vertexExternalEnergy[spKeIndependenceTopo, 2] &&
+      spKeIndependenceReport["dependencyData"][1]["independentVertexEnergyParameters"] === {ke[3]} &&
+      Sort[spKeIndependenceReport["dependencyData"][2]["independentVertexEnergyParameters"]] === Sort[{ke[1], ke[2]}]
      ],
    "sampledCoefficientRulesAcceptSP" -> TrueQ[
      spSampledLinear["coefficientRulesApplied"] === spInternalCoeffRules &&
@@ -160,6 +193,11 @@ spCheckResults = <|
       spWorkflowDefaultRulesData["linearSystem", "coefficientRulesApplied"] === spTopo["numericRules"] &&
       spWorkflowDefaultRulesData["kiraExport", "kiraInput", "kiraCoefficientRulesApplied"] === {} &&
       FreeQ[spWorkflowDefaultRulesData["kiraExport", "coefficientVariables"], kk | qk | qq | ke[15] | ke[22] | sigW]
+     ],
+   "nonLinearMomentumInputRejected" -> TrueQ[
+     spNonLinearMomentumReport["status"] === "issues" &&
+      MemberQ[spNonLinearMomentumIssueCodes, "nonLinearLineMomenta"] &&
+      MemberQ[spNonLinearMomentumIssueCodes, "nonLinearScalarProductArguments"]
      ],
    "rulesComputed" -> TrueQ[spRules["status"] === "computed"],
    "ispInternalExprs" -> TrueQ[spData["internalISPExprs"] === {qk[1, 1] + qq[1, 1], qk[2, 1]}],

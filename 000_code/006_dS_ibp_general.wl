@@ -1346,6 +1346,68 @@ coefficientMatrix[exprs_List, vars_List] := Table[
    ];
 
 
+linearMomentumExpressionData[expr_, basis_List] := Module[
+   {coeffs, residual},
+   coeffs = Coefficient[expr, #] & /@ basis;
+   residual = Expand[expr - Total[MapThread[#1 #2 &, {coeffs, basis}]]];
+   <|"expr" -> expr, "basis" -> basis, "coefficients" -> coeffs, "residual" -> residual, "linearQ" -> TrueQ[residual === 0]|>
+   ];
+
+
+linearMomentumExpressionQ[expr_, basis_List] := TrueQ[linearMomentumExpressionData[expr, basis]["linearQ"]];
+
+
+lineMomentumLinearityIssues[topo_Association] := Module[
+   {basis = Join[topo["loopMomenta"], topo["externalMomenta"]]},
+   DeleteCases[
+    MapIndexed[
+     With[{data = linearMomentumExpressionData[Lookup[#1, "momentum", 0], basis]},
+       If[TrueQ[data["linearQ"]],
+        Nothing,
+        <|"lineIndex" -> First[#2], "lineId" -> Lookup[#1, "id", Missing["id"]], "momentum" -> Lookup[#1, "momentum", Missing["momentum"]], "residual" -> data["residual"], "basis" -> basis|>
+        ]
+       ] &,
+     topo["lines"]
+     ],
+    Nothing
+    ]
+   ];
+
+
+scalarProductArgumentLinearityIssues[topo_Association] := Module[
+   {basis = Join[topo["loopMomenta"], topo["externalMomenta"]], rawISPExprs, spData},
+   rawISPExprs = Lookup[#, "expr"] & /@ topo["ispData"];
+   DeleteCases[
+    Flatten[
+     MapIndexed[
+      Function[{expr, pos},
+       MapIndexed[
+        Function[{pair, pairPos},
+         DeleteCases[
+          MapIndexed[
+           With[{data = linearMomentumExpressionData[#1, basis]},
+             If[TrueQ[data["linearQ"]],
+              Nothing,
+              <|"ispPosition" -> First[pos], "ispName" -> Lookup[topo["ispData"][[First[pos]]], "name", Missing["name"]], "spPosition" -> First[pairPos], "argumentSlot" -> First[#2], "argument" -> #1, "residual" -> data["residual"], "basis" -> basis|>
+              ]
+             ] &,
+           pair
+           ],
+          Nothing
+          ]
+         ],
+        Cases[expr, HoldPattern[sp[p_, r_]] :> {p, r}, {0, Infinity}]
+        ]
+       ],
+      rawISPExprs
+      ],
+     2
+     ],
+    Nothing
+    ]
+   ];
+
+
 
 (* 小规模线性规则生成：直接作为 ISP 给出的标量积会被保留，不强行改写成 rho。
    本 package 假设用户输入的 z_e 与直接 ISP 已经构成闭合坐标；这里不把 dS 图
@@ -1672,16 +1734,42 @@ rawVertexExternalEnergy[topo_Association, vertexId_] := Module[
 vertexExternalEnergy[topo_Association, vertexId_] := scalarProductInputToInternal[rawVertexExternalEnergy[topo, vertexId], topo];
 
 
+vertexEnergyDependencyData[topo_Association, vertexId_] := Module[
+   {internal, vars, externalVars, externalUsed, independentUsed},
+   internal = vertexExternalEnergy[topo, vertexId];
+   vars = Variables[internal];
+   externalVars = externalInvariantVariables[topo];
+   externalUsed = Intersection[vars, externalVars];
+   independentUsed = Complement[vars, externalVars];
+   <|
+    "internalExternalInvariantVariables" -> externalUsed,
+    "externalInvariantVariables" -> (scalarProductInternalToUser[#, topo] & /@ externalUsed),
+    "internalIndependentVertexEnergyParameters" -> independentUsed,
+    "independentVertexEnergyParameters" -> (scalarProductInternalToUser[#, topo] & /@ independentUsed),
+    "usesExternalInvariantQ" -> TrueQ[externalUsed =!= {}],
+    "usesIndependentVertexEnergyQ" -> TrueQ[independentUsed =!= {}],
+    "kind" -> Which[
+      externalUsed =!= {} && independentUsed === {}, "externalInvariantExpression",
+      externalUsed === {} && independentUsed =!= {}, "independentVertexEnergyParameter",
+      externalUsed =!= {} && independentUsed =!= {}, "mixedExpression",
+      True, "constant"
+      ]
+    |>
+   ];
+
+
 vertexEnergyNamingReport[topo_Association] := Module[
-   {vertices = activeAVertexIds[topo], raw, internal, user},
+   {vertices = activeAVertexIds[topo], raw, internal, user, dependencies},
    raw = AssociationThread[vertices -> (rawVertexExternalEnergy[topo, #] & /@ vertices)];
    internal = AssociationThread[vertices -> (vertexExternalEnergy[topo, #] & /@ vertices)];
    user = AssociationThread[vertices -> (scalarProductInternalToUser[vertexExternalEnergy[topo, #], topo] & /@ vertices)];
+   dependencies = AssociationThread[vertices -> (vertexEnergyDependencyData[topo, #] & /@ vertices)];
    <|
     "convention" -> "vertex external energy uses ke[i] for independent absolute-value parameters; expressions built from external invariant names are normalized to the same scalar-product coordinates used by loop momenta",
     "rawVertexEnergies" -> raw,
     "internalVertexEnergies" -> internal,
     "userVertexEnergies" -> user,
+    "dependencyData" -> dependencies,
     "message" -> "不要把 |ke1+ke2| 与 |ke1|+|ke2| 混同；若 |ke1+ke2| 作为独立能量参数，应单独命名为 ke[i]。外腿能量参数之间不生成点积关系；若该能量由 externalMomenta 张成并希望复用关系，可在 vertexEnergies 中写成 externalInvariantRules 输出变量的函数，例如 Sqrt[s11]。"
     |>
    ];
@@ -2388,6 +2476,7 @@ topologyValidationReport[topo_Association] := Module[
      zeroPointRuleValidationReport, shrinkPrefactorRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
+    nonLinearLineMomentumData, nonLinearScalarProductArgumentData,
     spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
     missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
     missingLineParameters, numericRequirementReport, pendingFeatures, ruleData},
@@ -2566,6 +2655,14 @@ topologyValidationReport[topo_Association] := Module[
    undeclaredMomentumVars = Complement[lineMomentumVars, declaredMomentumVars];
    If[undeclaredMomentumVars =!= {},
     appendIssue["error", "undeclaredMomentumVariables", <|"variables" -> undeclaredMomentumVars, "declared" -> declaredMomentumVars|>]
+    ];
+   nonLinearLineMomentumData = lineMomentumLinearityIssues[topo];
+   If[nonLinearLineMomentumData =!= {},
+    appendIssue["error", "nonLinearLineMomenta", <|"issues" -> nonLinearLineMomentumData, "comment" -> "line momenta must be linear combinations of loopMomenta and externalMomenta"|>]
+    ];
+   nonLinearScalarProductArgumentData = scalarProductArgumentLinearityIssues[topo];
+   If[nonLinearScalarProductArgumentData =!= {},
+    appendIssue["error", "nonLinearScalarProductArguments", <|"issues" -> nonLinearScalarProductArgumentData, "comment" -> "sp[p,r] arguments must be linear momentum combinations before scalar products are expanded"|>]
     ];
    spData = makeScalarProductData[topo];
    If[spData["unsupportedISPExprs"] =!= {},

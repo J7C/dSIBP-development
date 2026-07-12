@@ -562,15 +562,16 @@ ispData = {
 };
 \end{verbatim}
 
-\texttt{sp[p,r]} 是 006 起的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。顶点相位能量若不由 \texttt{externalMomenta} 的标量积关系决定，应作为独立 \texttt{ke[i]} 参数；例如 $|ke_1+ke_2|$ 应另记为 \texttt{ke[3]}，不能自动等同于 \texttt{ke[1]+ke[2]}。这些 \texttt{ke[i]} 不进入 \texttt{externalMomenta} 或 ISP 完备性坐标；外腿能量参数之间不生成点积关系。若某个顶点能量属于 \texttt{externalMomenta} 张成的空间并应复用变量，应在 \texttt{vertexEnergies} 中显式写成外部不变量表达式，例如 \verb|Sqrt[s11]| 或 \verb|Sqrt[sigW]|。
+\texttt{sp[p,r]} 是 006 起的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；其中 \texttt{p,r} 必须先是 \texttt{loopMomenta/externalMomenta} 的线性组合，不能写成 \texttt{q1\textasciicircum 2} 这类非线性表达式。内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。顶点相位能量若不由 \texttt{externalMomenta} 的标量积关系决定，应作为独立 \texttt{ke[i]} 参数；例如 $|ke_1+ke_2|$ 应另记为 \texttt{ke[3]}，不能自动等同于 \texttt{ke[1]+ke[2]}。这些 \texttt{ke[i]} 不进入 \texttt{externalMomenta} 或 ISP 完备性坐标；外腿能量参数之间不生成点积关系。若某个顶点能量属于 \texttt{externalMomenta} 张成的空间并应复用变量，应在 \texttt{vertexEnergies} 中显式写成外部不变量表达式，例如 \verb|Sqrt[s11]| 或 \verb|Sqrt[sigW]|。该约定用于避免未复用关系造成约化结果冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 \texttt{ke[i]} 参数，package 不主动替用户拆分或合并。
 
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}
   \item 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
   \item ISP 之间线性无关；006 起 ISP 表达式可为 \texttt{sp[p,r]} 或其线性组合坐标，不要求直接是某个内部编号变量
   \item \texttt{zExprs} 与 ISP 坐标总数等于独立 loop-scalar-products 数量，即 $\# z_e+\#\text{ISP}=N_{\text{sp}}$
+  \item line momentum 与 \texttt{sp[p,r]} 参数必须是声明动量基的线性组合；非线性输入会触发 \texttt{nonLinearLineMomenta} 或 \texttt{nonLinearScalarProductArguments}
   \item 数量闭合后必须能实际反解出 \texttt{repSP2Z}；重复或退化传播子动量会触发 \texttt{scalarProductCoordinateSolveFailed}
-  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；外部不变量推荐写输出变量名，例如默认 \verb|s11 -> value| 或用户自定义 \verb|sigW -> value|，\verb|sp[k_i,k_j] -> value| 仅作为输入兼容形式；独立顶点能量写 \verb|ke[3] -> value|；若顶点能量写成 \verb|Sqrt[s11]| 这类外部不变量表达式，则只需给对应外部不变量数值
+  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；外部不变量推荐写输出变量名，例如默认 \verb|s11 -> value| 或用户自定义 \verb|sigW -> value|，\verb|sp[k_i,k_j] -> value| 仅作为输入兼容形式；独立顶点能量写 \verb|ke[3] -> value|；若顶点能量写成 \verb|Sqrt[s11]| 这类外部不变量表达式，则只需给对应外部不变量数值；若用户希望它与外部不变量独立，则应改用独立 \verb|ke[i] -> value|
 \end{enumerate}
 
 这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动从传播子中选择独立子集；若输入中存在重复/退化传播子、ISP 不足或特殊数值外动量导致不可反解，应由用户修正 family 输入。

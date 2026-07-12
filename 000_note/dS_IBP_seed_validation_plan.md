@@ -41,7 +41,7 @@ numericRules = {
 - `numericRules -> {}`：保持解析 seed。
 - `numericRules -> {...}`：生成数值系数 seed 或数值验证样本。
 
-006 起用户口的圈动量相关标量积仍写 `sp[p,r]`。外动量-外动量不变量在输出和数值规则模板中写作变量名：用户可通过 `externalInvariantRules` 自定义，未指定时默认按 `externalMomenta` 顺序为 `sij`，因此例子中写 `s11 -> 5`。只出现在 dS 顶点时间相位里的无质量外腿能量模或能量组合，若不由 `externalMomenta` 的标量积表达式复用，应写作独立 `ke[i]` 参数和普通替换 `ke[i] -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。`|ke1+ke2|`、`|ke1|`、`|ke2|` 独立时必须分别命名。外腿能量参数之间不做完备标量积；若某个顶点能量应和圈外动量不变量共用变量，用户需要在 `vertexEnergies` 中显式写成对应表达式。
+006 起用户口的圈动量相关标量积仍写 `sp[p,r]`。外动量-外动量不变量在输出和数值规则模板中写作变量名：用户可通过 `externalInvariantRules` 自定义，未指定时默认按 `externalMomenta` 顺序为 `sij`，因此例子中写 `s11 -> 5`。只出现在 dS 顶点时间相位里的无质量外腿能量模或能量组合，若不由 `externalMomenta` 的标量积表达式复用，应写作独立 `ke[i]` 参数和普通替换 `ke[i] -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。`|ke1+ke2|`、`|ke1|`、`|ke2|` 独立时必须分别命名。外腿能量参数之间不做完备标量积；若某个顶点能量应和圈外动量不变量共用变量，用户需要在 `vertexEnergies` 中显式写成对应表达式。该约定用于避免未复用关系造成约化冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 `ke[i]` 参数。
 
 ## 4. 验证 case A：一 massive 一 massless 的 bubble
 
@@ -217,7 +217,7 @@ J[{a1, a2}, {{b1, n11, n12}, {b2, n2}, {b3, n3}}, {ispN[1], ispN[2]}]
 - `"linearEquations"`：每条 seed 的生成元标签、连续/离散替换规则、系数规则、常数项和非线性残留。
 - `"linearQ"` 与 `"nonlinearEquationCount"`：用于导出前检查是否出现了不能作为线性约化输入的项。
 
-当前 check 用 massless bubble 的 `sampleOnly` batch 验证线性抽取，用 mixed bubble 和 mixed sunrise 检查 building-block/ISP 项，用 shrunk-line toy 检查 `bS` 动量项，并用 mixed bubble 检查自动 shrink-sector 后 canonical batch 可生成 `{top,e1}` 的 `sectorMetadataList`、可保存/读取 seed `.m`、且可写 Kira user-defined system 文件。006 接口另用 `sp[p,r]` 和非标准动量命名检查 `makeIBPWorkflowData` 可贯通 sampled linear 与 Kira 内存导出，并覆盖 `CoefficientRules -> Automatic` 时自动使用 topology `numericRules`、`KiraCoefficientRules -> Automatic` 时不重复撒点的默认路径。该检查只做文件语法层，不运行 Kira。
+当前 check 用 massless bubble 的 `sampleOnly` batch 验证线性抽取，用 mixed bubble 和 mixed sunrise 检查 building-block/ISP 项，用 shrunk-line toy 检查 `bS` 动量项，并用 mixed bubble 检查自动 shrink-sector 后 canonical batch 可生成 `{top,e1}` 的 `sectorMetadataList`、可保存/读取 seed `.m`、且可写 Kira user-defined system 文件。006 接口另用 `sp[p,r]` 和非标准动量命名检查 `makeIBPWorkflowData` 可贯通 sampled linear 与 Kira 内存导出，并覆盖 `CoefficientRules -> Automatic` 时自动使用 topology `numericRules`、`KiraCoefficientRules -> Automatic` 时不重复撒点的默认路径。它还检查 line momentum 与 `sp[p,r]` 参数的线性组合门禁，非线性输入应在 topology validation 阶段被拒绝。该检查只做文件语法层，不运行 Kira。
 
 ## 13. 当前 time-core seed 检查
 
