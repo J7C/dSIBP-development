@@ -10,12 +10,12 @@
 - 圈动量基：`q_1,...,q_L`。
 - 内线集合：`e = 1,...,E`，每条内线携带端点 `(u[e], v[e])`、动量 `Q[e] = \sum_l c[e,l] q_l + P_e`、模长 `\xi_e = |Q[e]|`、场参数 `\nu_e`。
 - 外线（Boundary）：`B \to v` 表示外腿连接到顶点 `v`，携带动量 `k_{ext}`。
-- 外部能量按顶点汇总：`k_v = \sum_{ext \to v} k_{ext}`。
+- 外部能量按顶点汇总：`k_v = \sum_{ext \to v} |k_{ext}|`，或用户打包后的能量符号（如两个无质量外腿给出 `k15 = |k_1|+|k_5|`）。
 
 以下 family 初始化信息必须一开始设定，但不写进 `J` 的指标槽：
 
 - 每条线的 `massType`、`bbType`、`skType`、`thetaConvention` 和可选 `packType`。
-- 圈动量基 `loopMomenta` 与独立外动量基 `externalMomenta`。
+- 圈动量基 `loopMomenta` 与独立外动量向量基 `externalMomenta`。`externalMomenta` 只包含会进入内线动量 `Q_e = l + sum k` 并与圈动量纠缠的外部三动量向量；只出现在顶点时间相位中的无质量外腿能量模或能量模之和（如 `k15`）不属于该向量基。
 - ISP 列表 `ispData`。若传播子不足以覆盖全部独立标量积，必须显式给出 ISP。
 - 零点规则 `a0Rules/b0Rules/bS0Rules` 与缩并 prefactor 规则。
 - seed 幂次范围和测试范围。范围控制枚举，不属于积分指标本身。
@@ -295,6 +295,8 @@ IBP 中的 `k_v` 符号始终与 Feynman 规则一致，不需要根据顶点 ±
 **用户口定义**：用户先在 `loopMomenta` 与 `externalMomenta` 中给出独立圈动量/外动量基，符号名称任意；标量积统一写成 `sp[p,r]`，其中 `p,r` 可为这些基动量的线性组合，例如 `sp[l3, k321 + l3]`。`sp` 具有 `Orderless` 属性，因此 `sp[p,r]` 与 `sp[r,p]` 自动规范成同一对象。
 
 内部实现仍把所有 `sp[p,r]` 展开到编号坐标 `qq[i,j]`、`qk[i,j]`、`kk[i,j]` 做线性代数；这些内部记号不作为用户输入 convention。
+
+dS 的特殊点是：无质量外腿给出的 `|k|` 或 `|k_a|+|k_b|` 是顶点能量参数，不是外部三动量向量。只有当某个外部三动量向量实际出现在内线动量偏移 `P_e` 中、从而在 `Q_e^2` 或 `q_l \cdot Q_e` 中和圈动量发生标量积时，才应放入 `externalMomenta` 并参与 `sp` 完备性。若某个组合永远只以顶点能量形式出现，例如一个顶点连两条无质量外腿产生的 `k15=|k_1|+|k_5|`，则应保存在 `vertexEnergies` / `numericRules`，不进入 `externalMomenta`、`sp`、传播子坐标或 ISP 坐标。
 
 ### 10.2 函数族扩展
 

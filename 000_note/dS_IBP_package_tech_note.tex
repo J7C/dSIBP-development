@@ -522,23 +522,23 @@ IBP 恒等式来自全微分在维正规化下积分为零：
 
 \subsection{完备 IBP 生成元集合}
 
-参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，独立外动量 $E-1$ 个（动量守恒 $\sum p_i = 0$），完备的 IBP 生成元为：
+参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，设 \texttt{externalMomenta} 中有 $K$ 个独立外动量向量。这里的外动量向量只指实际进入内线动量偏移 $Q_e=\sum_l c_{e,l}q_l+P_e$、并会在 $Q_e^2$ 或 $q_l\cdot Q_e$ 中和圈动量发生标量积的三动量方向。只出现在 dS 顶点时间相位中的无质量外腿能量模或能量模之和（例如 $k15=|k_1|+|k_5|$）不计入 \texttt{externalMomenta}。完备的 IBP 生成元为：
 
 \begin{equation}
-  \mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_{E-1}^\mu\}
+  \mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_K^\mu\}
 \end{equation}
 
-总数 $N_{\text{IBP}} = L(L + E - 1)$，分解为：
+总数 $N_{\text{IBP}} = L(L + K)$，分解为：
 
 \begin{itemize}
   \item \textbf{对角（scale）}：$v = q_l$，共 $L$ 个。$\partial \cdot q_l = d$。
   \item \textbf{交叉（cross）}：$v = q_m$（$m \neq l$），共 $L(L-1)$ 个。$\partial \cdot q_m = 0$（当 $m \neq l$）。
-  \item \textbf{外动量（special）}：$v = k_j$，共 $L(E-1)$ 个。$\partial \cdot k_j = 0$。
+  \item \textbf{外动量（special）}：$v = k_j$，共 $LK$ 个。$\partial \cdot k_j = 0$。
 \end{itemize}
 
 \textbf{交叉 IBP 的必要性}：$L \geq 2$ 时，仅对角 IBP 不足以将所有积分约化到 master integrals。交叉 IBP $\partial_{q_l} \cdot q_m$ 提供不同圈动量之间的关系，是完备约化系统所必需的。
 
-\textbf{验证}：独立标量积数目 $N_{\text{sp}} = L(L+1)/2 + L(E-1)$ 恰好等于 $N_{\text{IBP}}$，确认生成元集合与标量积空间维度匹配。
+\textbf{验证}：独立 loop-scalar-products 数目 $N_{\text{sp}} = L(L+1)/2 + LK$ 与需要闭合的 $z/ISP$ 坐标维度匹配。这里不把顶点能量符号（如 \texttt{k15}）算入标量积空间。
 
 \subsection{ISP 处理}
 
@@ -552,19 +552,25 @@ ISP 指标 $n_{\text{isp}_j} \geq 0$（仅出现在分子，不出现在分母�
 
 \textbf{用户输入}：
 \begin{verbatim}
+loopMomenta = {l3, k321};
+externalMomenta = {wdnmd};
+vertexEnergies = <|1 -> k15, 2 -> p2|>;
+
 ispData = {
-  {"isp1", q1 . q2, {0, 2}},     (* q1·q2，分子幂次 0,1,2 *)
-  {"isp2", q1 . k1, {0, 1}}      (* q1·k1，分子幂次 0,1 *)
+  {rhoA, sp[l3, wdnmd + l3], {0, 1}},
+  {rhoB, sp[k321, wdnmd], {0, 1}}
 };
 \end{verbatim}
+
+\texttt{sp[p,r]} 是 006 起的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。上例中的 \texttt{k15} 只表示顶点相位能量 $|k_1|+|k_5|$，不进入 \texttt{externalMomenta} 或 ISP 完备性坐标。
 
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}
   \item 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
-  \item ISP 之间线性无关，且当前主线要求 ISP 直接是某个 \texttt{qq[i,j]} 或 \texttt{qk[i,j]} 标量积变量
-  \item \texttt{zExprs} 数量等于非 ISP 标量积数量，即 $\# z_e = N_{\text{sp}}-\#\text{ISP}_{\text{direct}}$
+  \item ISP 之间线性无关；006 起 ISP 表达式可为 \texttt{sp[p,r]} 或其线性组合坐标，不要求直接是某个内部编号变量
+  \item \texttt{zExprs} 与 ISP 坐标总数等于独立 loop-scalar-products 数量，即 $\# z_e+\#\text{ISP}=N_{\text{sp}}$
   \item 数量闭合后必须能实际反解出 \texttt{repSP2Z}；重复或退化传播子动量会触发 \texttt{scalarProductCoordinateSolveFailed}
-  \item \texttt{numericRules} 应覆盖全部外部不变量 \texttt{kk[i,j]}；缺失只触发 \texttt{numericRulesMissingExternal\allowbreak Invariants} warning，不阻止解析 seed 生成
+  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；006 用户口可写 \verb|sp[k_i,k_j] -> value| 与 \verb|k15 -> value|
 \end{enumerate}
 
 这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动从传播子中选择独立子集；若输入中存在重复/退化传播子、ISP 不足或特殊数值外动量导致不可反解，应由用户修正 family 输入。
@@ -626,21 +632,21 @@ ispData = {
 
 \subsection{标量积变量约定}
 
-独立标量积分为三类：
+独立标量积分为三类，其中 $K=\#\texttt{externalMomenta}$ 只统计进入内线动量偏移的外部三动量向量：
 
 \begin{itemize}
   \item \textbf{圈--圈}：$q_l \cdot q_m$（$l \leq m$），共 $L(L+1)/2$ 个。
-  \item \textbf{圈--外}：$q_l \cdot k_j$，共 $L(E-1)$ 个。
+  \item \textbf{圈--外}：$q_l \cdot k_j$，共 $LK$ 个。
   \item \textbf{外--外}：$k_i \cdot k_j \equiv k_{ij}$（定义为独立符号，不保持矢量点积结构），共 $(E-1)(E-2)/2$ 个。在 IBP 生成中作为常数参数处理。
 \end{itemize}
 
 总独立标量积数目为
 \begin{equation}
-  N_{\text{sp}} = \frac{L(L+1)}{2} + L(E-1).
+  N_{\text{sp}} = \frac{L(L+1)}{2} + LK.
   \label{Nsp}
 \end{equation}
 
-将所有独立标量积排成向量 $\vec{s}$，其分量依次为 $\{q_1^2,\, q_1 \cdot q_2,\, \ldots,\, q_L^2,\, q_1 \cdot k_1,\, \ldots\}$。
+将所有独立标量积排成向量 $\vec{s}$，其分量依次为 $\{q_1^2,\, q_1 \cdot q_2,\, \ldots,\, q_L^2,\, q_1 \cdot k_1,\, \ldots\}$。顶点相位中的 $|k|$ 或 $|k_a|+|k_b|$ 是能量参数，不是 $\vec{s}$ 的分量。
 
 \subsection{线性变换的推导}
 

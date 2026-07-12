@@ -20,6 +20,7 @@
 - seed 层必须立即应用 EOM 和 massless endpoint canonical，不允许 `n=2` 留到输出 seed。
 - seed 保存为 Mathematica 表达式；Kira 导出只消费 linear-system 数据。
 - 用户输入 `loopMomenta` 与 `externalMomenta` 后，可用任意符号命名这些动量；`006` 用户口标量积统一写作 `sp[p,r]`，例如 `sp[l3, k321 + l3]`。`sp` 具有 `Orderless` 属性，因此 `sp[p,r] === sp[r,p]`。内部 `qq/qk/kk` 只作为编号坐标，不要求用户输入。
+- dS 中要区分“进入内线动量的外部三动量向量”和“只进入顶点时间相位的无质量外腿能量模”。`externalMomenta` 只列前者，即会在内线动量中以 `l + sum k` 形式和圈动量纠缠的独立外部向量；若某顶点连着两个无质量外腿，只产生 `|k_a| + |k_b|` 这样的能量模之和，可把它打包成 `k15` 一类 vertex energy 符号放进 `vertexEnergies` / `numericRules`，不要把它加入 `externalMomenta` 或 `sp` 完备性坐标。若某个外部三动量组合实际作为内线动量偏移出现，则对应的独立外动量向量仍应放进 `externalMomenta`；`k15` 只表示能量模之和，不替代三动量向量。
 - 用户输入的传播子平方与 ISP 定义共同固定 family 坐标；程序验证这组 `z/ISP` 坐标是否闭合并可反解，不把 dS 拓扑默认当成需要自动删线或重选 basis 的冗余传播子族。
 - `seedPreset` 可选 `"quickCheck"`、`"fullDiscrete"`、`"bounded"`：分别对应小样本检查、连续指标基点加全离散态、有限连续范围加全离散态；未知 preset 会作为 topology error 停止 seed，显式 `seedRanges` / `seedOptions` 会覆盖 preset，batch 调用里的显式 option 又会覆盖 `seedOptions` 默认的 seed/batch/shrink-sector 上限。
 

@@ -20,15 +20,15 @@ spInterfaceCase = <|
      <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> k321, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>,
      <|"id" -> 3, "endpoints" -> {1, 2}, "momentum" -> l3 - k321 - wdnmd, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>
      },
-   "extLegs" -> {{"p1", 1, p1}, {"p2", 2, p2}},
-   "vertexEnergies" -> <|1 -> p1, 2 -> p2|>,
+   "extLegs" -> {{"kaPlusKb", 1, k15}, {"p2", 2, p2}},
+   "vertexEnergies" -> <|1 -> k15, 2 -> p2|>,
    "loopMomenta" -> {l3, k321},
    "externalMomenta" -> {wdnmd},
    "ispData" -> {
      {rhoA, sp[l3, wdnmd + l3], {0, 1}},
      {rhoB, sp[k321, wdnmd], {0, 1}}
      },
-   "numericRules" -> {dim -> 3, sp[wdnmd, wdnmd] -> 5, nuM -> 2, p1 -> 7, p2 -> 11},
+   "numericRules" -> {dim -> 3, sp[wdnmd, wdnmd] -> 5, nuM -> 2, k15 -> 17, p2 -> 11},
    "sampleDiscreteRules" -> {{n[1, 1] -> 0, n[1, 2] -> 0, n[2] -> 0, n[3] -> 0}},
    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>
    |>;
@@ -37,6 +37,7 @@ spTopo = parseTopology[spInterfaceCase];
 spRules = makeScalarProductRules[spTopo];
 spData = makeScalarProductData[spTopo];
 spSummary = summarizeCase[spInterfaceCase];
+spNumericReq = numericRuleRequirementReport[spTopo];
 spBaseIntegral = makeBaseIntegral[spTopo];
 spMomentumGen = SelectFirst[makeIBPGenerators[spTopo], #["type"] === "momentum" && #["vectorType"] === "external" && #["dLoop"] === 1 &];
 spMomentumSeed = applySeedCanonical[Expand[applyMomentumGeneratorSeed[spTopo, spBaseIntegral, spMomentumGen]], spTopo];
@@ -45,6 +46,7 @@ spCheckResults = <|
    "spOrderless" -> TrueQ[MemberQ[Attributes[sp], Orderless] && sp[l3, wdnmd + l3] === sp[wdnmd + l3, l3]],
    "internalNumericRule" -> TrueQ[MemberQ[spTopo["numericRules"], kk[1, 1] -> 5]],
    "userNumericRule" -> TrueQ[MemberQ[spSummary["numericRules"], sp[wdnmd, wdnmd] -> 5]],
+   "vertexEnergyNotExternalMomentum" -> TrueQ[FreeQ[spTopo["externalMomenta"], k15] && FreeQ[spData["scalarProducts"], k15] && MemberQ[spNumericReq["requiredVertexEnergies"], k15]],
    "rulesComputed" -> TrueQ[spRules["status"] === "computed"],
    "ispInternalExprs" -> TrueQ[spData["internalISPExprs"] === {qk[1, 1] + qq[1, 1], qk[2, 1]}],
    "ispUserExprs" -> TrueQ[spData["ispExprs"] === {sp[l3, l3] + sp[l3, wdnmd], sp[k321, wdnmd]}],

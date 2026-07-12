@@ -227,21 +227,21 @@ $$v^\mu \frac{\partial F}{\partial q_l^\mu} = \sum_e c_{e,l} \frac{v \cdot Q_e}{
 
 #### 4.3.3 完备 IBP 生成元集合（FIRE7 框架）
 
-对 $L$ 圈积分，独立外动量 $E-1$ 个（动量守恒 $\sum p_i = 0$），完备的 IBP 生成元为：
+对 $L$ 圈积分，设 `externalMomenta` 中有 $K$ 个独立外动量向量。这里的外动量向量只指实际进入内线动量偏移 $Q_e=\sum_l c_{e,l}q_l+P_e$、并会在 $Q_e^2$ 或 $q_l\cdot Q_e$ 中和圈动量发生标量积的三动量方向。只出现在 dS 顶点时间相位中的无质量外腿能量模或能量模之和（例如 $k15=|k_1|+|k_5|$）不计入 `externalMomenta`。完备的 IBP 生成元为：
 
-$$\boxed{\mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_{E-1}^\mu\}}$$
+$$\boxed{\mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_K^\mu\}}$$
 
-总数 $N_{\text{IBP}} = L(L + E - 1)$，分解为：
+总数 $N_{\text{IBP}} = L(L + K)$，分解为：
 
 | 类型 | 生成元 | 数量 | 作用 |
 |------|--------|------|------|
 | 对角（scale） | $\partial_{q_l} \cdot q_l$ | $L$ | 每圈标度 IBP |
 | 交叉（cross） | $\partial_{q_l} \cdot q_m\ (l \neq m)$ | $L(L-1)$ | 耦合不同圈动量 |
-| 外动量（special） | $\partial_{q_l} \cdot k_j$ | $L(E-1)$ | 连接外动量 |
+| 外动量（special） | $\partial_{q_l} \cdot k_j$ | $LK$ | 连接外动量 |
 
 **交叉 IBP 的必要性**：$L \geq 2$ 时，仅对角 IBP 不足以将所有积分约化到 master integrals。交叉 IBP $\partial_{q_l} \cdot q_m$ 提供不同圈动量之间的关系，是完备约化系统所必需的。
 
-**验证**：独立标量积数目 $N_{\text{sp}} = L(L+1)/2 + L K$（$K$ 为 `externalMomenta` 的独立外动量基个数）恰好等于 $N_{\text{IBP}}$，确认生成元集合与标量积空间维度匹配。
+**验证**：独立 loop-scalar-products 数目 $N_{\text{sp}} = L(L+1)/2 + L K$（$K$ 为 `externalMomenta` 的独立外动量基个数）与需要闭合的 $z/ISP$ 坐标维度匹配。这里不把顶点能量符号（如 `k15`）算入标量积空间。
 
 #### 4.3.4 ISP（不可约标量积）处理
 
@@ -260,6 +260,9 @@ ISP 指标 $n_{\text{isp}_j} \geq 0$（仅出现在分子，不出现在分母�
 loopMomenta = {l3, k321};
 externalMomenta = {wdnmd};
 
+(* 只出现在顶点相位的能量模之和不属于 externalMomenta。 *)
+vertexEnergies = <|1 -> k15, 2 -> p2|>;
+
 (* ISP 定义：{名称, sp 标量积表达式, 指标范围} *)
 ispData = {
   {rhoA, sp[l3, wdnmd + l3], {0, 1}},
@@ -274,7 +277,7 @@ ispData = {
 2. ISP 之间线性无关；`006` 起 ISP 表达式可为 `sp[p,r]` 或其线性组合坐标，不要求直接是某个内部编号变量
 3. `zExprs` 与 ISP 坐标总数等于独立标量积数量，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$
 4. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
-5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量；`006` 用户口可写 `sp[k_i,k_j] -> value`，内部自动转成编号坐标
+5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量和顶点能量符号；`006` 用户口可写 `sp[k_i,k_j] -> value` 与 `k15 -> value`，内部自动把前者转成编号坐标
 
 这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动挑选独立传播子子集；若计数不闭合、ISP 不足/过多、传播子动量退化或特殊数值外动量导致不可反解，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 
@@ -322,15 +325,15 @@ $$z_e \equiv \xi_e^2 = Q_e \cdot Q_e$$
 
 #### 4.4.2 标量积变量约定
 
-独立标量积分三类：
+独立标量积分三类，其中 $K=\#\texttt{externalMomenta}$ 只统计进入内线动量偏移的外部三动量向量：
 
 | 类型 | 记号 | 数量 |
 |------|------|------|
 | 圈-圈标量积 | $q_l \cdot q_m$（$l \leq m$） | $L(L+1)/2$ |
-| 圈-外动量标量积 | $q_l \cdot k_j$ | $L(E-1)$ |
+| 圈-外动量标量积 | $q_l \cdot k_j$ | $LK$ |
 | 外动量-外动量标量积 | $k_i \cdot k_j \equiv k_{ij}$ | 常数，不计入独立变量 |
 
-独立标量积总数 $N_{\text{sp}} = L(L+1)/2 + L(E-1)$（与 §4.3.3 的 IBP 生成元数目一致）。
+独立 loop-scalar-products 总数 $N_{\text{sp}} = L(L+1)/2 + LK$。顶点相位中的 $|k|$ 或 $|k_a|+|k_b|$ 是能量参数，不是这个标量积向量的分量。
 
 外动量-外动量标量积 $k_{ij}$ 记为符号常数，不保持矢量点积形式。对 $d=3$ bubble 例子（$L=1$，$E=2$，1 独立外动量 $k \equiv k_1$）：
 $$N_{\text{sp}} = 1 + 1 = 2, \quad \text{独立标量积：} q_1^2,\; q_1 \cdot k, \quad \text{外部不变量：} k^2 \equiv k_{11} = k_s^2$$
@@ -452,11 +455,12 @@ extLegs = {{B, 1, p1}, {B, 2, p2}, ...};
 (* 圈动量与独立外动量基 *)
 loopMomenta = {q1, q2, ...};
 externalMomenta = {k1, k2, ...};
+vertexEnergies = <|v1 -> k15, v2 -> p2, ...|>;  (* 只进 time-IBP 相位的能量模/能量模之和 *)
 
-(* ISP: {名称, 标量积表达式, 指标范围} — 多圈时必需 *)
+(* ISP: {名称, sp 标量积表达式, 指标范围} — 多圈时必需 *)
 ispData = {
-  {"isp1", q1 . q2, {0, 2}},     (* q1·q2，分子幂次 0,1,2 *)
-  {"isp2", q1 . k1, {0, 1}}      (* q1·k1，分子幂次 0,1 *)
+  {isp1, sp[q1, q2], {0, 2}},     (* q1·q2，分子幂次 0,1,2 *)
+  {isp2, sp[q1, k1], {0, 1}}      (* q1·k1，分子幂次 0,1 *)
 };
 (* 单圈时可省略 ispData（无 ISP），但仍需显式给 externalMomenta = {k} 等外动量基 *)
 
@@ -467,7 +471,7 @@ indexRanges = {aMin, aMax, bMin, bMax, bSMin, bSMax};
 seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 ```
 
-必须一开始设定但不写进指标里的信息包括：顶点 SK 符号、内线的 `massType/bbType/skType/thetaConvention`、圈动量基、独立外动量基、ISP 配置、零点规则、缩并 prefactor 规则和 seed 幂次范围。这样 `J` 只承载动态指标，物理类型与初始化 convention 不混进指标本体。
+必须一开始设定但不写进指标里的信息包括：顶点 SK 符号、内线的 `massType/bbType/skType/thetaConvention`、圈动量基、独立外动量向量基、顶点能量符号 `vertexEnergies`、ISP 配置、零点规则、缩并 prefactor 规则和 seed 幂次范围。这样 `J` 只承载动态指标，物理类型与初始化 convention 不混进指标本体。
 
 ## 6. 脚本结构
 
@@ -551,7 +555,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 
 - seed 生成阶段自动完成：按 sector 生成，再按 momentum/time 分类，每类内部枚举该 sector 的离散 `n=0/1` 状态，并立即应用 EOM/massless endpoint canonical。若为验证使用 `DiscreteMode -> "sample"`，`sampleDiscreteRules` 中每条规则也必须覆盖全部离散 `n` 变量；sample 只是减少取样条数，不允许保留符号 `n`。seed 只保存 MMA 表达式，不直接导出 Kira。
 - 输入初始化可用 `seedPreset` 简写常用 seed 策略：`"quickCheck"` 为默认小样本，`"fullDiscrete"` 在连续基点枚举全部离散态，`"bounded"` 使用有限连续范围和全部离散态。用户仍可用 `seedRanges` 或 `seedOptions` 覆盖 preset 中的 `sampleOnly`、范围和默认 `DiscreteMode`。
-- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`006` 用户口外部不变量写作 `sp[k_i,k_j]`，`validationReport` 会提前检查它们是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
+- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`006` 用户口外部不变量写作 `sp[k_i,k_j]`，只进顶点相位的能量模之和写作 `k15 -> value` 这类普通替换规则。`validationReport` 会提前检查它们是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
 - Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。linear-system 会保存 `kiraOrderingReport`，其中 `missingIntegralOrderItems` 用来提示未命中的候选。
 - 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。手动重排会额外保存 `manualIntegralOrderReport`，越界编号或不在系统中的 `J` 不会静默消失。
 - Kira 的 `list` 目标也可独立选择：`KiraTargetIntegrals -> Automatic` 表示全量目标；用户可传 Kira id 或 `J[...]` 积分对象列表，导出时会按当前全局 `integralRules` 转成 id。数值 dummy 若启用会自动附加到目标列表末尾。

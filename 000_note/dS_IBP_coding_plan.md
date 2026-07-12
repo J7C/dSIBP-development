@@ -19,8 +19,9 @@ vertexData = {{v1, sign1}, {v2, sign2}, ...};  (* V 个顶点 *)
 lineData = {{e1, {u1, v1}, Q1, nu1, bbType1}, ...};  (* 旧格式 E 条内线 *)
 extLegs = {{B1, v1, k1}, ...};  (* 外腿 *)
 loopMomenta = {q1, q2, ...};  (* L 个圈动量，显式指定 *)
-externalMomenta = {k1, k2, ...};  (* 独立外动量基，动量守恒后保留 E_ext-1 个 *)
-ispData = {{isp1, expr1, {min1, max1}}, ...};  (* ISP 定义 *)
+externalMomenta = {k1, k2, ...};  (* 进入内线动量偏移的独立外动量向量基 *)
+vertexEnergies = <|v1 -> k15, v2 -> p2, ...|>;  (* 只进顶点相位的能量模或能量模之和 *)
+ispData = {{isp1, sp[q1, k1], {min1, max1}}, ...};  (* 006 起用户口 ISP 定义用 sp *)
 ```
 
 推荐使用带 metadata 的 `lineData` Association 格式，避免代码猜测物理类型：
@@ -44,7 +45,8 @@ ispData = {{isp1, expr1, {min1, max1}}, ...};  (* ISP 定义 *)
 - `vertexData`：顶点编号和 SK 符号。
 - `lineData`：每条内线的端点、动量、质量类型、building block 类型、SK 类型。
 - `loopMomenta`：圈动量基。
-- `externalMomenta`：独立外动量基。即使 bubble 只有一个 `k`，也要用列表 `{k}`，不能在代码里硬编码 `k`。
+- `externalMomenta`：独立外动量向量基。它只包含实际进入内线动量 `Q_e = l + sum k`、会与圈动量发生标量积的三动量方向；只出现在顶点相位中的无质量外腿能量模或能量模之和（如 `k15=|k_1|+|k_5|`）不放这里。
+- `vertexEnergies`：顶点外部能量参数，可包含用户打包的能量模之和 `k15`。这类量只服务 time-IBP 相位和数值替换，不参与 `sp` 完备性。
 - `ispData`：多圈或传播子不足以覆盖标量积空间时必须给；单圈无 ISP case 可为空。
 - 零点和 prefactor 配置：`a0Rules`、`b0Rules`、`shrinkPrefactorRules` 可缺省，但建议 case 文件显式记录。
 - 幂次范围：`aRange`、`bRange`、`nRange`、`ispRange`。它们控制 seed 枚举，不属于 `J` 的指标本体。`nRange` 对完整线固定为离散 `0/1` 枚举；任何生成元产生的 `n=2` 必须立刻 EOM 化。
@@ -86,10 +88,10 @@ externalPart[[e]] = Q_e - Σ_l loopCoeff[[e,l]] q_l;  (* Q_e 的外动量部分 
 ### 2.1 标量积变量
 
 ```mathematica
-qq[l, m]  (* q_l · q_m, l ≤ m *)
-qk[l, j]  (* q_l · k_j *)
-kk[i, j]  (* k_i · k_j ≡ k_{ij} *)
+sp[p, r]  (* 用户口标量积；p,r 可为 loop/external 基动量的线性组合 *)
 ```
+
+`sp` 具有 `Orderless` 属性，故 `sp[p,r]` 与 `sp[r,p]` 自动等同。内部实现仍可展开到 `qq/qk/kk` 编号坐标做线性代数，但这些内部记号不作为用户输入 convention。
 
 ### 2.2 正向变换 z = M·s + c
 
@@ -352,6 +354,3 @@ saveBySector[equations_] := Module[{grouped},
 - 若需要 rank/span 检查，必须先对符号参数做明确代数赋值，使用小整数或有理数测试；检查文件名需标注 `numeric` 或 `specialized`。
 - 解析公式检查只允许针对单条公式、单个 seed 或非常小的 representative term，不得批量展开。
 - Kira 测试只检查导出文件语法和小范围 toy case，不在主线结构测试中启动大约化。没有 EOM/time-IBP 完整 canonical seed 和 linear-system 数据时，不做 Kira 导出测试；seed 本身不直接导出 Kira。
-
-
-
