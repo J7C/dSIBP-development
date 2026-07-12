@@ -47,6 +47,7 @@ ispData = {{isp1, sp[q1, k1], {min1, max1}}, ...};  (* 006 起用户口 ISP 定�
 - `loopMomenta`：圈动量基。
 - `externalMomenta`：独立外动量向量基。它只包含实际进入内线动量 `Q_e = l + sum k`、会与圈动量发生标量积的三动量方向；只出现在顶点相位中的无质量外腿能量模或能量模之和（如 `k15=|k_1|+|k_5|`）不放这里。
 - `vertexEnergies`：顶点外部能量参数，可包含用户打包的能量模之和 `k15`。这类量只服务 time-IBP 相位和数值替换，不参与 `sp` 完备性。
+- `externalInvariantRules`：外动量-外动量不变量的输出命名规则，例如 `sp[k1,k1] -> s11` 或 `sp[k1,k2] -> sig12`。未设时按 `externalMomenta` 位置默认生成 `sij`；输出端、数值规则模板和 Kira 系数替换都使用这些变量名。
 - `ispData`：多圈或传播子不足以覆盖标量积空间时必须给；单圈无 ISP case 可为空。
 - 零点和 prefactor 配置：`a0Rules`、`b0Rules`、`shrinkPrefactorRules` 可缺省，但建议 case 文件显式记录。
 - 幂次范围：`aRange`、`bRange`、`nRange`、`ispRange`。它们控制 seed 枚举，不属于 `J` 的指标本体。`nRange` 对完整线固定为离散 `0/1` 枚举；任何生成元产生的 `n=2` 必须立刻 EOM 化。
@@ -91,7 +92,7 @@ externalPart[[e]] = Q_e - Σ_l loopCoeff[[e,l]] q_l;  (* Q_e 的外动量部分 
 sp[p, r]  (* 用户口标量积；p,r 可为 loop/external 基动量的线性组合 *)
 ```
 
-`sp` 具有 `Orderless` 属性，故 `sp[p,r]` 与 `sp[r,p]` 自动等同。内部实现仍可展开到 `qq/qk/kk` 编号坐标做线性代数，但这些内部记号不作为用户输入 convention。
+`sp` 具有 `Orderless` 属性，故 `sp[p,r]` 与 `sp[r,p]` 自动等同。它用于输入传播子/ISP 等圈动量相关标量积；外动量-外动量不变量在输出端改用变量名，用户可设 `externalInvariantRules -> {sp[k1,k1] -> s11}`，未设时默认按 `externalMomenta` 的位置输出 `sij`。内部实现仍可展开到 `qq/qk/kk` 编号坐标做线性代数，但这些内部记号不作为用户输入 convention。
 
 ### 2.2 正向变换 z = M·s + c
 
@@ -125,14 +126,14 @@ makeScalarProductRules[] := Module[{matM, vecC, vecZ, vecS, matInv},
   (* 构建矩阵 M 和向量 c *)
   matM = Table[Coefficient[expandZ[e], scalarProducts[[α]]], {e, nE}, {α, Length[scalarProducts]}];
   vecC = Table[expandZ[e] /. Thread[scalarProducts -> 0], {e, nE}];
-  
+
   (* 求逆 *)
   matInv = Inverse[matM];
-  
+
   (* 生成替换规则 *)
   repSP2Z = Thread[scalarProducts -> matInv . (zVec - vecC)];
   repZ2SP = Thread[zVec -> matM . scalarProducts + vecC];
-  
+
   (* q_l · Q_e 的替换规则 *)
   repDotProduct = Table[
     qDotQ[l, e] -> (Σ_m loopCoeff[[e,m]] * (repSP2Z /. qq[l,m] -> ...)),
@@ -149,17 +150,17 @@ makeScalarProductRules[] := Module[{matM, vecC, vecZ, vecS, matInv},
 makeTimeIBP[expr_, v_] := Module[{result = 0},
   (* (a) 顶点幂次: -a_v *)
   result += -expr[[1, v]] * shiftA[expr, v, -1];
-  
+
   (* (b) 外部能量: -I P_v *)
   result += -I * Pext[v] * expr;
-  
+
   (* (c) 对每条连接 v 的线 *)
   Do[
     {e, dir} = vertexLines[[v]];
     If[fullLineQ[expr, e],
       (* building block 导数: -shift_n shift_b *)
       result += -shiftN[shiftB[expr, e, -1], e, endpoint[dir], 1];
-      
+
       (* massive 边界缩并: n_{e,1} + n_{e,2} == 1 时 *)
       If[linePackType[e] === "massiveFull" && expr[[2, e, 2]] + expr[[2, e, 3]] == 1,
         result += shrinkPrefactor[e] * shrinkLine[expr, e, v];
@@ -178,16 +179,16 @@ makeTimeIBP[expr_, v_] := Module[{result = 0},
 ```mathematica
 makeMomIBP[expr_, l_, v_] := Module[{result, e, coeff, dotProduct},
   (* v 可以是 q_m 或 k_j *)
-  
+
   (* 散度项: ∂·v = d if v=q_l, 0 otherwise *)
   result = If[v === loopMomenta[[l]], d * expr, 0];
-  
+
   (* 链式法则: Σ_e c_{e,l} (v·Q_e)/z_e ∂/∂z_e *)
   Do[
     If[fullLineQ[expr, e],
       coeff = loopCoeff[[e, l]];
       dotProduct = computeDotProduct[v, e];  (* 用 repDotProduct *)
-      
+
       (* dotProduct 是 z_e 的线性组合: Σ_α c_α z_{e_α} *)
       (* 每一项 z_{e_α}^n 作用在 z_{e_α}^{-(b+b0)/2} 上 → b_{e_α} → b_{e_α} - 2n *)
       result += coeff * applyDotProduct[dotProduct, expr, e];
@@ -197,7 +198,7 @@ makeMomIBP[expr_, l_, v_] := Module[{result, e, coeff, dotProduct},
   ],
   {e, nE}
   ];
-  
+
   (* n-shift 项: building block 导数产生 n → n+1 *)
   Do[
     If[fullLineQ[expr, e],
@@ -206,7 +207,7 @@ makeMomIBP[expr_, l_, v_] := Module[{result, e, coeff, dotProduct},
   ],
   {e, nE}
   ];
-  
+
   result
 ];
 ```
@@ -242,13 +243,13 @@ massless 线走双 theta 合并路线，不使用 Hankel Wronskian 缩并条件�
 shrinkLine[expr_, e_, mergeVertex_] := Module[{aSum, bS, prefactor},
   (* 合并顶点时间幂次：整数 -1 入指标，-2 nu_e 入零点 *)
   aSum = a_{u[e]} + a_{v[e]} - 1;
-  
+
   (* 缩并线的 bS 值：整数 +1 入指标，+2 nu_e 入 bS0 零点 *)
   bS = b_e + 1;
-  
+
   (* 缩并 prefactor *)
   prefactor = (4 I / Pi) * Exp[Pi * Im[nu_e]];
-  
+
   (* 构造新积分: 线 e 变为缩并态, 合并顶点 *)
   prefactor * ReplacePart[expr, {
     {1, u[e]} -> aSum,
@@ -272,7 +273,7 @@ makeEOMRules[] := Module[{rules = {}},
   Do[
     Do[
       (* n_{e,a} = 2 → c1 * (n=1, b+1, a±1) + c2 * (n=0) *)
-      AppendTo[rules, 
+      AppendTo[rules,
         J[args___] /; packE[[e, a]] == 2 :>
           -getC1[e] * shiftN[shiftB[shiftA[expr, vertex, -1], e, 1], e, a, 1]
           - getC2[e] * shiftN[expr, e, a, 0]
@@ -291,16 +292,16 @@ makeEOMRules[] := Module[{rules = {}},
 generateIBPEquations[] := Module[{int00, int000, seeds, equations, seedEq},
   (* 1. 构造基积分模板 *)
   int00 = J[aVars, makeLinePacks[lineData], ispVars];
-  
+
   (* 2. 添加零点 *)
   int000 = int00 /. repAddZeroPoints;
-  
+
   (* 3. 按每条线的 pack 类型枚举离散态：
         massiveFull -> {n1,n2} ∈ {0,1}^2
         masslessFull -> n ∈ {0,1}
         crossMassless/shrunk -> 无离散态 *)
   seeds = enumerateDiscreteStates[int000, lineData];
-  
+
   (* 4. 对每个离散种子，应用所有 IBP 生成元并立刻 EOM canonical *)
   equations = Flatten@Table[
     seedEq = applyGenerator[seeds[[i]], gen];
@@ -309,14 +310,14 @@ generateIBPEquations[] := Module[{int00, int000, seeds, equations, seedEq},
     {i, Length[seeds]},
     {gen, allIBPGenerators[]}
   ];
-  
+
   (* 5. massless 双 theta 合并 canonical 与边界检查 *)
   equations = applyMasslessCanonical[equations, topo];
   equations = checkIndexBounds[equations, topo];
-  
+
   (* 6. 移除零点，去重 *)
   equations = equations /. repRemoveZeroPoints // DeleteDuplicates;
-  
+
   equations
 ];
 ```

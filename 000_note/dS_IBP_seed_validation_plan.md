@@ -27,7 +27,7 @@
 ```mathematica
 numericRules = {
   d -> 3,
-  sp[k, k] -> 5,
+  s11 -> 5,
   k15 -> 17,
   k12 -> -1,
   nu1 -> 2,
@@ -41,7 +41,7 @@ numericRules = {
 - `numericRules -> {}`：保持解析 seed。
 - `numericRules -> {...}`：生成数值系数 seed 或数值验证样本。
 
-006 起用户口的外部不变量写作 `sp[k_i,k_j] -> value`。只出现在 dS 顶点时间相位里的无质量外腿能量模或能量模之和，例如 `k15=|k_1|+|k_5|`，写作普通替换 `k15 -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。
+006 起用户口的圈动量相关标量积仍写 `sp[p,r]`。外动量-外动量不变量在输出和数值规则模板中写作变量名：用户可通过 `externalInvariantRules` 自定义，未指定时默认按 `externalMomenta` 顺序为 `sij`，因此例子中写 `s11 -> 5`。只出现在 dS 顶点时间相位里的无质量外腿能量模或能量模之和，例如 `k15=|k_1|+|k_5|`，写作普通替换 `k15 -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。
 
 ## 4. 验证 case A：一 massive 一 massless 的 bubble
 

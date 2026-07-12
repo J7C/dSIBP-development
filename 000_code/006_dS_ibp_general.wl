@@ -73,7 +73,7 @@ requiredCaseInputKeys[] := {"vertexData", "lineData", "loopMomenta"};
 
 
 optionalCaseInputKeys[] := {
-   "name", "extLegs", "externalMomenta", "ispData", "vertexEnergies", "activeVertexIds",
+   "name", "extLegs", "externalMomenta", "externalInvariantRules", "ispData", "vertexEnergies", "activeVertexIds",
    "fixedAVertexValues", "numericRules", "sampleDiscreteRules", "seedPreset", "seedRanges",
    "seedOptions", "zeroPointRules", "shrinkPrefactorRules", "kiraOrdering"
    };
@@ -389,8 +389,8 @@ parseTopology::badinput = "case 输入 preflight 失败：`1`。";
 
 parseTopology[case_Association] := Module[
    {vertexData, vertexIds, vertexSignAssoc, rawLines, lines, loopMomenta,
-   externalMomenta, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
-    eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig},
+   externalMomenta, externalInvariantRules, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
+    eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig, topoContext},
    If[caseInputPreflightErrorQ[case],
     If[caseInputMissingRequiredKeysQ[case],
      Message[parseTopology::missingkeys, caseInputRequirementReport[case]["missingRequiredKeys"]],
@@ -435,6 +435,9 @@ parseTopology[case_Association] := Module[
      eMomenta[[e]] - Sum[loopCoeffMatrix[[e, l]] loopMomenta[[l]], {l, nL}],
      {e, nE}
      ];
+   topoContext = <|"loopMomenta" -> loopMomenta, "externalMomenta" -> externalMomenta, "nL" -> nL, "nK" -> nK|>;
+   externalInvariantRules = normalizeExternalInvariantRulesForTopology[Lookup[case, "externalInvariantRules", Automatic], topoContext];
+   topoContext = Join[topoContext, <|"externalInvariantRules" -> externalInvariantRules|>];
    seedConfig = normalizeSeedConfig[case];
    <|
     "name" -> Lookup[case, "name", "unnamed"],
@@ -448,6 +451,7 @@ parseTopology[case_Association] := Module[
     "fixedAVertexValues" -> Lookup[case, "fixedAVertexValues", <||>],
     "loopMomenta" -> loopMomenta,
     "externalMomenta" -> externalMomenta,
+    "externalInvariantRules" -> externalInvariantRules,
     "ispData" -> ispData,
     "nV" -> nV,
     "nE" -> nE,
@@ -458,7 +462,7 @@ parseTopology[case_Association] := Module[
     "loopCoeffMatrix" -> loopCoeffMatrix,
     "externalCoeffMatrix" -> externalCoeffMatrix,
     "externalPartList" -> externalPartList,
-    "numericRules" -> normalizeNumericRulesForTopology[Lookup[case, "numericRules", {}], <|"loopMomenta" -> loopMomenta, "externalMomenta" -> externalMomenta, "nL" -> nL, "nK" -> nK|>],
+    "numericRules" -> normalizeNumericRulesForTopology[Lookup[case, "numericRules", {}], topoContext],
     "sampleDiscreteRules" -> Lookup[case, "sampleDiscreteRules", {}],
     "seedPreset" -> seedConfig["seedPreset"],
     "seedRanges" -> seedConfig["seedRanges"],
@@ -1156,6 +1160,7 @@ numericRuleRequirementReport[topo_Association] := Module[
     "internalProvidedNumericVariables" -> provided,
     "requiredExternalInvariants" -> toUser[external],
     "internalRequiredExternalInvariants" -> external,
+    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
     "requiredVertexEnergies" -> vertex,
     "requiredLineParameters" -> line,
     "requiredNumericVariables" -> toUser[required],
@@ -1230,18 +1235,65 @@ expandDotExpr[p_, r_, topo_Association] := Module[
 
 
 (* 用户口的 sp[p,r] 统一展开到内部 qq/qk/kk 坐标；p,r 可为用户命名的线性动量组合。 *)
-scalarProductInputToInternal[expr_, topo_Association] := Expand[
+scalarProductSPInputToInternal[expr_, topo_Association] := Expand[
    expr /. HoldPattern[sp[p_, r_]] :> expandDotExpr[p, r, topo]
+   ];
+
+
+externalInvariantSymbolName[i_Integer, j_Integer] := ToExpression["s" <> ToString[Min[i, j]] <> ToString[Max[i, j]]];
+
+
+defaultExternalInvariantRulesForTopology[topo_Association] := Module[
+   {exts = Lookup[topo, "externalMomenta", {}], nK = Lookup[topo, "nK", Length[Lookup[topo, "externalMomenta", {}]]]},
+   Flatten[Table[sp[exts[[i]], exts[[j]]] -> externalInvariantSymbolName[i, j], {i, nK}, {j, i, nK}]]
+   ];
+
+
+normalizeExternalInvariantRulesForTopology[Automatic, topo_Association] := defaultExternalInvariantRulesForTopology[topo];
+normalizeExternalInvariantRulesForTopology[rules_Association, topo_Association] := normalizeExternalInvariantRulesForTopology[Normal[rules], topo];
+normalizeExternalInvariantRulesForTopology[rules_List, topo_Association] := Module[
+   {defaults = defaultExternalInvariantRulesForTopology[topo], validRules},
+   validRules = Select[rules, validReplacementRuleQ];
+   Normal[Association[Join[defaults, validRules]]]
+   ];
+normalizeExternalInvariantRulesForTopology[_, topo_Association] := defaultExternalInvariantRulesForTopology[topo];
+
+
+externalInvariantInternalToUserRules[topo_Association] := Module[
+   {rules = Lookup[topo, "externalInvariantRules", defaultExternalInvariantRulesForTopology[topo]]},
+   rules /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductSPInputToInternal[lhs, topo], rhs]
+   ];
+
+
+externalInvariantUserToInternalRules[topo_Association] := Module[
+   {rules = externalInvariantInternalToUserRules[topo]},
+   Cases[rules, Rule[lhs_, rhs_] :> Rule[rhs, lhs]]
+   ];
+
+
+externalInvariantNamingReport[topo_Association] := <|
+   "externalMomenta" -> Lookup[topo, "externalMomenta", {}],
+   "externalInvariantRules" -> Lookup[topo, "externalInvariantRules", defaultExternalInvariantRulesForTopology[topo]],
+   "internalExternalInvariantRules" -> externalInvariantInternalToUserRules[topo],
+   "defaultNamingConvention" -> "sij, where i,j are positions in externalMomenta and i<=j",
+   "message" -> "圈动量相关标量积的用户输入统一用 sp[p,r]；外动量-外动量不变量在输出端使用 externalInvariantRules 指定的变量名，未指定时默认按 externalMomenta 顺序输出为 sij。"
+   |>;
+
+
+scalarProductInputToInternal[expr_, topo_Association] := Expand[
+   scalarProductSPInputToInternal[expr, topo] /. externalInvariantUserToInternalRules[topo]
    ];
 
 
 scalarProductInternalToUser[expr_, topo_Association] := Module[
    {loops = topo["loopMomenta"], exts = topo["externalMomenta"]},
-   Expand[expr /. {
-      HoldPattern[qq[i_Integer, j_Integer]] :> sp[loops[[i]], loops[[j]]],
-      HoldPattern[qk[i_Integer, j_Integer]] :> sp[loops[[i]], exts[[j]]],
-      HoldPattern[kk[i_Integer, j_Integer]] :> sp[exts[[i]], exts[[j]]]
-      }]
+   Expand[expr /. Join[
+      externalInvariantInternalToUserRules[topo],
+      {
+       HoldPattern[qq[i_Integer, j_Integer]] :> sp[loops[[i]], loops[[j]]],
+       HoldPattern[qk[i_Integer, j_Integer]] :> sp[loops[[i]], exts[[j]]]
+       }
+      ]]
    ];
 
 
@@ -1257,6 +1309,25 @@ normalizeISPExprs[topo_Association] := scalarProductInputToInternal[Lookup[#, "e
 
 normalizeNumericRulesForTopology[rules_List, topo_Association] := rules /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductInputToInternal[lhs, topo], rhs];
 normalizeNumericRulesForTopology[rules_, topo_Association] := rules;
+
+
+normalizeCoefficientRulesForTopology[rules_List, topo_Association] := normalizeNumericRulesForTopology[rules, topo];
+normalizeCoefficientRulesForTopology[rules_, topo_Association] := rules;
+
+
+normalizeCoefficientRulesForLinearData[rules_, linearData_Association] := Module[
+   {topo = Lookup[linearData, "topology", Missing["NoTopology"]]},
+   If[parsedTopologyQ[topo], normalizeCoefficientRulesForTopology[rules, topo], rules]
+   ];
+
+
+userCoefficientRulesForLinearData[rules_, linearData_Association] := Module[
+   {topo = Lookup[linearData, "topology", Missing["NoTopology"]]},
+   If[parsedTopologyQ[topo] && ListQ[rules],
+    rules /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductInternalToUser[lhs, topo], rhs],
+    rules
+    ]
+   ];
 
 
 userNumericRules[topo_Association] := topo["numericRules"] /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductInternalToUser[lhs, topo], rhs];
@@ -1365,6 +1436,7 @@ makeScalarProductData[topo_Association] := Module[
     "internalScalarProducts" -> spVars,
     "externalInvariants" -> (scalarProductInternalToUser[#, topo] & /@ externalInvariantVariables[topo]),
     "internalExternalInvariants" -> externalInvariantVariables[topo],
+    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
     "zVars" -> zVars,
     "zExprs" -> (scalarProductInternalToUser[#, topo] & /@ zExprs),
     "internalZExprs" -> zExprs,
@@ -2186,6 +2258,7 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "vertexEnergies" -> remapVertexEnergiesToRepresentatives[topo["vertexEnergies"], repMap],
      "loopMomenta" -> topo["loopMomenta"],
      "externalMomenta" -> topo["externalMomenta"],
+     "externalInvariantRules" -> topo["externalInvariantRules"],
      "ispData" -> topo["ispData"],
      "numericRules" -> userNumericRules[topo],
      "sampleDiscreteRules" -> topo["sampleDiscreteRules"],
@@ -2247,6 +2320,7 @@ makeTopologySeedSummary[topo_Association] := <|
    "seedRanges" -> topo["seedRanges"],
    "numericRules" -> topo["numericRules"],
    "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
+   "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
    "sampleDiscreteRules" -> topo["sampleDiscreteRules"]
    |>;
 
@@ -3233,7 +3307,7 @@ kiraRunScript[jobOptions_: Automatic] := Module[
 makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Automatic, targetSpec_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, runScriptText, repKira2JText, repJ2KiraText, metadataText,
     normalizedJobOptions, jobOptionReport, coefficientRuleReport, topologyReport, requiredKeys, missingKeys, coefficientDiagnostics, numericCoefficientSystemQ, appendNumericDummyQ,
-    numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol},
+    numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol, rawCoeffRules, normalizedCoeffRules},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "reason" -> "linear data missing", "topologyValidationReport" -> topologyReport|>]
@@ -3250,11 +3324,13 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
    If[Lookup[jobOptionReport, "status", "ok"] =!= "ok",
     Return[Join[jobOptionReport, <|"topologyValidationReport" -> topologyReport|>]]
     ];
-   coefficientRuleReport = validateCoefficientRules[coeffRules];
+   rawCoeffRules = coeffRules;
+   coefficientRuleReport = validateCoefficientRules[rawCoeffRules];
    If[Lookup[coefficientRuleReport, "status", "ok"] =!= "ok",
     Return[Join[coefficientRuleReport, <|"topologyValidationReport" -> topologyReport|>]]
     ];
-   linearEquations = applyKiraCoefficientRulesToLinearEquation[#, coeffRules] & /@ linearData["linearEquations"];
+   normalizedCoeffRules = normalizeCoefficientRulesForLinearData[rawCoeffRules, linearData];
+   linearEquations = applyKiraCoefficientRulesToLinearEquation[#, normalizedCoeffRules] & /@ linearData["linearEquations"];
    badEquations = Select[linearEquations, ! TrueQ[#["linearQ"]] || ! TrueQ[#["constantTerm"] === 0] &];
    If[badEquations =!= {},
     Return[<|"status" -> "notLinear", "topologyValidationReport" -> topologyReport, "badEquationCount" -> Length[badEquations], "badEquations" -> badEquations|>]
@@ -3284,7 +3360,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
    metadataText = ToString[InputForm[
        Join[
-        KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}],
+        KeyDrop[linearData, {"integralList", "integralRules", "linearEquations", "topology"}],
         <|
          "exportedEquationCount" -> Length[exportedEquations],
          "kiraBlockCount" -> kiraBlockCount,
@@ -3295,7 +3371,8 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
          "coefficientVariables" -> coefficientDiagnostics["coefficientVariables"],
          "numericDummyAppendedQ" -> appendNumericDummyQ,
          "numericDummyIntegralId" -> numericDummyIntegralId,
-         "kiraCoefficientRules" -> coeffRules,
+         "kiraCoefficientRules" -> normalizedCoeffRules,
+         "userKiraCoefficientRules" -> userCoefficientRulesForLinearData[normalizedCoeffRules, linearData],
          "kiraJobOptions" -> normalizedJobOptions
          |>
         ]
@@ -3321,7 +3398,9 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
     "numericCoefficientSystemQ" -> numericCoefficientSystemQ,
     "coefficientVariables" -> coefficientDiagnostics["coefficientVariables"],
     "numericDummyAppendedQ" -> appendNumericDummyQ,
-    "numericDummyIntegralId" -> numericDummyIntegralId
+    "numericDummyIntegralId" -> numericDummyIntegralId,
+    "kiraCoefficientRulesApplied" -> normalizedCoeffRules,
+    "userKiraCoefficientRulesApplied" -> userCoefficientRulesForLinearData[normalizedCoeffRules, linearData]
     |>
    ];
 
@@ -3833,6 +3912,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    <|
     "status" -> "generated",
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+    "topology" -> topo,
     "integralCount" -> Length[integrals],
     "equationCount" -> Length[equations],
     "integralList" -> integrals,
@@ -3858,16 +3938,18 @@ Options[applyCoefficientRulesToLinearSystem] = {CoefficientRules -> {}};
 
 
 applyCoefficientRulesToLinearSystem[linearData_Association, OptionsPattern[]] := Module[
-   {rules = OptionValue[CoefficientRules], ruleReport, linearEquations, coefficientDiagnostics},
+   {rawRules = OptionValue[CoefficientRules], rules, ruleReport, linearEquations, coefficientDiagnostics},
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! KeyExistsQ[linearData, "linearEquations"], Return[linearData]];
-   ruleReport = validateCoefficientRules[rules];
+   ruleReport = validateCoefficientRules[rawRules];
    If[Lookup[ruleReport, "status", "ok"] =!= "ok",
     Return[Join[linearData, <|"status" -> "notReady", "reason" -> "invalidCoefficientRules", "coefficientRuleValidationReport" -> ruleReport|>]]
     ];
+   rules = normalizeCoefficientRulesForLinearData[rawRules, linearData];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, rules] & /@ linearData["linearEquations"];
    coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    Join[linearData, <|
      "coefficientRulesApplied" -> rules,
+     "userCoefficientRulesApplied" -> userCoefficientRulesForLinearData[rules, linearData],
      "linearEquations" -> linearEquations,
      "linearQ" -> And @@ (Lookup[linearEquations, "linearQ"]),
      "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False],
@@ -4121,6 +4203,7 @@ summarizeCase[case_Association] := Module[
     "scalarProducts" -> spData["scalarProducts"],
     "zExprs" -> spData["zExprs"],
     "numericRules" -> userNumericRules[topo],
+    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
     "numericZExprs" -> (spData["internalZExprs"] /. topo["numericRules"]),
     "seedRanges" -> topo["seedRanges"],
     "validationReport" -> topologyValidationReport[topo],

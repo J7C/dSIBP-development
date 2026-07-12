@@ -273,7 +273,7 @@ IBP seed 包括：
 
 Kira 编号必须对所有 sector 的积分一起做全局排序，不能先按 sector 追加。当前 `sortIntegralsForKira` 的第一优先级是所有线第一幂次指标的复杂度，随后再看 `a`、ISP、离散 `n` 和稳定字符串序；后续可在此基础上叠加用户指定 master/weight。若用户通过 `IntegralOrder` 或 `PreferredIntegrals` 指定候选主积分，linear-system 会保存 `kiraOrderingReport`；若某个指定对象不在当前全局 `integralList` 中，会出现在 `missingIntegralOrderItems`，避免静默失效。
 
-`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。它只做轻量结构检查：线编号、端点、声明的圈/外动量基、ISP 数量、z/ISP 坐标数是否闭合、`numericRules` 是否覆盖外动量不变量、sampleDiscreteRules 和当前未实现的 seed feature；不做解析 rank、全局求解或大规模 IBP 展开。`numericRules` 缺少某些 `kk[i,j]` 时只给 warning，因为解析 seed 仍可生成；但 workflow 显式使用 `LinearSystemMode -> "numeric"` 时会在 seed 生成前返回 `numericRulesMissingExternalInvariants`，要求用户补齐这些规则。若使用 sample 离散模式，`sampleDiscreteRules` 的每条规则必须覆盖该 sector 的全部离散 `n` 变量；否则 seed 中会残留符号 `n`，不能进入即时 EOM canonical。
+`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。它只做轻量结构检查：线编号、端点、声明的圈/外动量基、ISP 数量、z/ISP 坐标数是否闭合、`numericRules` 是否覆盖外动量不变量、sampleDiscreteRules 和当前未实现的 seed feature；不做解析 rank、全局求解或大规模 IBP 展开。`numericRules` 缺少某些外部不变量变量名（默认 `sij`，或 `externalInvariantRules` 给出的自定义名）时只给 warning，因为解析 seed 仍可生成；但 workflow 显式使用 `LinearSystemMode -> "numeric"` 时会在 seed 生成前返回 `numericRulesMissingExternalInvariants`，要求用户补齐这些规则。若使用 sample 离散模式，`sampleDiscreteRules` 的每条规则必须覆盖该 sector 的全部离散 `n` 变量；否则 seed 中会残留符号 `n`，不能进入即时 EOM canonical。
 
 ## 9. 外腿与传播子统一约定
 
@@ -294,7 +294,7 @@ IBP 中的 `k_v` 符号始终与 Feynman 规则一致，不需要根据顶点 ±
 
 **用户口定义**：用户先在 `loopMomenta` 与 `externalMomenta` 中给出独立圈动量/外动量基，符号名称任意；标量积统一写成 `sp[p,r]`，其中 `p,r` 可为这些基动量的线性组合，例如 `sp[l3, k321 + l3]`。`sp` 具有 `Orderless` 属性，因此 `sp[p,r]` 与 `sp[r,p]` 自动规范成同一对象。
 
-内部实现仍把所有 `sp[p,r]` 展开到编号坐标 `qq[i,j]`、`qk[i,j]`、`kk[i,j]` 做线性代数；这些内部记号不作为用户输入 convention。
+内部实现仍把所有 `sp[p,r]` 展开到编号坐标 `qq[i,j]`、`qk[i,j]`、`kk[i,j]` 做线性代数；这些内部记号不作为用户输入 convention。输出端需要区别：圈动量相关对象仍可显示为 `sp[...]`，但外动量-外动量不变量显示为变量名。用户可用 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}` 自定义；未指定时默认按 `externalMomenta` 的列表位置输出为 `sij`。
 
 dS 的特殊点是：无质量外腿给出的 `|k|` 或 `|k_a|+|k_b|` 是顶点能量参数，不是外部三动量向量。只有当某个外部三动量向量实际出现在内线动量偏移 `P_e` 中、从而在 `Q_e^2` 或 `q_l \cdot Q_e` 中和圈动量发生标量积时，才应放入 `externalMomenta` 并参与 `sp` 完备性。若某个组合永远只以顶点能量形式出现，例如一个顶点连两条无质量外腿产生的 `k15=|k_1|+|k_5|`，则应保存在 `vertexEnergies` / `numericRules`，不进入 `externalMomenta`、`sp`、传播子坐标或 ISP 坐标。
 
@@ -317,7 +317,7 @@ $$J[\{a_v\}; \{\text{pack}_e\}; \{n_{\text{isp}_j}\}]$$
 2. **独立性**：ISP 可以是 `sp[p,r]` 的线性组合坐标，例如 `sp[l3, k321 + l3]`；这些 ISP 坐标之间应线性无关，并且不应再由传播子平方线性表示。
 3. **数目检查**：`006` 要求 `zExprs` 与 ISP 坐标总数等于独立 loop-scalar-products 数目，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$。这里的计数是用户定义的 `z/ISP` 坐标闭合条件，不是程序自动选择 propagator 子集。
 4. **可解性检查**：数量闭合后，程序会实际构造小矩阵并尝试生成 `repSP2Z`；若传播子动量退化、重复或无法反解，会在 `validationReport` 中报告 `scalarProductCoordinateSolveFailed`，而不是等到 IBP seed 生成时报错。
-5. **数值规则检查**：若拓扑包含独立外动量基，`006` 用户口 `numericRules` 可写 `sp[k_i,k_j] -> value`；内部会转换为外部不变量编号。缺失时报 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed。
+5. **数值规则检查**：若拓扑包含独立外动量基，`006` 的报告和模板会列出外部不变量变量名，例如默认 `s11`、`s12` 或用户自定义名。推荐 `numericRules` 写 `s11 -> value` 或 `sigW -> value`；`sp[k_i,k_j] -> value` 只作为输入兼容形式。缺失时报 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed。
 
 其中 $N_{\text{sp}} = L(L+1)/2 + L K$，$K$ 是初始化中 `externalMomenta` 的独立外动量基个数。
 
@@ -370,12 +370,9 @@ IBP_sector_<sector_id>/
 
 ### 11.1 标量积约定
 
-外动量点积采用缩写记号，不保持矢量点积形式：
-```
-k_i · k_j ≡ k_{ij}
-```
+外动量-外动量点积在输出端采用变量名，不保持 `sp[k_i,k_j]` 的矢量点积形式。用户可用 `externalInvariantRules` 指定，例如 `sp[k1,k1] -> sigK`；未指定时按 `externalMomenta` 的位置默认记为 `sij`。
 
-对 bubble 拓扑，单外动量 $k$ 的平方记为 $k_s^2 = k_{11}$（或根据具体外动量标记）。所有圈动量与外动量的点积最终均用此类标量积表示。
+对 bubble 拓扑，单外动量 $k$ 的平方默认记为 $s_{11}$（或用户自定义名）。圈动量相关点积仍在用户输入端写作 `sp[p,r]`，输出到线性系数时外-外部分已经替换成这些变量名。
 
 ### 11.2 z 变量定义
 
@@ -392,12 +389,12 @@ $$\xi_e^{-(b_e + b0_e)} = z_e^{-(b_e + b0_e)/2}$$
 标量积 $\{q_l \cdot Q_e, q_l \cdot q_m, q_l \cdot k_j\}$ 与 $z_e$ 之间为线性关系，可互相表达。
 
 **正向变换**（标量积 → z）：
-$$z_e = \sum_{l,m} A_{e,lm}\, (q_l \cdot q_m) + \sum_{l,j} B_{e,lj}\, (q_l \cdot k_j) + C_e(\{k_{ij}\})$$
+$$z_e = \sum_{l,m} A_{e,lm}\, (q_l \cdot q_m) + \sum_{l,j} B_{e,lj}\, (q_l \cdot k_j) + C_e(\{s_{ij}\ \text{或用户自定义外部不变量名}\})$$
 
-其中 $C_e$ 为仅含外部不变量 $k_{ij}$ 的常数项。系数 $A, B, C$ 由 $Q_e = \sum_l c_{e,l}\, q_l + P_e$ 的定义直接展开得到。
+其中 $C_e$ 为仅含外部不变量名的常数项。系数 $A, B, C$ 由 $Q_e = \sum_l c_{e,l}\, q_l + P_e$ 的定义直接展开得到。
 
 **逆向变换**（z → 标量积）：
-$$(q_l \cdot q_m) = \sum_e D_{lm,e}\, z_e + \sum_j E_{lm,j}\, (q_l \cdot k_j) + F_{lm}(\{k_{ij}\})$$
+$$(q_l \cdot q_m) = \sum_e D_{lm,e}\, z_e + \sum_j E_{lm,j}\, (q_l \cdot k_j) + F_{lm}(\{s_{ij}\ \text{或用户自定义外部不变量名}\})$$
 
 当存在 ISP 时，逆向变换中保留 ISP 项（不试图用 $z_e$ 表示）。
 
@@ -413,7 +410,7 @@ repSP2Z    (* 标量积 → z_e 组合 + ISP + 外部不变量 *)
 
 1. **矢量求导与点积**：对生成元做链式法则，得到含 $q_l \cdot Q_e$ 的表达式。此时 $q_l \cdot Q_e$ 仍以矢量点积形式出现。
 
-2. **替换为 z 变量**：应用 `repSP2Z`，将所有 $q_l \cdot Q_e$ 用 $z_e$ 和 ISP 的线性组合替换。外部不变量 $k_{ij}$ 作为常数保留。
+2. **替换为 z 变量**：应用 `repSP2Z`，将所有 $q_l \cdot Q_e$ 用 $z_e$ 和 ISP 的线性组合替换。外部不变量名（默认 `sij` 或用户自定义名）作为常数保留。
 
 3. **幂次移位**：$z_e^n$ 因子转化为 $b_e$ 指标的移位：
    $$z_e^n \quad \longrightarrow \quad b_e \to b_e - 2n$$

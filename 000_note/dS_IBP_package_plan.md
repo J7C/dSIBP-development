@@ -134,7 +134,7 @@ bbDefault["H", nu_, dim_, k_] := {
 
 由 building block 参数自动构造 EOM 替换规则：
 
-对完整线 `e`（状态 `{b_e, n_{e,1}, n_{e,2}}`），指标 
+对完整线 `e`（状态 `{b_e, n_{e,1}, n_{e,2}}`），指标
 _{e,a} = 2` 时：
 ```
 J[..., {b_e, ..., 2, ...}, ...] ->
@@ -270,14 +270,14 @@ ispData = {
 };
 ```
 
-`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。内部仍会把 `sp` 展开到编号坐标做线性代数，但用户不需要输入 `qq/qk/kk`。
+`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。它主要用于输入传播子动量相关的标量积与 ISP。外动量-外动量不变量在输出端使用变量名，不保持 `sp[k_i,k_j]` 形式；用户可设 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}`，未设时默认按 `externalMomenta` 的位置输出 `sij`（`i<=j`）。内部仍会把 `sp` 展开到编号坐标做线性代数，但用户不需要输入 `qq/qk/kk`。
 
 **完备性验证**：`verifyISP[topology, ispData]` 检查：
 1. 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
 2. ISP 之间线性无关；`006` 起 ISP 表达式可为 `sp[p,r]` 或其线性组合坐标，不要求直接是某个内部编号变量
 3. `zExprs` 与 ISP 坐标总数等于独立标量积数量，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$
 4. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
-5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量和顶点能量符号；`006` 用户口可写 `sp[k_i,k_j] -> value` 与 `k15 -> value`，内部自动把前者转成编号坐标
+5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量和顶点能量符号；外部不变量的推荐写法是输出变量名规则，如自定义 `sigW -> value` 或默认 `s11 -> value`，`sp[k_i,k_j] -> value` 只作为输入兼容形式；顶点能量符号仍写 `k15 -> value`
 
 这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动挑选独立传播子子集；若计数不闭合、ISP 不足/过多、传播子动量退化或特殊数值外动量导致不可反解，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 
@@ -292,15 +292,15 @@ ispData = {
 4. 对每个 sector（由缩并线集合标记）：
    a. 构造该 sector 的指标盒子 {a_v, b_e, n_{e,a}, n_isp}
    b. 枚举种子（撒点范围控制）
-   c. 对每个连续种子，先枚举该 sector 中所有离散 
+   c. 对每个连续种子，先枚举该 sector 中所有离散
 ` 状态（massive 端点 `0/1`，massless 合并态 `0/1`）。
    d. 对每个离散态和每个生成元 O_{l,v}：
       - 应用链式法则 → z/ξ-导数 + ISP-导数 + 相位项
       - 转化为指标移位算符，包含传播子幂次项与 building-block 导数项
-      - 立即应用 EOM 递推，递归消去所有 
+      - 立即应用 EOM 递推，递归消去所有
 >=2`
       - 应用 massless 双 theta 合并关系，把结果保持在 `{b_e,n_e}` 包内
-      - 扫描结果，若仍有 
+      - 扫描结果，若仍有
 =2` 或未识别 pack，直接报错而不是继续导出
    e. 保存 EOM-canonical IBP 方程，命名区分 sector 与生成元类型
 5. 输出：按 sector 分组的 IBP seed 文件或 MMA seed batch。后续 linear/Kira 只能读取这些 canonical seed 转成的 linear-system。
@@ -331,35 +331,35 @@ $$z_e \equiv \xi_e^2 = Q_e \cdot Q_e$$
 |------|------|------|
 | 圈-圈标量积 | $q_l \cdot q_m$（$l \leq m$） | $L(L+1)/2$ |
 | 圈-外动量标量积 | $q_l \cdot k_j$ | $LK$ |
-| 外动量-外动量标量积 | $k_i \cdot k_j \equiv k_{ij}$ | 常数，不计入独立变量 |
+| 外动量-外动量标量积 | $k_i \cdot k_j \to s_{ij}$ 或用户自定义名 | 常数，不计入独立变量 |
 
 独立 loop-scalar-products 总数 $N_{\text{sp}} = L(L+1)/2 + LK$。顶点相位中的 $|k|$ 或 $|k_a|+|k_b|$ 是能量参数，不是这个标量积向量的分量。
 
-外动量-外动量标量积 $k_{ij}$ 记为符号常数，不保持矢量点积形式。对 $d=3$ bubble 例子（$L=1$，$E=2$，1 独立外动量 $k \equiv k_1$）：
-$$N_{\text{sp}} = 1 + 1 = 2, \quad \text{独立标量积：} q_1^2,\; q_1 \cdot k, \quad \text{外部不变量：} k^2 \equiv k_{11} = k_s^2$$
+外动量-外动量标量积记为符号常数，不保持矢量点积形式。006 输出端用 `externalInvariantRules` 给出的变量名；若未指定，则默认按 `externalMomenta` 中的位置记为 $s_{ij}$。对 $d=3$ bubble 例子（$L=1$，$E=2$，1 独立外动量 $k \equiv k_1$）：
+$$N_{\text{sp}} = 1 + 1 = 2, \quad \text{独立标量积：} q_1^2,\; q_1 \cdot k, \quad \text{外部不变量：} k^2 \equiv s_{11}\ \text{(或用户自定义名)}$$
 
 #### 4.4.3 $z$ 与标量积的线性变换
 
 每条内线的 $z_e$ 展开为标量积的线性组合加外部不变量：
 $$z_e = Q_e^2 = \left(\sum_l c_{e,l}\, q_l + P_e\right)^2 = \sum_l c_{e,l}^2\, q_l^2 + 2\sum_{l<m} c_{e,l}\, c_{e,m}\, q_l \cdot q_m + 2\sum_l c_{e,l}\, q_l \cdot P_e + P_e^2$$
 
-其中 $P_e^2$ 和 $q_l \cdot P_e$（$P_e$ 为外动量线性组合）均可进一步展开为 $\{q_l \cdot q_m,\; q_l \cdot k_j,\; k_{ij}\}$ 的线性组合。
+其中 $P_e^2$ 和 $q_l \cdot P_e$（$P_e$ 为外动量线性组合）均可进一步展开为 $\{q_l \cdot q_m,\; q_l \cdot k_j\}$ 加外动量不变量名（默认 $s_{ij}$ 或用户自定义名）的线性组合。
 
 定义独立标量积向量 $\mathbf{s} = (s_1, \ldots, s_{N_{\text{sp}}})^T$（包含所有 $q_l \cdot q_m$ 和 $q_l \cdot k_j$），则：
 $$\boxed{z_e = \sum_i M_{ei}\, s_i + c_e \quad \Longleftrightarrow \quad \mathbf{z} = M \cdot \mathbf{s} + \mathbf{c}}$$
 
 其中：
 - $M$ 为 $E_{\text{prop}} \times N_{\text{sp}}$ 系数矩阵（$E_{\text{prop}}$ 为内线数/传播子数）
-- $c_e$ 仅含外动量不变量 $k_{ij}$（与圈动量无关的常数项）
+- $c_e$ 仅含外动量不变量名（与圈动量无关的常数项）
 - 当 $E_{\text{prop}} = N_{\text{sp}}$（无 ISP 情形）时，$M$ 为方阵
 
 **逆变换**：
 $$\mathbf{s} = M^{-1} \cdot (\mathbf{z} - \mathbf{c})$$
 
-这给出所有标量积 $q_l \cdot q_m$ 和 $q_l \cdot k_j$ 用 $z_e$ 和 $k_{ij}$ 表示的替换规则。在代码中，`makeLinearRep[topology]` 自动构造 $M$、$\mathbf{c}$ 并计算逆，输出替换规则 `repScalarProduct`：
+这给出所有标量积 $q_l \cdot q_m$ 和 $q_l \cdot k_j$ 用 $z_e$ 和外部不变量名表示的替换规则。在代码中，`makeLinearRep[topology]` 自动构造 $M$、$\mathbf{c}$ 并计算逆，输出替换规则 `repScalarProduct`：
 ```mathematica
 repScalarProduct = {
-  q1 . q1 -> ...,    (* z_1, z_2, ..., k_{ij} 的线性组合 *)
+  q1 . q1 -> ...,    (* z_1, z_2, ..., 外部不变量名的线性组合 *)
   q1 . q2 -> ...,
   q1 . k1 -> ...,
   ...
@@ -383,13 +383,13 @@ $$\frac{\partial}{\partial z_e} z_e^{-(b_e+b0_e)/2} = -\frac{b_e+b0_e}{2}\, z_e^
 
 一般地，$z_e^n$ 对应 $b_e$ 移位 $-2n$（因为物理幂次 $\xi_e^{-(b+b0)} = z_e^{-(b+b0)/2}$，$z_e$ 每降 1 次幂，$b+b0$ 增加 2）。
 
-**IBP 系数的线性结构**：生成元 $\mathcal{O}_{l,v}$ 的系数全部为 $z_e$ 和外不变量 $k_{ij}$ 的线性组合：
+**IBP 系数的线性结构**：生成元 $\mathcal{O}_{l,v}$ 的系数全部为 $z_e$ 和外部不变量名的线性组合：
 
 | 生成元 | $v \cdot Q_e$ | 系数结构 |
 |--------|--------------|---------|
-| 对角 $\partial_{q_l} \cdot q_l$ | $q_l \cdot Q_e$ | $z_e$ 线性组合 $+ k_{ij}$ |
-| 交叉 $\partial_{q_l} \cdot q_m$ | $q_m \cdot Q_e$ | $z_e$ 线性组合 $+ k_{ij}$ |
-| 外动量 $\partial_{q_l} \cdot k_j$ | $k_j \cdot Q_e$ | 纯 $k_{ij}$（与 $z_e$ 无关） |
+| 对角 $\partial_{q_l} \cdot q_l$ | $q_l \cdot Q_e$ | $z_e$ 线性组合 $+$ 外部不变量名 |
+| 交叉 $\partial_{q_l} \cdot q_m$ | $q_m \cdot Q_e$ | $z_e$ 线性组合 $+$ 外部不变量名 |
+| 外动量 $\partial_{q_l} \cdot k_j$ | $k_j \cdot Q_e$ | 纯外部不变量名（与 $z_e$ 无关） |
 | 散度 $(\partial \cdot v)$ | — | 常数 $d$（对角）或 $0$（交叉/外动量） |
 
 #### 4.4.5 Bubble 例子
@@ -398,27 +398,27 @@ $d=3$ bubble 拓扑：2 顶点，2 内线，$L=1$，$E=2$。内线动量：
 $$Q_1 = q_1, \quad Q_2 = q_1 - k$$
 
 **$z$ 变量**：
-$$z_1 = q_1^2, \quad z_2 = (q_1 - k)^2 = q_1^2 - 2\, q_1 \cdot k + k_s^2$$
+$$z_1 = q_1^2, \quad z_2 = (q_1 - k)^2 = q_1^2 - 2\, q_1 \cdot k + s_{11}$$
 
-**线性变换矩阵**（$\mathbf{s} = (q_1^2,\; q_1 \cdot k)^T$，$\mathbf{c} = (0,\; k_s^2)^T$）：
-$$\begin{pmatrix} z_1 \\ z_2 \end{pmatrix} = \underbrace{\begin{pmatrix} 1 & 0 \\ 1 & -2 \end{pmatrix}}_{M} \begin{pmatrix} q_1^2 \\ q_1 \cdot k \end{pmatrix} + \begin{pmatrix} 0 \\ k_s^2 \end{pmatrix}$$
+**线性变换矩阵**（$\mathbf{s} = (q_1^2,\; q_1 \cdot k)^T$，$\mathbf{c} = (0,\; s_{11})^T$）：
+$$\begin{pmatrix} z_1 \\ z_2 \end{pmatrix} = \underbrace{\begin{pmatrix} 1 & 0 \\ 1 & -2 \end{pmatrix}}_{M} \begin{pmatrix} q_1^2 \\ q_1 \cdot k \end{pmatrix} + \begin{pmatrix} 0 \\ s_{11} \end{pmatrix}$$
 
 **逆变换**（$M^{-1} = \begin{pmatrix} 1 & 0 \\ 1/2 & -1/2 \end{pmatrix}$）：
-$$q_1^2 = z_1, \quad q_1 \cdot k = \frac{z_1 + k_s^2 - z_2}{2}$$
+$$q_1^2 = z_1, \quad q_1 \cdot k = \frac{z_1 + s_{11} - z_2}{2}$$
 
 **$v \cdot Q_e$ 系数**（生成元 $\partial_{q_1} \cdot v$ 的 IBP 系数）：
 
 | $v$ | $v \cdot Q_1 = v \cdot q_1$ | $v \cdot Q_2 = v \cdot (q_1 - k)$ |
 |-----|---------------------------|----------------------------------|
-| $q_1$（对角） | $q_1^2 = z_1$ | $q_1^2 - q_1 \cdot k = \dfrac{z_1 + z_2 - k_s^2}{2}$ |
-| $k$（外动量） | $k \cdot q_1 = \dfrac{z_1 + k_s^2 - z_2}{2}$ | $k \cdot q_1 - k_s^2 = \dfrac{z_1 - z_2 - k_s^2}{2}$ |
+| $q_1$（对角） | $q_1^2 = z_1$ | $q_1^2 - q_1 \cdot k = \dfrac{z_1 + z_2 - s_{11}}{2}$ |
+| $k$（外动量） | $k \cdot q_1 = \dfrac{z_1 + s_{11} - z_2}{2}$ | $k \cdot q_1 - s_{11} = \dfrac{z_1 - z_2 - s_{11}}{2}$ |
 
-所有系数均为 $z_e$ 和 $k_{ij}$ 的线性组合，验证了 §4.4.4 的一般结论。
+所有系数均为 $z_e$ 和外部不变量名的线性组合，验证了 §4.4.4 的一般结论。
 
 **IBP 方程示例**（对角生成元 $\mathcal{O}_{1,q_1} = \partial_{q_1} \cdot q_1$，忽略 ISP 和相位项）：
 $$0 = \int d^d q_1\; \frac{\partial}{\partial q_1^\mu}\left[q_1^\mu \cdot F\right] = d \cdot F + \sum_e 2\, (q_1 \cdot Q_e)\, \frac{\partial F}{\partial z_e}$$
 
-代入 $q_1 \cdot Q_1 = z_1$，$q_1 \cdot Q_2 = (z_1 + z_2 - k_s^2)/2$，以及 $\partial/\partial z_e$ 的指标移位效果（$b_e \to b_e + 2$），得到 $J$ 的线性关系式，系数为 $z_e$ 和 $k_s^2$ 的多项式。
+代入 $q_1 \cdot Q_1 = z_1$，$q_1 \cdot Q_2 = (z_1 + z_2 - s_{11})/2$，以及 $\partial/\partial z_e$ 的指标移位效果（$b_e \to b_e + 2$），得到 $J$ 的线性关系式，系数为 $z_e$ 和 $s_{11}$ 的多项式。
 
 ## 5. 拓扑输入格式
 
@@ -498,7 +498,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 
 ### Phase 1: 框架 + seed canonical check
 1. 写 `.wl` 脚本，实现 topology/parser/pack/生成元/指标移位工具
-2. 实现 EOM 递推并接入 seed 生成；验证所有输出 seed 中无 
+2. 实现 EOM 递推并接入 seed 生成；验证所有输出 seed 中无
 =2`
 3. 实现完整 momentum-IBP seed：传播子幂次项、building-block 导数项、ISP 项
 4. 补完 time-IBP seed：已接入顶点幂次项、相位项、massive building-block 导数项、massless 端点翻转/canonical、massive theta boundary shrink 项，以及受保护的自动 shrink-sector seed 派生与联立
@@ -555,7 +555,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 
 - seed 生成阶段自动完成：按 sector 生成，再按 momentum/time 分类，每类内部枚举该 sector 的离散 `n=0/1` 状态，并立即应用 EOM/massless endpoint canonical。若为验证使用 `DiscreteMode -> "sample"`，`sampleDiscreteRules` 中每条规则也必须覆盖全部离散 `n` 变量；sample 只是减少取样条数，不允许保留符号 `n`。seed 只保存 MMA 表达式，不直接导出 Kira。
 - 输入初始化可用 `seedPreset` 简写常用 seed 策略：`"quickCheck"` 为默认小样本，`"fullDiscrete"` 在连续基点枚举全部离散态，`"bounded"` 使用有限连续范围和全部离散态。用户仍可用 `seedRanges` 或 `seedOptions` 覆盖 preset 中的 `sampleOnly`、范围和默认 `DiscreteMode`。
-- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`006` 用户口外部不变量写作 `sp[k_i,k_j]`，只进顶点相位的能量模之和写作 `k15 -> value` 这类普通替换规则。`validationReport` 会提前检查它们是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
+- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`006` 输出端外部不变量使用 `externalInvariantRules` 的变量名（默认 `sij`），因此推荐写 `s11 -> value` 或自定义名 `sigW -> value`。只进顶点相位的能量模之和写作 `k15 -> value` 这类普通替换规则。`validationReport` 会提前检查它们是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
 - Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。linear-system 会保存 `kiraOrderingReport`，其中 `missingIntegralOrderItems` 用来提示未命中的候选。
 - 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。手动重排会额外保存 `manualIntegralOrderReport`，越界编号或不在系统中的 `J` 不会静默消失。
 - Kira 的 `list` 目标也可独立选择：`KiraTargetIntegrals -> Automatic` 表示全量目标；用户可传 Kira id 或 `J[...]` 积分对象列表，导出时会按当前全局 `integralRules` 转成 id。数值 dummy 若启用会自动附加到目标列表末尾。
