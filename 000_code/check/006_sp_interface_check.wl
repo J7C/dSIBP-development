@@ -75,6 +75,14 @@ spWorkflowData = makeIBPWorkflowData[
    KiraJobOptions -> <|"AppendNumericDummyEquation" -> False|>
    ];
 
+spWorkflowDefaultRulesData = makeIBPWorkflowData[
+   spInterfaceCase,
+   LinearSystemMode -> "sampled",
+   ExportKira -> True,
+   OutputDirectory -> None,
+   KiraJobOptions -> <|"AppendNumericDummyEquation" -> False|>
+   ];
+
 spEnergyConventionCase = Join[
    KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
    <|
@@ -144,6 +152,14 @@ spCheckResults = <|
       ! TrueQ[spWorkflowData["kiraExport", "writeFilesQ"]] &&
       spWorkflowData["kiraExport", "exportedEquationCount"] > 0 &&
       FreeQ[spWorkflowData["kiraExport", "coefficientVariables"], kk | qk | qq | ke[15] | ke[22] | sigW]
+     ],
+   "spWorkflowSampledDefaultsUseNumericRules" -> TrueQ[
+     spWorkflowDefaultRulesData["status"] === "ready" &&
+      spWorkflowDefaultRulesData["stage"] === "kira" &&
+      TrueQ[spWorkflowDefaultRulesData["linearSystem", "numericCoefficientSystemQ"]] &&
+      spWorkflowDefaultRulesData["linearSystem", "coefficientRulesApplied"] === spTopo["numericRules"] &&
+      spWorkflowDefaultRulesData["kiraExport", "kiraInput", "kiraCoefficientRulesApplied"] === {} &&
+      FreeQ[spWorkflowDefaultRulesData["kiraExport", "coefficientVariables"], kk | qk | qq | ke[15] | ke[22] | sigW]
      ],
    "rulesComputed" -> TrueQ[spRules["status"] === "computed"],
    "ispInternalExprs" -> TrueQ[spData["internalISPExprs"] === {qk[1, 1] + qq[1, 1], qk[2, 1]}],

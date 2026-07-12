@@ -34,11 +34,30 @@
 
 ## 推荐调用顺序
 
+优先使用 workflow 入口做门禁串联；`LinearSystemMode -> "sampled"` 时默认使用 topology 里的 `numericRules` 做 sampled linear，Kira 阶段默认不再重复撒点：
+
 ```wl
 Get["000_code/006_dS_ibp_general.wl"];  (* 新接口；若需旧稳定版可加载 005 *)
 
+readiness = makeIBPReadinessReport[
+  mixedBubbleCase,
+  LinearSystemMode -> "sampled",
+  ExportKira -> True
+];
+
+workflow = makeIBPWorkflowData[
+  mixedBubbleCase,
+  LinearSystemMode -> "sampled",
+  ExportKira -> True,
+  OutputDirectory -> "path/to/kira_input",
+  KiraTargetIntegrals -> Automatic
+];
+```
+
+若需要保存解析 seed 或手动插入自定义排序/撒点，也可以显式展开为 seed、linear、Kira 三步：
+
+```wl
 topoData = makeTopologyData[mixedBubbleCase];
-readiness = makeIBPReadinessReport[mixedBubbleCase];
 seedBatch = makeCanonicalSeedBatch[mixedBubbleCase];
 seedReport = makeCanonicalSeedCoverageReport[seedBatch];
 
@@ -57,7 +76,7 @@ linearData = makeSampledLinearSystemData[
 kiraData = makeKiraExportData[
   linearData,
   OutputDirectory -> "path/to/kira_input",
-  KiraCoefficientRules -> mixedBubbleCase["numericRules"],
+  KiraCoefficientRules -> {},
   KiraTargetIntegrals -> Automatic
 ];
 ```
@@ -89,7 +108,7 @@ kiraData = makeKiraExportData[
 - workflow 的 `ExportKira` 必须是 `True/False`；`OutputDirectory` 必须是 `None`、`Automatic` 或非空字符串，坏值会返回 `invalidWorkflowOptions`。
 - Kira 导出只接受 `makeLinearSystemData` 或 `makeSampledLinearSystemData` 的完整输出；手工拼出的残缺 linear-system association 会返回 `notLinearSystem`。
 - 直接调用 `makeKiraExportData` 时，`OutputDirectory` 同样必须是 `None`、`Automatic` 或非空字符串；`None/Automatic` 只生成内存字符串，不写文件。
-- `makeIBPWorkflowData[..., ExportKira -> True]` 可只生成内存中的 Kira 字符串；只有同时给出 `OutputDirectory -> "..."` 时才写入文件，返回的 `kiraExport["writeFilesQ"]` 会显式记录是否落盘。
+- `makeIBPWorkflowData[..., ExportKira -> True]` 可只生成内存中的 Kira 字符串；只有同时给出 `OutputDirectory -> "..."` 时才写入文件，返回的 `kiraExport["writeFilesQ"]` 会显式记录是否落盘。`LinearSystemMode -> "sampled"` 或 `"numeric"` 且 `CoefficientRules -> Automatic` 时，workflow 会使用 topology 的 `numericRules`；此时 `KiraCoefficientRules -> Automatic` 会解析为 `{}`，避免重复撒点。
 - `KiraTargetIntegrals -> Automatic` 默认把全部积分编号写入 `list`；也可传 `{1, J[...]}` 这样的 id/积分对象混合列表来只导出指定目标。
 - `KiraOrdering` 必须是 `Automatic` 或 Association；`IntegralOrder` / `PreferredIntegrals` / `SectorOrder` 必须是列表，`PreferredPriority` 只接受 `"BeforeB"` 或 `"AfterB"`。排序作用于全局 `integralList`，不是逐 sector 分别排序；轻量检查已覆盖把 shrink-sector 积分指定为 preferred 后排到全局第一。
 - Kira 导出返回值会直接包含 `kiraOrderingReport` 与 `manualIntegralOrderReport`，用于检查用户指定的 master/排序对象是否全部出现在当前全局积分列表中。
