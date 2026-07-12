@@ -290,7 +290,7 @@ IBP 中的 `k_v` 符号始终与 Feynman 规则一致，不需要根据顶点 ±
 
 ### 10.1 ISP 定义
 
-对于 $L$ 圈图，存在 $L(L+1)/2$ 个独立的圈动量标量积 $q_i \cdot q_j$ 和 $L \times (E-1)$ 个圈-外动量标量积 $q_i \cdot k_j$。其中一部分可由传播子动量 $Q_e$ 的平方 $\xi_e^2 = Q_e^2$ 线性表示，剩余的不可约标量积称为 ISP。
+对于 $L$ 圈图，若 `externalMomenta` 中有 $K$ 个独立外动量向量，则存在 $L(L+1)/2$ 个独立的圈动量标量积 $q_i \cdot q_j$ 和 $L K$ 个圈-外动量标量积 $q_i \cdot k_j$。其中一部分可由传播子动量 $Q_e$ 的平方 $\xi_e^2 = Q_e^2$ 线性表示，剩余的不可约标量积称为 ISP。
 
 **用户口定义**：用户先在 `loopMomenta` 与 `externalMomenta` 中给出独立圈动量/外动量基，符号名称任意；标量积统一写成 `sp[p,r]`，其中 `p,r` 必须是这些基动量的线性组合，例如 `sp[l3, k321 + l3]`。`sp` 具有 `Orderless` 属性，因此 `sp[p,r]` 与 `sp[r,p]` 自动规范成同一对象。非线性参数如 `sp[l3^2,k]` 不属于 scalar-product 输入，会在 validation 中报错。
 
@@ -333,9 +333,9 @@ $$\mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu$$
 其中 $v^\mu$ 遍历：
 - $v = q_m$（$m = 1, \ldots, L$）：$L$ 个对角生成元
 - $v = q_m$（$m \neq l$）：$L(L-1)$ 个交叉生成元
-- $v = k_j$（$j = 1, \ldots, E-1$）：$L(E-1)$ 个外动量生成元
+- $v = k_j$（$j = 1, \ldots, K$）：$LK$ 个外动量生成元，其中 $K=\#\texttt{externalMomenta}$
 
-总计 $L(L + E - 1)$ 个独立生成元。
+总计 $L(L + K)$ 个独立生成元。普通散射记号中若用户正好选择 $K=E_{\rm ext}-1$，才退化为常见的 $L(L+E_{\rm ext}-1)$ 写法；这不是本 package 的输入 convention。
 
 ### 10.5 链式法则实现
 

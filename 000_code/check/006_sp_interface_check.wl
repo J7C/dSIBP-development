@@ -94,6 +94,17 @@ spEnergyTopo = parseTopology[spEnergyConventionCase];
 spEnergyReq = numericRuleRequirementReport[spEnergyTopo];
 spEnergyReport = vertexEnergyNamingReport[spEnergyTopo];
 
+spEnergySPInvariantCase = Join[
+   KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
+   <|
+    "vertexEnergies" -> <|1 -> Sqrt[sp[wdnmd, wdnmd]], 2 -> ke[3]|>,
+    "numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2, ke[3] -> 7}
+    |>
+   ];
+spEnergySPInvariantTopo = parseTopology[spEnergySPInvariantCase];
+spEnergySPInvariantReq = numericRuleRequirementReport[spEnergySPInvariantTopo];
+spEnergySPInvariantReport = vertexEnergyNamingReport[spEnergySPInvariantTopo];
+
 spDefaultEnergyCase = Join[
    KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
    <|"numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2, ke[1] -> 11, ke[2] -> 13}|>
@@ -153,6 +164,12 @@ spCheckResults = <|
       Sort[spEnergyReq["internalRequiredVertexEnergies"]] === Sort[{kk[1, 1], ke[3]}] &&
       Sort[spEnergyReq["requiredVertexEnergies"]] === Sort[{sigW, ke[3]}] &&
       spEnergyReport["userVertexEnergies"][1] === Sqrt[sigW]
+     ],
+   "vertexEnergySPExternalInvariantInputNormalized" -> TrueQ[
+     vertexExternalEnergy[spEnergySPInvariantTopo, 1] === Sqrt[kk[1, 1]] &&
+      Sort[spEnergySPInvariantReq["requiredVertexEnergies"]] === Sort[{sigW, ke[3]}] &&
+      spEnergySPInvariantReport["userVertexEnergies"][1] === Sqrt[sigW] &&
+      spEnergySPInvariantReport["dependencyData"][1]["externalInvariantVariables"] === {sigW}
      ],
    "vertexEnergyDefaultDoesNotSumExtLegs" -> TrueQ[
      vertexExternalEnergy[spDefaultEnergyTopo, 1] === ke[1] &&

@@ -174,7 +174,9 @@ makeTimeIBP[expr_, v_] := Module[{result = 0},
 ];
 ```
 
-### 3.2 动量 IBP（L(L+E-1) 个生成元）
+### 3.2 动量 IBP（L(L+K) 个生成元）
+
+这里 $K$ 是初始化中 `externalMomenta` 的独立外动量向量个数；只有会进入内线动量并与圈动量发生标量积的外部三动量放入该列表。只进入顶点时间相位的外腿能量用 `vertexEnergies` / `ke[i]` 处理，不参与 momentum-IBP 生成元计数。
 
 ```mathematica
 makeMomIBP[expr_, l_, v_] := Module[{result, e, coeff, dotProduct},
@@ -218,7 +220,7 @@ makeMomIBP[expr_, l_, v_] := Module[{result, e, coeff, dotProduct},
 allIBPGenerators[] := Join[
   (* 时间 IBP: V 个 *)
   Table[{time, v}, {v, nV}],
-  (* 动量 IBP: L(L+E-1) 个 *)
+  (* 动量 IBP: L(L+K) 个，其中 K = Length[externalMomenta] *)
   Flatten[Table[
     Join[
       Table[{momentum, l, loopMomenta[[m]]}, {m, nL}],  (* 对角 + 交叉 *)

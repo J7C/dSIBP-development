@@ -11,7 +11,7 @@
     \mathcal O_{l,v}=\frac{\partial}{\partial q_l^\mu}v^\mu,\qquad
     v\in\{q_1,\ldots,q_L,k_1,\ldots,k_{E_{\rm ext}-1}\}.
   \]
-  总数为 \(L(L+E_{\rm ext}-1)\)，包含 diagonal、cross 和所有独立外动量方向。
+  总数为 \(L(L+K)\)，其中 \(K=#externalMomenta\)，包含 diagonal、cross 和所有独立外动量方向；只有用户把普通散射的 \(E_{\rm ext}-1\) 个独立外动量都放进 externalMomenta 时才写成旧的 \(L(L+E_{\rm ext}-1)\)。
 - massive 完整线指标包为 `{b_i,n_{i,1},n_{i,2}}`；massless 完整线在统一双 theta 合并路线中为 `{b_i,n_i}`。单 theta 分支约化只作为外部纯 massless 项目的参考路线，不作为本 package 的主线配置。
 - seed 生成必须按 sector 和生成元分类，先枚举离散 `n=0/1`，再作用 IBP，并立即应用 EOM。输出中不得残留 `n=2`。
 - 若同一对顶点之间有多条 massless 线，双 theta 合并路线中 Heaviside 区域不是逐线独立的 \(2^N\) 个分支，而是同一对时间变量的两个互斥区域；可进一步做 bundle 合并简化。该简化需要在设计中保留，但代码可先不专门实现 bundle canonical 化。

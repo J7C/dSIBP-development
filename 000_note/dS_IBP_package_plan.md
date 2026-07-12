@@ -289,7 +289,7 @@ ispData = {
 ```
 1. 读取拓扑 + ISP 配置
 2. 验证 ISP 完备性
-3. 构造 IBP 生成元集合 {O_{l,v}}（L(L+E-1) 个）
+3. 构造 IBP 生成元集合 {O_{l,v}}（L(L+K) 个，K 为 `externalMomenta` 中独立外动量向量个数）
 4. 对每个 sector（由缩并线集合标记）：
    a. 构造该 sector 的指标盒子 {a_v, b_e, n_{e,a}, n_isp}
    b. 枚举种子（撒点范围控制）
