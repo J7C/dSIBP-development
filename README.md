@@ -9,7 +9,7 @@
 - `000_code/006_dS_ibp_general.wl`：新接口版，在 `005` 基础上新增用户口 `sp[p,r]` scalar-product convention；旧版不动，便于回退对照。
 - `000_code/check/004_seed_expected_examples.wl`：轻量结构与手推 seed 对照检查，优先加载 `005`。
 - `000_code/check/run_004_seed_expected_examples.wl`：`005` 稳定版 Wolfram runner。
-- `000_code/check/006_sp_interface_check.wl`：`006` 的 `sp[p,r]` 用户接口轻量检查。
+- `000_code/check/006_sp_interface_check.wl`：`006` 的 `sp[p,r]` 用户接口轻量检查，并贯通 `makeIBPWorkflowData` 的 sampled linear/Kira 内存导出门禁。
 
 ## 关键约定
 
@@ -30,7 +30,7 @@
 & 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\run_004_seed_expected_examples.wl'
 ```
 
-该检查只做小型 seed/metadata/linear/Kira 文件结构验证，不运行 Kira reduction，不做大范围解析生成。
+该检查只做小型 seed/metadata/linear/Kira 文件结构验证，不运行 Kira reduction，不做大范围解析生成。`006_sp_interface_check.wl` 另用奇怪动量命名和 `sp[p,r]` 输入检查 006 接口可贯通 sampled linear/Kira 内存导出。
 
 ## 推荐调用顺序
 

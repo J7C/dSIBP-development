@@ -65,6 +65,16 @@ spLinearToy = <|
 spSampledLinear = applyCoefficientRulesToLinearSystem[spLinearToy, CoefficientRules -> spUserCoeffRules];
 spKiraStrings = makeKiraInputStrings[spLinearToy, spUserCoeffRules, <|"AppendNumericDummyEquation" -> False|>];
 
+spWorkflowData = makeIBPWorkflowData[
+   spInterfaceCase,
+   LinearSystemMode -> "sampled",
+   CoefficientRules -> spInterfaceCase["numericRules"],
+   ExportKira -> True,
+   OutputDirectory -> None,
+   KiraCoefficientRules -> {},
+   KiraJobOptions -> <|"AppendNumericDummyEquation" -> False|>
+   ];
+
 spEnergyConventionCase = Join[
    KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
    <|
@@ -121,6 +131,19 @@ spCheckResults = <|
       spKiraStrings["userKiraCoefficientRulesApplied"] === spUserCoeffRules &&
       TrueQ[spKiraStrings["numericCoefficientSystemQ"]] &&
       FreeQ[spKiraStrings["coefficientVariables"], kk | ke[15]]
+     ],
+   "spWorkflowSampledKiraReady" -> TrueQ[
+     spWorkflowData["status"] === "ready" &&
+      spWorkflowData["stage"] === "kira" &&
+      spWorkflowData["seedBatch", "status"] === "generated" &&
+      TrueQ[spWorkflowData["seedBatch", "completeCanonicalQ"]] &&
+      spWorkflowData["linearSystem", "status"] === "generated" &&
+      TrueQ[spWorkflowData["linearSystem", "linearQ"]] &&
+      TrueQ[spWorkflowData["linearSystem", "numericCoefficientSystemQ"]] &&
+      spWorkflowData["kiraExport", "status"] === "ready" &&
+      ! TrueQ[spWorkflowData["kiraExport", "writeFilesQ"]] &&
+      spWorkflowData["kiraExport", "exportedEquationCount"] > 0 &&
+      FreeQ[spWorkflowData["kiraExport", "coefficientVariables"], kk | qk | qq | ke[15] | ke[22] | sigW]
      ],
    "rulesComputed" -> TrueQ[spRules["status"] === "computed"],
    "ispInternalExprs" -> TrueQ[spData["internalISPExprs"] === {qk[1, 1] + qq[1, 1], qk[2, 1]}],

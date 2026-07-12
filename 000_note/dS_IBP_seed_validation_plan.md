@@ -217,7 +217,7 @@ J[{a1, a2}, {{b1, n11, n12}, {b2, n2}, {b3, n3}}, {ispN[1], ispN[2]}]
 - `"linearEquations"`：每条 seed 的生成元标签、连续/离散替换规则、系数规则、常数项和非线性残留。
 - `"linearQ"` 与 `"nonlinearEquationCount"`：用于导出前检查是否出现了不能作为线性约化输入的项。
 
-当前 check 用 massless bubble 的 `sampleOnly` batch 验证线性抽取，用 mixed bubble 和 mixed sunrise 检查 building-block/ISP 项，用 shrunk-line toy 检查 `bS` 动量项，并用 mixed bubble 检查自动 shrink-sector 后 canonical batch 可生成 `{top,e1}` 的 `sectorMetadataList`、可保存/读取 seed `.m`、且可写 Kira user-defined system 文件。该检查只做文件语法层，不运行 Kira。
+当前 check 用 massless bubble 的 `sampleOnly` batch 验证线性抽取，用 mixed bubble 和 mixed sunrise 检查 building-block/ISP 项，用 shrunk-line toy 检查 `bS` 动量项，并用 mixed bubble 检查自动 shrink-sector 后 canonical batch 可生成 `{top,e1}` 的 `sectorMetadataList`、可保存/读取 seed `.m`、且可写 Kira user-defined system 文件。006 接口另用 `sp[p,r]` 和非标准动量命名检查 `makeIBPWorkflowData` 可贯通 sampled linear 与 Kira 内存导出。该检查只做文件语法层，不运行 Kira。
 
 ## 13. 当前 time-core seed 检查
 
