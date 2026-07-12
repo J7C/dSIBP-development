@@ -95,7 +95,7 @@ kiraData = makeKiraExportData[
 - `seedRanges` 与 ISP 自带 `range` 只接受整数或非空整数列表；坏范围会作为 topology error 停止 seed/linear/Kira，避免拼错范围后静默退回 `{0}`。
 - `seedOptions` 必须是 Association；`DiscreteMode` 只接受 `"sample"`、`"all"`、`"none"`，各类 `Max...Count` 必须是非负整数，`MaxShrinkSectorDepth` 还可取 `Automatic`。
 - `makeCanonicalSeedBatch` 会合并 momentum/time/shrink-sector seed，并检查 EOM canonical 与 pending features。
-- `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、逐 sector 生成元标签、EOM canonical 和 pending/forbidden 数据；canonical batch 进入 linear/Kira 前必须通过该 report，失败时 linear-system 返回 `seedCoverageReportNotReady` 并附带完整 report。
+- `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、逐 sector 生成元标签、EOM canonical 和 pending/forbidden 数据；canonical batch 进入 linear/Kira 前必须通过该 report，失败时 linear-system 返回 `seedCoverageReportNotReady` 并附带完整 report。若传入的是 momentum-only/time-only seed batch，`makeLinearSystemData` 会返回 `notCanonicalSeedBatch`；这些 batch 只用于 seed 层回归，不进入 Kira。
 - `topologyValidationReport` 在 topology 初始化、seed batch、linear-system 和 Kira metadata 中都会保留，用来追踪输入拓扑/ISP/numeric rules 是否满足通用生成器前置条件。
 - `topologyValidationReport` 中若存在 error，seed/linear/workflow/Kira 导出会在入口返回 `invalidTopology` 或 `notReady`，不会继续生成 IBP、编号线性系统或写 Kira 文件；warning 只作为提示保留。
 - 数值规则和撒点规则在 linear/Kira 阶段使用；解析 seed 本身保持不撒点。
@@ -103,7 +103,7 @@ kiraData = makeKiraExportData[
 - `numericRules` 和 sampled linear-system 的 `CoefficientRules` 必须是替换规则列表；坏规则会在 topology 或 sampled linear 阶段返回 `invalidNumericRules` / `invalidCoefficientRules`。
 - `zeroPointRules` 与 `shrinkPrefactorRules` 也必须是替换规则列表；坏规则会在 topology 阶段返回 `invalidZeroPointRules` / `invalidShrinkPrefactorRules`。
 - 若 workflow 使用 `LinearSystemMode -> "numeric"`，`numericRules` 必须覆盖所有外部不变量、time-IBP 顶点外部能量和 massive line 参数（如 `nu`）。外部不变量的规则左端应使用输出变量名，例如自定义 `sigW -> 5` 或默认 `s11 -> 5`；`sp[k_i,k_j] -> value` 仍可作为输入兼容形式被内部转换，但报告和模板会提醒用户使用变量名。`numericRuleRequirementReport` 会集中列出 required/provided/missing 变量、`externalInvariantNamingReport` 和 `vertexEnergyNamingReport`，`makeNumericRuleTemplate[case]` 会生成缺失项的替换规则骨架。缺失时会在 seed 生成前返回 `numericRulesMissingExternalInvariants`、`numericRulesMissingVertexEnergies` 或 `numericRulesMissingLineParameters`。线性系统生成后还会检查系数是否已全数值化，若仍残留 `dim` 等其它参数则返回 `nonNumericCoefficients` 并列出 `coefficientVariables`。
-- `makeLinearSystemData` / `makeSampledLinearSystemData` / `makeMomentumIBPLinearSystem` 的 topology 参数可传 raw case 或 `parseTopology` 后的 topology；内部会统一规范化。
+- `makeLinearSystemData` / `makeSampledLinearSystemData` / `makeMomentumIBPLinearSystem` 的 topology 参数可传 raw case 或 `parseTopology` 后的 topology；内部会统一规范化。注意 `makeMomentumIBPLinearSystem` 现在会被 canonical 覆盖门禁拒绝，保留它只是为了确认旧 momentum-only 入口不会误入 linear/Kira 主线。
 - workflow 的 `LinearSystemMode` 只接受 `"symbolic"`、`"sampled"`、`"numeric"`；拼写错误会在 seed 生成前返回 `invalidLinearSystemMode`。
 - workflow 的 `ExportKira` 必须是 `True/False`；`OutputDirectory` 必须是 `None`、`Automatic` 或非空字符串，坏值会返回 `invalidWorkflowOptions`。
 - Kira 导出只接受 `makeLinearSystemData` 或 `makeSampledLinearSystemData` 的完整输出；手工拼出的残缺 linear-system association 会返回 `notLinearSystem`。

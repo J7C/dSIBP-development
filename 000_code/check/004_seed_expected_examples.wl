@@ -2478,7 +2478,7 @@ compareExpectedKiraWorkspaceExportMixedBubble[] := Module[
 compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
    {topo, batch, sampledLinear, outDir, kiraData, requiredFiles, ibpText, listText, metadataFile, metadata, blocks, blockCount, listCount},
    topo = Global`parseTopology[Global`masslessBoxCase];
-   batch = Global`makeMomentumIBPSeedBatch[topo];
+   batch = Global`makeCanonicalSeedBatch[topo];
    sampledLinear = Global`makeSampledLinearSystemData[batch, topo];
    outDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "kira_export_massless_box"}];
    kiraData = Global`makeKiraExportData[sampledLinear, Global`OutputDirectory -> outDir, Global`KiraTargetIntegrals -> {1}];
@@ -2502,12 +2502,14 @@ compareExpectedKiraWorkspaceExportMasslessBox[] := Module[
    blockCount = Length[blocks];
    listCount = Length[StringSplit[StringTrim[listText], WhitespaceCharacter ..]];
    <|
-    "name" -> "kiraWorkspaceExport_masslessBox_sampledMomentumFilesOnly",
+    "name" -> "kiraWorkspaceExport_masslessBox_canonicalSampledFiles",
     "pass" -> TrueQ[
       sampledLinear["status"] === "generated" &&
        TrueQ[sampledLinear["linearQ"]] &&
        sampledLinear["coefficientRulesApplied"] === topo["numericRules"] &&
        sampledLinear["topologyValidationReport"]["status"] === "ok" &&
+       sampledLinear["seedCoverageReport"]["status"] === "ready" &&
+       TrueQ[batch["completeCanonicalQ"]] &&
        kiraData["status"] === "ready" &&
        Length[kiraData["filesWritten"]] === Length[requiredFiles] &&
        And @@ (FileExistsQ /@ requiredFiles) &&
@@ -2653,32 +2655,29 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
    ];
 
 compareExpectedMomentumLinearSystem[] := Module[
-   {topo, system, rawCaseSystem, firstEquation},
+   {topo, system, rawCaseSystem, momentumBatch},
    topo = Global`parseTopology[Global`bubbleMasslessCase];
+   momentumBatch = Global`makeMomentumIBPSeedBatch[topo];
    system = Global`makeMomentumIBPLinearSystem[topo];
    rawCaseSystem = Global`makeMomentumIBPLinearSystem[Global`bubbleMasslessCase];
-   firstEquation = First[system["linearEquations"]];
    <|
-    "name" -> "momentumLinearSystem_masslessBubble_sampleOnly",
+    "name" -> "momentumLinearSystem_rejectsMomentumOnlyBatch",
     "pass" -> TrueQ[
-      system["status"] === "generated" &&
-       system["integralCount"] === 3 &&
-       system["equationCount"] === 6 &&
-       TrueQ[system["linearQ"]] &&
-       system["nonlinearEquationCount"] === 0 &&
-       system["topologyValidationReport"]["status"] === "ok" &&
-       firstEquation["coefficientRules"] === {1 -> Global`dim} &&
-       firstEquation["constantTerm"] === 0 &&
-       rawCaseSystem["status"] === "generated" &&
-       rawCaseSystem["integralRules"] === system["integralRules"] &&
-       rawCaseSystem["equationCount"] === system["equationCount"]
+      momentumBatch["status"] === "generated" &&
+       momentumBatch["equationCount"] === 6 &&
+       TrueQ[momentumBatch["completeMomentumIBPQ"]] &&
+       system["status"] === "notReady" &&
+       system["reason"] === "notCanonicalSeedBatch" &&
+       rawCaseSystem["status"] === "notReady" &&
+       rawCaseSystem["reason"] === "notCanonicalSeedBatch" &&
+       rawCaseSystem["caseName"] === system["caseName"]
       ],
-    "summary" -> KeyDrop[system, {"integralList", "integralRules", "linearEquations"}],
-    "rawCaseSummary" -> KeyDrop[rawCaseSystem, {"integralList", "integralRules", "linearEquations"}],
-    "firstEquation" -> firstEquation,
-    "integralRules" -> system["integralRules"]
+    "momentumSummary" -> KeyDrop[momentumBatch, "equations"],
+    "systemSummary" -> system,
+    "rawCaseSummary" -> rawCaseSystem
     |>
    ];
+
 
 
 compareExpectedMasslessBoxTopologyReplacement[] := Module[
@@ -2701,7 +2700,7 @@ compareExpectedMasslessBoxTopologyReplacement[] := Module[
      Global`qk[1, 3] -> (-Global`kk[3, 3] - Global`z[1] + Global`z[4])/2
      };
    <|
-    "name" -> "masslessBoxTopologyReplacement_sampleMomentumLinear",
+    "name" -> "masslessBoxTopologyReplacement_momentumSeedOnlyLinearGate",
     "pass" -> TrueQ[
       summary["validationReport", "status"] === "ok" &&
        summary["nV"] === 4 &&
@@ -2721,10 +2720,8 @@ compareExpectedMasslessBoxTopologyReplacement[] := Module[
        momentumBatch["equationCount"] === 12 &&
        TrueQ[momentumBatch["completeMomentumIBPQ"]] &&
        momentumBatch["forbiddenNData"] === {} &&
-       sampledLinear["status"] === "generated" &&
-       sampledLinear["equationCount"] === 12 &&
-       TrueQ[sampledLinear["linearQ"]] &&
-       sampledLinear["coefficientRulesApplied"] === topo["numericRules"]
+       sampledLinear["status"] === "notReady" &&
+       sampledLinear["reason"] === "notCanonicalSeedBatch"
       ],
     "summary" -> KeyDrop[summary, {"generatorList", "sampleIntegrals"}],
     "repSP2Z" -> Lookup[spRules, "repSP2Z", Missing["repSP2Z"]],

@@ -4084,11 +4084,17 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
       "forbiddenNData" -> Lookup[batch, "forbiddenNData", {}]
       |>]
     ];
-   seedCoverageReport = If[KeyExistsQ[batch, "completeCanonicalQ"],
-     makeCanonicalSeedCoverageReport[batch],
-     Missing["NotCanonicalSeedBatch"]
-     ];
-   If[AssociationQ[seedCoverageReport] && ! TrueQ[Lookup[seedCoverageReport, "passQ", False]],
+   If[! KeyExistsQ[batch, "completeCanonicalQ"],
+    Return[<|
+      "status" -> "notReady",
+      "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+      "topologyValidationReport" -> topologyReport,
+      "reason" -> "notCanonicalSeedBatch",
+      "comment" -> "linear/Kira stages require makeCanonicalSeedBatch output with all-sector qIBP/tIBP coverage; momentum-only or time-only seed batches are seed-level regression data only"
+      |>]
+    ];
+   seedCoverageReport = makeCanonicalSeedCoverageReport[batch];
+   If[! TrueQ[Lookup[seedCoverageReport, "passQ", False]],
     Return[<|
       "status" -> "notReady",
       "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],

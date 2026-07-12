@@ -204,7 +204,7 @@ J[{a1, a2}, {{b1, n11, n12}, {b2, n2}, {b3, n3}}, {ispN[1], ispN[2]}]
 
 - `integralObjectsInBatch[batch]`：从 batch 的 `"equations"` 中抽取所有出现过的 `J[...]` 对象。
 - `sortIntegralsForKira[integrals]`：对全 sector 的积分一起排序编号，当前第一优先级为所有线第一幂次指标（`b`/`bS`）的复杂度，避免 sub-sector master 被简单追加到最后。
-- `makeLinearSystemData[batch, topo]`：给排序后的 `J[...]` 建立整数编号，并把每条 seed 方程转成 `"coefficientRules" -> {id -> coeff, ...}`；若 batch 含 shrink sectors，会保存 top 与各 sub-sector 的 `sectorMetadataList`。
+- `makeLinearSystemData[batch, topo]`：只接受 `makeCanonicalSeedBatch` 产生、带 all-sector `qIBP/tIBP` 覆盖信息的 canonical batch；给排序后的 `J[...]` 建立整数编号，并把每条 seed 方程转成 `"coefficientRules" -> {id -> coeff, ...}`；若 batch 含 shrink sectors，会保存 top 与各 sub-sector 的 `sectorMetadataList`。momentum-only/time-only batch 会返回 `notCanonicalSeedBatch`，只作为 seed regression data。
 - `writeSeedBatchMMA[batch, OutputDirectory -> dir]` / `readSeedBatchMMA[file]`：保存和读取 canonical seed batch；这是 seed 层输出，不是 Kira 输入。
 - `makeKiraExportData[linearData]`：只接受 linear-system 数据，写 `userSystem/ibp.kira`、`list`、`jobs.yaml` 和 `J <-> id` 映射文件；零方程不会写入 `ibp.kira` block。
 
