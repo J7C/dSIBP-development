@@ -95,7 +95,7 @@ kiraData = makeKiraExportData[
 - `seedRanges` 与 ISP 自带 `range` 只接受整数或非空整数列表；坏范围会作为 topology error 停止 seed/linear/Kira，避免拼错范围后静默退回 `{0}`。
 - `seedOptions` 必须是 Association；`DiscreteMode` 只接受 `"sample"`、`"all"`、`"none"`，各类 `Max...Count` 必须是非负整数，`MaxShrinkSectorDepth` 还可取 `Automatic`。
 - `makeCanonicalSeedBatch` 会合并 momentum/time/shrink-sector seed，并检查 EOM canonical 与 pending features。
-- `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、逐 sector 生成元标签、EOM canonical 和 pending/forbidden 数据；canonical batch 进入 linear/Kira 时会把这个 report 写入 metadata。
+- `makeCanonicalSeedCoverageReport` 检查 all-sector `qIBP/tIBP` 覆盖、逐 sector 生成元标签、EOM canonical 和 pending/forbidden 数据；canonical batch 进入 linear/Kira 前必须通过该 report，失败时 linear-system 返回 `seedCoverageReportNotReady` 并附带完整 report。
 - `topologyValidationReport` 在 topology 初始化、seed batch、linear-system 和 Kira metadata 中都会保留，用来追踪输入拓扑/ISP/numeric rules 是否满足通用生成器前置条件。
 - `topologyValidationReport` 中若存在 error，seed/linear/workflow/Kira 导出会在入口返回 `invalidTopology` 或 `notReady`，不会继续生成 IBP、编号线性系统或写 Kira 文件；warning 只作为提示保留。
 - 数值规则和撒点规则在 linear/Kira 阶段使用；解析 seed 本身保持不撒点。

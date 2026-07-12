@@ -3815,7 +3815,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
    seedOpts = FilterRules[{opts}, Options[makeCanonicalSeedBatch]];
    batch = makeCanonicalSeedBatch[topo, Sequence @@ seedOpts];
    seedCoverageReport = makeCanonicalSeedCoverageReport[batch];
-   If[Lookup[batch, "status", "missing"] =!= "generated" || ! TrueQ[canonicalSeedReadyQ[batch]],
+   If[Lookup[batch, "status", "missing"] =!= "generated" || ! TrueQ[canonicalSeedReadyQ[batch]] || ! TrueQ[Lookup[seedCoverageReport, "passQ", False]],
     Return[<|"status" -> "notReady", "stage" -> "seed", "topology" -> topo, "topologyValidationReport" -> topologyReport, "numericRuleRequirementReport" -> numericRequirementReport, "seedBatch" -> KeyDrop[batch, "equations"], "seedCoverageReport" -> seedCoverageReport|>]
    ];
    linearOpts = FilterRules[{opts}, Options[makeLinearSystemData]];
@@ -4084,6 +4084,19 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
       "forbiddenNData" -> Lookup[batch, "forbiddenNData", {}]
       |>]
     ];
+   seedCoverageReport = If[KeyExistsQ[batch, "completeCanonicalQ"],
+     makeCanonicalSeedCoverageReport[batch],
+     Missing["NotCanonicalSeedBatch"]
+     ];
+   If[AssociationQ[seedCoverageReport] && ! TrueQ[Lookup[seedCoverageReport, "passQ", False]],
+    Return[<|
+      "status" -> "notReady",
+      "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+      "topologyValidationReport" -> topologyReport,
+      "reason" -> "seedCoverageReportNotReady",
+      "seedCoverageReport" -> seedCoverageReport
+      |>]
+    ];
    orderingReport = validateKiraOrderingSpec[OptionValue[KiraOrdering]];
    If[Lookup[orderingReport, "status", "ok"] =!= "ok",
     Return[<|"status" -> "notReady", "caseName" -> Lookup[batch, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalidKiraOrdering", "kiraOrderingValidationReport" -> orderingReport|>]
@@ -4096,10 +4109,6 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    linearEquations = linearizeSeedEquation[#, integralIndex] & /@ equations;
    coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    metadata = If[metadataList === {}, Missing["NoSectorMetadata"], First[metadataList]];
-   seedCoverageReport = If[KeyExistsQ[batch, "completeCanonicalQ"],
-     makeCanonicalSeedCoverageReport[batch],
-     Missing["NotCanonicalSeedBatch"]
-     ];
    <|
     "status" -> "generated",
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],

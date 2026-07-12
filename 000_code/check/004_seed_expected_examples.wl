@@ -1185,6 +1185,32 @@ compareExpectedCanonicalCoverageSmallCases[] := Module[
    ];
 
 
+compareExpectedCanonicalCoverageGate[] := Module[
+   {topo, batch, badEquations, badBatch, report, linearData},
+   topo = Global`parseTopology[Global`mixedBubbleCase];
+   batch = Global`makeCanonicalSeedBatch[topo];
+   badEquations = Select[
+     batch["equations"],
+     ! TrueQ[Global`seedEntrySourceSectorKey[#] === "top" && Global`seedEntryIBPClass[#] === "tIBP"] &
+     ];
+   badBatch = Join[batch, <|"equations" -> badEquations, "equationCount" -> Length[badEquations]|>];
+   report = Global`makeCanonicalSeedCoverageReport[badBatch];
+   linearData = Global`makeLinearSystemData[badBatch, topo];
+   <|
+    "name" -> "canonicalCoverage_gateRejectsIncompleteBatch",
+    "pass" -> TrueQ[
+      Lookup[report, "status", Missing["status"]] === "notReady" &&
+       ! TrueQ[Lookup[report, "passQ", True]] &&
+       Lookup[Lookup[report["sectorClassChecks"], "top", <||>], "tIBPCount", -1] === 0 &&
+       ! TrueQ[Lookup[Lookup[report["sectorGeneratorChecks"], "top", <||>], "tGeneratorCoverageQ", True]] &&
+       linearData["status"] === "notReady" &&
+       linearData["reason"] === "seedCoverageReportNotReady"
+      ],
+    "coverageReport" -> report,
+    "linearData" -> linearData
+    |>
+   ];
+
 compareExpectedDoubleShrinkCompactA[] := Module[
    {case, topo, batch, linearData, sectorKeys, doubleMetadata, doubleIntegrals, doubleAListLengths,
     tightCase, tightTopo, tightBatch, overrideBatch, tightTopologyData},
@@ -2940,6 +2966,7 @@ compareExpectedWithCurrentGenerator[] := Module[
     "momentumSeedBatchMixedBubbleEOM" -> compareExpectedMomentumSeedBatchMixedBubbleEOM[],
     "canonicalSeedGateMixedBubble" -> compareExpectedCanonicalSeedGateMixedBubble[],
     "canonicalCoverageSmallCases" -> compareExpectedCanonicalCoverageSmallCases[],
+    "canonicalCoverageGate" -> compareExpectedCanonicalCoverageGate[],
     "doubleShrinkCompactA" -> compareExpectedDoubleShrinkCompactA[],
     "threeVertexMultiShrinkCompactA" -> compareExpectedThreeVertexMultiShrinkCompactA[],
     "topologyDataInterface" -> compareExpectedTopologyDataInterface[],
