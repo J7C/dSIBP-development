@@ -253,22 +253,28 @@ $$J[\{a_v\}, \{\text{pack}_e\}, \{n_{\text{isp}_j}\}]$$
 
 ISP 指标 $n_{\text{isp}_j} \geq 0$（仅出现在分子，不出现在分母）。
 
-**用户输入**：
+**用户输入（006 起）**：
 
 ```mathematica
-(* ISP 定义：{名称, 标量积表达式, 指标范围} *)
+(* 用户可任意命名 loop/external momenta；标量积统一写 sp[p,r]。 *)
+loopMomenta = {l3, k321};
+externalMomenta = {wdnmd};
+
+(* ISP 定义：{名称, sp 标量积表达式, 指标范围} *)
 ispData = {
-  {"isp1", q1 . q2, {0, 2}},      (* q1·q2，分子幂次 0,1,2 *)
-  {"isp2", q1 . k1, {0, 1}}       (* q1·k1，分子幂次 0,1 *)
+  {rhoA, sp[l3, wdnmd + l3], {0, 1}},
+  {rhoB, sp[k321, wdnmd], {0, 1}}
 };
 ```
 
+`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。内部仍会把 `sp` 展开到编号坐标做线性代数，但用户不需要输入 `qq/qk/kk`。
+
 **完备性验证**：`verifyISP[topology, ispData]` 检查：
 1. 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
-2. ISP 之间线性无关，并且当前主线要求 ISP 表达式直接是某个 `qq[i,j]` 或 `qk[i,j]` 标量积变量
-3. `zExprs` 数量等于非 ISP 标量积数量，即 $\#z_e = N_{\text{sp}} - \#\text{ISP}_{\text{direct}}$
+2. ISP 之间线性无关；`006` 起 ISP 表达式可为 `sp[p,r]` 或其线性组合坐标，不要求直接是某个内部编号变量
+3. `zExprs` 与 ISP 坐标总数等于独立标量积数量，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$
 4. 数量闭合后必须能实际反解出 `repSP2Z`；重复或退化传播子动量会触发 `scalarProductCoordinateSolveFailed`
-5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量 `kk[i,j]`；缺失只触发 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed 生成
+5. 若要进入数值 linear/Kira 阶段，`numericRules` 应覆盖全部外部不变量；`006` 用户口可写 `sp[k_i,k_j] -> value`，内部自动转成编号坐标
 
 这里验证的是用户初始化给出的 `z/ISP` 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动挑选独立传播子子集；若计数不闭合、ISP 不足/过多、传播子动量退化或特殊数值外动量导致不可反解，validation report 直接报错，用户应修正传播子动量或 ISP 输入。
 
@@ -545,7 +551,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 
 - seed 生成阶段自动完成：按 sector 生成，再按 momentum/time 分类，每类内部枚举该 sector 的离散 `n=0/1` 状态，并立即应用 EOM/massless endpoint canonical。若为验证使用 `DiscreteMode -> "sample"`，`sampleDiscreteRules` 中每条规则也必须覆盖全部离散 `n` 变量；sample 只是减少取样条数，不允许保留符号 `n`。seed 只保存 MMA 表达式，不直接导出 Kira。
 - 输入初始化可用 `seedPreset` 简写常用 seed 策略：`"quickCheck"` 为默认小样本，`"fullDiscrete"` 在连续基点枚举全部离散态，`"bounded"` 使用有限连续范围和全部离散态。用户仍可用 `seedRanges` 或 `seedOptions` 覆盖 preset 中的 `sampleOnly`、范围和默认 `DiscreteMode`。
-- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`validationReport` 会提前检查外部不变量 `kk[i,j]` 是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
+- 撒点/数值替换属于 linear/Kira 阶段：用户在 topology 的 `numericRules` 或 Kira 导出时的 `KiraCoefficientRules` 中给规则；`006` 用户口外部不变量写作 `sp[k_i,k_j]`，`validationReport` 会提前检查它们是否被覆盖，缺失只给 warning。验证默认只用小样本，不做大范围遍历。
 - Kira/master 排序必须对全 sector 的 `integralList` 一起做。默认排序仍以 line pack 的第一指标（`b` 或 `bS`）复杂度为最高主要权重；用户可用 `KiraOrdering -> <|"IntegralOrder" -> {...}|>` 或 `"PreferredIntegrals"` 提前指定候选主积分。linear-system 会保存 `kiraOrderingReport`，其中 `missingIntegralOrderItems` 用来提示未命中的候选。
 - 若 linear-system 已生成，用户可先看 `linearData["integralList"]`，手动重排后调用 `reorderLinearSystemIntegrals[linearData, order]`，或直接在 `makeKiraExportData[..., KiraIntegralOrder -> order]` 中指定导出顺序。手动重排会额外保存 `manualIntegralOrderReport`，越界编号或不在系统中的 `J` 不会静默消失。
 - Kira 的 `list` 目标也可独立选择：`KiraTargetIntegrals -> Automatic` 表示全量目标；用户可传 Kira id 或 `J[...]` 积分对象列表，导出时会按当前全局 `integralRules` 转成 id。数值 dummy 若启用会自动附加到目标列表末尾。
@@ -559,7 +565,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 已加入一个双 massive-line bubble toy：两条 massive 完整线均可由 theta 边界缩并，自动生成 `{e1}`、`{e2}`、`{e1,e2}` 三个 shrink sectors。该检查验证 double-shrink sector 使用 `aSlotMode -> "compactActiveSlots"`，`J` 的 `aList` 长度为 1，且 `sectorMetadata` 保留每条线的 `originalEndpoints` 与 compact/original slot 对应。
 ## 11. v5 接口整理与上传边界
 
-`005_dS_ibp_general.wl` 是当前主线脚本，保留 `004_dS_ibp_general.wl` 作为上一版对照。当前验证入口 `000_code/check/run_004_seed_expected_examples.wl` 会优先加载 `005`，不存在时回退 `004`。
+`005_dS_ibp_general.wl` 是稳定接口脚本，保留 `004_dS_ibp_general.wl` 作为上一版对照。`006_dS_ibp_general.wl` 在 `005` 基础上新增用户口 `sp[p,r]` scalar-product convention，旧版不动。当前验证入口 `000_code/check/run_004_seed_expected_examples.wl` 仍优先加载 `005`；`006` 的用户接口由 `000_code/check/006_sp_interface_check.wl` 单独检查。
 
 新增接口：
 

@@ -5,9 +5,11 @@
 ## 当前主线
 
 - `000_code/004_dS_ibp_general.wl`：上一版 linear/Kira 导出骨架。
-- `000_code/005_dS_ibp_general.wl`：当前主线接口版，新增 topology 初始化缓存、seed 分类、sampled linear-system、精确 sector 匹配。
+- `000_code/005_dS_ibp_general.wl`：稳定接口版，包含 topology 初始化缓存、seed 分类、sampled linear-system、精确 sector 匹配。
+- `000_code/006_dS_ibp_general.wl`：新接口版，在 `005` 基础上新增用户口 `sp[p,r]` scalar-product convention；旧版不动，便于回退对照。
 - `000_code/check/004_seed_expected_examples.wl`：轻量结构与手推 seed 对照检查，优先加载 `005`。
-- `000_code/check/run_004_seed_expected_examples.wl`：Wolfram runner。
+- `000_code/check/run_004_seed_expected_examples.wl`：`005` 稳定版 Wolfram runner。
+- `000_code/check/006_sp_interface_check.wl`：`006` 的 `sp[p,r]` 用户接口轻量检查。
 
 ## 关键约定
 
@@ -17,7 +19,8 @@
 - shrink sector 当前使用 `{bS_e}`；缩并后 `aList` 只保留 compact active slots，原顶点到 compact slot 的映射保存在 `sectorMetadataList`。
 - seed 层必须立即应用 EOM 和 massless endpoint canonical，不允许 `n=2` 留到输出 seed。
 - seed 保存为 Mathematica 表达式；Kira 导出只消费 linear-system 数据。
-- 用户输入的传播子平方与直接 ISP 定义共同固定 family 坐标；程序验证这组 `z/ISP` 坐标是否闭合并可反解，不把 dS 拓扑默认当成需要自动删线或重选 basis 的冗余传播子族。
+- 用户输入 `loopMomenta` 与 `externalMomenta` 后，可用任意符号命名这些动量；`006` 用户口标量积统一写作 `sp[p,r]`，例如 `sp[l3, k321 + l3]`。`sp` 具有 `Orderless` 属性，因此 `sp[p,r] === sp[r,p]`。内部 `qq/qk/kk` 只作为编号坐标，不要求用户输入。
+- 用户输入的传播子平方与 ISP 定义共同固定 family 坐标；程序验证这组 `z/ISP` 坐标是否闭合并可反解，不把 dS 拓扑默认当成需要自动删线或重选 basis 的冗余传播子族。
 - `seedPreset` 可选 `"quickCheck"`、`"fullDiscrete"`、`"bounded"`：分别对应小样本检查、连续指标基点加全离散态、有限连续范围加全离散态；未知 preset 会作为 topology error 停止 seed，显式 `seedRanges` / `seedOptions` 会覆盖 preset，batch 调用里的显式 option 又会覆盖 `seedOptions` 默认的 seed/batch/shrink-sector 上限。
 
 ## 轻量检查
@@ -31,7 +34,7 @@
 ## 推荐调用顺序
 
 ```wl
-Get["000_code/005_dS_ibp_general.wl"];
+Get["000_code/006_dS_ibp_general.wl"];  (* 新接口；若需旧稳定版可加载 005 *)
 
 topoData = makeTopologyData[mixedBubbleCase];
 readiness = makeIBPReadinessReport[mixedBubbleCase];
@@ -79,7 +82,7 @@ kiraData = makeKiraExportData[
 - `sampleDiscreteRules` 必须写成“替换规则列表的列表”，如 `{{n[1] -> 0, n[2] -> 1}}`；sample 模式下每个样本需覆盖当前 sector 的全部离散 `n`，取值只能是 `0/1`。
 - `numericRules` 和 sampled linear-system 的 `CoefficientRules` 必须是替换规则列表；坏规则会在 topology 或 sampled linear 阶段返回 `invalidNumericRules` / `invalidCoefficientRules`。
 - `zeroPointRules` 与 `shrinkPrefactorRules` 也必须是替换规则列表；坏规则会在 topology 阶段返回 `invalidZeroPointRules` / `invalidShrinkPrefactorRules`。
-- 若 workflow 使用 `LinearSystemMode -> "numeric"`，`numericRules` 必须覆盖所有外部不变量 `kk[i,j]`、time-IBP 顶点外部能量和 massive line 参数（如 `nu`）；`numericRuleRequirementReport` 会集中列出 required/provided/missing 变量，`makeNumericRuleTemplate[case]` 会生成缺失项的替换规则骨架。缺失时会在 seed 生成前返回 `numericRulesMissingExternalInvariants`、`numericRulesMissingVertexEnergies` 或 `numericRulesMissingLineParameters`。线性系统生成后还会检查系数是否已全数值化，若仍残留 `dim` 等其它参数则返回 `nonNumericCoefficients` 并列出 `coefficientVariables`。
+- 若 workflow 使用 `LinearSystemMode -> "numeric"`，`numericRules` 必须覆盖所有外部不变量（`006` 用户口写作 `sp[k_i,k_j]`；内部会转成编号坐标）、time-IBP 顶点外部能量和 massive line 参数（如 `nu`）；`numericRuleRequirementReport` 会集中列出 required/provided/missing 变量，`makeNumericRuleTemplate[case]` 会生成缺失项的替换规则骨架。缺失时会在 seed 生成前返回 `numericRulesMissingExternalInvariants`、`numericRulesMissingVertexEnergies` 或 `numericRulesMissingLineParameters`。线性系统生成后还会检查系数是否已全数值化，若仍残留 `dim` 等其它参数则返回 `nonNumericCoefficients` 并列出 `coefficientVariables`。
 - `makeLinearSystemData` / `makeSampledLinearSystemData` / `makeMomentumIBPLinearSystem` 的 topology 参数可传 raw case 或 `parseTopology` 后的 topology；内部会统一规范化。
 - workflow 的 `LinearSystemMode` 只接受 `"symbolic"`、`"sampled"`、`"numeric"`；拼写错误会在 seed 生成前返回 `invalidLinearSystemMode`。
 - workflow 的 `ExportKira` 必须是 `True/False`；`OutputDirectory` 必须是 `None`、`Automatic` 或非空字符串，坏值会返回 `invalidWorkflowOptions`。

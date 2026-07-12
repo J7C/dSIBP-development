@@ -292,10 +292,9 @@ IBP 中的 `k_v` 符号始终与 Feynman 规则一致，不需要根据顶点 ±
 
 对于 $L$ 圈图，存在 $L(L+1)/2$ 个独立的圈动量标量积 $q_i \cdot q_j$ 和 $L \times (E-1)$ 个圈-外动量标量积 $q_i \cdot k_j$。其中一部分可由传播子动量 $Q_e$ 的平方 $\xi_e^2 = Q_e^2$ 线性表示，剩余的不可约标量积称为 ISP。
 
-**数学定义**：
-$$\text{ISP}_j = q_{a_j} \cdot q_{b_j} \quad \text{或} \quad \text{ISP}_j = q_a \cdot k_b$$
+**用户口定义**：用户先在 `loopMomenta` 与 `externalMomenta` 中给出独立圈动量/外动量基，符号名称任意；标量积统一写成 `sp[p,r]`，其中 `p,r` 可为这些基动量的线性组合，例如 `sp[l3, k321 + l3]`。`sp` 具有 `Orderless` 属性，因此 `sp[p,r]` 与 `sp[r,p]` 自动规范成同一对象。
 
-其中 $q_{a_j}, q_{b_j}$ 为圈动量，$k_b$ 为外动量。
+内部实现仍把所有 `sp[p,r]` 展开到编号坐标 `qq[i,j]`、`qk[i,j]`、`kk[i,j]` 做线性代数；这些内部记号不作为用户输入 convention。
 
 ### 10.2 函数族扩展
 
@@ -313,10 +312,10 @@ $$J[\{a_v\}; \{\text{pack}_e\}; \{n_{\text{isp}_j}\}]$$
 在生成 IBP 前，必须验证 ISP 集合的完备性：
 
 1. **覆盖性**：所有标量积 $\{q_i \cdot q_j, q_i \cdot k_j\}$ 均可表示为用户给出的 $\{\xi_e^2\}$ 和 $\{\text{ISP}_j\}$ 的线性组合。
-2. **独立性**：直接作为 ISP 给出的标量积之间线性无关，并且不应再由传播子平方线性表示。
-3. **数目检查**：当前实现要求 `zExprs` 的数量等于“非 ISP 标量积”的数量，即 $\#z_e = N_{\text{sp}} - \#\text{ISP}_{\text{direct}}$。这里的计数是用户定义的 `z/ISP` 坐标闭合条件，不是程序自动选择 propagator 子集。
+2. **独立性**：ISP 可以是 `sp[p,r]` 的线性组合坐标，例如 `sp[l3, k321 + l3]`；这些 ISP 坐标之间应线性无关，并且不应再由传播子平方线性表示。
+3. **数目检查**：`006` 要求 `zExprs` 与 ISP 坐标总数等于独立 loop-scalar-products 数目，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$。这里的计数是用户定义的 `z/ISP` 坐标闭合条件，不是程序自动选择 propagator 子集。
 4. **可解性检查**：数量闭合后，程序会实际构造小矩阵并尝试生成 `repSP2Z`；若传播子动量退化、重复或无法反解，会在 `validationReport` 中报告 `scalarProductCoordinateSolveFailed`，而不是等到 IBP seed 生成时报错。
-5. **数值规则检查**：若拓扑包含独立外动量基，`validationReport` 会检查 `numericRules` 是否覆盖全部 `kk[i,j]` 外部不变量；缺失时报 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed。
+5. **数值规则检查**：若拓扑包含独立外动量基，`006` 用户口 `numericRules` 可写 `sp[k_i,k_j] -> value`；内部会转换为外部不变量编号。缺失时报 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed。
 
 其中 $N_{\text{sp}} = L(L+1)/2 + L K$，$K$ 是初始化中 `externalMomenta` 的独立外动量基个数。
 
