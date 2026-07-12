@@ -10,12 +10,12 @@
 - 圈动量基：`q_1,...,q_L`。
 - 内线集合：`e = 1,...,E`，每条内线携带端点 `(u[e], v[e])`、动量 `Q[e] = \sum_l c[e,l] q_l + P_e`、模长 `\xi_e = |Q[e]|`、场参数 `\nu_e`。
 - 外线（Boundary）：`B \to v` 表示外腿连接到顶点 `v`，携带动量 `k_{ext}`。
-- 外部能量按顶点汇总：`k_v = \sum_{ext \to v} |k_{ext}|`，或用户打包后的能量符号（如两个无质量外腿给出 `k15 = |k_1|+|k_5|`）。
+- 外部能量按顶点 e 指数输入：若能量由 `externalMomenta` 张成并应复用关系，写成外部不变量名的函数；否则作为独立 `ke[i]` 参数。不要默认把同一顶点的外腿模相加。
 
 以下 family 初始化信息必须一开始设定，但不写进 `J` 的指标槽：
 
 - 每条线的 `massType`、`bbType`、`skType`、`thetaConvention` 和可选 `packType`。
-- 圈动量基 `loopMomenta` 与独立外动量向量基 `externalMomenta`。`externalMomenta` 只包含会进入内线动量 `Q_e = l + sum k` 并与圈动量纠缠的外部三动量向量；只出现在顶点时间相位中的无质量外腿能量模或能量模之和（如 `k15`）不属于该向量基。
+- 圈动量基 `loopMomenta` 与独立外动量向量基 `externalMomenta`。`externalMomenta` 只包含会进入内线动量 `Q_e = l + sum k` 并与圈动量纠缠的外部三动量向量；只出现在顶点时间相位中的无质量外腿能量模或能量组合不属于该向量基；独立绝对值参数用 `ke[i]` 记录。
 - ISP 列表 `ispData`。若传播子不足以覆盖全部独立标量积，必须显式给出 ISP。
 - 零点规则 `a0Rules/b0Rules/bS0Rules` 与缩并 prefactor 规则。
 - seed 幂次范围和测试范围。范围控制枚举，不属于积分指标本身。
@@ -296,7 +296,7 @@ IBP 中的 `k_v` 符号始终与 Feynman 规则一致，不需要根据顶点 ±
 
 内部实现仍把所有 `sp[p,r]` 展开到编号坐标 `qq[i,j]`、`qk[i,j]`、`kk[i,j]` 做线性代数；这些内部记号不作为用户输入 convention。输出端需要区别：圈动量相关对象仍可显示为 `sp[...]`，但外动量-外动量不变量显示为变量名。用户可用 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}` 自定义；未指定时默认按 `externalMomenta` 的列表位置输出为 `sij`。
 
-dS 的特殊点是：无质量外腿给出的 `|k|` 或 `|k_a|+|k_b|` 是顶点能量参数，不是外部三动量向量。只有当某个外部三动量向量实际出现在内线动量偏移 `P_e` 中、从而在 `Q_e^2` 或 `q_l \cdot Q_e` 中和圈动量发生标量积时，才应放入 `externalMomenta` 并参与 `sp` 完备性。若某个组合永远只以顶点能量形式出现，例如一个顶点连两条无质量外腿产生的 `k15=|k_1|+|k_5|`，则应保存在 `vertexEnergies` / `numericRules`，不进入 `externalMomenta`、`sp`、传播子坐标或 ISP 坐标。
+dS 的特殊点是：无质量外腿给出的 `|k|` 或 `|k_a|+|k_b|` 是顶点能量参数，不是外部三动量向量。只有当某个外部三动量向量实际出现在内线动量偏移 `P_e` 中、从而在 `Q_e^2` 或 `q_l \cdot Q_e` 中和圈动量发生标量积时，才应放入 `externalMomenta` 并参与 `sp` 完备性。若某个组合永远只以顶点能量形式出现，则应保存在 `vertexEnergies` / `numericRules`，不进入 `externalMomenta`、`sp`、传播子坐标或 ISP 坐标。独立能量参数建议写 `ke[i]`；若 `|ke1+ke2|`、`|ke1|`、`|ke2|` 独立，就必须分别命名，不能自动相加。外腿能量参数不是一组要做完备标量积的向量基，程序不需要生成 `ke[i] ke[j]` 这类外腿-外腿点积；只有用户显式把顶点能量写成 `Sqrt[s11]`、`Sqrt[sigW]` 等外部不变量表达式时，才复用圈外动量空间的变量。
 
 ### 10.2 函数族扩展
 
@@ -366,7 +366,7 @@ IBP_sector_<sector_id>/
 - 1-line shrink: `sector_e<e_index>`
 - 2-line shrink: `sector_e<e1>_e<e2>`
 
-## 11. 标量积变量与 z=ξ² 线性变换
+## 11. 标量积变量与 z=ξ2 线性变换
 
 ### 11.1 标量积约定
 
@@ -430,20 +430,20 @@ Q_2 = q_1 - k
 
 **正向变换**（$z$ 的定义展开）：
 ```
-z_1 = Q_1 · Q_1 = q_1²
-z_2 = Q_2 · Q_2 = (q_1 - k)² = q_1² - 2 q_1·k + k_s²
+z_1 = Q_1 · Q_1 = q_12
+z_2 = Q_2 · Q_2 = (q_1 - k)2 = q_12 - 2 q_1·k + k_s2
 ```
 
 **逆向变换**（标量积 → z）：
 ```
-q_1² = z_1
-q_1 · k = (z_1 + k_s² - z_2) / 2
+q_12 = z_1
+q_1 · k = (z_1 + k_s2 - z_2) / 2
 ```
 
 **链式法则验证**：生成元 $\mathcal{O} = \partial/\partial q_1^\mu \cdot q_1^\mu$（标度生成元）作用后：
 ```
-q_1 · Q_1 = q_1² = z_1
-q_1 · Q_2 = q_1 · (q_1 - k) = q_1² - q_1·k = (z_1 + z_2 - k_s²) / 2
+q_1 · Q_1 = q_12 = z_1
+q_1 · Q_2 = q_1 · (q_1 - k) = q_12 - q_1·k = (z_1 + z_2 - k_s2) / 2
 ```
 
 与参考代码 `reference/ref_code/codebubble/001 bubble_ibp_sym.m` 中 `ibp[expr_G, 3]` 的结果一致。这确认了 $z$ 变量方案与参考实现等价，且 $b_e$ 移位规则正确。

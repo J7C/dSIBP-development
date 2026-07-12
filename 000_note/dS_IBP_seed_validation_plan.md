@@ -28,8 +28,8 @@
 numericRules = {
   d -> 3,
   s11 -> 5,
-  k15 -> 17,
-  k12 -> -1,
+  ke[3] -> 17,
+  s12 -> -1,
   nu1 -> 2,
   nu2 -> 2,
   (* 其它外动量不变量、顶点能量、质量参数、零点参数 *)
@@ -41,7 +41,7 @@ numericRules = {
 - `numericRules -> {}`：保持解析 seed。
 - `numericRules -> {...}`：生成数值系数 seed 或数值验证样本。
 
-006 起用户口的圈动量相关标量积仍写 `sp[p,r]`。外动量-外动量不变量在输出和数值规则模板中写作变量名：用户可通过 `externalInvariantRules` 自定义，未指定时默认按 `externalMomenta` 顺序为 `sij`，因此例子中写 `s11 -> 5`。只出现在 dS 顶点时间相位里的无质量外腿能量模或能量模之和，例如 `k15=|k_1|+|k_5|`，写作普通替换 `k15 -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。
+006 起用户口的圈动量相关标量积仍写 `sp[p,r]`。外动量-外动量不变量在输出和数值规则模板中写作变量名：用户可通过 `externalInvariantRules` 自定义，未指定时默认按 `externalMomenta` 顺序为 `sij`，因此例子中写 `s11 -> 5`。只出现在 dS 顶点时间相位里的无质量外腿能量模或能量组合，若不由 `externalMomenta` 的标量积表达式复用，应写作独立 `ke[i]` 参数和普通替换 `ke[i] -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。`|ke1+ke2|`、`|ke1|`、`|ke2|` 独立时必须分别命名。外腿能量参数之间不做完备标量积；若某个顶点能量应和圈外动量不变量共用变量，用户需要在 `vertexEnergies` 中显式写成对应表达式。
 
 ## 4. 验证 case A：一 massive 一 massless 的 bubble
 
@@ -73,8 +73,8 @@ J[{a1, a2}, {{b1, n11, n12}, {b2, n2}}, ispList]
 
 生成元：
 
-- 时间 IBP：`∂_{τ1}`、`∂_{τ2}`。
-- 圈动量 IBP：`∂_{q1}·q1`、`∂_{q1}·k`。
+- 时间 IBP：`?_{τ1}`、`?_{τ2}`。
+- 圈动量 IBP：`?_{q1}·q1`、`?_{q1}·k`。
 - 基础 seed 模板共 4 个；完整离散态展开最多 32 条，验证时不必全撒点。
 
 手推检查重点：
@@ -112,7 +112,7 @@ J[{a1, a2, a3}, {{b1,n11,n12}, {b2,n21,n22}, {b3,n3}}, ispList]
 生成元：
 
 - 时间 IBP：3 个。
-- 圈动量 IBP：`∂_{q1}·q1`、`∂_{q1}·k1`、`∂_{q1}·k2`，共 3 个。
+- 圈动量 IBP：`?_{q1}·q1`、`?_{q1}·k1`、`?_{q1}·k2`，共 3 个。
 - 基础 seed 模板共 6 个。
 
 验证时只取代表性离散态，例如：
@@ -174,9 +174,9 @@ J[{a1, a2}, {{b1, n11, n12}, {b2, n2}, {b3, n3}}, {ispN[1], ispN[2]}]
 
 对应 check 写在 `000_code/check/004_seed_expected_examples.wl`：
 
-- pure massless bubble：检查 `∂_{q1}·q1` 的 massless per-line merged-theta momentum seed。
+- pure massless bubble：检查 `?_{q1}·q1` 的 massless per-line merged-theta momentum seed。
 - mixed bubble：检查 massive building-block 动量导数项会产生端点 `n+1`，且若出现 `n=2` 会被 EOM seed-canonical 化；同时检查 time-core 的 `τ1` seed 和 time batch EOM 门禁。
-- mixed sunrise：检查 `∂_{q1}·k` 会产生 `ispN[1]+1` 与 `ispN[2]+1` 的分子指标移位，并包含 massive building-block 动量导数项，确认 sunrise 预期并非只在基准积分里包含 ISP。
+- mixed sunrise：检查 `?_{q1}·k` 会产生 `ispN[1]+1` 与 `ispN[2]+1` 的分子指标移位，并包含 massive building-block 动量导数项，确认 sunrise 预期并非只在基准积分里包含 ISP。
 
 运行入口为：
 
@@ -224,7 +224,7 @@ J[{a1, a2}, {{b1, n11, n12}, {b2, n2}, {b3, n3}}, {ispN[1], ispN[2]}]
 `000_code/004_dS_ibp_general.wl` 现在提供 `applyTimeGeneratorSeed` 与 `makeTimeIBPSeedBatch`。当前实现 time-IBP core：
 
 - 顶点幂次项 `-a_v J[a_v-1]`。
-- 外部相位项 `-I P_v J`，其中 `P_v` 可由 `vertexEnergies` 指定，未指定时从 `extLegs` 自动求和。
+- 外部相位项 `-I P_v J`，其中 `P_v` 由 `vertexEnergies` 指定；未指定时 006 使用独立占位 `ke[v]`，不再从 `extLegs` 自动求和，避免混淆 `|ke1+ke2|` 与 `|ke1|+|ke2|`。
 - massive full line 的端点导数项，按端点把 `{b_e,n_{e,1},n_{e,2}}` 移到 `{b_e-1,n_{e,a}+1}`。
 - massless full line 的端点翻转项，按逐线 merged theta 约定把 `{b_e,n_e}` 移到 `{b_e-1,1-n_e}`，端点 1/2 符号分别为 `+I/-I`。
 - batch 层立即应用 EOM 与 massless endpoint canonical，并扫描 `forbiddenNData`。

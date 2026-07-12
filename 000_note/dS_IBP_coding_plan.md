@@ -20,7 +20,7 @@ lineData = {{e1, {u1, v1}, Q1, nu1, bbType1}, ...};  (* 旧格式 E 条内线 *)
 extLegs = {{B1, v1, k1}, ...};  (* 外腿 *)
 loopMomenta = {q1, q2, ...};  (* L 个圈动量，显式指定 *)
 externalMomenta = {k1, k2, ...};  (* 进入内线动量偏移的独立外动量向量基 *)
-vertexEnergies = <|v1 -> k15, v2 -> p2, ...|>;  (* 只进顶点相位的能量模或能量模之和 *)
+vertexEnergies = <|v1 -> ke[1], v2 -> Sqrt[s11], ...|>;  (* 独立顶点能量用 ke[i]；可复用外部不变量表达式 *)
 ispData = {{isp1, sp[q1, k1], {min1, max1}}, ...};  (* 006 起用户口 ISP 定义用 sp *)
 ```
 
@@ -45,8 +45,8 @@ ispData = {{isp1, sp[q1, k1], {min1, max1}}, ...};  (* 006 起用户口 ISP 定�
 - `vertexData`：顶点编号和 SK 符号。
 - `lineData`：每条内线的端点、动量、质量类型、building block 类型、SK 类型。
 - `loopMomenta`：圈动量基。
-- `externalMomenta`：独立外动量向量基。它只包含实际进入内线动量 `Q_e = l + sum k`、会与圈动量发生标量积的三动量方向；只出现在顶点相位中的无质量外腿能量模或能量模之和（如 `k15=|k_1|+|k_5|`）不放这里。
-- `vertexEnergies`：顶点外部能量参数，可包含用户打包的能量模之和 `k15`。这类量只服务 time-IBP 相位和数值替换，不参与 `sp` 完备性。
+- `externalMomenta`：独立外动量向量基。它只包含实际进入内线动量 `Q_e = l + sum k`、会与圈动量发生标量积的三动量方向；只出现在顶点相位中的无质量外腿能量模或能量组合不放这里；独立绝对值参数用 `ke[i]`，可由外部不变量复用的能量在 `vertexEnergies` 中写成相应表达式。外腿能量参数之间不做完备标量积，只有用户显式写成外部不变量表达式时才复用圈外动量空间变量。
+- `vertexEnergies`：顶点 e 指数外部能量参数。若能量由 `externalMomenta` 张成且应与圈动量部分共享变量，写成外部不变量名的函数，如 `Sqrt[s11]`；若为独立绝对值参数，建议写 `ke[i]`。不要把 `|ke1+ke2|` 自动拆成 `|ke1|+|ke2|`；若该组合本身独立，就另记为 `ke[3]` 这类新参数。
 - `externalInvariantRules`：外动量-外动量不变量的输出命名规则，例如 `sp[k1,k1] -> s11` 或 `sp[k1,k2] -> sig12`。未设时按 `externalMomenta` 位置默认生成 `sij`；输出端、数值规则模板和 Kira 系数替换都使用这些变量名。
 - `ispData`：多圈或传播子不足以覆盖标量积空间时必须给；单圈无 ISP case 可为空。
 - 零点和 prefactor 配置：`a0Rules`、`b0Rules`、`shrinkPrefactorRules` 可缺省，但建议 case 文件显式记录。

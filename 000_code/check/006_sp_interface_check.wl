@@ -20,8 +20,8 @@ spInterfaceCase = <|
      <|"id" -> 2, "endpoints" -> {1, 2}, "momentum" -> k321, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>,
      <|"id" -> 3, "endpoints" -> {1, 2}, "momentum" -> l3 - k321 - wdnmd, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++"|>
      },
-   "extLegs" -> {{"kaPlusKb", 1, k15}, {"p2", 2, p2}},
-   "vertexEnergies" -> <|1 -> k15, 2 -> p2|>,
+   "extLegs" -> {{"kaPlusKb", 1, ke[15]}, {"p2", 2, ke[22]}},
+   "vertexEnergies" -> <|1 -> ke[15], 2 -> ke[22]|>,
    "loopMomenta" -> {l3, k321},
    "externalMomenta" -> {wdnmd},
    "externalInvariantRules" -> {sp[wdnmd, wdnmd] -> sigW},
@@ -29,7 +29,7 @@ spInterfaceCase = <|
      {rhoA, sp[l3, wdnmd + l3], {0, 1}},
      {rhoB, sp[k321, wdnmd], {0, 1}}
      },
-   "numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2, k15 -> 17, p2 -> 11},
+   "numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2, ke[15] -> 17, ke[22] -> 11},
    "sampleDiscreteRules" -> {{n[1, 1] -> 0, n[1, 2] -> 0, n[2] -> 0, n[3] -> 0}},
    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>
    |>;
@@ -41,7 +41,7 @@ spSummary = summarizeCase[spInterfaceCase];
 spNumericReq = numericRuleRequirementReport[spTopo];
 spDefaultInvariantCase = Join[
    KeyDrop[spInterfaceCase, {"externalInvariantRules", "numericRules"}],
-   <|"numericRules" -> {dim -> 3, s11 -> 5, nuM -> 2, k15 -> 17, p2 -> 11}|>
+   <|"numericRules" -> {dim -> 3, s11 -> 5, nuM -> 2, ke[15] -> 17, ke[22] -> 11}|>
    ];
 spDefaultTopo = parseTopology[spDefaultInvariantCase];
 spDefaultSummary = summarizeCase[spDefaultInvariantCase];
@@ -49,14 +49,14 @@ spDefaultTemplate = makeNumericRuleTemplate[KeyDrop[spDefaultInvariantCase, "num
 spBaseIntegral = makeBaseIntegral[spTopo];
 spMomentumGen = SelectFirst[makeIBPGenerators[spTopo], #["type"] === "momentum" && #["vectorType"] === "external" && #["dLoop"] === 1 &];
 spMomentumSeed = applySeedCanonical[Expand[applyMomentumGeneratorSeed[spTopo, spBaseIntegral, spMomentumGen]], spTopo];
-spUserCoeffRules = {sigW -> 5, k15 -> 17};
-spInternalCoeffRules = {kk[1, 1] -> 5, k15 -> 17};
+spUserCoeffRules = {sigW -> 5, ke[15] -> 17};
+spInternalCoeffRules = {kk[1, 1] -> 5, ke[15] -> 17};
 spLinearToy = <|
    "status" -> "generated",
    "caseName" -> "spLinearToy",
    "topology" -> spTopo,
    "topologyValidationReport" -> topologyValidationReport[spTopo],
-   "linearEquations" -> {<|"coefficientRules" -> {1 -> kk[1, 1] + k15}, "constantTerm" -> 0, "linearQ" -> True|>},
+   "linearEquations" -> {<|"coefficientRules" -> {1 -> kk[1, 1] + ke[15]}, "constantTerm" -> 0, "linearQ" -> True|>},
    "integralList" -> {spBaseIntegral},
    "integralRules" -> {spBaseIntegral -> 1},
    "integralCount" -> 1,
@@ -64,6 +64,24 @@ spLinearToy = <|
    |>;
 spSampledLinear = applyCoefficientRulesToLinearSystem[spLinearToy, CoefficientRules -> spUserCoeffRules];
 spKiraStrings = makeKiraInputStrings[spLinearToy, spUserCoeffRules, <|"AppendNumericDummyEquation" -> False|>];
+
+spEnergyConventionCase = Join[
+   KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
+   <|
+    "vertexEnergies" -> <|1 -> Sqrt[sigW], 2 -> ke[3]|>,
+    "numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2, ke[3] -> 7}
+    |>
+   ];
+spEnergyTopo = parseTopology[spEnergyConventionCase];
+spEnergyReq = numericRuleRequirementReport[spEnergyTopo];
+spEnergyReport = vertexEnergyNamingReport[spEnergyTopo];
+
+spDefaultEnergyCase = Join[
+   KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
+   <|"numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2, ke[1] -> 11, ke[2] -> 13}|>
+   ];
+spDefaultEnergyTopo = parseTopology[spDefaultEnergyCase];
+spDefaultEnergyReport = vertexEnergyNamingReport[spDefaultEnergyTopo];
 
 spCheckResults = <|
    "spOrderless" -> TrueQ[MemberQ[Attributes[sp], Orderless] && sp[l3, wdnmd + l3] === sp[wdnmd + l3, l3]],
@@ -79,7 +97,19 @@ spCheckResults = <|
       spDefaultTemplate === {s11 -> numericValue[s11]} &&
       spDefaultSummary["externalInvariantNamingReport", "externalInvariantRules"] === {sp[wdnmd, wdnmd] -> s11}
      ],
-   "vertexEnergyNotExternalMomentum" -> TrueQ[FreeQ[spTopo["externalMomenta"], k15] && FreeQ[spData["scalarProducts"], k15] && MemberQ[spNumericReq["requiredVertexEnergies"], k15]],
+   "vertexEnergyNotExternalMomentum" -> TrueQ[FreeQ[spTopo["externalMomenta"], ke[15]] && FreeQ[spData["scalarProducts"], ke[15]] && MemberQ[spNumericReq["requiredVertexEnergies"], ke[15]]],
+   "vertexEnergyUsesExternalInvariantWhenSpecified" -> TrueQ[
+     vertexExternalEnergy[spEnergyTopo, 1] === Sqrt[kk[1, 1]] &&
+      vertexExternalEnergy[spEnergyTopo, 2] === ke[3] &&
+      Sort[spEnergyReq["internalRequiredVertexEnergies"]] === Sort[{kk[1, 1], ke[3]}] &&
+      Sort[spEnergyReq["requiredVertexEnergies"]] === Sort[{sigW, ke[3]}] &&
+      spEnergyReport["userVertexEnergies"][1] === Sqrt[sigW]
+     ],
+   "vertexEnergyDefaultDoesNotSumExtLegs" -> TrueQ[
+     vertexExternalEnergy[spDefaultEnergyTopo, 1] === ke[1] &&
+      vertexExternalEnergy[spDefaultEnergyTopo, 2] === ke[2] &&
+      FreeQ[Values[spDefaultEnergyReport["internalVertexEnergies"]], ke[15] | ke[22]]
+     ],
    "sampledCoefficientRulesAcceptSP" -> TrueQ[
      spSampledLinear["coefficientRulesApplied"] === spInternalCoeffRules &&
       spSampledLinear["userCoefficientRulesApplied"] === spUserCoeffRules &&
@@ -90,7 +120,7 @@ spCheckResults = <|
       spKiraStrings["kiraCoefficientRulesApplied"] === spInternalCoeffRules &&
       spKiraStrings["userKiraCoefficientRulesApplied"] === spUserCoeffRules &&
       TrueQ[spKiraStrings["numericCoefficientSystemQ"]] &&
-      FreeQ[spKiraStrings["coefficientVariables"], kk | k15]
+      FreeQ[spKiraStrings["coefficientVariables"], kk | ke[15]]
      ],
    "rulesComputed" -> TrueQ[spRules["status"] === "computed"],
    "ispInternalExprs" -> TrueQ[spData["internalISPExprs"] === {qk[1, 1] + qq[1, 1], qk[2, 1]}],

@@ -73,7 +73,7 @@ requiredCaseInputKeys[] := {"vertexData", "lineData", "loopMomenta"};
 
 
 optionalCaseInputKeys[] := {
-   "name", "extLegs", "externalMomenta", "externalInvariantRules", "ispData", "vertexEnergies", "activeVertexIds",
+   "name", "extLegs", "externalMomenta", "externalInvariantRules", "rawExternalInvariantRules", "ispData", "vertexEnergies", "activeVertexIds",
    "fixedAVertexValues", "numericRules", "sampleDiscreteRules", "seedPreset", "seedRanges",
    "seedOptions", "zeroPointRules", "shrinkPrefactorRules", "kiraOrdering"
    };
@@ -389,7 +389,7 @@ parseTopology::badinput = "case 输入 preflight 失败：`1`。";
 
 parseTopology[case_Association] := Module[
    {vertexData, vertexIds, vertexSignAssoc, rawLines, lines, loopMomenta,
-   externalMomenta, externalInvariantRules, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
+   externalMomenta, rawExternalInvariantRules, externalInvariantRules, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
     eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig, topoContext},
    If[caseInputPreflightErrorQ[case],
     If[caseInputMissingRequiredKeysQ[case],
@@ -436,7 +436,8 @@ parseTopology[case_Association] := Module[
      {e, nE}
      ];
    topoContext = <|"loopMomenta" -> loopMomenta, "externalMomenta" -> externalMomenta, "nL" -> nL, "nK" -> nK|>;
-   externalInvariantRules = normalizeExternalInvariantRulesForTopology[Lookup[case, "externalInvariantRules", Automatic], topoContext];
+   rawExternalInvariantRules = Lookup[case, "rawExternalInvariantRules", Lookup[case, "externalInvariantRules", Automatic]];
+   externalInvariantRules = normalizeExternalInvariantRulesForTopology[rawExternalInvariantRules, topoContext];
    topoContext = Join[topoContext, <|"externalInvariantRules" -> externalInvariantRules|>];
    seedConfig = normalizeSeedConfig[case];
    <|
@@ -451,6 +452,7 @@ parseTopology[case_Association] := Module[
     "fixedAVertexValues" -> Lookup[case, "fixedAVertexValues", <||>],
     "loopMomenta" -> loopMomenta,
     "externalMomenta" -> externalMomenta,
+    "rawExternalInvariantRules" -> rawExternalInvariantRules,
     "externalInvariantRules" -> externalInvariantRules,
     "ispData" -> ispData,
     "nV" -> nV,
@@ -1161,13 +1163,16 @@ numericRuleRequirementReport[topo_Association] := Module[
     "requiredExternalInvariants" -> toUser[external],
     "internalRequiredExternalInvariants" -> external,
     "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
-    "requiredVertexEnergies" -> vertex,
+    "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
+    "requiredVertexEnergies" -> toUser[vertex],
+    "internalRequiredVertexEnergies" -> vertex,
     "requiredLineParameters" -> line,
     "requiredNumericVariables" -> toUser[required],
     "internalRequiredNumericVariables" -> required,
     "missingExternalInvariants" -> toUser[missingExternal],
     "internalMissingExternalInvariants" -> missingExternal,
-    "missingVertexEnergies" -> missingVertex,
+    "missingVertexEnergies" -> toUser[missingVertex],
+    "internalMissingVertexEnergies" -> missingVertex,
     "missingLineParameters" -> missingLine,
     "missingNumericVariables" -> toUser[missingAll],
     "internalMissingNumericVariables" -> missingAll,
@@ -1653,15 +1658,32 @@ applyMomentumGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
 (* 本章接入 time-IBP 的通用 core 项：顶点幂次、外部能量、massive building-block 端点导数、massless 端点翻转项和 massive theta 边界缩并项。
    单独 time batch 会把进一步 shrink-sector 生成标为 pending；canonical batch 会在保护阈值内自动补齐这些 sectors。 *)
 
-vertexExternalEnergy[topo_Association, vertexId_] := Module[
-   {vertexEnergies = Lookup[topo, "vertexEnergies", Missing["NotSet"]], attachedExtLegs},
+rawVertexExternalEnergy[topo_Association, vertexId_] := Module[
+   {vertexEnergies = Lookup[topo, "vertexEnergies", Missing["NotSet"]]},
    Which[
     AssociationQ[vertexEnergies] && KeyExistsQ[vertexEnergies, vertexId], vertexEnergies[vertexId],
     ListQ[vertexEnergies], vertexId /. vertexEnergies,
     True,
-    attachedExtLegs = Select[topo["extLegs"], Length[#] >= 3 && #[[2]] === vertexId &];
-    If[Length[attachedExtLegs] > 0, Total[attachedExtLegs[[All, 3]]], P[vertexId]]
+    ke[vertexId]
     ]
+   ];
+
+
+vertexExternalEnergy[topo_Association, vertexId_] := scalarProductInputToInternal[rawVertexExternalEnergy[topo, vertexId], topo];
+
+
+vertexEnergyNamingReport[topo_Association] := Module[
+   {vertices = activeAVertexIds[topo], raw, internal, user},
+   raw = AssociationThread[vertices -> (rawVertexExternalEnergy[topo, #] & /@ vertices)];
+   internal = AssociationThread[vertices -> (vertexExternalEnergy[topo, #] & /@ vertices)];
+   user = AssociationThread[vertices -> (scalarProductInternalToUser[vertexExternalEnergy[topo, #], topo] & /@ vertices)];
+   <|
+    "convention" -> "vertex external energy uses ke[i] for independent absolute-value parameters; expressions built from external invariant names are normalized to the same scalar-product coordinates used by loop momenta",
+    "rawVertexEnergies" -> raw,
+    "internalVertexEnergies" -> internal,
+    "userVertexEnergies" -> user,
+    "message" -> "不要把 |ke1+ke2| 与 |ke1|+|ke2| 混同；若 |ke1+ke2| 作为独立能量参数，应单独命名为 ke[i]。外腿能量参数之间不生成点积关系；若该能量由 externalMomenta 张成并希望复用关系，可在 vertexEnergies 中写成 externalInvariantRules 输出变量的函数，例如 Sqrt[s11]。"
+    |>
    ];
 
 
@@ -2258,6 +2280,7 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "vertexEnergies" -> remapVertexEnergiesToRepresentatives[topo["vertexEnergies"], repMap],
      "loopMomenta" -> topo["loopMomenta"],
      "externalMomenta" -> topo["externalMomenta"],
+     "rawExternalInvariantRules" -> Lookup[topo, "rawExternalInvariantRules", topo["externalInvariantRules"]],
      "externalInvariantRules" -> topo["externalInvariantRules"],
      "ispData" -> topo["ispData"],
      "numericRules" -> userNumericRules[topo],
@@ -2321,6 +2344,7 @@ makeTopologySeedSummary[topo_Association] := <|
    "numericRules" -> topo["numericRules"],
    "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
+   "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
    "sampleDiscreteRules" -> topo["sampleDiscreteRules"]
    |>;
 
@@ -2574,7 +2598,7 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingExternalInvariants", <|
       "missingExternalInvariants" -> missingExternalInvariants,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need these kk rules"
+      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need external invariant value rules, using the output names from externalInvariantRules/default sij"
       |>]
     ];
    missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
@@ -4204,6 +4228,7 @@ summarizeCase[case_Association] := Module[
     "zExprs" -> spData["zExprs"],
     "numericRules" -> userNumericRules[topo],
     "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
+    "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
     "numericZExprs" -> (spData["internalZExprs"] /. topo["numericRules"]),
     "seedRanges" -> topo["seedRanges"],
     "validationReport" -> topologyValidationReport[topo],
