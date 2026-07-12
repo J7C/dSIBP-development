@@ -45,8 +45,8 @@ ispData = {{isp1, sp[q1, k1], {min1, max1}}, ...};  (* 006 起用户口 ISP 定�
 - `vertexData`：顶点编号和 SK 符号。
 - `lineData`：每条内线的端点、动量、质量类型、building block 类型、SK 类型。
 - `loopMomenta`：圈动量基。
-- `externalMomenta`：独立外动量向量基。它只包含实际进入内线动量 `Q_e = l + sum k`、会与圈动量发生标量积的三动量方向；只出现在顶点相位中的无质量外腿能量模或能量组合不放这里；独立绝对值参数用 `ke[i]`，可由外部不变量复用的能量在 `vertexEnergies` 中写成相应表达式。外腿能量参数之间不做完备标量积，只有用户显式写成外部不变量表达式时才复用圈外动量空间变量。
-- `vertexEnergies`：顶点 e 指数外部能量参数。若能量由 `externalMomenta` 张成且应与圈动量部分共享变量，写成外部不变量名的函数，如 `Sqrt[s11]`；若为独立绝对值参数，建议写 `ke[i]`。不要把 `|ke1+ke2|` 自动拆成 `|ke1|+|ke2|`；若该组合本身独立，就另记为 `ke[3]` 这类新参数。
+- `externalMomenta`：独立外动量向量基。它只包含实际进入内线动量 `Q_e = l + sum k`、会与圈动量发生标量积的三动量方向；只出现在顶点相位中的外腿能量模或能量组合不放这里。若一个顶点连着的所有外腿打包后的 e 指数能量和这些外动量不变量是同一变量，在 `vertexEnergies` 中写成外部不变量表达式；否则用独立 `ke[i]`。外腿能量参数之间不做点积。
+- `vertexEnergies`：顶点 e 指数外部能量参数，每个值表示该顶点连着的所有外腿打包后的能量。若能量由 `externalMomenta` 张成且应与圈动量部分共享变量，写成外部不变量名的函数，如 `Sqrt[s11]`；若为独立绝对值参数，建议写 `ke[i]`。不要把 `|ke1+ke2|` 自动拆成 `|ke1|+|ke2|`；若该组合本身独立，就另记为 `ke[3]` 这类新参数。外腿能量参数之间不做点积。
 - `externalInvariantRules`：外动量-外动量不变量的输出命名规则，例如 `sp[k1,k1] -> s11` 或 `sp[k1,k2] -> sig12`。未设时按 `externalMomenta` 位置默认生成 `sij`；输出端、数值规则模板和 Kira 系数替换都使用这些变量名。
 - `ispData`：多圈或传播子不足以覆盖标量积空间时必须给；单圈无 ISP case 可为空。
 - 零点和 prefactor 配置：`a0Rules`、`b0Rules`、`shrinkPrefactorRules` 可缺省，但建议 case 文件显式记录。

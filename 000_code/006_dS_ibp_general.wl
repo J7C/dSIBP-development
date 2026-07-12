@@ -1408,6 +1408,72 @@ scalarProductArgumentLinearityIssues[topo_Association] := Module[
    ];
 
 
+vertexEnergySPArgumentIssues[expr_, topo_Association] := Module[
+   {basis = Join[topo["loopMomenta"], topo["externalMomenta"]], nL = topo["nL"], pairs},
+   pairs = Cases[expr, HoldPattern[sp[p_, r_]] :> {p, r}, {0, Infinity}];
+   DeleteCases[
+    Flatten[
+     MapIndexed[
+      Function[{pair, pairPos},
+       MapIndexed[
+        Function[{arg, argPos},
+         Module[{data = linearMomentumExpressionData[arg, basis], loopCoeffs},
+          loopCoeffs = Take[data["coefficients"], nL];
+          If[TrueQ[data["linearQ"]] && TrueQ[loopCoeffs === ConstantArray[0, nL]],
+           Nothing,
+           <|
+            "spPosition" -> First[pairPos],
+            "argumentSlot" -> First[argPos],
+            "argument" -> arg,
+            "residual" -> data["residual"],
+            "loopCoefficients" -> loopCoeffs,
+            "basis" -> basis
+            |>
+           ]
+          ]
+         ],
+        pair
+        ]
+       ],
+      pairs
+      ],
+     1
+     ],
+    Nothing
+    ]
+   ];
+
+
+vertexEnergyMomentumDependenceIssues[topo_Association] := Module[
+   {declared = Join[topo["loopMomenta"], topo["externalMomenta"]], loopSPVars = scalarProductVariables[topo], vertices = activeAVertexIds[topo]},
+   DeleteCases[
+    Table[
+     Module[{raw = rawVertexExternalEnergy[topo, vertex], rawNoSP, directMomenta, spArgIssues, internal, loopSPUsed},
+      rawNoSP = raw /. HoldPattern[sp[_, _]] -> 0;
+      directMomenta = DeleteDuplicates@Cases[rawNoSP, sym_Symbol /; MemberQ[declared, sym], {0, Infinity}];
+      spArgIssues = vertexEnergySPArgumentIssues[raw, topo];
+      internal = scalarProductInputToInternal[raw, topo];
+      loopSPUsed = Intersection[Variables[internal], loopSPVars];
+      If[directMomenta === {} && spArgIssues === {} && loopSPUsed === {},
+       Nothing,
+       <|
+        "vertexId" -> vertex,
+        "rawVertexEnergy" -> raw,
+        "userVertexEnergy" -> scalarProductInternalToUser[internal, topo],
+        "directMomentumSymbols" -> directMomenta,
+        "spArgumentIssues" -> spArgIssues,
+        "loopScalarProducts" -> scalarProductInternalToUser[#, topo] & /@ loopSPUsed,
+        "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex; use external invariant variables when the energy is tied to externalMomenta space, otherwise use independent ke[i] parameters"
+        |>
+       ]
+      ],
+     {vertex, vertices}
+     ],
+    Nothing
+    ]
+   ];
+
+
 
 (* 小规模线性规则生成：直接作为 ISP 给出的标量积会被保留，不强行改写成 rho。
    本 package 假设用户输入的 z_e 与直接 ISP 已经构成闭合坐标；这里不把 dS 图
@@ -1770,7 +1836,7 @@ vertexEnergyNamingReport[topo_Association] := Module[
     "internalVertexEnergies" -> internal,
     "userVertexEnergies" -> user,
     "dependencyData" -> dependencies,
-    "message" -> "不要把 |ke1+ke2| 与 |ke1|+|ke2| 混同；若 |ke1+ke2| 作为独立能量参数，应单独命名为 ke[i]。外腿能量参数之间不生成点积关系；若该能量由 externalMomenta 张成并希望复用关系，可在 vertexEnergies 中写成 externalInvariantRules 输出变量的函数，例如 Sqrt[s11]。"
+    "message" -> "vertexEnergies 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 externalMomenta 空间的外部不变量是同一变量，应写成 externalInvariantRules 输出变量的函数，例如 Sqrt[s11]；否则写独立 ke[i]。不要把 |ke1+ke2| 与 |ke1|+|ke2| 混同；若 |ke1+ke2| 独立，应单独命名为 ke[i]。外腿能量参数之间不生成点积关系。"
     |>
    ];
 
@@ -2476,7 +2542,7 @@ topologyValidationReport[topo_Association] := Module[
      zeroPointRuleValidationReport, shrinkPrefactorRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
-    nonLinearLineMomentumData, nonLinearScalarProductArgumentData,
+    nonLinearLineMomentumData, nonLinearScalarProductArgumentData, vertexEnergyMomentumDependenceData,
     spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
     missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
     missingLineParameters, numericRequirementReport, pendingFeatures, ruleData},
@@ -2615,6 +2681,10 @@ topologyValidationReport[topo_Association] := Module[
     If[badVertexEnergyKeys =!= {},
      appendIssue["error", "vertexEnergiesNotInVertexData", <|"vertexEnergyKeys" -> badVertexEnergyKeys, "vertexIds" -> vertexIds|>]
      ]
+    ];
+   vertexEnergyMomentumDependenceData = vertexEnergyMomentumDependenceIssues[topo];
+   If[vertexEnergyMomentumDependenceData =!= {},
+    appendIssue["error", "invalidVertexEnergyMomentumDependence", <|"issues" -> vertexEnergyMomentumDependenceData, "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex: use external invariant variables such as s11/sigW when they belong to externalMomenta space, otherwise use independent ke[i] parameters"|>]
     ];
    If[Lookup[topo, "unknownSeedPreset", None] =!= None,
     appendIssue["error", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "allowedSeedPresets" -> {"quickCheck", "fullDiscrete", "bounded"}|>]

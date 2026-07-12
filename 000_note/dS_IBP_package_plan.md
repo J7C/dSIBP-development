@@ -270,7 +270,7 @@ ispData = {
 };
 ```
 
-`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。它主要用于输入传播子动量相关的标量积与 ISP，其中 `p,r` 必须先是 `loopMomenta/externalMomenta` 的线性组合，不能写成 `q1^2` 这类非线性表达式。外动量-外动量不变量在输出端使用变量名，不保持 `sp[k_i,k_j]` 形式；用户可设 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}`，未设时默认按 `externalMomenta` 的位置输出 `sij`（`i<=j`）。内部仍会把 `sp` 展开到编号坐标做线性代数，但用户不需要输入 `qq/qk/kk`。顶点外腿能量若属于 `externalMomenta` 张成的空间，推荐在 `vertexEnergies` 中写成外部不变量变量名的表达式；若不是，则作为独立 `ke[i]`。不同外腿能量参数之间不做点积，`|ke1+ke2|` 若独立就应另记为 `ke[3]`。
+`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。它主要用于输入传播子动量相关的标量积与 ISP，其中 `p,r` 必须先是 `loopMomenta/externalMomenta` 的线性组合，不能写成 `q1^2` 这类非线性表达式。外动量-外动量不变量在输出端使用变量名，不保持 `sp[k_i,k_j]` 形式；用户可设 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}`，未设时默认按 `externalMomenta` 的位置输出 `sij`（`i<=j`）。内部仍会把 `sp` 展开到编号坐标做线性代数，但用户不需要输入 `qq/qk/kk`。`vertexEnergies` 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量；若它和 `externalMomenta` 张成空间中的外部不变量是同一变量，优先写成外部不变量变量名的表达式；若不是，则作为独立 `ke[i]`。不同外腿能量参数之间不做点积，`|ke1+ke2|`、`|ke1|`、`|ke2|` 若独立就应分别命名，例如 `|ke1+ke2|` 另记为 `ke[3]`。`vertexEnergies` 中不能直接写 `loopMomenta/externalMomenta` 的向量符号，也不能写圈相关 `sp[q,k]`；属于外动量空间时写外部不变量变量名表达式，否则写独立 `ke[i]`。
 
 **完备性验证**：`verifyISP[topology, ispData]` 检查：
 1. 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合

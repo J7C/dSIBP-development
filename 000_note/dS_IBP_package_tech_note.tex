@@ -522,7 +522,7 @@ IBP 恒等式来自全微分在维正规化下积分为零：
 
 \subsection{完备 IBP 生成元集合}
 
-参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，设 \texttt{externalMomenta} 中有 $K$ 个独立外动量向量。这里的外动量向量只指实际进入内线动量偏移 $Q_e=\sum_l c_{e,l}q_l+P_e$、并会在 $Q_e^2$ 或 $q_l\cdot Q_e$ 中和圈动量发生标量积的三动量方向。只出现在 dS 顶点时间相位中的无质量外腿能量模或能量组合不计入 \texttt{externalMomenta}；独立能量参数内部建议记为 \texttt{ke[i]}，例如 $|k_1+k_5|$ 可记为 \texttt{ke[3]}。完备的 IBP 生成元为：
+参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，设 \texttt{externalMomenta} 中有 $K$ 个独立外动量向量。这里的外动量向量只指实际进入内线动量偏移 $Q_e=\sum_l c_{e,l}q_l+P_e$、并会在 $Q_e^2$ 或 $q_l\cdot Q_e$ 中和圈动量发生标量积的三动量方向。一个顶点连着的所有外腿在时间相位里只通过打包后的 e 指数能量进入；该能量若和 \texttt{externalMomenta} 空间中的外部不变量是同一变量，应复用对应变量名，若不是则作为独立参数，内部建议记为 \texttt{ke[i]}。例如 $|k_1+k_5|$ 作为独立能量时可记为 \texttt{ke[3]}，不等同于 \texttt{ke[1]+ke[5]}。这些顶点能量不计入 \texttt{externalMomenta} 或 loop-scalar-product 空间。完备的 IBP 生成元为：
 
 \begin{equation}
   \mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_K^\mu\}
@@ -562,7 +562,7 @@ ispData = {
 };
 \end{verbatim}
 
-\texttt{sp[p,r]} 是 006 起的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；其中 \texttt{p,r} 必须先是 \texttt{loopMomenta/externalMomenta} 的线性组合，不能写成 \texttt{q1\textasciicircum 2} 这类非线性表达式。内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。顶点相位能量若不由 \texttt{externalMomenta} 的标量积关系决定，应作为独立 \texttt{ke[i]} 参数；例如 $|ke_1+ke_2|$ 应另记为 \texttt{ke[3]}，不能自动等同于 \texttt{ke[1]+ke[2]}。这些 \texttt{ke[i]} 不进入 \texttt{externalMomenta} 或 ISP 完备性坐标；外腿能量参数之间不生成点积关系。若某个顶点能量属于 \texttt{externalMomenta} 张成的空间并应复用变量，应在 \texttt{vertexEnergies} 中显式写成外部不变量表达式，例如 \verb|Sqrt[s11]| 或 \verb|Sqrt[sigW]|。该约定用于避免未复用关系造成约化结果冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 \texttt{ke[i]} 参数，package 不主动替用户拆分或合并。
+\texttt{sp[p,r]} 是 006 起的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；其中 \texttt{p,r} 必须先是 \texttt{loopMomenta/externalMomenta} 的线性组合，不能写成 \texttt{q1\textasciicircum 2} 这类非线性表达式。内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。外动量--外动量不变量在输出端使用变量名；用户可用 \texttt{externalInvariantRules} 自定义，未指定时默认按 \texttt{externalMomenta} 顺序命名为 \texttt{sij}。\texttt{vertexEnergies} 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 \texttt{externalMomenta} 张成空间中的外部不变量是同一变量，应在 \texttt{vertexEnergies} 中显式写成外部不变量表达式，例如 \verb|Sqrt[s11]| 或 \verb|Sqrt[sigW]|；若不是，则作为独立 \texttt{ke[i]} 参数。$|ke_1+ke_2|$、$|ke_1|$、$|ke_2|$ 是三个独立参数时必须分别命名，例如 $|ke_1+ke_2|$ 另记为 \texttt{ke[3]}，不能自动等同于 \texttt{ke[1]+ke[2]}。这些 \texttt{ke[i]} 不进入 \texttt{externalMomenta} 或 ISP 完备性坐标；外腿能量参数之间不生成点积关系。该约定用于避免未复用关系造成约化结果冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 \texttt{ke[i]} 参数，package 不主动替用户拆分或合并。\texttt{vertexEnergies} 中不能直接写 \texttt{loopMomenta/externalMomenta} 的向量符号，也不能写圈相关 \verb|sp[q,k]|；属于外动量空间时写外部不变量变量名表达式，否则写独立 \texttt{ke[i]}。
 
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}

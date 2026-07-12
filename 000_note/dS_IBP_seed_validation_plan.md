@@ -41,7 +41,7 @@ numericRules = {
 - `numericRules -> {}`：保持解析 seed。
 - `numericRules -> {...}`：生成数值系数 seed 或数值验证样本。
 
-006 起用户口的圈动量相关标量积仍写 `sp[p,r]`。外动量-外动量不变量在输出和数值规则模板中写作变量名：用户可通过 `externalInvariantRules` 自定义，未指定时默认按 `externalMomenta` 顺序为 `sij`，因此例子中写 `s11 -> 5`。只出现在 dS 顶点时间相位里的无质量外腿能量模或能量组合，若不由 `externalMomenta` 的标量积表达式复用，应写作独立 `ke[i]` 参数和普通替换 `ke[i] -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。`|ke1+ke2|`、`|ke1|`、`|ke2|` 独立时必须分别命名。外腿能量参数之间不做完备标量积；若某个顶点能量应和圈外动量不变量共用变量，用户需要在 `vertexEnergies` 中显式写成对应表达式。该约定用于避免未复用关系造成约化冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 `ke[i]` 参数。
+006 起用户口的圈动量相关标量积仍写 `sp[p,r]`。外动量-外动量不变量在输出和数值规则模板中写作变量名：用户可通过 `externalInvariantRules` 自定义，未指定时默认按 `externalMomenta` 顺序为 `sij`，因此例子中写 `s11 -> 5`。`vertexEnergies` 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量；若这个能量和 `externalMomenta` 空间中的外部不变量是同一变量，应写成对应变量名表达式并复用同一条数值规则；若不由 `externalMomenta` 的标量积表达式复用，应写作独立 `ke[i]` 参数和普通替换 `ke[i] -> value`，不放入 `externalMomenta` 或 ISP 完备性坐标。`|ke1+ke2|`、`|ke1|`、`|ke2|` 独立时必须分别命名。外腿能量参数之间不做完备标量积；该约定用于避免未复用关系造成约化冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 `ke[i]` 参数。`vertexEnergies` 中不能直接写 `loopMomenta/externalMomenta` 的向量符号，也不能写圈相关 `sp[q,k]`；属于外动量空间时写外部不变量变量名表达式，否则写独立 `ke[i]`。
 
 ## 4. 验证 case A：一 massive 一 massless 的 bubble
 

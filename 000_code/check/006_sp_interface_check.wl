@@ -121,6 +121,17 @@ spNonLinearMomentumCase = Join[
 spNonLinearMomentumReport = topologyValidationReport[parseTopology[spNonLinearMomentumCase]];
 spNonLinearMomentumIssueCodes = Lookup[spNonLinearMomentumReport["issues"], "code", {}];
 
+spBadVertexEnergyCase = Join[
+   KeyDrop[spInterfaceCase, {"vertexEnergies", "numericRules"}],
+   <|
+    "vertexEnergies" -> <|1 -> wdnmd, 2 -> sp[l3, wdnmd]|>,
+    "numericRules" -> {dim -> 3, sigW -> 5, nuM -> 2}
+    |>
+   ];
+spBadVertexEnergyReport = topologyValidationReport[parseTopology[spBadVertexEnergyCase]];
+spBadVertexEnergyIssueCodes = Lookup[spBadVertexEnergyReport["issues"], "code", {}];
+spBadVertexEnergyIssue = SelectFirst[spBadVertexEnergyReport["issues"], #code === "invalidVertexEnergyMomentumDependence" &];
+
 spCheckResults = <|
    "spOrderless" -> TrueQ[MemberQ[Attributes[sp], Orderless] && sp[l3, wdnmd + l3] === sp[wdnmd + l3, l3]],
    "internalNumericRule" -> TrueQ[MemberQ[spTopo["numericRules"], kk[1, 1] -> 5]],
@@ -198,6 +209,13 @@ spCheckResults = <|
      spNonLinearMomentumReport["status"] === "issues" &&
       MemberQ[spNonLinearMomentumIssueCodes, "nonLinearLineMomenta"] &&
       MemberQ[spNonLinearMomentumIssueCodes, "nonLinearScalarProductArguments"]
+     ],
+   "vertexEnergyMomentumInputRejected" -> TrueQ[
+     spBadVertexEnergyReport["status"] === "issues" &&
+      MemberQ[spBadVertexEnergyIssueCodes, "invalidVertexEnergyMomentumDependence"] &&
+      MemberQ[Flatten[Lookup[Lookup[spBadVertexEnergyIssue, "issues", {}], "directMomentumSymbols", {}]], wdnmd] &&
+      MemberQ[Flatten[Lookup[Lookup[spBadVertexEnergyIssue, "issues", {}], "loopScalarProducts", {}]], sp[l3, wdnmd]] &&
+      ! FreeQ[Lookup[Lookup[spBadVertexEnergyIssue, "issues", {}], "spArgumentIssues", {}], l3]
      ],
    "rulesComputed" -> TrueQ[spRules["status"] === "computed"],
    "ispInternalExprs" -> TrueQ[spData["internalISPExprs"] === {qk[1, 1] + qq[1, 1], qk[2, 1]}],
