@@ -1383,7 +1383,32 @@ shiftLineB[J[aList_, linePacks_, ispList_], e_Integer, delta_] := Module[
    ];
 
 
-linePowerIndex[J[aList_, linePacks_, ispList_], e_Integer] := linePacks[[e, 1]];
+zeroPointRuleValue[topo_Association, symbol_, default_: 0] := Module[
+   {hits},
+   hits = Cases[Lookup[topo, "zeroPointRules", {}], (Rule | RuleDelayed)[lhs_, rhs_] /; lhs === symbol :> rhs];
+   If[hits === {}, default, Last[hits]]
+   ];
+
+
+vertexZeroPoint[topo_Association, vertexId_] := zeroPointRuleValue[topo, a0[vertexRepresentative[topo, vertexId]]];
+
+
+lineBZeroPoint[topo_Association, e_Integer] := zeroPointRuleValue[topo, b0[topo["lines"][[e, "id"]]]];
+
+
+lineBSZeroPoint[topo_Association, e_Integer] := zeroPointRuleValue[topo, bS0[topo["lines"][[e, "id"]]]];
+
+
+vertexPowerIndex[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] := Module[
+   {pos = vertexASlot[topo, vertexId]},
+   If[Head[pos] === Missing, 0, aList[[pos]] + vertexZeroPoint[topo, vertexId]]
+   ];
+
+
+linePowerIndex[topo_Association, J[aList_, linePacks_, ispList_], e_Integer] := Module[
+   {base = linePacks[[e, 1]], packType = actualLinePackType[topo, e, linePacks[[e]]]},
+   base + If[packType === "shrunk", lineBSZeroPoint[topo, e], lineBZeroPoint[topo, e]]
+   ];
 
 
 shiftISPIndex[J[aList_, linePacks_, ispList_], j_Integer, delta_] := Module[
@@ -1481,7 +1506,7 @@ momentumPropagatorDerivativeTerms[topo_Association, int_J, gen_Association, repS
       0,
       vDotQ = Expand[expandDotExpr[vector, lineMomenta[[e]], topo] /. repSP2ZRules];
       shiftedInt = shiftLineB[int, e, 2];
-      -loopCoeff linePowerIndex[int, e] absorbLinearFactor[vDotQ, shiftedInt, topo]
+      -loopCoeff linePowerIndex[topo, int, e] absorbLinearFactor[vDotQ, shiftedInt, topo]
       ],
      {e, topo["nE"]}
      ]
@@ -1529,7 +1554,7 @@ vertexExternalEnergy[topo_Association, vertexId_] := Module[
 timeVertexPowerTerm[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] := Module[
    {pos = vertexASlot[topo, vertexId]},
    If[Head[pos] === Missing, Return[0]];
-   -aList[[pos]] shiftVertexA[J[aList, linePacks, ispList], topo, vertexId, -1]
+   -vertexPowerIndex[topo, J[aList, linePacks, ispList], vertexId] shiftVertexA[J[aList, linePacks, ispList], topo, vertexId, -1]
    ];
 
 
@@ -1612,6 +1637,33 @@ thetaBoundarySignOffset[topo_Association, e_Integer] := Lookup[
    topo["lines"][[e]],
    "thetaBoundarySignOffset",
    Lookup[topo, "thetaBoundarySignOffset", 0]
+   ];
+lineShrinkZeroPointShift[line_Association] := Module[
+   {bbType = Lookup[line, "bbType", "h"], nuValue = Lookup[line, "nu", nu]},
+   Lookup[line, "shrinkZeroPointShift", If[bbType === "h", 2 nuValue, 0]]
+   ];
+
+
+sectorZeroPointRules[topo_Association, shrunkLines_List, repMap_Association, activeVertices_List] := Module[
+   {lineRules, vertexRules, classVertices, classShrunkLines, shiftSum},
+   lineRules = Flatten@Table[
+      If[MemberQ[shrunkLines, e],
+       bS0[topo["lines"][[e, "id"]]] -> lineBZeroPoint[topo, e] + lineShrinkZeroPointShift[topo["lines"][[e]]],
+       Switch[actualLinePackType[topo, e, makeLinePack[topo["lines"][[e]]]],
+        "shrunk", bS0[topo["lines"][[e, "id"]]] -> lineBSZeroPoint[topo, e],
+        _, b0[topo["lines"][[e, "id"]]] -> lineBZeroPoint[topo, e]
+        ]
+       ],
+      {e, topo["nE"]}
+      ];
+   vertexRules = Table[
+     classVertices = Select[topo["vertexIds"], Lookup[repMap, #] === rep &];
+     classShrunkLines = Select[shrunkLines, Function[e, And @@ (Function[v, Lookup[repMap, v] === rep] /@ topo["lines"][[e, "endpoints"]])]];
+     shiftSum = Total[lineShrinkZeroPointShift[topo["lines"][[#]]] & /@ classShrunkLines];
+     a0[rep] -> Total[vertexZeroPoint[topo, #] & /@ classVertices] - shiftSum,
+     {rep, activeVertices}
+     ];
+   DeleteDuplicates@Join[vertexRules, lineRules]
    ];
 
 
@@ -2095,7 +2147,7 @@ filterSampleDiscreteRulesForTopology[rules_List, topo_Association] := Module[
 
 
 shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
-   {pairs, repMap, activeVertices, fixedA, newLines, newExtLegs, newCase, sectorTopo},
+   {pairs, repMap, activeVertices, fixedA, newLines, newExtLegs, newZeroPointRules, newCase, sectorTopo},
    pairs = topo["lines"][[#, "endpoints"]] & /@ shrunkLines;
    repMap = vertexRepresentativeMap[topo["vertexIds"], pairs];
    activeVertices = DeleteDuplicates[Lookup[repMap, topo["vertexIds"]]];
@@ -2111,6 +2163,7 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      topo["lines"]
      ];
    newExtLegs = remapExtLegsToRepresentatives[topo["extLegs"], repMap];
+   newZeroPointRules = sectorZeroPointRules[topo, shrunkLines, repMap, activeVertices];
    newCase = <|
      "name" -> topo["name"] <> "_sector_" <> StringRiffle["e" <> ToString[#] & /@ shrunkLines, "_"],
      "vertexData" -> topo["vertexData"],
@@ -2123,7 +2176,7 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "numericRules" -> topo["numericRules"],
      "sampleDiscreteRules" -> topo["sampleDiscreteRules"],
      "seedRanges" -> topo["seedRanges"],
-     "zeroPointRules" -> topo["zeroPointRules"],
+     "zeroPointRules" -> newZeroPointRules,
      "shrinkPrefactorRules" -> topo["shrinkPrefactorRules"],
      "kiraOrdering" -> topo["kiraOrdering"],
      "sectorVertexRepresentativeMap" -> repMap,

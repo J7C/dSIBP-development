@@ -56,6 +56,43 @@ loadGeneralGenerator[] := Block[
 (*手推预期数据*)
 
 (* 这里显式使用 Global` 符号，以便和 004 生成器的输出 SameQ 比较。 *)
+lineIdFromInput[line_Association] := line["id"];
+lineIdFromInput[line_List] := line[[1]];
+
+
+benchmarkZeroPointRules[case_Association] := Module[
+   {vertexIds, lineIds},
+   vertexIds = case["vertexData"][[All, 1]];
+   lineIds = lineIdFromInput /@ case["lineData"];
+   Join[
+    (Global`a0[#] -> Global`a0[#] & /@ vertexIds),
+    (Global`b0[#] -> Global`b0[#] & /@ lineIds)
+    ]
+   ];
+
+
+benchmarkCaseWithZeroPoints[case_Association] := Join[case, <|"zeroPointRules" -> benchmarkZeroPointRules[case]|>];
+
+
+aPow[i_] := Global`a[i] + Global`a0[i];
+bPow[i_] := Global`b[i] + Global`b0[i];
+bSPowH[i_, nu_] := Global`bS[i] + Global`b0[i] + 2 nu;
+mergedAPow[rep_, vertices_List, shifts_List] := Global`a[rep] + Total[Global`a0 /@ vertices] - Total[shifts];
+
+
+zeroPointLiftTerm[term_, coeffRules_List] := Module[
+   {integrals, coeff},
+   integrals = Cases[term, _Global`J, {0, Infinity}];
+   If[integrals === {}, Return[term]];
+   coeff = term/(Times @@ integrals);
+   (coeff /. coeffRules) (Times @@ integrals)
+   ];
+
+
+zeroPointLift[expr_, coeffRules_List] := Expand[Total[zeroPointLiftTerm[#, coeffRules] & /@ If[Head[Expand[expr]] === Plus, List @@ Expand[expr], {Expand[expr]}]]];
+
+
+topZeroPointRules[vertices_List, lines_List] := Join[(Global`a[#] -> aPow[#] & /@ vertices), (Global`b[#] -> bPow[#] & /@ lines)];
 
 expectedMixedBubble[] := <|
    "name" -> "mixedBubbleMassiveMassless",
@@ -356,11 +393,11 @@ expectedMomentumSeedMasslessBubbleQ[] := Module[
 
 compareExpectedMomentumSeedMasslessBubble[] := Module[
    {topo, int0, gen, got, expected},
-   topo = Global`parseTopology[Global`bubbleMasslessCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`bubbleMasslessCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    got = Expand[Global`applyMomentumGeneratorSeed[topo, int0, gen]];
-   expected = expectedMomentumSeedMasslessBubbleQ[];
+   expected = zeroPointLift[expectedMomentumSeedMasslessBubbleQ[], topZeroPointRules[{1, 2}, {1, 2}]];
    <|
     "name" -> "momentumSeedMasslessBubble_q1Dotq1_propagatorOnly",
     "pass" -> TrueQ[got === expected],
@@ -383,14 +420,14 @@ expectedTimeSeedMasslessBubbleTau1[] := Module[
 
 compareExpectedMasslessBubbleAllSectorHandSeeds[] := Module[
    {topo, int0, qgen, tgen, gotQ, gotT, expectedQ, expectedT, qCheck, sectorKeys},
-   topo = Global`parseTopology[Global`bubbleMasslessCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`bubbleMasslessCase]];
    int0 = Global`makeBaseIntegral[topo];
    qgen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    tgen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" && #["vertex"] === 1 &];
    gotQ = Expand[Global`applyMomentumGeneratorSeed[topo, int0, qgen]];
    gotT = Expand[Global`applyTimeGeneratorSeed[topo, int0, tgen]];
-   expectedQ = expectedMomentumSeedMasslessBubbleQ[];
-   expectedT = expectedTimeSeedMasslessBubbleTau1[];
+   expectedQ = zeroPointLift[expectedMomentumSeedMasslessBubbleQ[], topZeroPointRules[{1, 2}, {1, 2}]];
+   expectedT = zeroPointLift[expectedTimeSeedMasslessBubbleTau1[], topZeroPointRules[{1, 2}, {1, 2}]];
    qCheck = compareExpectedMomentumSeedMasslessBubble[];
    sectorKeys = Lookup[Global`makeCanonicalSeedBatch[topo]["sectorMetadataList"], "sectorKey"];
    <|
@@ -504,11 +541,11 @@ expectedMomentumSeedMixedBubbleQ[] := Module[
 
 compareExpectedMomentumSeedMixedBubbleBuildingBlock[] := Module[
    {topo, int0, gen, got, expected},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    got = Expand[Global`applyMomentumGeneratorSeed[topo, int0, gen]];
-   expected = expectedMomentumSeedMixedBubbleQ[];
+   expected = zeroPointLift[expectedMomentumSeedMixedBubbleQ[], topZeroPointRules[{1, 2}, {1, 2}]];
    <|
     "name" -> "momentumSeedMixedBubble_q1Dotq1_buildingBlock",
     "pass" -> TrueQ[got === expected],
@@ -553,11 +590,11 @@ expectedMomentumSeedMixedTriangleQ1DotK1[] := Module[
 
 compareExpectedMomentumSeedMixedTriangleBuildingBlock[] := Module[
    {topo, int0, gen, got, expected, gotCanonical},
-   topo = Global`parseTopology[Global`mixedTriangleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedTriangleCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" && #["vectorType"] === "external" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    got = Expand[Global`applyMomentumGeneratorSeed[topo, int0, gen]];
-   expected = expectedMomentumSeedMixedTriangleQ1DotK1[];
+   expected = zeroPointLift[expectedMomentumSeedMixedTriangleQ1DotK1[], topZeroPointRules[{1, 2, 3}, {1, 2, 3}]];
    gotCanonical = Global`applySeedCanonical[got, topo];
    <|
     "name" -> "momentumSeedMixedTriangle_dq1Dotk1_twoMassiveOneMassless",
@@ -585,11 +622,11 @@ expectedMomentumSeedSunriseQ1DotK[] := Module[
 
 compareExpectedMomentumSeedSunriseISP[] := Module[
    {topo, int0, gen, got, expected},
-   topo = Global`parseTopology[Global`mixedSunriseCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedSunriseCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" && #["vectorType"] === "external" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    got = Expand[Global`applyMomentumGeneratorSeed[topo, int0, gen]];
-   expected = expectedMomentumSeedSunriseQ1DotK[];
+   expected = zeroPointLift[expectedMomentumSeedSunriseQ1DotK[], topZeroPointRules[{1, 2}, {1, 2, 3}]];
    <|
     "name" -> "momentumSeedSunrise_dq1Dotk1_ISPShift_buildingBlock",
     "pass" -> TrueQ[got === expected],
@@ -601,7 +638,7 @@ compareExpectedMomentumSeedSunriseISP[] := Module[
 
 compareExpectedEOMCanonical[] := Module[
    {topo, raw, got, expected, beforeBad, afterBad},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    raw = Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], 2, 0}, {Global`b[2], Global`n[2]}}, {}];
    got = Expand[Global`applyEOM[raw, topo]];
    expected = Expand[
@@ -635,11 +672,11 @@ expectedTimeSeedMixedBubbleTau1Core[] := Module[
 
 compareExpectedTimeSeedMixedBubbleCore[] := Module[
    {topo, int0, gen, got, expected},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" && #["vertex"] === 1 &];
    got = Expand[Global`applyTimeGeneratorSeed[topo, int0, gen]];
-   expected = expectedTimeSeedMixedBubbleTau1Core[];
+   expected = zeroPointLift[expectedTimeSeedMixedBubbleTau1Core[], topZeroPointRules[{1, 2}, {1, 2}]];
    <|
     "name" -> "timeSeedMixedBubble_tau1_core_withBoundaryShrink",
     "pass" -> TrueQ[got === expected],
@@ -687,11 +724,11 @@ expectedTimeSeedMixedTriangleTau3Core[] := Module[
 
 compareExpectedTimeSeedMixedTriangleCore[] := Module[
    {topo, int0, gen, got, expected},
-   topo = Global`parseTopology[Global`mixedTriangleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedTriangleCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" && #["vertex"] === 3 &];
    got = Expand[Global`applyTimeGeneratorSeed[topo, int0, gen]];
-   expected = expectedTimeSeedMixedTriangleTau3Core[];
+   expected = zeroPointLift[expectedTimeSeedMixedTriangleTau3Core[], topZeroPointRules[{1, 2, 3}, {1, 2, 3}]];
    <|
     "name" -> "timeSeedMixedTriangle_tau3_core_massiveMasslessBoundary",
     "pass" -> TrueQ[got === expected],
@@ -777,7 +814,7 @@ expectedMixedTriangleShrinkTimeFirst[subset_List] := Module[
 
 compareExpectedMixedTriangleAllSectorHandSeeds[] := Module[
    {topo, topQ, topT, sectorKeys, shrinkChecks},
-   topo = Global`parseTopology[Global`mixedTriangleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedTriangleCase]];
    topQ = compareExpectedMomentumSeedMixedTriangleBuildingBlock[];
    topT = compareExpectedTimeSeedMixedTriangleCore[];
    sectorKeys = Lookup[Global`makeCanonicalSeedBatch[topo]["sectorMetadataList"], "sectorKey"];
@@ -789,8 +826,16 @@ compareExpectedMixedTriangleAllSectorHandSeeds[] := Module[
       tgen = SelectFirst[Global`makeIBPGenerators[shrinkTopo], #["type"] === "time" &];
       gotQ = Expand[Global`applyMomentumGeneratorSeed[shrinkTopo, int0, qgen]];
       gotT = Expand[Global`applyTimeGeneratorSeed[shrinkTopo, int0, tgen]];
-      expectedQ = expectedMixedTriangleShrinkMomentumQ1DotQ1[subset];
-      expectedT = expectedMixedTriangleShrinkTimeFirst[subset];
+      expectedQ = zeroPointLift[expectedMixedTriangleShrinkMomentumQ1DotQ1[subset], Switch[subset,
+        {1}, {Global`a[1] -> mergedAPow[1, {1, 2}, {2 Global`nuM}], Global`a[3] -> aPow[3], Global`bS[1] -> bSPowH[1, Global`nuM], Global`b[2] -> bPow[2], Global`b[3] -> bPow[3]},
+        {2}, {Global`a[1] -> aPow[1], Global`a[2] -> mergedAPow[2, {2, 3}, {2 Global`nuM}], Global`b[1] -> bPow[1], Global`bS[2] -> bSPowH[2, Global`nuM], Global`b[3] -> bPow[3]},
+        {1, 2}, {Global`a[1] -> mergedAPow[1, {1, 2, 3}, {2 Global`nuM, 2 Global`nuM}], Global`bS[1] -> bSPowH[1, Global`nuM], Global`bS[2] -> bSPowH[2, Global`nuM], Global`b[3] -> bPow[3]}
+        ]];
+      expectedT = zeroPointLift[expectedMixedTriangleShrinkTimeFirst[subset], Switch[subset,
+        {1}, {Global`a[1] -> mergedAPow[1, {1, 2}, {2 Global`nuM}], Global`a[3] -> aPow[3], Global`bS[1] -> bSPowH[1, Global`nuM], Global`b[2] -> bPow[2], Global`b[3] -> bPow[3]},
+        {2}, {Global`a[1] -> aPow[1], Global`a[2] -> mergedAPow[2, {2, 3}, {2 Global`nuM}], Global`b[1] -> bPow[1], Global`bS[2] -> bSPowH[2, Global`nuM], Global`b[3] -> bPow[3]},
+        {1, 2}, {Global`a[1] -> mergedAPow[1, {1, 2, 3}, {2 Global`nuM, 2 Global`nuM}], Global`bS[1] -> bSPowH[1, Global`nuM], Global`bS[2] -> bSPowH[2, Global`nuM], Global`b[3] -> bPow[3]}
+        ]];
       <|"subset" -> subset, "qPass" -> TrueQ[gotQ === expectedQ], "tPass" -> TrueQ[gotT === expectedT],
         "gotQ" -> gotQ, "expectedQ" -> expectedQ, "gotT" -> gotT, "expectedT" -> expectedT|>
       ],
@@ -860,11 +905,11 @@ expectedTimeSeedMixedSunriseTau1Core[] := Module[
 
 compareExpectedTimeSeedMixedSunriseCore[] := Module[
    {topo, int0, gen, got, expected},
-   topo = Global`parseTopology[Global`mixedSunriseCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedSunriseCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" && #["vertex"] === 1 &];
    got = Expand[Global`applyTimeGeneratorSeed[topo, int0, gen]];
-   expected = expectedTimeSeedMixedSunriseTau1Core[];
+   expected = zeroPointLift[expectedTimeSeedMixedSunriseTau1Core[], topZeroPointRules[{1, 2}, {1, 2, 3}]];
    <|
     "name" -> "timeSeedMixedSunrise_tau1_twoLoopPerLineMassless",
     "pass" -> TrueQ[got === expected],
@@ -900,15 +945,15 @@ expectedMixedBubbleShrinkE1TimeTau1[] := Module[
 compareExpectedMixedBubbleAllSectorHandSeeds[] := Module[
    {topo, shrinkTopo, int0, qgen, tgen, gotQ, gotT, expectedQ, expectedT,
     topQ, topT, sectorKeys},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    shrinkTopo = Global`shrinkSectorTopology[topo, {1}];
    int0 = Global`makeBaseIntegral[shrinkTopo];
    qgen = SelectFirst[Global`makeIBPGenerators[shrinkTopo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    tgen = SelectFirst[Global`makeIBPGenerators[shrinkTopo], #["type"] === "time" &];
    gotQ = Expand[Global`applyMomentumGeneratorSeed[shrinkTopo, int0, qgen]];
    gotT = Expand[Global`applyTimeGeneratorSeed[shrinkTopo, int0, tgen]];
-   expectedQ = expectedMixedBubbleShrinkE1MomentumQ1DotQ1[];
-   expectedT = expectedMixedBubbleShrinkE1TimeTau1[];
+   expectedQ = zeroPointLift[expectedMixedBubbleShrinkE1MomentumQ1DotQ1[], {Global`a[1] -> mergedAPow[1, {1, 2}, {2 Global`nuM}], Global`bS[1] -> bSPowH[1, Global`nuM], Global`b[2] -> bPow[2]}];
+   expectedT = zeroPointLift[expectedMixedBubbleShrinkE1TimeTau1[], {Global`a[1] -> mergedAPow[1, {1, 2}, {2 Global`nuM}], Global`bS[1] -> bSPowH[1, Global`nuM], Global`b[2] -> bPow[2]}];
    topQ = compareExpectedMomentumSeedMixedBubbleBuildingBlock[];
    topT = compareExpectedTimeSeedMixedBubbleCore[];
    sectorKeys = Lookup[Global`makeCanonicalSeedBatch[topo]["sectorMetadataList"], "sectorKey"];
@@ -967,15 +1012,15 @@ expectedMixedSunriseShrinkE1TimeTau1[] := Module[
 compareExpectedMixedSunriseAllSectorHandSeeds[] := Module[
    {topo, shrinkTopo, int0, qgen, tgen, gotQ, gotT, expectedQ, expectedT,
     topQ, topT, sectorKeys},
-   topo = Global`parseTopology[Global`mixedSunriseCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedSunriseCase]];
    shrinkTopo = Global`shrinkSectorTopology[topo, {1}];
    int0 = Global`makeBaseIntegral[shrinkTopo];
    qgen = SelectFirst[Global`makeIBPGenerators[shrinkTopo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    tgen = SelectFirst[Global`makeIBPGenerators[shrinkTopo], #["type"] === "time" &];
    gotQ = Expand[Global`applyMomentumGeneratorSeed[shrinkTopo, int0, qgen]];
    gotT = Expand[Global`applyTimeGeneratorSeed[shrinkTopo, int0, tgen]];
-   expectedQ = expectedMixedSunriseShrinkE1MomentumQ1DotQ1[];
-   expectedT = expectedMixedSunriseShrinkE1TimeTau1[];
+   expectedQ = zeroPointLift[expectedMixedSunriseShrinkE1MomentumQ1DotQ1[], {Global`a[1] -> mergedAPow[1, {1, 2}, {2 Global`nuM}], Global`bS[1] -> bSPowH[1, Global`nuM], Global`b[2] -> bPow[2], Global`b[3] -> bPow[3]}];
+   expectedT = zeroPointLift[expectedMixedSunriseShrinkE1TimeTau1[], {Global`a[1] -> mergedAPow[1, {1, 2}, {2 Global`nuM}], Global`bS[1] -> bSPowH[1, Global`nuM], Global`b[2] -> bPow[2], Global`b[3] -> bPow[3]}];
    topQ = compareExpectedMomentumSeedSunriseISP[];
    topT = compareExpectedTimeSeedMixedSunriseCore[];
    sectorKeys = Lookup[Global`makeCanonicalSeedBatch[topo]["sectorMetadataList"], "sectorKey"];
@@ -1003,7 +1048,7 @@ compareExpectedMixedSunriseAllSectorHandSeeds[] := Module[
 
 compareExpectedMasslessEndpointCanonical[] := Module[
    {topo, raw, got, expected, beforeBad, afterBad},
-   topo = Global`parseTopology[Global`bubbleMasslessCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`bubbleMasslessCase]];
    raw = Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1], 2}, {Global`b[2], 0}}, {}];
    got = Expand[Global`applySeedCanonical[raw, topo]];
    expected = Global`J[{Global`a[1], Global`a[2]}, {{Global`b[1] - 2, 0}, {Global`b[2], 0}}, {}];
@@ -1021,7 +1066,7 @@ compareExpectedMasslessEndpointCanonical[] := Module[
 
 compareExpectedTimeSeedBatchMixedBubbleEOM[] := Module[
    {topo, batch, equations},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeTimeIBPSeedBatch[topo];
    equations = Lookup[Lookup[batch, "equations", {}], "equation", {}];
    <|
@@ -1044,7 +1089,7 @@ compareExpectedTimeSeedBatchMixedBubbleEOM[] := Module[
 
 compareExpectedMomentumSeedBatch[] := Module[
    {topo, batch, blockedContinuousBatch, blockedDiscreteBatch},
-   topo = Global`parseTopology[Global`bubbleMasslessCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`bubbleMasslessCase]];
    batch = Global`makeMomentumIBPSeedBatch[topo];
    blockedContinuousBatch = Global`makeMomentumIBPSeedBatch[topo, Global`UseSampleOnly -> False, Global`MaxSeedRuleCount -> 1];
    blockedDiscreteBatch = Global`makeMomentumIBPSeedBatch[topo, Global`DiscreteMode -> "all", Global`MaxDiscreteRuleCount -> 1];
@@ -1077,7 +1122,7 @@ compareExpectedMomentumSeedBatch[] := Module[
 
 compareExpectedMomentumSeedBatchMixedBubbleEOM[] := Module[
    {topo, batch, equations},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeMomentumIBPSeedBatch[topo];
    equations = Lookup[Lookup[batch, "equations", {}], "equation", {}];
    <|
@@ -1100,7 +1145,7 @@ compareExpectedCanonicalSeedGateMixedBubble[] := Module[
    {topo, batch, linearData, sectorKeys, integralSectorKeys, aSlotModes, shrinkAListLengths,
     noShrinkBatch, noShrinkLinear, blockedBatch, blockedLinear, badTopologyReport,
     invalidTopologyLinear},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
    noShrinkBatch = Global`makeCanonicalSeedBatch[topo, Global`GenerateShrinkSectors -> False];
@@ -1187,7 +1232,7 @@ compareExpectedCanonicalCoverageSmallCases[] := Module[
 
 compareExpectedCanonicalCoverageGate[] := Module[
    {topo, batch, badEquations, badBatch, report, linearData},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeCanonicalSeedBatch[topo];
    badEquations = Select[
      batch["equations"],
@@ -1573,7 +1618,7 @@ compareExpectedTopologyValidationReport[] := Module[
       |>
      ];
     malformedSampleTopo = Join[
-      Global`parseTopology[Global`mixedBubbleCase],
+      Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]],
       <|"sampleDiscreteRules" -> {Global`n[1, 1] -> 0, {Global`n[1, 2], Global`n[2, 1] -> 1}}|>
       ];
    duplicateMomentumCase = Join[
@@ -1735,7 +1780,7 @@ compareExpectedSeedPresetConfig[] := Module[
      tightDiscreteCase, tightDiscreteTopo, tightDiscreteRules, overrideDiscreteRules,
      tightEquationCase, tightEquationTopo, tightEquationBatch, overrideEquationBatch,
      unknownCase, unknownTopo, unknownReport, unknownBatch, issueCodes},
-   defaultTopo = Global`parseTopology[Global`bubbleMasslessCase];
+   defaultTopo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`bubbleMasslessCase]];
    fullDiscreteCase = Join[
      Global`bubbleMasslessCase,
      <|"seedPreset" -> "fullDiscrete", "sampleDiscreteRules" -> {}|>
@@ -1918,11 +1963,11 @@ expectedMomentumSeedMasslessCrossQ1DotQ1[] := Module[
 compareExpectedMasslessCrossTimeSeed[] := Module[
    {summary, topo, int0, gen, got, expected, canonicalBatch, linearData},
    summary = Global`summarizeCase[Global`masslessCrossBubbleCase];
-   topo = Global`parseTopology[Global`masslessCrossBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`masslessCrossBubbleCase]];
    int0 = Global`makeBaseIntegral[topo];
    gen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" && #["vertex"] === 1 &];
    got = Expand[Global`applyTimeGeneratorSeed[topo, int0, gen]];
-   expected = expectedTimeSeedMasslessCrossVertex1[];
+   expected = zeroPointLift[expectedTimeSeedMasslessCrossVertex1[], topZeroPointRules[{1, 2}, {1, 2}]];
    canonicalBatch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[canonicalBatch, topo];
    <|
@@ -1947,14 +1992,14 @@ compareExpectedMasslessCrossTimeSeed[] := Module[
 compareExpectedMasslessCrossAllSectorHandSeeds[] := Module[
    {summary, topo, int0, qgen, tgen, gotQ, gotT, expectedQ, expectedT, timeCheck, sectorKeys},
    summary = Global`summarizeCase[Global`masslessCrossBubbleCase];
-   topo = Global`parseTopology[Global`masslessCrossBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`masslessCrossBubbleCase]];
    int0 = Global`makeBaseIntegral[topo];
    qgen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "momentum" && #["vectorType"] === "loop" && #["dLoop"] === 1 && #["vectorIndex"] === 1 &];
    tgen = SelectFirst[Global`makeIBPGenerators[topo], #["type"] === "time" && #["vertex"] === 1 &];
    gotQ = Expand[Global`applyMomentumGeneratorSeed[topo, int0, qgen]];
    gotT = Expand[Global`applyTimeGeneratorSeed[topo, int0, tgen]];
-   expectedQ = expectedMomentumSeedMasslessCrossQ1DotQ1[];
-   expectedT = expectedTimeSeedMasslessCrossVertex1[];
+   expectedQ = zeroPointLift[expectedMomentumSeedMasslessCrossQ1DotQ1[], topZeroPointRules[{1, 2}, {1, 2}]];
+   expectedT = zeroPointLift[expectedTimeSeedMasslessCrossVertex1[], topZeroPointRules[{1, 2}, {1, 2}]];
    timeCheck = compareExpectedMasslessCrossTimeSeed[];
    sectorKeys = Lookup[Global`makeCanonicalSeedBatch[topo]["sectorMetadataList"], "sectorKey"];
    <|
@@ -2007,7 +2052,7 @@ compareExpectedMassiveCrossGate[] := Module[
 
 compareExpectedSeedClassificationAndSampledLinear[] := Module[
    {topo, batch, classified, sampled, sampledFromRawCase, badSampled, firstCoeffRules},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeCanonicalSeedBatch[topo];
    classified = Global`classifyCanonicalSeedBatch[batch];
    sampled = Global`makeSampledLinearSystemData[batch, topo];
@@ -2044,7 +2089,7 @@ compareExpectedSeedClassificationAndSampledLinear[] := Module[
 
 compareExpectedSeedMMASaveMixedBubble[] := Module[
    {topo, batch, outDir, saveData, loaded, noWriteData, badOutputData, badBaseNameData, badBatchData, missingReadData},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeCanonicalSeedBatch[topo];
    outDir = FileNameJoin[{projectRootFromCheckDir[], "check", "results_test", "seed_mma_mixed_bubble"}];
    saveData = Global`writeSeedBatchMMA[batch, Global`OutputDirectory -> outDir, Global`SeedFileBaseName -> "mixed_bubble_canonical_seed"];
@@ -2176,7 +2221,7 @@ compareExpectedIBPWorkflowData[] := Module[
        FileExistsQ[metadataFile] &&
        metadata["topologyValidationReport"]["status"] === "ok" &&
        metadata["seedCoverageReport"]["status"] === "ready" &&
-       metadata["kiraCoefficientRules"] === Global`parseTopology[Global`mixedBubbleCase]["numericRules"] &&
+       metadata["kiraCoefficientRules"] === Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]]["numericRules"] &&
        metadata["kiraJobOptions"]["RunFirefly"] === False &&
        metadata["kiraJobOptions"]["WriteKira2MathJob"] === False
       ],
@@ -2273,7 +2318,7 @@ compareExpectedKiraExporterRejectsSeedBatch[] := Module[
     notGeneratedStrings, emptyLinearData, emptyStrings, badTopologyReport, badLinearData,
     invalidTopologyStrings, invalidTopologyExport, malformedLinearData, malformedStrings,
     badOutputDirExport, badJobOptionStrings, badJobOptionExport, badCoeffRuleStrings, badCoeffRuleExport},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeCanonicalSeedBatch[topo];
    topologyReport = batch["topologyValidationReport"];
    badTopologyReport = <|"status" -> "issues", "errorCount" -> 1, "warningCount" -> 0, "pendingCount" -> 0, "pendingFeatures" -> {}, "issues" -> {<|"severity" -> "error", "code" -> "checkInvalidTopology"|>}|>;
@@ -2550,7 +2595,7 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
     customData, shrinkCustomData, reorderedData, badReorderedData,
     kiraData, shrinkKiraData, exportedLinear, shrinkExportedLinear,
     badTargetData, badIntegralOrderData, badKiraOrderingData},
-   topo = Global`parseTopology[Global`mixedBubbleCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`mixedBubbleCase]];
    batch = Global`makeCanonicalSeedBatch[topo];
    linearData = Global`makeLinearSystemData[batch, topo];
    preferred = linearData["integralList"][[Min[3, linearData["integralCount"]]]];
@@ -2656,7 +2701,7 @@ compareExpectedKiraIntegralOrderingMixedBubble[] := Module[
 
 compareExpectedMomentumLinearSystem[] := Module[
    {topo, system, rawCaseSystem, momentumBatch},
-   topo = Global`parseTopology[Global`bubbleMasslessCase];
+   topo = Global`parseTopology[benchmarkCaseWithZeroPoints[Global`bubbleMasslessCase]];
    momentumBatch = Global`makeMomentumIBPSeedBatch[topo];
    system = Global`makeMomentumIBPLinearSystem[topo];
    rawCaseSystem = Global`makeMomentumIBPLinearSystem[Global`bubbleMasslessCase];

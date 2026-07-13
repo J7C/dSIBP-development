@@ -5,11 +5,12 @@
 ## 当前主线
 
 - `000_code/004_dS_ibp_general.wl`：上一版 linear/Kira 导出骨架。
-- `000_code/005_dS_ibp_general.wl`：稳定接口版，包含 topology 初始化缓存、seed 分类、sampled linear-system、精确 sector 匹配。
-- `000_code/006_dS_ibp_general.wl`：新接口版，在 `005` 基础上新增用户口 `sp[p,r]` scalar-product convention；旧版不动，便于回退对照。
+- `000_code/005_dS_ibp_general.wl`：稳定接口版，包含 topology 初始化、非零幂次零点、seed 分类、sampled linear-system、精确 sector 匹配。
+- `000_code/006_dS_ibp_general.wl`：当前主线，在 `005` 基础上新增用户口 `sp[p,r]` scalar-product convention，并缓存同一 family/各 shrink sector 共用的标量积坐标变换。
 - `000_code/check/004_seed_expected_examples.wl`：轻量结构与手推 seed 对照检查，优先加载 `005`。
 - `000_code/check/run_004_seed_expected_examples.wl`：`005` 稳定版 Wolfram runner。
 - `000_code/check/006_sp_interface_check.wl`：`006` 的 `sp[p,r]` 用户接口轻量检查，并贯通 `makeIBPWorkflowData` 的 sampled linear/Kira 内存导出门禁。
+- `000_code/check/006_scalar_product_cache_check.wl`：检查缓存结果与 uncached 坐标规则一致、重复调用命中缓存，并可跨同一 family 的 shrink sector 复用。
 
 ## 关键约定
 
@@ -17,6 +18,7 @@
 - massive full line: `{b_e, n_{e,1}, n_{e,2}}`。
 - massless full line: `{b_e, n_e}`，主线统一采用双 theta 合并路线。
 - shrink sector 当前使用 `{bS_e}`；缩并后 `aList` 只保留 compact active slots，原顶点到 compact slot 的映射保存在 `sectorMetadataList`。
+- 实际幂次为 `a[v]+a0[v]`、`b[e]+b0[e]` 或 `bS[e]+bS0[e]`。`zeroPointRules` 未给出时零点默认取 0；新 benchmark 应显式保留非零符号零点。massive `h` 线缩并后自动使用 `bS0[e] -> b0[e]+2 nu[e]`，并把合并顶点零点变为原顶点零点之和减去该缩并线的 `2 nu[e]`；`H` 模式对应 shift 为 0。
 - seed 层必须立即应用 EOM 和 massless endpoint canonical，不允许 `n=2` 留到输出 seed。
 - seed 保存为 Mathematica 表达式；Kira 导出只消费 linear-system 数据。
 - 用户输入 `loopMomenta` 与 `externalMomenta` 后，可用任意符号命名这些动量；`006` 用户口的圈动量相关标量积统一写作 `sp[p,r]`，例如 ISP 可写 `sp[l3, k321 + l3]`。外动量-外动量不变量在输出端不显示为 `sp[k_i,k_j]`，而显示为变量名：用户可用 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}` 自定义；若未指定，默认按 `externalMomenta` 中的位置输出为 `sij`（`i<=j`）。内部 `qq/qk/kk` 只作为编号坐标，不要求用户输入。
@@ -28,9 +30,11 @@
 
 ```powershell
 & 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\run_004_seed_expected_examples.wl'
+& 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\006_sp_interface_check.wl'
+& 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\006_scalar_product_cache_check.wl'
 ```
 
-该检查只做小型 seed/metadata/linear/Kira 文件结构验证，不运行 Kira reduction，不做大范围解析生成。`006_sp_interface_check.wl` 另用奇怪动量命名和 `sp[p,r]` 输入检查 006 接口可贯通 sampled linear/Kira 内存导出。
+这些检查只做小型 seed/metadata/linear/Kira 文件结构验证，不运行 Kira reduction，不做大范围解析生成。`006_sp_interface_check.wl` 另用奇怪动量命名和 `sp[p,r]` 输入检查 006 接口可贯通 sampled linear/Kira 内存导出。
 
 ## 推荐调用顺序
 
