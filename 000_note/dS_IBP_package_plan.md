@@ -562,7 +562,7 @@ seedRange = {-3, 3};  (* 可选, 缺省 {-3,3} *)
 - Kira 的 `list` 目标也可独立选择：`KiraTargetIntegrals -> Automatic` 表示全量目标；用户可传 Kira id 或 `J[...]` 积分对象列表，导出时会按当前全局 `integralRules` 转成 id。数值 dummy 若启用会自动附加到目标列表末尾。
 - `makeKiraExportData` 的最后一步规则必须可追溯：`KiraCoefficientRules` 和 `KiraJobOptions` 写入 `result/kira_export_metadata.m`。默认 `jobs.yaml` 开启 `run_initiate`、`run_firefly` 和 `kira2math`；用户可覆盖这些开关，但这只改变后端文件，不改变 seed 或 linear-system。
 - 数值 Kira 输入沿用参考 code 的 dummy 保护：若所有导出系数均为数值，`KiraJobOptions` 中的 `"AppendNumericDummyEquation" -> Automatic` 会在 `ibp.kira` 末尾加入 `(N+1)*(ccc)`，并让 `list` 多包含这个 dummy id；metadata 中记录 `numericDummyAppendedQ`、`numericDummyIntegralId` 和 `targetIntegralCount`。
-- Kira 工作区默认额外写参考式 `run.sh`，包含清理、`dos2unix` 和 `kira --parallel=N jobs.yaml` 命令；它只是文件产物，不会被 package 自动执行。用户可通过 `KiraJobOptions` 的 `"WriteRunScript"`、`"KiraCommand"`、`"KiraParallelJobs"` 覆盖。
+- Kira 工作区默认只写基础输入与映射文件，不写 `run.sh`，也不保存本机 Kira/Fermat 路径。只有用户显式设置 `KiraJobOptions -> <|"WriteRunScript" -> True|>` 时才生成参考脚本；安装、环境变量与实际执行由用户自行管理。backend-neutral `linearData` 同时保留给 Rational Tracer 或其它线性后端。
 - 每个 sector 缓存一份 `sectorMetadata`：包含 `sectorVertexRepresentativeMap`、`compactASlots`、`vertexIdToCompactASlot`、`lineSlots`、`lineIdToSlot`、`bSymbolToLineSlot`。这样导出、排序和人工检查不需要每次从指标形状反推“哪个 a/b 属于哪条线或哪个顶点”。
 - 物理 convention 上，缩并后 delta 已积分掉一个时间变量，因此 sub-sector 的有效 `a` 只有 compact 后的 active slots。当前 `004` 主代码已切换为 `aSlotMode -> "compactActiveSlots"`：sub-sector 的 `J` 本身只保留 delta 积分后仍 active 的 compact `aList`；原顶点、原 slot 与 compact slot 的对应关系全部由 `sectorMetadata` 保存。
 ### v4.1 追加验证：multi-shrink compact aList

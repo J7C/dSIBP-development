@@ -269,7 +269,9 @@ IBP seed 包括：
 - `ispSlots`：ISP 指标和对应定义。
 - `masslessBundleCandidates`：同一顶点对上多条 `masslessFull` 线的候选合并组。当前只用于提示 future bundle 简化，不作为生成 seed 的输入。
 
-`J` 的 `aList` 采用 compact active slots：delta 缩并后只保留仍独立的时间变量，不在 `J` 中保留 inactive 原顶点槽。原始顶点编号、外腿、线端点、original slot 与 compact slot 的对应关系全部保存在 `sectorMetadataList` 中。seed batch 通过 `writeSeedBatchMMA` 保存为 MMA 表达式；Kira exporter 不直接读取 seed batch。
+`J` 的 `aList` 采用 compact active slots：delta 缩并后只保留仍独立的时间变量，不在 `J` 中保留 inactive 原顶点槽。原始顶点编号、外腿、线端点、original slot 与 compact slot 的对应关系全部保存在 `sectorMetadataList` 中。seed batch 通过 `writeSeedBatchMMA` 保存为 MMA 表达式；任何后端 exporter 都不直接读取 seed batch。
+
+`makeLinearSystemData` / `makeSampledLinearSystemData` 的 `linearData` 是 backend-neutral 中间层，保存 `linearEquations`、`integralList`、`integralRules` 与全 sector metadata。Kira 只是当前提供的一个 serializer；Rational Tracer 或其它线性后端应从这一层对接，不要求 package 记录或管理后端可执行文件路径。
 
 Kira 编号必须对所有 sector 的积分一起做全局排序，不能先按 sector 追加。当前 `sortIntegralsForKira` 的第一优先级是所有线第一幂次指标的复杂度，随后再看 `a`、ISP、离散 `n` 和稳定字符串序；后续可在此基础上叠加用户指定 master/weight。若用户通过 `IntegralOrder` 或 `PreferredIntegrals` 指定候选主积分，linear-system 会保存 `kiraOrderingReport`；若某个指定对象不在当前全局 `integralList` 中，会出现在 `missingIntegralOrderItems`，避免静默失效。
 
@@ -451,7 +453,7 @@ q_1 · Q_2 = q_1 · (q_1 - k) = q_12 - q_1·k = (z_1 + z_2 - k_s2) / 2
 
 ## 12. 验证原则
 
-本 package 的验证分为轻量结构检查和小规模公式检查。默认脚本只能做轻量结构检查，包括 pack 类型、seed 数、生成元数、ISP 覆盖性、EOM canonical 扫描和极小样本公式对比。导出文件语法检查放在 Kira 阶段，不能替代 seed 完备性检查。
+本 package 的验证分为轻量结构检查和小规模公式检查。默认脚本只能做轻量结构检查，包括 pack 类型、seed 数、生成元数、ISP 覆盖性、EOM canonical 扫描、极小样本公式对比和导出文件结构检查。默认检查不运行 Kira、Rational Tracer 或其它后端；文件结构检查不能替代 seed 完备性检查。
 
 严禁默认生成整族解析 IBP 方程组并做全局化简。若需要 rank/span 检查，必须先对参数做明确代数赋值，使用小整数或有理数 specialized check；不对大符号矩阵做解析 `MatrixRank`。解析公式只允许逐 seed 或代表项检查。
 
@@ -486,4 +488,4 @@ Kira 排序约定：排序对象是所有 sector 的 `integralList` 全集，不
 
 Kira 导出流程仍是：先 `makeCanonicalSeedBatch`，必要时保存 seed `.m`；再 `makeLinearSystemData` 或 `makeSampledLinearSystemData`；最后用户可查看/重排 `integralList`，用 `reorderLinearSystemIntegrals` 或 `makeKiraExportData[..., KiraIntegralOrder -> order]` 导出。
 
-导出时 `KiraCoefficientRules` 属于最后一步的数值/撒点规则，不回写 seed；`makeKiraExportData` 会把实际使用的 coefficient rules 和 `KiraJobOptions` 写入 `result/kira_export_metadata.m`。默认 `jobs.yaml` 保持 `run_initiate -> true`、`run_firefly -> true` 并写 `kira2math` job；用户可通过 `KiraJobOptions` 覆盖这些开关，用于只生成 system、只初始化或调试 Kira 输入格式。
+导出时 `KiraCoefficientRules` 属于最后一步的数值/撒点规则，不回写 seed；`makeKiraExportData` 会把实际使用的 coefficient rules 和 `KiraJobOptions` 写入 `result/kira_export_metadata.m`。默认只生成基础 Kira 输入与映射文件，不写 `run.sh`，也不保存本机 Kira/Fermat 路径；用户若需要参考脚本必须显式设置 `"WriteRunScript" -> True`。`jobs.yaml` 的 initiate/firefly/kira2math 开关仍可配置，但 package 不负责执行。

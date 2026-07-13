@@ -5,13 +5,13 @@
    当前文件生成 momentum seed、time-core seed 与受保护的自动 shrink-sector seed；EOM、per-line massless endpoint canonical 与 massive theta boundary shrink 项已作为 seed 门禁接入，并提供 linear-system 层与 Kira user-defined system 导出门禁。
    性能原则：默认只定义函数和示例输入，不自动运行检查；验证必须是 seed/metadata 层或代数赋值后的小检查。 *)
 
-ClearAll["Global`*"];
+(* 加载主线脚本不得清空用户 Global` 上下文；开发时需要彻底重载应使用新 kernel。 *)
 
 
 (* ::Chapter:: *)
 (*环境与通用工具*)
 
-(* 本章只处理工作目录和小工具函数。脚本可由 wolframscript 执行，也可在 notebook 中逐段运行。 *)
+(* 本章只解析脚本目录并定义小工具函数。加载 package 不改变用户当前工作目录；输出路径由调用者显式决定。 *)
 
 baseDir = If[StringQ[$InputFileName] && $InputFileName =!= "",
    DirectoryName[$InputFileName],
@@ -22,7 +22,6 @@ baseDir = If[StringQ[$InputFileName] && $InputFileName =!= "",
     Directory[]
     ]
    ];
-SetDirectory[baseDir];
 
 
 (* 只做结构零判断；解析化简应放到单独的小规模 specialized check 中。 *)
@@ -3472,7 +3471,7 @@ defaultKiraJobOptions[] := <|
    "Kira2MathTarget" -> "list",
    "AppendNumericDummyEquation" -> Automatic,
    "NumericDummySymbol" -> "ccc",
-   "WriteRunScript" -> True,
+   "WriteRunScript" -> False,
    "RunScriptName" -> "run.sh",
    "KiraCommand" -> "kira",
    "KiraParallelJobs" -> 10,
@@ -3645,7 +3644,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
      If[appendNumericDummyQ, kiraDummyEquationBlock[numericDummyIntegralId, numericDummySymbol], ""];
    listText = StringRiffle[ToString /@ targetData["targetIDs"], "\n"] <> "\n";
    jobsText = kiraJobsYAML[normalizedJobOptions];
-   runScriptText = If[TrueQ[Lookup[normalizedJobOptions, "WriteRunScript", True]], kiraRunScript[normalizedJobOptions], Missing["RunScriptDisabled"]];
+   runScriptText = If[TrueQ[Lookup[normalizedJobOptions, "WriteRunScript", False]], kiraRunScript[normalizedJobOptions], Missing["RunScriptDisabled"]];
    repKira2JText = ToString[InputForm[linearData["integralRules"] /. (j_J -> id_Integer) :> (Tuserweight[id] -> j)]] <> "\n";
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
    metadataText = ToString[InputForm[

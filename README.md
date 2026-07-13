@@ -1,6 +1,6 @@
 # dS-IBP-Package
 
-面向 de Sitter 圈图的 IBP 关系生成框架。目标是支持任意圈数、任意拓扑、massive/massless 混合的函数族，用统一 `J[...]` 表示生成圈动量 IBP、time-IBP/EOM canonical seed，并在后端导出 Kira user-defined system。
+面向 de Sitter 圈图的 IBP 关系生成框架。目标是支持任意圈数、任意拓扑、massive/massless 混合的函数族，用统一 `J[...]` 表示生成圈动量 IBP、time-IBP/EOM canonical seed 和 backend-neutral linear system；Kira user-defined system 是可选导出格式之一。
 
 ## 当前主线
 
@@ -11,6 +11,7 @@
 - `000_code/check/run_004_seed_expected_examples.wl`：`005` 稳定版 Wolfram runner。
 - `000_code/check/006_sp_interface_check.wl`：`006` 的 `sp[p,r]` 用户接口轻量检查，并贯通 `makeIBPWorkflowData` 的 sampled linear/Kira 内存导出门禁。
 - `000_code/check/006_scalar_product_cache_check.wl`：检查缓存结果与 uncached 坐标规则一致、重复调用命中缓存，并可跨同一 family 的 shrink sector 复用。
+- `000_code/check/006_kira_export_smoke_check.wl`：只用 Wolfram 生成极小 numeric linear system 与基础 Kira 文件，检查加载 006 不改变当前目录、不清空用户 `Global` 上下文，且默认不写 `run.sh`。
 
 ## 关键约定
 
@@ -20,7 +21,7 @@
 - shrink sector 当前使用 `{bS_e}`；缩并后 `aList` 只保留 compact active slots，原顶点到 compact slot 的映射保存在 `sectorMetadataList`。
 - 实际幂次为 `a[v]+a0[v]`、`b[e]+b0[e]` 或 `bS[e]+bS0[e]`。`zeroPointRules` 未给出时零点默认取 0；新 benchmark 应显式保留非零符号零点。massive `h` 线缩并后自动使用 `bS0[e] -> b0[e]+2 nu[e]`，并把合并顶点零点变为原顶点零点之和减去该缩并线的 `2 nu[e]`；`H` 模式对应 shift 为 0。
 - seed 层必须立即应用 EOM 和 massless endpoint canonical，不允许 `n=2` 留到输出 seed。
-- seed 保存为 Mathematica 表达式；Kira 导出只消费 linear-system 数据。
+- seed 保存为 Mathematica 表达式；`makeLinearSystemData` / `makeSampledLinearSystemData` 的输出是 backend-neutral 中间层。Kira 导出只消费该中间层；Rational Tracer 或其它线性后端也应从 `linearEquations`、`integralList`、`integralRules` 和 sector metadata 对接。
 - 用户输入 `loopMomenta` 与 `externalMomenta` 后，可用任意符号命名这些动量；`006` 用户口的圈动量相关标量积统一写作 `sp[p,r]`，例如 ISP 可写 `sp[l3, k321 + l3]`。外动量-外动量不变量在输出端不显示为 `sp[k_i,k_j]`，而显示为变量名：用户可用 `externalInvariantRules -> {sp[k1,k1] -> s11, sp[k1,k2] -> s12}` 自定义；若未指定，默认按 `externalMomenta` 中的位置输出为 `sij`（`i<=j`）。内部 `qq/qk/kk` 只作为编号坐标，不要求用户输入。
 - dS 中要区分“进入内线动量的外部三动量向量”和“只进入顶点时间相位的外腿能量”。`externalMomenta` 只列前者，即会在内线动量中以 `l + sum k` 形式和圈动量纠缠的独立外部向量；`vertexEnergies` 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若这个能量属于 `externalMomenta` 张成的空间并应与圈动量部分共用变量，优先写成外部不变量变量名的函数，例如 `Sqrt[s11]` 或 `Sqrt[sigW]`；若不是，就作为独立绝对值参数，内部/文档统一建议记为 `ke[i]`。特别注意 `|ke1+ke2|`、`|ke1|`、`|ke2|` 是三个独立参数时必须分别命名，例如把 `|ke1+ke2|` 另记为 `ke[3]`，不要自动写成 `ke[1]+ke[2]`。外腿能量参数之间不需要也不应自动建立互相点积；只有用户显式把某个顶点能量写成外部不变量表达式时，才与圈外动量空间复用同一个变量。这样做的目的有两个：一是避免明明应共用的外部不变量没被用上而使约化结果冗余，二是后续求微分方程时同一变量能被统一求导；若用户物理上要把这些量当独立变量，应通过输入显式写成独立参数，package 不主动替用户拆分或合并。`vertexEnergies` 中不能直接写 `loopMomenta/externalMomenta` 的向量符号，也不能写圈相关 `sp[q,k]`；属于外动量空间时写外部不变量变量名表达式，否则写独立 `ke[i]`。
 - 用户输入的传播子平方与 ISP 定义共同固定 family 坐标；程序验证这组 `z/ISP` 坐标是否闭合并可反解，不把 dS 拓扑默认当成需要自动删线或重选 basis 的冗余传播子族。所有 line momentum 和 `sp[p,r]` 的参数都必须是 `loopMomenta/externalMomenta` 的线性组合；非线性写法如 `q1^2` 会在 topology validation 中返回 `nonLinearLineMomenta` 或 `nonLinearScalarProductArguments`。
@@ -32,9 +33,10 @@
 & 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\run_004_seed_expected_examples.wl'
 & 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\006_sp_interface_check.wl'
 & 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\006_scalar_product_cache_check.wl'
+& 'D:\Wolfram Research\Wolfram\15.0\wolframscript.exe' -file '000_code\check\006_kira_export_smoke_check.wl'
 ```
 
-这些检查只做小型 seed/metadata/linear/Kira 文件结构验证，不运行 Kira reduction，不做大范围解析生成。`006_sp_interface_check.wl` 另用奇怪动量命名和 `sp[p,r]` 输入检查 006 接口可贯通 sampled linear/Kira 内存导出。
+这些检查只做小型 seed/metadata/linear/Kira 文件结构验证，不运行 Kira、Rational Tracer 或其它后端，不做大范围解析生成。`006_sp_interface_check.wl` 另用奇怪动量命名和 `sp[p,r]` 输入检查 006 接口可贯通 sampled linear/Kira 内存导出。
 
 ## 推荐调用顺序
 
@@ -120,7 +122,7 @@ kiraData = makeKiraExportData[
 - Kira 导出和 `kira_export_metadata.m` 会记录系数替换后的 `numericCoefficientSystemQ` 与 `coefficientVariables`；若用户选择符号系数导出，残留参数会显式列出但不强制阻止导出。
 - `KiraCoefficientRules` 必须是替换规则列表；非列表或混入非 `Rule/RuleDelayed` 项时导出会返回 `invalidCoefficientRules`，不会写 Kira 文件。
 - 若导出的 Kira 系数已经全部数值化，`KiraJobOptions` 中的 `"AppendNumericDummyEquation" -> Automatic` 会追加参考代码同款 dummy block `(N+1)*(ccc)`，并把 `list` 扩到 `targetIntegralCount = integralCount + 1`。
-- 默认只写 Kira 输入文件和参考式 `run.sh`，不运行 Kira reduction；`KiraJobOptions` 可覆盖 `"KiraCommand"`、`"KiraParallelJobs"` 或设 `"WriteRunScript" -> False`。
+- 默认只写基础 Kira 输入与映射文件，不写 `run.sh`，也不记录本机 Kira/Fermat 路径。若用户确实需要参考执行脚本，可显式设置 `KiraJobOptions -> <|"WriteRunScript" -> True, ...|>`；安装、环境变量和实际运行由用户自行管理。
 - `KiraJobOptions` 会在导出前检查未知 key 和非法值；布尔开关必须是 `True/False`，`KiraParallelJobs` 必须是正整数，命令/文件名/符号名必须是非空字符串。
 
 ## 当前验证覆盖
@@ -140,7 +142,7 @@ kiraData = makeKiraExportData[
 
 - 同一顶点对多条 massless 线的真实 bundle canonical 合并；目前只记录候选 metadata。
 - 自动选择或删除冗余 propagator basis；用户输入的 propagator 与 ISP 坐标应已构成可反解 family。
-- 运行 Kira reduction 或确认最终 master integral 数；本 package 只导出输入文件。
+- 运行 Kira、Rational Tracer 或其它 reduction backend，以及确认最终 master integral 数；本 package 只生成 backend-neutral linear system 和可选后端输入文件。
 - 大范围解析 IBP 生成；验证应保持 seed 层或数值/撒点小范围。
 
 ## 笔记
