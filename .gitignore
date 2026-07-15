@@ -38,10 +38,13 @@ results_ignore/
 **/result/
 **/temp/
 
-# Keep only current two main scripts in 000_code; older generated prototypes are ignored if recreated.
+# Keep only the latest three main package scripts (007/008/009).
 000_code/001_*.wl
 000_code/002_*.wl
 000_code/003_*.wl
+000_code/004_*.wl
+000_code/005_*.wl
+000_code/006_*.wl
 
 # Keep source check scripts, but ignore old textual run outputs.
 000_code/check/*_out.txt

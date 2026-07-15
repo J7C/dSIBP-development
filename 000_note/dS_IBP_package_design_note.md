@@ -1,6 +1,6 @@
-# dS IBP 设计笔记（v4）
+# dS IBP Package 设计笔记
 
-本笔记记录约定体系和关键推导，与 `dS_IBP_package_plan.md`（v4）配合阅读。每个拓扑对应一个独立 `.wl` 脚本，拓扑输入驱动通用 IBP 生成函数。
+本笔记记录当前主线的约定体系和关键推导，与 `dS_IBP_package_plan.md` 配合阅读。不同拓扑由输入 Association 描述，共用同一套 topology-driven IBP 生成函数。
 
 ## 1. 基本对象与记号
 
@@ -31,12 +31,13 @@
 
 积分的人读记号：
 ```
-J[\{a_v\}; \{linePacks_e\}]
+J[\{a_v\}, \{linePacks_e\}, \{n_{isp}\}]
 ```
 
-两个槽位：
+三个槽位：
 - `\{a_v\}`：时间幂次 `(-\tau_v)^{a_v}`，写在分子
 - `\{linePacks_e\}`：逐条内线的指标包，结构由线的状态决定
+- `\{n_{isp}\}`：ISP 分子幂次；没有 ISP 时为 `{}`
 
 ### 线的两种状态
 
@@ -72,12 +73,10 @@ J[\{a_v\}; \{linePacks_e\}]
 
 以下在脚本顶部定义，不写进积分指标：
 
-- 表示类型（tq 或 xq）
-- 物理对象（correlator 或 wavefunction coefficient）
 - 时空维数 `dim`（缺省为符号 `dim`）
 - 早时 `i\epsilon` 处方与晚时边界收敛条件
 - 传播子 normalization、整体耦合常数、对称因子
-- Theta 策略：主线固定为 A 类双 theta 合并；B/单 theta 分支只作为非主线参考检查
+- Theta 策略：参考资料也讨论单 theta 路线；本 package 固定使用双 theta 合并，不提供路线开关
 - PQ 系数（缺省由 h 函数 ODE 给出）
 - 数值替换规则 `repN`（缺省空集）
 - 种子撒点范围 `SeedRange`（缺省 `{-3, 3}`）
@@ -116,7 +115,7 @@ in-in formalism 中，顶点 ± 标记决定传播子类型：
 
 因此在指标层面，`G^{+-}/G^{-+}` 型 massless 线不需要离散态指标 `n_e`，指标包退化为纯 `{b_e}`。这是相对 `G^{++}/G^{--}` 型 massless 线（需要 `n_e \in \{0,1\}`）的关键简化。
 
-当前代码状态：`005` 已实现 `masslessCross -> {b_e}`。momentum IBP 中它只参与传播子幂次导数；time IBP 中无 theta 边界项，端点相位导数按 SK 符号给出 `+ i q_e` 或 `- i q_e`，指标上为 `b_e -> b_e-1`。该路线已有 `bubbleMasslessCrossNoTheta` 小检查。
+当前 009 主线已实现 `masslessCross -> {b_e}`。momentum IBP 同时包含传播子幂次和无 theta 指数核的 q 导数；time IBP 中无 theta 边界项，端点相位导数按 SK 符号给出 `+ i q_e` 或 `- i q_e`，指标上为 `b_e -> b_e-1`。该路线已有 `bubbleMasslessCrossNoTheta` 小检查。
 
 ### 3.4 G^{+-}/G^{-+} 型 massive 的处理
 
@@ -127,7 +126,7 @@ Massive 线的 Hankel building block `h[\nu, n, q_e \tau]` 在每个端点导数
 - EOM 递推与 `G^{++}/G^{--}` 型相同，种子层递归消去所有 `n>=2`
 - 唯一区别是没有 theta 导数产生的 shrink-sector 边界项
 
-当前代码状态：`005` 已把这类线显式分派为 `massiveCross`，但指标包仍为 `{b_e,n_{e,1},n_{e,2}}`。它已接入离散态枚举、momentum/time building-block seed、EOM canonical 和 linear-system/Kira 前置门禁；theta boundary shrink 只作用于 `massiveFull`。
+当前主线已把这类线显式分派为 `massiveCross`，但指标包仍为 `{b_e,n_{e,1},n_{e,2}}`。它已接入离散态枚举、momentum/time building-block seed、EOM canonical 和 linear-system/Kira 前置门禁；theta boundary shrink 只作用于 `massiveFull`。
 
 ## 4. h 函数与 H/h 转换
 
@@ -195,32 +194,83 @@ h[\nu_e, n, z] = -Q_e * h[\nu_e, n-1, z] - P_e * h[\nu_e, n-2, z]
 
 当 `absorbFactor` 处理动量 IBP 产生的 building block 导数时，导数 `f'(\xi_e)` 通过 PQ 转化为 `n_{e,a}` 的移位和 PQ 系数的乘积。这是 PQ 系数在 IBP 生成中的主要使用场景。
 
-## 6. massless 的统一双 theta 合并方案
+## 6. massless 双 theta 与有方向单 `n`
 
-### 6.1 主线方案：两 theta 合并
+参考资料还讨论过纯 massless 的单 theta 路线；本 package 只采用双 theta 合并，后文不再展开另一条路线。
 
-同一对顶点间的 `G^{++}`（或 `G^{--}`）两个互斥 time-ordering 合并为一族。massive 线指标包 `{b_e, n_{e,1}, n_{e,2}}`，massless 线 `{b_e, n_e}`（`n_e = 0` 对称，`n_e = 1` 反对称）。
+### 6.1 有序端点定义
 
-massless 简化关系：
-```
-{b_e, 1, 0} = -{b_e, 0, 1}     （反对称化）
-{b_e, 1, 1} = {b_e - 2, 0, 0}  （双端点导数 = 动量降 2）
-```
+对一条 `masslessFull` 线，`lineData["endpoints"]={u,v}` 是有序数据。第一端点 `u` 是单 `n=1` 的参考方向。令 `Delta=tau[u]-tau[v]`，并对 `++/--` 分别取 `sigma=+1/-1`：
 
-同一顶点对多条 massless 线可进一步按 bundle 合并（暂不强制实现）。
+~~~text
+M0 = theta[Delta] exp[-i sigma q Delta]
+   + theta[-Delta] exp[ i sigma q Delta]
 
-本 package 的主线只采用两 theta 合并方案作为 massive/massless 混合与纯 massless 的统一表示。原因是本项目目标是任意 case 通用，而不是专门为纯 massless 最小化方程数；只有在两 theta 合并路线中，massless 端点导数关系才能自然压缩为逐线指标包 `{b_e, n_e}`，并与 massive 的 `{b_e, n_{e,1}, n_{e,2}}` 放在同一套 `J` 表示中。
+M1 = -theta[Delta] exp[-i sigma q Delta]
+   +  theta[-Delta] exp[ i sigma q Delta]
+~~~
 
-特别地，若同一对顶点之间有多条 massless 传播子，它们的 Heaviside 结构不是逐线独立的 \(2^N\) 个分支。因为同一对时间变量只有 `\tau_u>\tau_v` 与 `\tau_v>\tau_u` 两个互斥区域，混合 theta 支撑为空。实现上当前逐线保留 `{b_e,n_e}`，但 `005` 会在 topology metadata 中记录 `masslessBundleCandidates`，指出未来可按顶点对 bundle 合并的线组；这一步只是提示与检查信息，不改变 seed 生成、EOM/time-IBP canonical 或 Kira 导出。
+因此 `n=0` 对应 `M0`，`n=1` 对应 `M1`。交换端点 `{u,v}->{v,u}` 时 `M0` 不变、`M1` 变号。该方向保存在 line metadata 的 `masslessN1ReferenceEndpoint`、`masslessN1OppositeEndpoint`，并复制到 sector metadata；不能只从缩并后的 coincident endpoints 重新推断。
 
-### 6.2 非主线参考：单 theta 分支
+### 6.2 二阶导数与单 `n` canonical
 
-固定一组 `\sigma_e`、每次只约化一个 theta 分支的做法，属于另一个纯 massless 项目的路线。本 package 不把它作为可切换主线，也不据此定义 massless 指标包。这里仅作为参考背景保留：它可用于和纯 massless 结果交叉检查，但不能替代本 package 的双 theta 合并 convention。`G^{+-}/G^{-+}` 型线天然无 Heaviside 选择，仍按 §3.3 的特殊简化处理。
+对每个指数分支 `E=exp[+- i q(tau[u]-tau[v])]`：
 
-统一策略：
-- massive/massless 混合 → 双 theta 合并
-- 纯 massless → 双 theta 合并
-- 双 theta 合并中 massless 线用 `{b_e, n_e}`；`G^{+-}/G^{-+}` 线用 `{b_e}`
+~~~text
+d_u E = -d_v E
+d_u^2 E = d_v^2 E = -q^2 E
+d_u d_v E = +q^2 E
+~~~
+
+若为了推导临时写双端点标签，则
+
+~~~text
+{10} = -{01}
+{20} = {02} = -q^2 {00}
+{11} = +q^2 {00}
+~~~
+
+`{20}` 与 `{11}` 的符号不同，所以不能把它们都压成一个没有方向信息的 “massless n=2”。正式 `J` 只允许 `n=0,1`；time/momentum 原子模块直接翻转 `n -> 1-n`。连续在同一端点作用两次时，两次 `+-i` 系数自动给出负号和 `b->b-2`，不经过临时 `n=2`。
+
+### 6.3 time-IBP 与 theta boundary
+
+完整 kernel 满足
+
+~~~text
+d_u M[n] =  i sigma q M[1-n] - 2 n delta[tau[u]-tau[v]]
+d_v M[n] = -i sigma q M[1-n] + 2 n delta[tau[u]-tau[v]]
+~~~
+
+所以 regular 部分的指标变化为
+
+~~~text
+first endpoint : {b,n} -> {b-1,1-n}, coefficient +i sigma
+second endpoint: {b,n} -> {b-1,1-n}, coefficient -i sigma
+~~~
+
+当且仅当 `n=1` 时，theta 导数产生 massless shrink sector。第一端点系数为 `-2`，第二端点为 `+2`；shrunk pack 为 `{bS}` 且整数关系 `bS=b`。这不同于 massive Wronskian shrink 的 `bS=b+1`。
+
+若其它缩并已使一条 `masslessFull` 线的两个原端点落在同一 active vertex，则共同时间导数必须同时作用两个端点：regular 项和 theta-delta 的 `-2/+2` 项分别相消，反对称 `n=1` 在等时点为零，不能用 `FirstPosition` 只取一端。对 top 方程中产生的 sub-sector 项，也必须根据该输出 `J` 的单元素 shrunk packs 重建目标 sector 代表顶点映射后再做此 canonical，不能沿用 source topology。
+
+### 6.4 momentum-IBP
+
+massless 指数核也依赖 `q=|Q|`，不能只微分分母。其径向导数为
+
+~~~text
+d_q M[n] = i sigma (tau[u]-tau[v]) M[1-n].
+~~~
+
+因此 `d/dq_l . v` 除传播子幂次项外，还产生
+
+~~~text
+c[e,l] (v.Q[e]/q[e]) i sigma (tau[u]-tau[v]) M[1-n],
+~~~
+
+在指标语言中表现为 `b->b+1`、`n->1-n`、分别乘 `tau[u]` 与 `tau[v]`，随后把 `v.Q[e]` 吸收到 `z/ISP` 指标。009 已为 `masslessFull` 和无 theta 的 `masslessCross` 都接入该项。
+
+### 6.5 同顶点对多条 massless 线
+
+同一对顶点之间多条 massless 线严格只有两个共同 theta 区域。当前实现仍逐线保留 `{b_e,n_e}`，并用 `masslessBundleCandidates` 记录可进一步合并的线组；真实 bundle canonical 留作未来优化。逐线表示必须保留每条线的有序端点，并在某条线 shrink 后应用 coincident antisymmetric zero。
 
 ## 7. 幂次范围
 
@@ -240,12 +290,18 @@ IBP 产生的移位：
 
 子拓扑单独设 range，不假设由 top sector 某个 `b_e = 0` 自动表示。
 
+
+### 用户对称性规则的边界
+
+`sp` 的 `Orderless` 只实现标量积交换性 `sp[p,q]=sp[q,p]`，不代表 Feynman 图或积分族对称性。积分族对称性依赖质量、外腿能量和动量等物理条件，当前不允许 package 自动猜测。
+
+当前 009 case 可选输入 `symmetryRules`。`repSymmetry0[topo_]` 返回原始规则，`symmetry[expr_,topo_]` 只执行一次 `/.`；空规则保持表达式不变。pure massive bubble reference 会显式输入等质量内线交换规则，以及参考参数中两外腿动量/能量相等后才成立的附加规则。其它 benchmark 不设置对称性。
 ## 8. IBP 生成要点
 
 IBP seed 包括：
 - 时间 IBP：`d/d\tau_v`（`V` 个算子），处理 Heaviside delta 塌缩
 - 圈动量 IBP：`q_l^\mu \partial/\partial q_l^\mu`（`L` 个标度算子），多圈时添加 `q_l^\mu \partial/\partial q_m^\mu`
-- 前端关系：apart、scaleless、symmetry、massless endpoint、`G^{+-}/G^{-+}` 简化
+- 前端关系：massless endpoint 与 `G^{+-}/G^{-+}` 简化；symmetry 下一版只应用用户输入规则，apart/scaleless 仍待实现
 
 生成流程：
 1. 读取 family 配置，并验证 ISP/零点/numericRules/seedRanges 已定义
@@ -317,10 +373,10 @@ $$J[\{a_v\}; \{\text{pack}_e\}; \{n_{\text{isp}_j}\}]$$
 
 1. **覆盖性**：所有标量积 $\{q_i \cdot q_j, q_i \cdot k_j\}$ 均可表示为用户给出的 $\{\xi_e^2\}$ 和 $\{\text{ISP}_j\}$ 的线性组合。
 2. **独立性**：ISP 可以是 `sp[p,r]` 的线性组合坐标，例如 `sp[l3, k321 + l3]`；这些 ISP 坐标之间应线性无关，并且不应再由传播子平方线性表示。
-3. **数目检查**：`006` 要求 `zExprs` 与 ISP 坐标总数等于独立 loop-scalar-products 数目，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$。这里的计数是用户定义的 `z/ISP` 坐标闭合条件，不是程序自动选择 propagator 子集。
+3. **数目检查**：`008` 要求 `zExprs` 与 ISP 坐标总数等于独立 loop-scalar-products 数目，即 $\#z_e + \#\text{ISP}=N_{\text{sp}}$。这里的计数是用户定义的 `z/ISP` 坐标闭合条件，不是程序自动选择 propagator 子集。
 4. **线性动量检查**：每条 line momentum 以及每个 `sp[p,r]` 的参数都必须是 `loopMomenta/externalMomenta` 的线性组合；若出现 `q1^2` 这类非线性写法，`validationReport` 返回 `nonLinearLineMomenta` 或 `nonLinearScalarProductArguments`。
 5. **可解性检查**：数量闭合后，程序会实际构造小矩阵并尝试生成 `repSP2Z`；若传播子动量退化、重复或无法反解，会在 `validationReport` 中报告 `scalarProductCoordinateSolveFailed`，而不是等到 IBP seed 生成时报错。
-6. **数值规则检查**：若拓扑包含独立外动量基，`006` 的报告和模板会列出外部不变量变量名，例如默认 `s11`、`s12` 或用户自定义名。推荐 `numericRules` 写 `s11 -> value` 或 `sigW -> value`；`sp[k_i,k_j] -> value` 只作为输入兼容形式。缺失时报 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed。
+6. **数值规则检查**：若拓扑包含独立外动量基，`008` 的报告和模板会列出外部不变量变量名，例如默认 `s11`、`s12` 或用户自定义名。推荐 `numericRules` 写 `s11 -> value` 或 `sigW -> value`；`sp[k_i,k_j] -> value` 只作为输入兼容形式。缺失时报 `numericRulesMissingExternalInvariants` warning，不阻止解析 seed。
 
 其中 $N_{\text{sp}} = L(L+1)/2 + L K$，$K$ 是初始化中 `externalMomenta` 的独立外动量基个数。
 
@@ -458,34 +514,62 @@ q_1 · Q_2 = q_1 · (q_1 - k) = q_12 - q_1·k = (z_1 + z_2 - k_s2) / 2
 严禁默认生成整族解析 IBP 方程组并做全局化简。若需要 rank/span 检查，必须先对参数做明确代数赋值，使用小整数或有理数 specialized check；不对大符号矩阵做解析 `MatrixRank`。解析公式只允许逐 seed 或代表项检查。
 
 
-## 9. v4.1 sector-local metadata 与主积分排序接口
+## 13. 当前实现接口与边界
 
-缩并 sector 需要同时记录两类信息：
+### 13.1 权威实现与公开工作流
 
-- 原图记号：原顶点、原线编号、原 `a/b/n` 指标来自哪里，便于和推导、参考代码、图拓扑对应。
-- sector-local 记号：delta 缩并后还剩哪些 active time variables，哪些原顶点被合并到同一个 compact `a` 槽，哪些线处于 shrunk 状态。
+当前唯一权威实现是 `000_code/008_dS_ibp_general.wl`。本设计笔记只描述当前接口，不保留旧脚本的版本差异。
 
-实现上每个 sector 的 `sectorMetadata` 是权威缓存。重要字段包括：
+- `makeTopologyData`：解析用户 case，验证 topology、动量基和 `z/ISP` 坐标，并预缓存 index maps、seed summary 与 sector metadata。
+- `makeCanonicalSeedBatch`：生成全 sector 的 qIBP/tIBP canonical seed，自动派生受门禁保护的 massive/masslessFull shrink sectors。
+- `classifyCanonicalSeedBatch`：按 sector 和 `qIBP/tIBP` 分类，供保存、检查和分块使用。
+- `writeSeedBatchMMA` / `readSeedBatchMMA`：保存和读取解析 seed；seed 不直接交给后端。
+- `makeLinearSystemData`：把 canonical seed 转成后端中立线性系统。
+- `makeSampledLinearSystemData`：在 linear 层应用小规模数值/撒点规则，不污染解析 seed。
+- `reorderLinearSystemIntegrals`：在全 sector 积分表上应用用户排序。
+- `makeKiraExportData`：把 linear system 转成基础 Kira 输入文件，不运行 Kira。
+- `makeIBPWorkflowData` / `makeIBPReadinessReport`：串联 gate 或只报告分阶段 readiness。
 
-- `sectorVertexRepresentativeMap`：原顶点到缩并后代表顶点的映射。
-- `compactASlots`：每个 compact `a` 槽对应的代表顶点、原顶点集合和原 slot 集合。
-- `vertexIdToOriginalASlot` / `vertexIdToCompactASlot`：顶点到两套 `a` 槽的快速索引。
-- `lineSlots`：每条线的 slot、line id、packType、state、endpoints、端点对应的 original/compact `a` 槽和 pack template。
-- `lineIdToSlot`、`bSymbolToLineSlot`：用于导出和人工检查的快速索引。
+### 13.2 Sector metadata 是拓扑缓存
 
-Kira 排序约定：排序对象是所有 sector 的 `integralList` 全集，不按 sector 分别编号。默认排序以 line pack 第一指标（完整线的 `b_e`，缩并线的 `bS_e`）为主；用户指定的 `IntegralOrder` 或 `PreferredIntegrals` 可插入到排序权重中。若用户已经有 preferred master list，应在 linear-system 阶段或 Kira 导出前一次性应用到全局积分表，并检查 `kiraOrderingReport` / `manualIntegralOrderReport` 中的 `missingIntegralOrderItems` 是否为空。
+每个 sector 的 `sectorMetadata` 同时保留原图与 sector-local 信息，避免后端从 `J` 的指标形状重新推断拓扑。主要字段包括：
 
-当前代码状态：sub-sector 的 `J` 已采用 compact `aList`，不再保留 inactive 原顶点槽。原图顶点、缩并代表点、original slot 与 compact slot 的对应关系由 `sectorMetadata` 负责保存，导出和人工检查都应读取 metadata，而不是从 `aList` 长度反推拓扑。
-### 8.2 v5 用户入口与后端接口
+- `sectorVertexRepresentativeMap`；
+- `compactASlots`；
+- `vertexIdToOriginalASlot` / `vertexIdToCompactASlot`；
+- `lineSlots`；
+- `lineIdToSlot` / `bSymbolToLineSlot`；
+- `masslessBundleCandidates`；
+- `masslessN1ReferenceEndpoint` / `masslessN1OppositeEndpoint`。
 
-当前主线保留两版脚本：`004_dS_ibp_general.wl` 是上一版 Kira/linear 导出骨架，`005_dS_ibp_general.wl` 是当前接口版。`005` 新增：
+delta 缩并后，`J` 只保留仍独立的 compact `aList`；原顶点、代表顶点和指标 slot 的对应关系以 metadata 为准。全 sector 积分排序也必须使用这一缓存，不能把某个 subsector 的全部积分简单追加在其它 sector 之后。
 
-- `makeTopologyData[case, PrecomputeShrinkSectorMetadata -> ...]`：读取用户输入并缓存 `sectorMetadataList`、`indexMaps`、`seedSummary`，避免后端每次重新反推 a/b/line/vertex 对应关系。
-- `classifyCanonicalSeedBatch[batch]`：把 canonical seed 按 sector 再按 `qIBP`/`tIBP` 分类，方便检查和后续分块保存。
-- `makeSampledLinearSystemData[batch, topo, CoefficientRules -> ...]`：seed 保持解析，进入 linear/Kira 前再代入用户给定的数值/撒点规则。
-- `makeIBPWorkflowData[caseOrTopo, ...]`：最小端到端入口，按 topology、canonical seed、linear/sample linear、可选 Kira export 的顺序调用现有 gate；默认不运行 Kira reduction。
-- `integralSectorKey` 已改为按 compact `aList` 长度、逐线 pack 位置、`b/bS` 符号和 ISP 槽精确匹配 sector，不再只用 pack 长度判断。
+### 13.3 后端中立的 `linearData`
 
-Kira 导出流程仍是：先 `makeCanonicalSeedBatch`，必要时保存 seed `.m`；再 `makeLinearSystemData` 或 `makeSampledLinearSystemData`；最后用户可查看/重排 `integralList`，用 `reorderLinearSystemIntegrals` 或 `makeKiraExportData[..., KiraIntegralOrder -> order]` 导出。
+`makeLinearSystemData` 与 `makeSampledLinearSystemData` 返回的 `linearData` 是后端中立中间层，至少保存：
 
-导出时 `KiraCoefficientRules` 属于最后一步的数值/撒点规则，不回写 seed；`makeKiraExportData` 会把实际使用的 coefficient rules 和 `KiraJobOptions` 写入 `result/kira_export_metadata.m`。默认只生成基础 Kira 输入与映射文件，不写 `run.sh`，也不保存本机 Kira/Fermat 路径；用户若需要参考脚本必须显式设置 `"WriteRunScript" -> True`。`jobs.yaml` 的 initiate/firefly/kira2math 开关仍可配置，但 package 不负责执行。
+- `linearEquations`：编号后的线性方程；
+- `integralList` / `integralRules`：全 sector 统一积分表与映射；
+- `sectorMetadataList`：sector 与拓扑信息；
+- coefficient、ordering、coverage 和 readiness reports。
+
+这里的“后端中立”表示这些数据不含 Kira 可执行路径，也不依赖 Kira 的工作目录。serializer 的职责是读取 `linearData`，转换为目标后端的语法、编号和文件布局，并完成后端特有的输入校验；它不重新生成 IBP、不重新应用 EOM，也不改变 sector convention。
+
+当前 Kira serializer 可生成 `userSystem/ibp.kira`、`list`、`jobs.yaml`、积分映射和 metadata。默认不生成 `run.sh`，不保存 Kira/Fermat 路径，不运行 reduction。若以后对接 Rational Tracer，需要实现新的 serializer 及其格式检查，但 canonical seed 和 linear-system 主线不需要重写。
+
+### 13.4 当前验证结论与剩余设计项
+
+009 当前通过独立 massive 原子 104/104、独立 massless 22/22 加易错点 8/8、pure massless bubble 70/70、symmetry/Vpm 11/11、massless 27/27、sp 24/24、缓存 8/8 和 Kira serializer smoke 11/11。serializer 检查不运行 Kira/Fermat。旧的含 massless expected 不再作为当前证据，剩余函数族必须按新 convention 重推。
+
+这些检查不是任意拓扑的数学穷尽证明。当前只完成 massless 单线原子规则与极小 batch；新的 hand-derived 目录必须覆盖每个顶点符号组合、每个 sector 和基准 seed 点上的全部 qIBP/tIBP 生成元。
+
+仍保留的设计项：
+
+1. 正式 Mathematica package/context 和公开 API。
+2. 独立 benchmark 的全 sector、全顶点符号与全生成元公式库。
+3. 高圈 seed 的 streaming/chunking 与规模报告。
+4. 同一顶点对多条 massless 线的 bundle theta canonical。
+5. 用户输入 `symmetryRules` 与 `symmetry[expr_,topo_]` 的函数化应用；不自动检测图或参数对称性。scaleless、parity 等其它前端 canonical 仍待实现。
+6. Rational Tracer 或其它后端 serializer。
+
+自动运行 reduction、管理后端安装路径和导入 reduction 结果不属于本 package 的当前职责。

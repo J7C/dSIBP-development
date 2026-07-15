@@ -1,0 +1,85 @@
+(* ::Package:: *)
+(* atomic_massive_line：逐条比较参考 Vpm 手推 expected 与主线 actual。 *)
+
+(* ::Chapter:: *)
+(*初始化*)
+
+benchmarkDir = DirectoryName[$InputFileName];
+Get[FileNameJoin[{benchmarkDir, "..", "..", "..", "009_dS_ibp_general.wl"}]];
+Get[FileNameJoin[{benchmarkDir, "family.wl"}]];
+Get[FileNameJoin[{benchmarkDir, "expected.wl"}]];
+
+topologyCache = Association[];
+getTopTopology[signKey_String, mode_String] := Module[
+   {key = signKey <> ":" <> mode},
+   If[
+    KeyExistsQ[topologyCache, key],
+    topologyCache[key],
+    topologyCache[key] = parseTopology[
+      makeAtomicMassiveCase[signKey, mode]
+      ]
+    ]
+   ];
+
+getSectorTopology[signKey_String, mode_String, "top"] :=
+   getTopTopology[signKey, mode];
+getSectorTopology[signKey_String, mode_String, "e1"] :=
+   shrinkSectorTopology[getTopTopology[signKey, mode], {1}];
+
+relationActual[relation_Association] := Module[
+   {topo, int, label, generator, raw},
+   topo = getSectorTopology[
+     relation["vertexSigns"], relation["mode"], relation["sector"]];
+   int = makeBaseIntegral[topo] /. relation["seedRules"];
+   label = relation["generator"];
+   generator = First @ Select[
+      makeIBPGenerators[topo],
+      If[First[label] === "time",
+        timeGeneratorLabel[#] === label,
+        momentumGeneratorLabel[#] === label
+        ] &
+      ];
+   raw = If[First[label] === "time",
+     applyTimeGeneratorSeed[topo, int, generator],
+     applyMomentumGeneratorSeed[topo, int, generator]
+     ];
+   applySeedCanonical[raw, topo]
+   ];
+
+(* ::Chapter:: *)
+(*逐条比较*)
+
+relationResults = MapIndexed[
+   Function[{relation, index},
+    Module[{actual, difference},
+     actual = Expand[relationActual[relation]];
+     difference = Expand[actual - relation["equation"]];
+     <|
+      "index" -> First[index],
+      "mode" -> relation["mode"],
+      "sector" -> relation["sector"],
+      "vertexSigns" -> relation["vertexSigns"],
+      "generator" -> relation["generator"],
+      "tags" -> relation["tags"],
+      "passQ" -> TrueQ[difference === 0],
+      "difference" -> difference
+      |>
+     ]
+    ],
+   expectedRelations
+   ];
+
+failed = Select[relationResults, ! TrueQ[#["passQ"]] &];
+failedBySign = If[failed === {}, <||>, Counts[Lookup[failed, "vertexSigns"]]];
+failedByMode = If[failed === {}, <||>, Counts[Lookup[failed, "mode"]]];
+
+Print["atomic_massive_line relations: ",
+  Count[Lookup[relationResults, "passQ"], True], "/", Length[relationResults]];
+Print["failed by sign: ", failedBySign];
+Print["failed by mode: ", failedByMode];
+
+If[Length[expectedRelations] =!= 104, Print["Unexpected relation count."]; Exit[1]];
+If[failed =!= {},
+ Print["First failed relations: ", Take[failed, UpTo[8]]];
+ Exit[1]
+ ];

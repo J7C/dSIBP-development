@@ -11,11 +11,14 @@
 - `000_note/dS_IBP_package_plan.md`：实现计划，包含统一积分表示、IBP 生成函数设计、拓扑输入格式
 - `000_note/dS_IBP_package_design_note.md`：设计笔记，记录约定体系和关键推导
 - `000_note/dS_IBP_package_tech_note.tex`：技术笔记，包含完整公式推导和 convention 汇总
+- `研究计划与研究进度.md`：当前任务、完成状态、验证记录和交接顺序；每次收到新任务必须先更新
+- `independent-benchmark/independent-benchmark.md`：交给独立推导者的 benchmark 规范
 
 ## 代码结构
 
-- `000_code/`：主线脚本
-- `000_code/check/`：验证脚本
+- `000_code/009_dS_ibp_general.wl`：当前开发主线脚本
+- `000_code/006_dS_ibp_general.wl`：上一稳定接口版
+- `000_code/check/`：当前主线验证脚本
 - `000_code/test/`：临时测试脚本
 - `000_code/test/results_test/`：测试输出
 
@@ -37,7 +40,7 @@
 ### 多圈 IBP 生成元
 
 - 完备集合：O_{l,v} = ∂/∂q_l^μ · v^μ，v ∈ {q_1, ..., q_L, k_1, ..., k_{E-1}}
-- 总数：L(L + E - 1) = L（对角）+ L(L-1)（交叉）+ L(E-1)（外动量）
+- 总数：L(L + K)，其中 K 是 externalMomenta 中独立外动量数；包括 L 个对角、L(L-1) 个交叉和 LK 个外动量生成元
 - ISP 处理：用户定义，需验证完备性
 
 ## Mathematica 脚本规范
@@ -56,7 +59,7 @@
 **原则**：函数名应反映其物理/数学含义，而非操作方式。
 
 - `eom[expr]`：EOM 递推约化（而非 `id`，后者含义模糊）
-- `symmetry[expr]`：对称性约化
+- `repSymmetry0[topo_]`：用户原始对称性规则；`symmetry[expr_, topo_]`：函数化单次应用
 - `shiftIndex[expr, ...]`：指标移位（而非 `listcal`）
 - `ibp[expr, generator]`：IBP 生成（用生成元标识，而非数字编号）
 
@@ -129,9 +132,11 @@ DeleteDuplicates[applySymmetry[applyEOM[generateIBP[seeds]]]]
 
 ## 开发流程
 
-1. 读取拓扑输入 + ISP 配置
-2. 验证 ISP 完备性
-3. 构造 IBP 生成元集合
-4. 对每个 sector：枚举种子 → 应用生成元 → 转化为指标移位 → 应用 EOM
-5. 分 sector 保存 IBP 方程
-6. 导出 Kira 输入格式
+1. 收到新任务后先更新根目录 `研究计划与研究进度.md`，写清任务、未完成项和验收标准
+2. 读取拓扑输入 + ISP 配置
+3. 验证 ISP 完备性
+4. 构造 IBP 生成元集合
+5. 对每个 sector：枚举种子 → 应用生成元 → 转化为指标移位 → 应用 EOM
+6. 分 sector 保存 canonical seed MMA 文件
+7. 转换为 backend-neutral `linearData`，必要时在此层代入小规模数值规则
+8. 由 serializer 转成 Kira 或其它后端的基础输入文件；package 不运行 reduction

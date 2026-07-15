@@ -2,16 +2,17 @@
 (* 本文件是 dS IBP package 的通用生成器骨架。
    目标是先把 topology-driven 的结构层做实：拓扑解析、传播子 metadata、统一 J 指标包、
    离散态枚举、完整圈动量 IBP 生成元列表、标量积/ISP 覆盖性验证。
-   当前文件生成 momentum seed、time-core seed 与受保护的自动 shrink-sector seed；EOM、per-line massless endpoint canonical 与 massive theta boundary shrink 项已作为 seed 门禁接入，并提供 linear-system 层与 Kira user-defined system 导出门禁。
+   当前文件生成 momentum seed、time-core seed 与受保护的自动 shrink-sector seed；EOM、有方向的 per-line massless 单 n 规则与 massive/massless theta boundary shrink 已作为 seed 门禁接入，并提供 backend-neutral linear-system 与 Kira serializer。
+   008 修正 massive ++ Wronskian theta-boundary 的 Vpm 符号，并加入用户 symmetryRules 的原子化单次应用接口。
    性能原则：默认只定义函数和示例输入，不自动运行检查；验证必须是 seed/metadata 层或代数赋值后的小检查。 *)
 
-ClearAll["Global`*"];
+(* 加载主线脚本不得清空用户 Global` 上下文；开发时需要彻底重载应使用新 kernel。 *)
 
 
 (* ::Chapter:: *)
 (*环境与通用工具*)
 
-(* 本章只处理工作目录和小工具函数。脚本可由 wolframscript 执行，也可在 notebook 中逐段运行。 *)
+(* 本章只解析脚本目录并定义小工具函数。加载 package 不改变用户当前工作目录；输出路径由调用者显式决定。 *)
 
 baseDir = If[StringQ[$InputFileName] && $InputFileName =!= "",
    DirectoryName[$InputFileName],
@@ -22,11 +23,16 @@ baseDir = If[StringQ[$InputFileName] && $InputFileName =!= "",
     Directory[]
     ]
    ];
-SetDirectory[baseDir];
 
 
 (* 只做结构零判断；解析化简应放到单独的小规模 specialized check 中。 *)
 zeroQ[expr_] := TrueQ[expr === 0];
+
+
+(* 用户口统一用 sp 表示 scalar product；内部仍用 qq/qk/kk 编号坐标做线性代数。 *)
+SetAttributes[sp, Orderless];
+SetAttributes[qq, Orderless];
+SetAttributes[kk, Orderless];
 
 
 (* 对称标量积记号。qq/kk 只保留上三角索引，避免同一个标量积出现两种名字。 *)
@@ -54,7 +60,7 @@ normalizeLine[{id_, endpoints_, momentum_, nu_, bbType_}] := <|
    |>;
 
 
-(* ISP 可用 {name, expr, range} 或 Association。expr 必须用 qq/qk 变量表示。 *)
+(* ISP 可用 {name, expr, range} 或 Association。006 用户口 expr 写成 sp[p,r] 或其线性组合。 *)
 normalizeISP[isp_Association] := isp;
 normalizeISP[{name_, expr_, range_}] := <|
    "name" -> name,
@@ -67,9 +73,9 @@ requiredCaseInputKeys[] := {"vertexData", "lineData", "loopMomenta"};
 
 
 optionalCaseInputKeys[] := {
-   "name", "extLegs", "externalMomenta", "ispData", "vertexEnergies", "activeVertexIds",
+   "name", "extLegs", "externalMomenta", "externalInvariantRules", "rawExternalInvariantRules", "ispData", "vertexEnergies", "activeVertexIds",
    "fixedAVertexValues", "numericRules", "sampleDiscreteRules", "seedPreset", "seedRanges",
-   "seedOptions", "zeroPointRules", "shrinkPrefactorRules", "kiraOrdering"
+   "seedOptions", "zeroPointRules", "shrinkPrefactorRules", "symmetryRules", "thetaBoundarySignOffset", "kiraOrdering"
    };
 
 
@@ -153,7 +159,7 @@ sampleDiscreteRulePairs[rules_] := Cases[
 caseInputMalformedIssues[case_Association] := Module[
    {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, seedRanges, seedOptions, badVertexPositions,
     badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData,
-    sampleDiscreteRules, sampleRuleShapeIssues},
+    sampleDiscreteRules, sampleRuleShapeIssues, symmetryRules, badSymmetryRulePositions},
    If[KeyExistsQ[case, "vertexData"],
     vertexData = case["vertexData"];
     If[! ListQ[vertexData],
@@ -222,6 +228,21 @@ caseInputMalformedIssues[case_Association] := Module[
     seedOptions = case["seedOptions"];
     If[! AssociationQ[seedOptions],
      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSeedOptions", "reason" -> "seedOptions must be an Association"|>]
+     ]
+    ];
+   If[KeyExistsQ[case, "symmetryRules"],
+    symmetryRules = case["symmetryRules"];
+    If[! ListQ[symmetryRules],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSymmetryRules", "reason" -> "symmetryRules must be a list of Rule or RuleDelayed entries"|>],
+     badSymmetryRulePositions = Flatten @ Position[
+        symmetryRules,
+        rule_ /; ! validDiscreteReplacementRuleQ[rule],
+        {1},
+        Heads -> False
+        ];
+     If[badSymmetryRulePositions =!= {},
+      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSymmetryRules", "badPositions" -> badSymmetryRulePositions|>]
+      ]
      ]
     ];
    If[KeyExistsQ[case, "ispData"],
@@ -355,10 +376,12 @@ inferPackType[massType_, skType_, state_] := Which[
    ];
 
 
-(* 补齐每条线的默认 metadata。thetaConvention 固定为 mergedTwoTheta，避免主线再切到单 theta 路线。 *)
+(* 补齐每条线的默认 metadata。thetaConvention 固定为 mergedTwoTheta。
+   endpoints 是有序输入；对 masslessFull，第一端点定义单 n=1 的反对称方向。 *)
 completeLineMetadata[line_, vertexSignAssoc_] := Module[
-   {endpoints, massType, skType, state, packType},
+   {endpoints, referenceEndpoints, massType, skType, state, packType},
    endpoints = line["endpoints"];
+   referenceEndpoints = Lookup[line, "originalEndpoints", endpoints];
    massType = Lookup[line, "massType", "massive"];
    skType = Lookup[line, "skType", inferSKType[endpoints, vertexSignAssoc]];
    state = Lookup[line, "state", "full"];
@@ -370,7 +393,9 @@ completeLineMetadata[line_, vertexSignAssoc_] := Module[
      "skType" -> skType,
      "state" -> state,
      "thetaConvention" -> "mergedTwoTheta",
-     "packType" -> packType
+     "packType" -> packType,
+     "masslessN1ReferenceEndpoint" -> If[packType === "masslessFull", referenceEndpoints[[1]], Missing["NotApplicable"]],
+     "masslessN1OppositeEndpoint" -> If[packType === "masslessFull", referenceEndpoints[[2]], Missing["NotApplicable"]]
      |>
     ]
    ];
@@ -383,8 +408,8 @@ parseTopology::badinput = "case 输入 preflight 失败：`1`。";
 
 parseTopology[case_Association] := Module[
    {vertexData, vertexIds, vertexSignAssoc, rawLines, lines, loopMomenta,
-   externalMomenta, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
-    eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig},
+   externalMomenta, rawExternalInvariantRules, externalInvariantRules, ispData, nV, nE, nL, nK, bMatrix, vertexLines,
+    eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig, topoContext},
    If[caseInputPreflightErrorQ[case],
     If[caseInputMissingRequiredKeysQ[case],
      Message[parseTopology::missingkeys, caseInputRequirementReport[case]["missingRequiredKeys"]],
@@ -429,6 +454,10 @@ parseTopology[case_Association] := Module[
      eMomenta[[e]] - Sum[loopCoeffMatrix[[e, l]] loopMomenta[[l]], {l, nL}],
      {e, nE}
      ];
+   topoContext = <|"loopMomenta" -> loopMomenta, "externalMomenta" -> externalMomenta, "nL" -> nL, "nK" -> nK|>;
+   rawExternalInvariantRules = Lookup[case, "rawExternalInvariantRules", Lookup[case, "externalInvariantRules", Automatic]];
+   externalInvariantRules = normalizeExternalInvariantRulesForTopology[rawExternalInvariantRules, topoContext];
+   topoContext = Join[topoContext, <|"externalInvariantRules" -> externalInvariantRules|>];
    seedConfig = normalizeSeedConfig[case];
    <|
     "name" -> Lookup[case, "name", "unnamed"],
@@ -442,6 +471,8 @@ parseTopology[case_Association] := Module[
     "fixedAVertexValues" -> Lookup[case, "fixedAVertexValues", <||>],
     "loopMomenta" -> loopMomenta,
     "externalMomenta" -> externalMomenta,
+    "rawExternalInvariantRules" -> rawExternalInvariantRules,
+    "externalInvariantRules" -> externalInvariantRules,
     "ispData" -> ispData,
     "nV" -> nV,
     "nE" -> nE,
@@ -452,7 +483,7 @@ parseTopology[case_Association] := Module[
     "loopCoeffMatrix" -> loopCoeffMatrix,
     "externalCoeffMatrix" -> externalCoeffMatrix,
     "externalPartList" -> externalPartList,
-    "numericRules" -> Lookup[case, "numericRules", {}],
+    "numericRules" -> normalizeNumericRulesForTopology[Lookup[case, "numericRules", {}], topoContext],
     "sampleDiscreteRules" -> Lookup[case, "sampleDiscreteRules", {}],
     "seedPreset" -> seedConfig["seedPreset"],
     "seedRanges" -> seedConfig["seedRanges"],
@@ -460,6 +491,8 @@ parseTopology[case_Association] := Module[
     "unknownSeedPreset" -> seedConfig["unknownSeedPreset"],
     "zeroPointRules" -> Lookup[case, "zeroPointRules", {}],
     "shrinkPrefactorRules" -> Lookup[case, "shrinkPrefactorRules", {}],
+    "symmetryRules" -> Lookup[case, "symmetryRules", {}],
+    "thetaBoundarySignOffset" -> Lookup[case, "thetaBoundarySignOffset", Automatic],
     "kiraOrdering" -> Lookup[case, "kiraOrdering", <||>],
     "sectorVertexRepresentativeMap" -> Lookup[case, "sectorVertexRepresentativeMap", AssociationThread[vertexIds -> vertexIds]]
     |>
@@ -545,6 +578,8 @@ makeSectorMetadata[topo_Association] := Module[
        "state" -> lines[[e]]["state"],
        "endpoints" -> endpoints,
        "originalEndpoints" -> originalEndpoints,
+       "masslessN1ReferenceEndpoint" -> Lookup[lines[[e]], "masslessN1ReferenceEndpoint", Missing["NotApplicable"]],
+       "masslessN1OppositeEndpoint" -> Lookup[lines[[e]], "masslessN1OppositeEndpoint", Missing["NotApplicable"]],
        "endpointOriginalASlots" -> Lookup[originalSlotByVertex, originalEndpoints],
        "endpointCompactASlots" -> Lookup[compactSlotByVertex, endpoints, None],
        "bSymbol" -> pack[[1]],
@@ -994,40 +1029,25 @@ applyEOMToIntegral[topo_Association, int_J] := Module[{target},
 applyEOM[expr_, topo_Association] := Expand[expr /. int_J :> applyEOMToIntegral[topo, int]];
 
 
-(* massless full line 采用 A 类双 theta 合并后的逐线 {b,n} 约定。
-   若中间步骤显式出现 n>=2，则用 {11}=q^2 {00} 的压缩关系递归回 n=0/1。 *)
-masslessEndpointTarget[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
-   {lines = topo["lines"], pack, target = Missing["NoMasslessEndpointTarget"]},
-   Do[
-    pack = linePacks[[e]];
-    If[actualLinePackType[topo, e, pack] === "masslessFull",
-     If[Length[pack] >= 2 && IntegerQ[pack[[2]]] && pack[[2]] >= 2 && Head[target] === Missing,
-      target = <|"lineIndex" -> e, "nValue" -> pack[[2]]|>
-      ]
-     ],
-    {e, Length[lines]}
-    ];
-   target
-   ];
-
-
-masslessEndpointReduceIntegralAt[topo_Association, int_J, target_Association] := Module[
-   {e = target["lineIndex"], nValue = target["nValue"], reduced},
-   reduced = setLinePackEntry[int, e, 2, nValue - 2];
-   shiftLineB[reduced, e, -2]
-   ];
-
-
-applyMasslessEndpointCanonicalToIntegral[topo_Association, int_J] := Module[{target},
-   target = masslessEndpointTarget[topo, int];
-   If[Head[target] === Missing,
-    int,
-    applyMasslessEndpointCanonical[masslessEndpointReduceIntegralAt[topo, int, target], topo]
+(* masslessFull 的单 n 只允许 0/1。它以 line endpoints 的第一端点定义方向，
+   所有导数直接在 0/1 间翻转；不再用有歧义的临时 n=2 混写 {20} 与 {11}。
+   若其它缩并使该线两端点重合，反对称态 n=1 在等时点恒为零。 *)
+masslessCoincidentAntisymmetricIntegralQ[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
+   {lines = topo["lines"]},
+   AnyTrue[
+    Range[Length[lines]],
+    Function[e,
+     actualLinePackType[topo, e, linePacks[[e]]] === "masslessFull" &&
+      SameQ @@ lines[[e]]["endpoints"] &&
+      linePacks[[e, 2]] === 1
+     ]
     ]
    ];
 
 
-applyMasslessEndpointCanonical[expr_, topo_Association] := Expand[expr /. int_J :> applyMasslessEndpointCanonicalToIntegral[topo, int]];
+applyMasslessEndpointCanonical[expr_, topo_Association] := Expand[
+   expr /. (int_J /; masslessCoincidentAntisymmetricIntegralQ[topo, int]) :> 0
+   ];
 
 
 applySeedCanonical[expr_, topo_Association] := applyMasslessEndpointCanonical[applyEOM[expr, topo], topo];
@@ -1077,6 +1097,26 @@ containsForbiddenNQ[topo_Association, expr_] := Length[forbiddenNData[topo, expr
 assertNoForbiddenN::badn = "表达式仍含 forbidden n 指标：`1`。";
 assertNoForbiddenN[expr_, topo_Association] := Module[{bad = forbiddenNData[topo, expr]},
    If[bad === {}, expr, Message[assertNoForbiddenN::badn, bad]; $Failed]
+   ];
+
+(* ::Chapter:: *)
+(*用户输入的积分族对称性*)
+
+(* sp 的 Orderless 只处理标量积交换性；本章只应用用户确认物理条件后的积分族规则。 *)
+repSymmetry0[topo_Association] := Lookup[topo, "symmetryRules", {}];
+
+
+symmetry::badrules = "symmetryRules 必须是 Rule/RuleDelayed 的列表。";
+
+
+symmetry[expr_, topo_Association] := Module[
+   {rules = repSymmetry0[topo]},
+   If[
+    ! ListQ[rules] || ! And @@ (validDiscreteReplacementRuleQ /@ rules),
+    Message[symmetry::badrules];
+    Return[$Failed]
+    ];
+   expr /. rules
    ];
 
 (* ::Chapter:: *)
@@ -1134,25 +1174,39 @@ missingLineParameterNumericRules[topo_Association] := Complement[
 
 (* numeric workflow 的前置规则集中在这里，方便用户初始化时一次看清需要补哪些替换。 *)
 numericRuleRequirementReport[topo_Association] := Module[
-   {provided, external, vertex, line},
+   {provided, external, vertex, line, required, missingExternal, missingVertex, missingLine, missingAll, toUser},
    provided = numericRuleLHSVariables[topo];
    external = externalInvariantVariables[topo];
    vertex = vertexEnergyVariables[topo];
    line = lineParameterVariables[topo];
+   required = DeleteDuplicates[Join[external, vertex, line]];
+   missingExternal = Complement[external, provided];
+   missingVertex = Complement[vertex, provided];
+   missingLine = Complement[line, provided];
+   missingAll = Complement[required, provided];
+   toUser[list_] := scalarProductInternalToUser[#, topo] & /@ list;
    <|
-    "providedNumericVariables" -> provided,
-    "requiredExternalInvariants" -> external,
-    "requiredVertexEnergies" -> vertex,
+    "providedNumericVariables" -> toUser[provided],
+    "internalProvidedNumericVariables" -> provided,
+    "requiredExternalInvariants" -> toUser[external],
+    "internalRequiredExternalInvariants" -> external,
+    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
+    "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
+    "requiredVertexEnergies" -> toUser[vertex],
+    "internalRequiredVertexEnergies" -> vertex,
     "requiredLineParameters" -> line,
-    "requiredNumericVariables" -> DeleteDuplicates[Join[external, vertex, line]],
-    "missingExternalInvariants" -> Complement[external, provided],
-    "missingVertexEnergies" -> Complement[vertex, provided],
-    "missingLineParameters" -> Complement[line, provided],
-    "missingNumericVariables" -> Complement[DeleteDuplicates[Join[external, vertex, line]], provided],
-    "completeStaticNumericRulesQ" -> TrueQ[Complement[DeleteDuplicates[Join[external, vertex, line]], provided] === {}]
+    "requiredNumericVariables" -> toUser[required],
+    "internalRequiredNumericVariables" -> required,
+    "missingExternalInvariants" -> toUser[missingExternal],
+    "internalMissingExternalInvariants" -> missingExternal,
+    "missingVertexEnergies" -> toUser[missingVertex],
+    "internalMissingVertexEnergies" -> missingVertex,
+    "missingLineParameters" -> missingLine,
+    "missingNumericVariables" -> toUser[missingAll],
+    "internalMissingNumericVariables" -> missingAll,
+    "completeStaticNumericRulesQ" -> TrueQ[missingAll === {}]
     |>
    ];
-
 
 numericRuleTemplateVariables[report_Association, scope_] := Switch[scope,
    "missing", report["missingNumericVariables"],
@@ -1212,6 +1266,105 @@ expandDotExpr[p_, r_, topo_Association] := Module[
    ];
 
 
+
+(* 用户口的 sp[p,r] 统一展开到内部 qq/qk/kk 坐标；p,r 可为用户命名的线性动量组合。 *)
+scalarProductSPInputToInternal[expr_, topo_Association] := Expand[
+   expr /. HoldPattern[sp[p_, r_]] :> expandDotExpr[p, r, topo]
+   ];
+
+
+externalInvariantSymbolName[i_Integer, j_Integer] := ToExpression["s" <> ToString[Min[i, j]] <> ToString[Max[i, j]]];
+
+
+defaultExternalInvariantRulesForTopology[topo_Association] := Module[
+   {exts = Lookup[topo, "externalMomenta", {}], nK = Lookup[topo, "nK", Length[Lookup[topo, "externalMomenta", {}]]]},
+   Flatten[Table[sp[exts[[i]], exts[[j]]] -> externalInvariantSymbolName[i, j], {i, nK}, {j, i, nK}]]
+   ];
+
+
+normalizeExternalInvariantRulesForTopology[Automatic, topo_Association] := defaultExternalInvariantRulesForTopology[topo];
+normalizeExternalInvariantRulesForTopology[rules_Association, topo_Association] := normalizeExternalInvariantRulesForTopology[Normal[rules], topo];
+normalizeExternalInvariantRulesForTopology[rules_List, topo_Association] := Module[
+   {defaults = defaultExternalInvariantRulesForTopology[topo], validRules},
+   validRules = Select[rules, validReplacementRuleQ];
+   Normal[Association[Join[defaults, validRules]]]
+   ];
+normalizeExternalInvariantRulesForTopology[_, topo_Association] := defaultExternalInvariantRulesForTopology[topo];
+
+
+externalInvariantInternalToUserRules[topo_Association] := Module[
+   {rules = Lookup[topo, "externalInvariantRules", defaultExternalInvariantRulesForTopology[topo]]},
+   rules /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductSPInputToInternal[lhs, topo], rhs]
+   ];
+
+
+externalInvariantUserToInternalRules[topo_Association] := Module[
+   {rules = externalInvariantInternalToUserRules[topo]},
+   Cases[rules, Rule[lhs_, rhs_] :> Rule[rhs, lhs]]
+   ];
+
+
+externalInvariantNamingReport[topo_Association] := <|
+   "externalMomenta" -> Lookup[topo, "externalMomenta", {}],
+   "externalInvariantRules" -> Lookup[topo, "externalInvariantRules", defaultExternalInvariantRulesForTopology[topo]],
+   "internalExternalInvariantRules" -> externalInvariantInternalToUserRules[topo],
+   "defaultNamingConvention" -> "sij, where i,j are positions in externalMomenta and i<=j",
+   "message" -> "圈动量相关标量积的用户输入统一用 sp[p,r]；外动量-外动量不变量在输出端使用 externalInvariantRules 指定的变量名，未指定时默认按 externalMomenta 顺序输出为 sij。"
+   |>;
+
+
+scalarProductInputToInternal[expr_, topo_Association] := Expand[
+   scalarProductSPInputToInternal[expr, topo] /. externalInvariantUserToInternalRules[topo]
+   ];
+
+
+scalarProductInternalToUser[expr_, topo_Association] := Module[
+   {loops = topo["loopMomenta"], exts = topo["externalMomenta"]},
+   Expand[expr /. Join[
+      externalInvariantInternalToUserRules[topo],
+      {
+       HoldPattern[qq[i_Integer, j_Integer]] :> sp[loops[[i]], loops[[j]]],
+       HoldPattern[qk[i_Integer, j_Integer]] :> sp[loops[[i]], exts[[j]]]
+       }
+      ]]
+   ];
+
+
+scalarProductExpressionValidQ[expr_, topo_Association] := Module[
+   {internal = scalarProductInputToInternal[expr, topo], allowedVars},
+   allowedVars = Join[scalarProductVariables[topo], externalInvariantVariables[topo]];
+   FreeQ[internal, sp] && SubsetQ[allowedVars, Variables[internal]]
+   ];
+
+
+normalizeISPExprs[topo_Association] := scalarProductInputToInternal[Lookup[#, "expr"], topo] & /@ topo["ispData"];
+
+
+normalizeNumericRulesForTopology[rules_List, topo_Association] := rules /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductInputToInternal[lhs, topo], rhs];
+normalizeNumericRulesForTopology[rules_, topo_Association] := rules;
+
+
+normalizeCoefficientRulesForTopology[rules_List, topo_Association] := normalizeNumericRulesForTopology[rules, topo];
+normalizeCoefficientRulesForTopology[rules_, topo_Association] := rules;
+
+
+normalizeCoefficientRulesForLinearData[rules_, linearData_Association] := Module[
+   {topo = Lookup[linearData, "topology", Missing["NoTopology"]]},
+   If[parsedTopologyQ[topo], normalizeCoefficientRulesForTopology[rules, topo], rules]
+   ];
+
+
+userCoefficientRulesForLinearData[rules_, linearData_Association] := Module[
+   {topo = Lookup[linearData, "topology", Missing["NoTopology"]]},
+   If[parsedTopologyQ[topo] && ListQ[rules],
+    rules /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductInternalToUser[lhs, topo], rhs],
+    rules
+    ]
+   ];
+
+
+userNumericRules[topo_Association] := topo["numericRules"] /. (Rule | RuleDelayed)[lhs_, rhs_] :> Rule[scalarProductInternalToUser[lhs, topo], rhs];
+
 expandZList[topo_Association] := expandDotExpr[#, #, topo] & /@ Lookup[topo["lines"], "momentum"];
 
 
@@ -1221,97 +1374,291 @@ coefficientMatrix[exprs_List, vars_List] := Table[
    ];
 
 
+linearMomentumExpressionData[expr_, basis_List] := Module[
+   {coeffs, residual},
+   coeffs = Coefficient[expr, #] & /@ basis;
+   residual = Expand[expr - Total[MapThread[#1 #2 &, {coeffs, basis}]]];
+   <|"expr" -> expr, "basis" -> basis, "coefficients" -> coeffs, "residual" -> residual, "linearQ" -> TrueQ[residual === 0]|>
+   ];
 
-(* 小规模线性规则生成：直接作为 ISP 给出的标量积会被保留，不强行改写成 rho。
+
+linearMomentumExpressionQ[expr_, basis_List] := TrueQ[linearMomentumExpressionData[expr, basis]["linearQ"]];
+
+
+lineMomentumLinearityIssues[topo_Association] := Module[
+   {basis = Join[topo["loopMomenta"], topo["externalMomenta"]]},
+   DeleteCases[
+    MapIndexed[
+     With[{data = linearMomentumExpressionData[Lookup[#1, "momentum", 0], basis]},
+       If[TrueQ[data["linearQ"]],
+        Nothing,
+        <|"lineIndex" -> First[#2], "lineId" -> Lookup[#1, "id", Missing["id"]], "momentum" -> Lookup[#1, "momentum", Missing["momentum"]], "residual" -> data["residual"], "basis" -> basis|>
+        ]
+       ] &,
+     topo["lines"]
+     ],
+    Nothing
+    ]
+   ];
+
+
+scalarProductArgumentLinearityIssues[topo_Association] := Module[
+   {basis = Join[topo["loopMomenta"], topo["externalMomenta"]], rawISPExprs, spData},
+   rawISPExprs = Lookup[#, "expr"] & /@ topo["ispData"];
+   DeleteCases[
+    Flatten[
+     MapIndexed[
+      Function[{expr, pos},
+       MapIndexed[
+        Function[{pair, pairPos},
+         DeleteCases[
+          MapIndexed[
+           With[{data = linearMomentumExpressionData[#1, basis]},
+             If[TrueQ[data["linearQ"]],
+              Nothing,
+              <|"ispPosition" -> First[pos], "ispName" -> Lookup[topo["ispData"][[First[pos]]], "name", Missing["name"]], "spPosition" -> First[pairPos], "argumentSlot" -> First[#2], "argument" -> #1, "residual" -> data["residual"], "basis" -> basis|>
+              ]
+             ] &,
+           pair
+           ],
+          Nothing
+          ]
+         ],
+        Cases[expr, HoldPattern[sp[p_, r_]] :> {p, r}, {0, Infinity}]
+        ]
+       ],
+      rawISPExprs
+      ],
+     2
+     ],
+    Nothing
+    ]
+   ];
+
+
+vertexEnergySPArgumentIssues[expr_, topo_Association] := Module[
+   {basis = Join[topo["loopMomenta"], topo["externalMomenta"]], nL = topo["nL"], pairs},
+   pairs = Cases[expr, HoldPattern[sp[p_, r_]] :> {p, r}, {0, Infinity}];
+   DeleteCases[
+    Flatten[
+     MapIndexed[
+      Function[{pair, pairPos},
+       MapIndexed[
+        Function[{arg, argPos},
+         Module[{data = linearMomentumExpressionData[arg, basis], loopCoeffs},
+          loopCoeffs = Take[data["coefficients"], nL];
+          If[TrueQ[data["linearQ"]] && TrueQ[loopCoeffs === ConstantArray[0, nL]],
+           Nothing,
+           <|
+            "spPosition" -> First[pairPos],
+            "argumentSlot" -> First[argPos],
+            "argument" -> arg,
+            "residual" -> data["residual"],
+            "loopCoefficients" -> loopCoeffs,
+            "basis" -> basis
+            |>
+           ]
+          ]
+         ],
+        pair
+        ]
+       ],
+      pairs
+      ],
+     1
+     ],
+    Nothing
+    ]
+   ];
+
+
+vertexEnergyMomentumDependenceIssues[topo_Association] := Module[
+   {declared = Join[topo["loopMomenta"], topo["externalMomenta"]], loopSPVars = scalarProductVariables[topo], vertices = activeAVertexIds[topo]},
+   DeleteCases[
+    Table[
+     Module[{raw = rawVertexExternalEnergy[topo, vertex], rawNoSP, directMomenta, spArgIssues, internal, loopSPUsed},
+      rawNoSP = raw /. HoldPattern[sp[_, _]] -> 0;
+      directMomenta = DeleteDuplicates@Cases[rawNoSP, sym_Symbol /; MemberQ[declared, sym], {0, Infinity}];
+      spArgIssues = vertexEnergySPArgumentIssues[raw, topo];
+      internal = scalarProductInputToInternal[raw, topo];
+      loopSPUsed = Intersection[Variables[internal], loopSPVars];
+      If[directMomenta === {} && spArgIssues === {} && loopSPUsed === {},
+       Nothing,
+       <|
+        "vertexId" -> vertex,
+        "rawVertexEnergy" -> raw,
+        "userVertexEnergy" -> scalarProductInternalToUser[internal, topo],
+        "directMomentumSymbols" -> directMomenta,
+        "spArgumentIssues" -> spArgIssues,
+        "loopScalarProducts" -> scalarProductInternalToUser[#, topo] & /@ loopSPUsed,
+        "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex; use external invariant variables when the energy is tied to externalMomenta space, otherwise use independent ke[i] parameters"
+        |>
+       ]
+      ],
+     {vertex, vertices}
+     ],
+    Nothing
+    ]
+   ];
+
+
+
+(* 标量积坐标规则只依赖动量路由、ISP 和外部不变量命名。
+   缓存键排除 sector、顶点和 seed 配置，使同一 family 的 shrink sectors 共享一次 LinearSolve。 *)
+$scalarProductRuleCache = <||>;
+
+
+scalarProductRuleCacheKey[topo_Association] := With[
+   {
+    nL = topo["nL"],
+    nK = topo["nK"],
+    nE = topo["nE"],
+    loopMomenta = topo["loopMomenta"],
+    externalMomenta = topo["externalMomenta"],
+    lineMomenta = Lookup[topo["lines"], "momentum"],
+    ispExprs = Lookup[topo["ispData"], "expr"],
+    externalInvariantRules = Lookup[topo, "externalInvariantRules", {}]
+    },
+   HoldComplete[nL, nK, nE, loopMomenta, externalMomenta, lineMomenta, ispExprs, externalInvariantRules]
+   ];
+
+
+clearScalarProductRuleCache[] := ($scalarProductRuleCache = <||>; Null);
+
+
+scalarProductRuleCacheReport[] := <|
+   "entryCount" -> Length[$scalarProductRuleCache],
+   "hashes" -> Keys[$scalarProductRuleCache]
+   |>;
+
+
+(* 小规模线性规则核心：直接作为 ISP 给出的标量积会被保留，不强行改写成 rho。
    本 package 假设用户输入的 z_e 与直接 ISP 已经构成闭合坐标；这里不把 dS 图
    默认当成 overcomplete propagator family 处理，避免改变用户定义的函数族。 *)
-makeScalarProductRules[topo_Association] := Module[
-   {spVars, zVars, zExprs, ispExprs, directISPVars, unsupportedISPExprs, solveVars,
-    mat, const, rhs, solVec},
+makeScalarProductRulesUncached[topo_Association] := Module[
+   {spVars, zVars, zExprs, rawISPExprs, ispExprs, ispVars, invalidISPPositions, unsupportedISPExprs,
+    coordExprs, coordVars, mat, const, rhs, solVec},
    spVars = scalarProductVariables[topo];
    zVars = Table[z[e], {e, topo["nE"]}];
    zExprs = expandZList[topo];
-   ispExprs = Lookup[#, "expr"] & /@ topo["ispData"];
-   directISPVars = Select[ispExprs, MemberQ[spVars, #] &] // DeleteDuplicates;
-   unsupportedISPExprs = Select[ispExprs, ! MemberQ[spVars, #] &] // DeleteDuplicates;
+   rawISPExprs = Lookup[#, "expr"] & /@ topo["ispData"];
+   ispExprs = scalarProductInputToInternal[#, topo] & /@ rawISPExprs;
+   ispVars = Table[rho[j], {j, Length[ispExprs]}];
+   invalidISPPositions = Flatten@Position[Map[scalarProductExpressionValidQ[#, topo] &, rawISPExprs], False];
+   unsupportedISPExprs = rawISPExprs[[invalidISPPositions]];
    If[unsupportedISPExprs =!= {},
     Return[<|
       "status" -> "notComputed",
-      "reason" -> "ISP expressions must be direct qq/qk scalar-product variables",
+      "reason" -> "ISP expressions must be scalar products written as sp[p,r] or linear combinations of them",
       "repSP2Z" -> Missing["NotComputedUnsupportedISP"],
       "solveVars" -> Missing["NotComputedUnsupportedISP"],
-      "preservedISPVars" -> directISPVars,
+      "preservedISPVars" -> ispVars,
+      "ispCoordinateVars" -> ispVars,
       "unsupportedISPExprs" -> unsupportedISPExprs
       |>]
     ];
-   solveVars = Complement[spVars, directISPVars];
-   If[Length[zExprs] =!= Length[solveVars],
+   coordExprs = Join[zExprs, ispExprs];
+   coordVars = Join[zVars, ispVars];
+   If[Length[coordExprs] =!= Length[spVars],
     Return[<|
       "status" -> "notComputed",
-      "reason" -> "z equation count does not match non-ISP scalar-product count",
+      "reason" -> "z plus ISP equation count does not match scalar-product count",
       "repSP2Z" -> Missing["NotComputedCountMismatch"],
-      "solveVars" -> solveVars,
-      "preservedISPVars" -> directISPVars,
+      "solveVars" -> spVars,
+      "preservedISPVars" -> ispVars,
+      "ispCoordinateVars" -> ispVars,
       "zCount" -> Length[zExprs],
-      "nonISPScalarProductCount" -> Length[solveVars]
+      "ispCount" -> Length[ispExprs],
+      "scalarProductCount" -> Length[spVars]
       |>]
     ];
-   mat = coefficientMatrix[zExprs, solveVars];
-   const = zExprs /. Thread[solveVars -> 0];
-   rhs = zVars - const;
+   mat = coefficientMatrix[coordExprs, spVars];
+   const = coordExprs /. Thread[spVars -> 0];
+   rhs = coordVars - const;
    solVec = Check[LinearSolve[mat, rhs], $Failed];
    If[solVec === $Failed,
     Return[<|
       "status" -> "notComputed",
       "reason" -> "LinearSolve failed",
       "repSP2Z" -> Missing["LinearSolveFailed"],
-      "solveVars" -> solveVars,
-      "preservedISPVars" -> directISPVars,
+      "solveVars" -> spVars,
+      "preservedISPVars" -> ispVars,
+      "ispCoordinateVars" -> ispVars,
       "zCount" -> Length[zExprs],
-      "nonISPScalarProductCount" -> Length[solveVars]
+      "ispCount" -> Length[ispExprs],
+      "scalarProductCount" -> Length[spVars]
       |>]
     ];
    <|
     "status" -> "computed",
-    "repSP2Z" -> Thread[solveVars -> (Expand /@ solVec)],
+    "repSP2Z" -> Thread[spVars -> (Expand /@ solVec)],
+    "userRepSP2Z" -> (Rule[scalarProductInternalToUser[#[[1]], topo], scalarProductInternalToUser[#[[2]], topo]] & /@ Thread[spVars -> (Expand /@ solVec)]),
     "repZ2SP" -> Thread[zVars -> zExprs],
-    "solveVars" -> solveVars,
-    "preservedISPVars" -> directISPVars,
+    "userRepZ2SP" -> (Rule[#[[1]], scalarProductInternalToUser[#[[2]], topo]] & /@ Thread[zVars -> zExprs]),
+    "repISP2SP" -> Thread[ispVars -> ispExprs],
+    "userRepISP2SP" -> (Rule[#[[1]], scalarProductInternalToUser[#[[2]], topo]] & /@ Thread[ispVars -> ispExprs]),
+    "solveVars" -> spVars,
+    "preservedISPVars" -> ispVars,
+    "ispCoordinateVars" -> ispVars,
     "zCount" -> Length[zExprs],
-    "nonISPScalarProductCount" -> Length[solveVars]
+    "ispCount" -> Length[ispExprs],
+    "scalarProductCount" -> Length[spVars]
     |>
    ];
 
+
+(* 公开入口在命中缓存时直接返回；SHA-256 命中后仍用完整键 SameQ 防止哈希冲突。 *)
+makeScalarProductRules[topo_Association] := Module[
+   {key, hash, entry, result},
+   key = scalarProductRuleCacheKey[topo];
+   hash = Hash[key, "SHA256"];
+   entry = Lookup[$scalarProductRuleCache, hash, Missing["NotCached"]];
+   If[AssociationQ[entry] && SameQ[entry["key"], key],
+    Return[entry["value"]]
+    ];
+   result = makeScalarProductRulesUncached[topo];
+   AssociateTo[$scalarProductRuleCache, hash -> <|"key" -> key, "value" -> result|>];
+   result
+   ];
+
+
 makeScalarProductData[topo_Association] := Module[
-   {spVars, zVars, zExprs, ispExprs, ispSymbols, directISPVars, unsupportedISPExprs,
-    solveVars, nSP, structuralNeededISPCount, structuralCountQ, coordinateCountQ},
+   {spVars, zVars, zExprs, rawISPExprs, ispExprs, ispSymbols, invalidISPPositions, unsupportedISPExprs,
+    coordExprs, nSP, structuralNeededISPCount, structuralCountQ, coordinateCountQ},
    spVars = scalarProductVariables[topo];
    zVars = Table[z[e], {e, topo["nE"]}];
    zExprs = expandZList[topo];
-   ispExprs = Lookup[#, "expr"] & /@ topo["ispData"];
+   rawISPExprs = Lookup[#, "expr"] & /@ topo["ispData"];
+   ispExprs = scalarProductInputToInternal[#, topo] & /@ rawISPExprs;
    ispSymbols = Table[rho[j], {j, Length[ispExprs]}];
-   directISPVars = Select[ispExprs, MemberQ[spVars, #] &] // DeleteDuplicates;
-   unsupportedISPExprs = Select[ispExprs, ! MemberQ[spVars, #] &] // DeleteDuplicates;
-   solveVars = Complement[spVars, directISPVars];
+   invalidISPPositions = Flatten@Position[Map[scalarProductExpressionValidQ[#, topo] &, rawISPExprs], False];
+   unsupportedISPExprs = rawISPExprs[[invalidISPPositions]];
+   coordExprs = Join[zExprs, ispExprs];
    nSP = Length[spVars];
    structuralNeededISPCount = Max[0, nSP - Length[zExprs]];
-   structuralCountQ = Length[directISPVars] >= structuralNeededISPCount;
-   coordinateCountQ = Length[zExprs] === Length[solveVars];
+   structuralCountQ = Length[ispExprs] >= structuralNeededISPCount;
+   coordinateCountQ = Length[coordExprs] === nSP;
    <|
-    "scalarProducts" -> spVars,
-    "externalInvariants" -> externalInvariantVariables[topo],
+    "scalarProducts" -> (scalarProductInternalToUser[#, topo] & /@ spVars),
+    "internalScalarProducts" -> spVars,
+    "externalInvariants" -> (scalarProductInternalToUser[#, topo] & /@ externalInvariantVariables[topo]),
+    "internalExternalInvariants" -> externalInvariantVariables[topo],
+    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
     "zVars" -> zVars,
-    "zExprs" -> zExprs,
+    "zExprs" -> (scalarProductInternalToUser[#, topo] & /@ zExprs),
+    "internalZExprs" -> zExprs,
     "ispSymbols" -> ispSymbols,
-    "ispExprs" -> ispExprs,
-    "directISPVars" -> directISPVars,
+    "ispExprs" -> (scalarProductInternalToUser[#, topo] & /@ ispExprs),
+    "internalISPExprs" -> ispExprs,
+    "directISPVars" -> ispSymbols,
+    "internalDirectISPVars" -> ispSymbols,
     "unsupportedISPExprs" -> unsupportedISPExprs,
-    "solveVars" -> solveVars,
+    "solveVars" -> spVars,
     "zCount" -> Length[zExprs],
     "spCount" -> nSP,
     "ispCount" -> Length[ispExprs],
-    "directISPCount" -> Length[directISPVars],
-    "nonISPScalarProductCount" -> Length[solveVars],
+    "directISPCount" -> Length[ispExprs],
+    "nonISPScalarProductCount" -> nSP - Length[ispExprs],
     "structuralNeededISPCount" -> structuralNeededISPCount,
     "structuralCountQ" -> structuralCountQ,
     "coordinateCountQ" -> coordinateCountQ,
@@ -1320,7 +1667,6 @@ makeScalarProductData[topo_Association] := Module[
     "repSP2Z" -> Missing["NotComputedSeedOnly"]
     |>
    ];
-
 
 (* ::Chapter:: *)
 (*IBP 生成元枚举*)
@@ -1368,7 +1714,7 @@ expectedMomentumGeneratorCount[topo_Association] := topo["nL"] (topo["nL"] + top
 (* ::Chapter:: *)
 (*轻量 momentum IBP seed*)
 
-(* 本章生成 momentum IBP seed 的传播子幂次项、z/ISP 吸收和 massive building-block 导数项。
+(* 本章生成 momentum IBP seed 的传播子幂次项、z/ISP 吸收和 massive/massless building-block 导数项。
    输出会经过 EOM 与 per-line massless endpoint canonical 门禁；shrunk pack 的 bS 幂次也使用当前 pack 指标。 *)
 
 linearTerms[expr_] := Module[{expanded = Expand[expr]},
@@ -1420,10 +1766,10 @@ shiftISPIndex[J[aList_, linePacks_, ispList_], j_Integer, delta_] := Module[
 
 (* 将一个线性因子吸收到 b 或 ISP 指标中；无法识别的高次项保持为显式系数。 *)
 absorbLinearFactorTerm[term_, int_J, topo_Association] := Module[
-   {zVars, ispExprs, vars, rules, rebuildMonomial},
+   {zVars, ispVars, vars, rules, rebuildMonomial},
    zVars = Table[z[e], {e, topo["nE"]}];
-   ispExprs = Lookup[#, "expr"] & /@ topo["ispData"];
-   vars = Join[zVars, ispExprs];
+   ispVars = Table[rho[j], {j, Length[topo["ispData"]]}];
+   vars = Join[zVars, ispVars];
    If[Length[vars] == 0, Return[term int]];
    rules = CoefficientRules[term, vars];
    rebuildMonomial[powers_] := Times @@ MapThread[#1^#2 &, {vars, powers}];
@@ -1438,8 +1784,8 @@ absorbLinearFactorTerm[term_, int_J, topo_Association] := Module[
          Which[
           MatchQ[var, z[_Integer]],
           coeff shiftLineB[int, var[[1]], -2],
-          MemberQ[ispExprs, var],
-          coeff shiftISPIndex[int, First@FirstPosition[ispExprs, var], 1],
+          MemberQ[ispVars, var],
+          coeff shiftISPIndex[int, First@FirstPosition[ispVars, var], 1],
           True,
           coeff var int
           ],
@@ -1463,20 +1809,46 @@ momentumDivergenceTerm[int_J, gen_Association] := If[
    ];
 
 
+(* masslessFull 的 n=1 方向由 endpoints[[1]] 定义；++ 取 sigma=+1，-- 取 sigma=-1。 *)
+masslessFullSKSign[line_Association] := If[
+   StringTake[Lookup[line, "skType", "++"], 1] === "+",
+   1,
+   -1
+   ];
+
+
+lineEndpointSlotsAtVertex[line_Association, vertexId_] := Flatten @ Position[
+   line["endpoints"],
+   vertexId
+   ];
+
+
+toggleMasslessLineState[J[aList_, linePacks_, ispList_], e_Integer] := Module[
+   {newLinePacks = linePacks},
+   newLinePacks[[e, 2]] = 1 - newLinePacks[[e, 2]];
+   J[aList, newLinePacks, ispList]
+   ];
+
+
+(* q 导数同时作用 massive Hankel block 与 massless 指数核。
+   masslessFull 使用 d_q M_n = i sigma (tau_u-tau_v) M_(1-n)；
+   masslessCross 使用两个端点相位符号的和。 *)
 momentumBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Association, repSP2ZRules_List] := Module[
-   {dLoop, vector, lineMomenta, lines, loopCoeff, vDotQ, endpointVertex, shiftedInt},
+   {dLoop, vector, lineMomenta, lines, loopCoeff, vDotQ, endpointVertex,
+    shiftedInt, packType, sigma},
    dLoop = gen["dLoop"];
    vector = gen["vector"];
    lineMomenta = Lookup[topo["lines"], "momentum"];
    lines = topo["lines"];
    Total[
     Table[
-     If[! MemberQ[{"massiveFull", "massiveCross"}, lines[[e]]["packType"]],
+     loopCoeff = Coefficient[lineMomenta[[e]], topo["loopMomenta"][[dLoop]]];
+     If[zeroQ[loopCoeff],
       0,
-      loopCoeff = Coefficient[lineMomenta[[e]], topo["loopMomenta"][[dLoop]]];
-      If[zeroQ[loopCoeff],
-       0,
-       vDotQ = Expand[expandDotExpr[vector, lineMomenta[[e]], topo] /. repSP2ZRules];
+      vDotQ = Expand[expandDotExpr[vector, lineMomenta[[e]], topo] /. repSP2ZRules];
+      packType = lines[[e]]["packType"];
+      Switch[packType,
+       "massiveFull" | "massiveCross",
        Total[
         Table[
          endpointVertex = lines[[e]]["endpoints"][[endpointSlot]];
@@ -1486,7 +1858,36 @@ momentumBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Association, r
          loopCoeff absorbLinearFactor[vDotQ, shiftedInt, topo],
          {endpointSlot, 2}
          ]
-        ]
+        ],
+       "masslessFull",
+       sigma = masslessFullSKSign[lines[[e]]];
+       shiftedInt = shiftLineB[toggleMasslessLineState[int, e], e, 1];
+       loopCoeff (
+         -I sigma absorbLinearFactor[
+           vDotQ,
+           shiftVertexA[shiftedInt, topo, lines[[e]]["endpoints"][[1]], 1],
+           topo
+           ] +
+          I sigma absorbLinearFactor[
+           vDotQ,
+           shiftVertexA[shiftedInt, topo, lines[[e]]["endpoints"][[2]], 1],
+           topo
+           ]
+         ),
+       "masslessCross",
+       shiftedInt = shiftLineB[int, e, 1];
+       loopCoeff Total[
+         Table[
+          -I skEndpointPhaseSign[lines[[e]], endpointSlot] absorbLinearFactor[
+            vDotQ,
+            shiftVertexA[shiftedInt, topo, lines[[e]]["endpoints"][[endpointSlot]], 1],
+            topo
+            ],
+          {endpointSlot, 2}
+          ]
+         ],
+       _,
+       0
        ]
       ],
      {e, topo["nE"]}
@@ -1536,18 +1937,61 @@ applyMomentumGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
 (* ::Chapter:: *)
 (*轻量 time IBP core seed*)
 
-(* 本章接入 time-IBP 的通用 core 项：顶点幂次、外部能量、massive building-block 端点导数、massless 端点翻转项和 massive theta 边界缩并项。
+(* 本章接入 time-IBP 的通用 core 项：顶点幂次、外部能量、massive building-block 端点导数、massless 端点翻转项和 massive/massless theta 边界缩并项。
    单独 time batch 会把进一步 shrink-sector 生成标为 pending；canonical batch 会在保护阈值内自动补齐这些 sectors。 *)
 
-vertexExternalEnergy[topo_Association, vertexId_] := Module[
-   {vertexEnergies = Lookup[topo, "vertexEnergies", Missing["NotSet"]], attachedExtLegs},
+rawVertexExternalEnergy[topo_Association, vertexId_] := Module[
+   {vertexEnergies = Lookup[topo, "vertexEnergies", Missing["NotSet"]]},
    Which[
     AssociationQ[vertexEnergies] && KeyExistsQ[vertexEnergies, vertexId], vertexEnergies[vertexId],
     ListQ[vertexEnergies], vertexId /. vertexEnergies,
     True,
-    attachedExtLegs = Select[topo["extLegs"], Length[#] >= 3 && #[[2]] === vertexId &];
-    If[Length[attachedExtLegs] > 0, Total[attachedExtLegs[[All, 3]]], P[vertexId]]
+    ke[vertexId]
     ]
+   ];
+
+
+vertexExternalEnergy[topo_Association, vertexId_] := scalarProductInputToInternal[rawVertexExternalEnergy[topo, vertexId], topo];
+
+
+vertexEnergyDependencyData[topo_Association, vertexId_] := Module[
+   {internal, vars, externalVars, externalUsed, independentUsed},
+   internal = vertexExternalEnergy[topo, vertexId];
+   vars = Variables[internal];
+   externalVars = externalInvariantVariables[topo];
+   externalUsed = Intersection[vars, externalVars];
+   independentUsed = Complement[vars, externalVars];
+   <|
+    "internalExternalInvariantVariables" -> externalUsed,
+    "externalInvariantVariables" -> (scalarProductInternalToUser[#, topo] & /@ externalUsed),
+    "internalIndependentVertexEnergyParameters" -> independentUsed,
+    "independentVertexEnergyParameters" -> (scalarProductInternalToUser[#, topo] & /@ independentUsed),
+    "usesExternalInvariantQ" -> TrueQ[externalUsed =!= {}],
+    "usesIndependentVertexEnergyQ" -> TrueQ[independentUsed =!= {}],
+    "kind" -> Which[
+      externalUsed =!= {} && independentUsed === {}, "externalInvariantExpression",
+      externalUsed === {} && independentUsed =!= {}, "independentVertexEnergyParameter",
+      externalUsed =!= {} && independentUsed =!= {}, "mixedExpression",
+      True, "constant"
+      ]
+    |>
+   ];
+
+
+vertexEnergyNamingReport[topo_Association] := Module[
+   {vertices = activeAVertexIds[topo], raw, internal, user, dependencies},
+   raw = AssociationThread[vertices -> (rawVertexExternalEnergy[topo, #] & /@ vertices)];
+   internal = AssociationThread[vertices -> (vertexExternalEnergy[topo, #] & /@ vertices)];
+   user = AssociationThread[vertices -> (scalarProductInternalToUser[vertexExternalEnergy[topo, #], topo] & /@ vertices)];
+   dependencies = AssociationThread[vertices -> (vertexEnergyDependencyData[topo, #] & /@ vertices)];
+   <|
+    "convention" -> "vertex external energy uses ke[i] for independent absolute-value parameters; expressions built from external invariant names are normalized to the same scalar-product coordinates used by loop momenta",
+    "rawVertexEnergies" -> raw,
+    "internalVertexEnergies" -> internal,
+    "userVertexEnergies" -> user,
+    "dependencyData" -> dependencies,
+    "message" -> "vertexEnergies 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 externalMomenta 空间的外部不变量是同一变量，应写成 externalInvariantRules 输出变量的函数，例如 Sqrt[s11]；否则写独立 ke[i]。不要把 |ke1+ke2| 与 |ke1|+|ke2| 混同；若 |ke1+ke2| 独立，应单独命名为 ke[i]。外腿能量参数之间不生成点积关系。"
+    |>
    ];
 
 
@@ -1558,7 +2002,16 @@ timeVertexPowerTerm[topo_Association, J[aList_, linePacks_, ispList_], vertexId_
    ];
 
 
-timeExternalEnergyTerm[topo_Association, int_J, vertexId_] := -I vertexExternalEnergy[topo, vertexId] int;
+(* 顶点 + 对应 exp[-i E tau]，顶点 - 对应 exp[+i E tau]。 *)
+vertexExternalPhaseDerivativeCoefficient[topo_Association, vertexId_] := If[
+   Lookup[topo["vertexSignAssoc"], vertexId, "+"] === "+",
+   -I,
+   I
+   ];
+
+
+timeExternalEnergyTerm[topo_Association, int_J, vertexId_] :=
+   vertexExternalPhaseDerivativeCoefficient[topo, vertexId] vertexExternalEnergy[topo, vertexId] int;
 
 
 skEndpointPhaseSign[line_Association, endpointSlot_Integer] := Module[
@@ -1572,31 +2025,39 @@ skEndpointPhaseSign[line_Association, endpointSlot_Integer] := Module[
 
 
 timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] := Module[
-   {pos, connectedLines, lines = topo["lines"], endpointPos, endpointSign, newLinePacks},
+   {pos, connectedLines, lines = topo["lines"], endpointSlots, endpointSign,
+    newLinePacks, sigma},
    pos = vertexPosition[topo, vertexId];
    If[Head[pos] === Missing, Return[0]];
    connectedLines = topo["vertexLines"][[pos]][[All, 1]];
    Total[
     Table[
+     endpointSlots = lineEndpointSlotsAtVertex[lines[[e]], vertexId];
      Switch[lines[[e]]["packType"],
       "masslessFull",
-      endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
-      If[Head[endpointPos] === Missing, 0,
-       endpointSign = If[StringTake[Lookup[lines[[e]], "skType", "++"], 1] === "+", 1, -1] If[First[endpointPos] === 1, 1, -1];
-       newLinePacks = linePacks;
-       newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
-       newLinePacks[[e, 2]] = 1 - newLinePacks[[e, 2]];
-       I endpointSign J[aList, newLinePacks, ispList]
+      sigma = masslessFullSKSign[lines[[e]]];
+      Total[
+       Table[
+        endpointSign = sigma If[endpointSlot === 1, 1, -1];
+        newLinePacks = linePacks;
+        newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
+        newLinePacks[[e, 2]] = 1 - newLinePacks[[e, 2]];
+        I endpointSign J[aList, newLinePacks, ispList],
+        {endpointSlot, endpointSlots}
+        ]
        ],
       "masslessCross",
-      endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
-      If[Head[endpointPos] === Missing, 0,
-       endpointSign = skEndpointPhaseSign[lines[[e]], First[endpointPos]];
-       newLinePacks = linePacks;
-       newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
-       I endpointSign J[aList, newLinePacks, ispList]
+      Total[
+       Table[
+        endpointSign = skEndpointPhaseSign[lines[[e]], endpointSlot];
+        newLinePacks = linePacks;
+        newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
+        I endpointSign J[aList, newLinePacks, ispList],
+        {endpointSlot, endpointSlots}
+        ]
        ],
-      _, 0
+      _,
+      0
       ],
      {e, connectedLines}
      ]
@@ -1604,8 +2065,10 @@ timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispL
    ];
 
 
+(* 缩并后同一条线的两个原端点可能落到同一 active vertex；
+   此时必须同时微分两个 building block，不能只取 FirstPosition。 *)
 timeMassiveBuildingBlockDerivativeTerms[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] := Module[
-   {pos, connectedLines, lines = topo["lines"], endpointPos, shiftedInt},
+   {pos, connectedLines, lines = topo["lines"], endpointSlots, shiftedInt},
    pos = vertexPosition[topo, vertexId];
    If[Head[pos] === Missing, Return[0]];
    connectedLines = topo["vertexLines"][[pos]][[All, 1]];
@@ -1613,11 +2076,13 @@ timeMassiveBuildingBlockDerivativeTerms[topo_Association, J[aList_, linePacks_, 
     Table[
      If[! MemberQ[{"massiveFull", "massiveCross"}, actualLinePackType[topo, e, linePacks[[e]]]],
       0,
-      endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
-      If[Head[endpointPos] === Missing,
-       0,
-       shiftedInt = shiftLineB[J[aList, linePacks, ispList], e, -1];
-       -shiftLinePackEntry[shiftedInt, e, First[endpointPos] + 1, 1]
+      endpointSlots = lineEndpointSlotsAtVertex[lines[[e]], vertexId];
+      Total[
+       Table[
+        shiftedInt = shiftLineB[J[aList, linePacks, ispList], e, -1];
+        -shiftLinePackEntry[shiftedInt, e, endpointSlot + 1, 1],
+        {endpointSlot, endpointSlots}
+        ]
        ]
       ],
      {e, connectedLines}
@@ -1633,10 +2098,23 @@ lineShrinkPrefactor[topo_Association, e_Integer] := Module[
    ];
 
 
-thetaBoundarySignOffset[topo_Association, e_Integer] := Lookup[
-   topo["lines"][[e]],
-   "thetaBoundarySignOffset",
-   Lookup[topo, "thetaBoundarySignOffset", 0]
+defaultThetaBoundarySignOffset[line_Association] := If[
+   Lookup[line, "packType", "massiveFull"] === "massiveFull" &&
+    Lookup[line, "skType", "++"] === "++",
+   1,
+   0
+   ];
+
+
+(* 参考 bubble 的 Vpm convention：++ 为 1，-- 为 0；显式 line/case 设置仍可覆盖默认值。 *)
+thetaBoundarySignOffset[topo_Association, e_Integer] := Module[
+   {line = topo["lines"][[e]], caseOffset},
+   caseOffset = Lookup[topo, "thetaBoundarySignOffset", Automatic];
+   Lookup[
+    line,
+    "thetaBoundarySignOffset",
+    If[caseOffset === Automatic, defaultThetaBoundarySignOffset[line], caseOffset]
+    ]
    ];
 lineShrinkZeroPointShift[line_Association] := Module[
    {bbType = Lookup[line, "bbType", "h"], nuValue = Lookup[line, "nu", nu]},
@@ -1667,6 +2145,14 @@ sectorZeroPointRules[topo_Association, shrunkLines_List, repMap_Association, act
    ];
 
 
+(* massive Wronskian 缩并带一个额外 1/q；massless 反对称 theta 边界不带该移位。 *)
+lineShrinkBShift[line_Association] := If[
+   Lookup[line, "massType", "massive"] === "massless",
+   0,
+   1
+   ];
+
+
 shrinkLineIntegral[topo_Association, J[aList_, linePacks_, ispList_], e_Integer] := Module[
    {line = topo["lines"][[e]], uSlot, vSlot, oldActive, newRepMap, newActive, newAList, newLinePacks = linePacks,
     mergedRep, oldSlotsForNewRep, slotValues},
@@ -1689,27 +2175,37 @@ shrinkLineIntegral[topo_Association, J[aList_, linePacks_, ispList_], e_Integer]
       ],
      {i, Length[newActive]}
      ];
-   newLinePacks[[e]] = {linePacks[[e, 1]] + 1};
+   newLinePacks[[e]] = {linePacks[[e, 1]] + lineShrinkBShift[line]};
    J[newAList, newLinePacks, ispList]
    ];
 
 
+(* masslessFull 的 M_1 theta 导数在第一/第二端点分别给 -2/+2 delta。
+   若一条线的两个端点已在同一 active vertex，则共同时间导数不再产生 theta 边界。 *)
 timeThetaBoundaryShrinkTerms[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] := Module[
-   {pos, connectedLines, lines = topo["lines"], endpointPos, endpointSlot, pack, coeff},
+   {pos, connectedLines, lines = topo["lines"], endpointSlots, endpointSlot,
+    endpointOrientation, pack, packType, coeff},
    pos = vertexPosition[topo, vertexId];
    If[Head[pos] === Missing, Return[0]];
    connectedLines = topo["vertexLines"][[pos]][[All, 1]];
    Total[
     Table[
      pack = linePacks[[e]];
-     If[actualLinePackType[topo, e, pack] =!= "massiveFull",
+     packType = actualLinePackType[topo, e, pack];
+     endpointSlots = lineEndpointSlotsAtVertex[lines[[e]], vertexId];
+     If[Length[endpointSlots] =!= 1,
       0,
-      endpointPos = FirstPosition[lines[[e]]["endpoints"], vertexId, Missing["EndpointNotFound"]];
-      If[Head[endpointPos] === Missing,
-       0,
-       endpointSlot = First[endpointPos];
+      endpointSlot = First[endpointSlots];
+      endpointOrientation = If[endpointSlot === 1, 1, -1];
+      Switch[packType,
+       "massiveFull",
        coeff = lineShrinkPrefactor[topo, e] KroneckerDelta[pack[[2]] + pack[[3]], 1] (-1)^(pack[[endpointSlot + 1]] + thetaBoundarySignOffset[topo, e]);
-       coeff shrinkLineIntegral[topo, J[aList, linePacks, ispList], e]
+       coeff shrinkLineIntegral[topo, J[aList, linePacks, ispList], e],
+       "masslessFull",
+       coeff = -2 endpointOrientation KroneckerDelta[pack[[2]], 1];
+       coeff shrinkLineIntegral[topo, J[aList, linePacks, ispList], e],
+       _,
+       0
        ]
       ],
      {e, connectedLines}
@@ -1728,7 +2224,7 @@ momentumIBPPendingFeatures[topo_Association] := seedUnsupportedPendingFeatures[t
 
 timeIBPPendingFeatures[topo_Association] := DeleteDuplicates@Join[
     seedUnsupportedPendingFeatures[topo],
-    If[MemberQ[Lookup[topo["lines"], "packType"], "massiveFull"], {"shrinkSectorSeedGeneration"}, {}]
+    If[thetaFullLineIndices[topo] =!= {}, {"shrinkSectorSeedGeneration"}, {}]
     ];
 
 
@@ -2172,12 +2668,16 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "vertexEnergies" -> remapVertexEnergiesToRepresentatives[topo["vertexEnergies"], repMap],
      "loopMomenta" -> topo["loopMomenta"],
      "externalMomenta" -> topo["externalMomenta"],
+     "rawExternalInvariantRules" -> Lookup[topo, "rawExternalInvariantRules", topo["externalInvariantRules"]],
+     "externalInvariantRules" -> topo["externalInvariantRules"],
      "ispData" -> topo["ispData"],
-     "numericRules" -> topo["numericRules"],
+     "numericRules" -> userNumericRules[topo],
      "sampleDiscreteRules" -> topo["sampleDiscreteRules"],
      "seedRanges" -> topo["seedRanges"],
      "zeroPointRules" -> newZeroPointRules,
      "shrinkPrefactorRules" -> topo["shrinkPrefactorRules"],
+     "symmetryRules" -> topo["symmetryRules"],
+     "thetaBoundarySignOffset" -> topo["thetaBoundarySignOffset"],
      "kiraOrdering" -> topo["kiraOrdering"],
      "sectorVertexRepresentativeMap" -> repMap,
      "activeVertexIds" -> activeVertices,
@@ -2195,8 +2695,17 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
 massiveFullLineIndices[topo_Association] := Flatten@Position[Lookup[topo["lines"], "packType"], "massiveFull"];
 
 
+masslessFullLineIndices[topo_Association] := Flatten@Position[Lookup[topo["lines"], "packType"], "masslessFull"];
+
+
+thetaFullLineIndices[topo_Association] := Sort @ Join[
+   massiveFullLineIndices[topo],
+   masslessFullLineIndices[topo]
+   ];
+
+
 shrinkSectorSubsets[topo_Association, maxDepthSpec_, maxCount_Integer] := Module[
-   {lines = massiveFullLineIndices[topo], maxDepth, subsets},
+   {lines = thetaFullLineIndices[topo], maxDepth, subsets},
    If[lines === {}, Return[<|"status" -> "generated", "subsets" -> {}, "completeCoverageQ" -> True|>]];
    maxDepth = If[maxDepthSpec === Automatic || maxDepthSpec === All || maxDepthSpec === Infinity,
      Length[lines],
@@ -2233,6 +2742,8 @@ makeTopologySeedSummary[topo_Association] := <|
    "seedRanges" -> topo["seedRanges"],
    "numericRules" -> topo["numericRules"],
    "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
+   "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
+   "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
    "sampleDiscreteRules" -> topo["sampleDiscreteRules"]
    |>;
 
@@ -2261,6 +2772,19 @@ masslessBundleCandidates[topo_Association] := Module[
    ];
 
 
+masslessEndpointConventionData[topo_Association] := MapIndexed[
+   <|
+     "lineIndex" -> First[#2],
+     "lineId" -> #1["id"],
+     "orderedEndpoints" -> #1["endpoints"],
+     "n1ReferenceEndpoint" -> #1["endpoints"][[1]],
+     "n1OppositeEndpoint" -> #1["endpoints"][[2]],
+     "convention" -> "n=1 is the antisymmetric state defined by the first endpoint; swapping endpoints flips n=1"
+     |> &,
+   Select[topo["lines"], #["packType"] === "masslessFull" &]
+   ];
+
+
 unsupportedSeedFeaturesForTopology[topo_Association] := DeleteDuplicates@Join[
     {}
     ];
@@ -2276,6 +2800,7 @@ topologyValidationReport[topo_Association] := Module[
      zeroPointRuleValidationReport, shrinkPrefactorRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
+    nonLinearLineMomentumData, nonLinearScalarProductArgumentData, vertexEnergyMomentumDependenceData,
     spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
     missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
     missingLineParameters, numericRequirementReport, pendingFeatures, ruleData},
@@ -2415,6 +2940,10 @@ topologyValidationReport[topo_Association] := Module[
      appendIssue["error", "vertexEnergiesNotInVertexData", <|"vertexEnergyKeys" -> badVertexEnergyKeys, "vertexIds" -> vertexIds|>]
      ]
     ];
+   vertexEnergyMomentumDependenceData = vertexEnergyMomentumDependenceIssues[topo];
+   If[vertexEnergyMomentumDependenceData =!= {},
+    appendIssue["error", "invalidVertexEnergyMomentumDependence", <|"issues" -> vertexEnergyMomentumDependenceData, "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex: use external invariant variables such as s11/sigW when they belong to externalMomenta space, otherwise use independent ke[i] parameters"|>]
+    ];
    If[Lookup[topo, "unknownSeedPreset", None] =!= None,
     appendIssue["error", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "allowedSeedPresets" -> {"quickCheck", "fullDiscrete", "bounded"}|>]
     ];
@@ -2455,6 +2984,14 @@ topologyValidationReport[topo_Association] := Module[
    If[undeclaredMomentumVars =!= {},
     appendIssue["error", "undeclaredMomentumVariables", <|"variables" -> undeclaredMomentumVars, "declared" -> declaredMomentumVars|>]
     ];
+   nonLinearLineMomentumData = lineMomentumLinearityIssues[topo];
+   If[nonLinearLineMomentumData =!= {},
+    appendIssue["error", "nonLinearLineMomenta", <|"issues" -> nonLinearLineMomentumData, "comment" -> "line momenta must be linear combinations of loopMomenta and externalMomenta"|>]
+    ];
+   nonLinearScalarProductArgumentData = scalarProductArgumentLinearityIssues[topo];
+   If[nonLinearScalarProductArgumentData =!= {},
+    appendIssue["error", "nonLinearScalarProductArguments", <|"issues" -> nonLinearScalarProductArgumentData, "comment" -> "sp[p,r] arguments must be linear momentum combinations before scalar products are expanded"|>]
+    ];
    spData = makeScalarProductData[topo];
    If[spData["unsupportedISPExprs"] =!= {},
     appendIssue["error", "unsupportedISPExpressions", <|"expressions" -> spData["unsupportedISPExprs"], "allowedScalarProducts" -> spData["scalarProducts"]|>]
@@ -2485,15 +3022,15 @@ topologyValidationReport[topo_Association] := Module[
    If[missingExternalInvariants =!= {},
     appendIssue["warning", "numericRulesMissingExternalInvariants", <|
       "missingExternalInvariants" -> missingExternalInvariants,
-      "numericRules" -> topo["numericRules"],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need these kk rules"
+      "numericRules" -> userNumericRules[topo],
+      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need external invariant value rules, using the output names from externalInvariantRules/default sij"
       |>]
     ];
    missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
    If[missingVertexEnergies =!= {},
     appendIssue["warning", "numericRulesMissingVertexEnergies", <|
       "missingVertexEnergies" -> missingVertexEnergies,
-      "numericRules" -> topo["numericRules"],
+      "numericRules" -> userNumericRules[topo],
       "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"
       |>]
     ];
@@ -2501,7 +3038,7 @@ topologyValidationReport[topo_Association] := Module[
    If[missingLineParameters =!= {},
     appendIssue["warning", "numericRulesMissingLineParameters", <|
       "missingLineParameters" -> missingLineParameters,
-      "numericRules" -> topo["numericRules"],
+      "numericRules" -> userNumericRules[topo],
       "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need massive line parameter rules"
       |>]
     ];
@@ -2590,6 +3127,7 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
      "numericRuleTemplate" -> makeNumericRuleTemplate[topo],
      "masslessBundleCandidates" -> masslessBundleCandidates[topo],
+     "masslessEndpointConventions" -> masslessEndpointConventionData[topo],
      "precomputedShrinkSectorSummary" -> KeyDrop[subsetData, "subsets"],
      "precomputedShrinkSectorKeys" -> Lookup[sectorMetadataList, "sectorKey"]
      |>]
@@ -2709,7 +3247,7 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
    timeBatch = makeTimeIBPSeedBatch[topo, Sequence @@ seedOpts];
    shrinkBatch = If[TrueQ[OptionValue[GenerateShrinkSectors]],
      makeShrinkSectorSeedBatch[topo, Sequence @@ shrinkOpts],
-     <|"status" -> "skipped", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> If[massiveFullLineIndices[topo] === {}, {}, {"shrinkSectorSeedGeneration"}], "equations" -> {}|>
+     <|"status" -> "skipped", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> If[thetaFullLineIndices[topo] === {}, {}, {"shrinkSectorSeedGeneration"}], "equations" -> {}|>
      ];
    If[Lookup[momentumBatch, "status", "missing"] =!= "generated" || Lookup[timeBatch, "status", "missing"] =!= "generated",
     Return[<|
@@ -3094,7 +3632,7 @@ defaultKiraJobOptions[] := <|
    "Kira2MathTarget" -> "list",
    "AppendNumericDummyEquation" -> Automatic,
    "NumericDummySymbol" -> "ccc",
-   "WriteRunScript" -> True,
+   "WriteRunScript" -> False,
    "RunScriptName" -> "run.sh",
    "KiraCommand" -> "kira",
    "KiraParallelJobs" -> 10,
@@ -3219,7 +3757,7 @@ kiraRunScript[jobOptions_: Automatic] := Module[
 makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Automatic, targetSpec_: Automatic] := Module[
    {linearEquations, badEquations, exportedEquations, ibpText, listText, jobsText, runScriptText, repKira2JText, repJ2KiraText, metadataText,
     normalizedJobOptions, jobOptionReport, coefficientRuleReport, topologyReport, requiredKeys, missingKeys, coefficientDiagnostics, numericCoefficientSystemQ, appendNumericDummyQ,
-    numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol},
+    numericDummyIntegralId, targetData, targetIntegralCount, kiraBlockCount, numericDummySymbol, rawCoeffRules, normalizedCoeffRules},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Return[<|"status" -> "notGenerated", "reason" -> "linear data missing", "topologyValidationReport" -> topologyReport|>]
@@ -3236,11 +3774,13 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
    If[Lookup[jobOptionReport, "status", "ok"] =!= "ok",
     Return[Join[jobOptionReport, <|"topologyValidationReport" -> topologyReport|>]]
     ];
-   coefficientRuleReport = validateCoefficientRules[coeffRules];
+   rawCoeffRules = coeffRules;
+   coefficientRuleReport = validateCoefficientRules[rawCoeffRules];
    If[Lookup[coefficientRuleReport, "status", "ok"] =!= "ok",
     Return[Join[coefficientRuleReport, <|"topologyValidationReport" -> topologyReport|>]]
     ];
-   linearEquations = applyKiraCoefficientRulesToLinearEquation[#, coeffRules] & /@ linearData["linearEquations"];
+   normalizedCoeffRules = normalizeCoefficientRulesForLinearData[rawCoeffRules, linearData];
+   linearEquations = applyKiraCoefficientRulesToLinearEquation[#, normalizedCoeffRules] & /@ linearData["linearEquations"];
    badEquations = Select[linearEquations, ! TrueQ[#["linearQ"]] || ! TrueQ[#["constantTerm"] === 0] &];
    If[badEquations =!= {},
     Return[<|"status" -> "notLinear", "topologyValidationReport" -> topologyReport, "badEquationCount" -> Length[badEquations], "badEquations" -> badEquations|>]
@@ -3265,12 +3805,12 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
      If[appendNumericDummyQ, kiraDummyEquationBlock[numericDummyIntegralId, numericDummySymbol], ""];
    listText = StringRiffle[ToString /@ targetData["targetIDs"], "\n"] <> "\n";
    jobsText = kiraJobsYAML[normalizedJobOptions];
-   runScriptText = If[TrueQ[Lookup[normalizedJobOptions, "WriteRunScript", True]], kiraRunScript[normalizedJobOptions], Missing["RunScriptDisabled"]];
+   runScriptText = If[TrueQ[Lookup[normalizedJobOptions, "WriteRunScript", False]], kiraRunScript[normalizedJobOptions], Missing["RunScriptDisabled"]];
    repKira2JText = ToString[InputForm[linearData["integralRules"] /. (j_J -> id_Integer) :> (Tuserweight[id] -> j)]] <> "\n";
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
    metadataText = ToString[InputForm[
        Join[
-        KeyDrop[linearData, {"integralList", "integralRules", "linearEquations"}],
+        KeyDrop[linearData, {"integralList", "integralRules", "linearEquations", "topology"}],
         <|
          "exportedEquationCount" -> Length[exportedEquations],
          "kiraBlockCount" -> kiraBlockCount,
@@ -3281,7 +3821,8 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
          "coefficientVariables" -> coefficientDiagnostics["coefficientVariables"],
          "numericDummyAppendedQ" -> appendNumericDummyQ,
          "numericDummyIntegralId" -> numericDummyIntegralId,
-         "kiraCoefficientRules" -> coeffRules,
+         "kiraCoefficientRules" -> normalizedCoeffRules,
+         "userKiraCoefficientRules" -> userCoefficientRulesForLinearData[normalizedCoeffRules, linearData],
          "kiraJobOptions" -> normalizedJobOptions
          |>
         ]
@@ -3307,7 +3848,9 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
     "numericCoefficientSystemQ" -> numericCoefficientSystemQ,
     "coefficientVariables" -> coefficientDiagnostics["coefficientVariables"],
     "numericDummyAppendedQ" -> appendNumericDummyQ,
-    "numericDummyIntegralId" -> numericDummyIntegralId
+    "numericDummyIntegralId" -> numericDummyIntegralId,
+    "kiraCoefficientRulesApplied" -> normalizedCoeffRules,
+    "userKiraCoefficientRulesApplied" -> userCoefficientRulesForLinearData[normalizedCoeffRules, linearData]
     |>
    ];
 
@@ -3834,6 +4377,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    <|
     "status" -> "generated",
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
+    "topology" -> topo,
     "integralCount" -> Length[integrals],
     "equationCount" -> Length[equations],
     "integralList" -> integrals,
@@ -3859,16 +4403,18 @@ Options[applyCoefficientRulesToLinearSystem] = {CoefficientRules -> {}};
 
 
 applyCoefficientRulesToLinearSystem[linearData_Association, OptionsPattern[]] := Module[
-   {rules = OptionValue[CoefficientRules], ruleReport, linearEquations, coefficientDiagnostics},
+   {rawRules = OptionValue[CoefficientRules], rules, ruleReport, linearEquations, coefficientDiagnostics},
    If[Lookup[linearData, "status", "missing"] =!= "generated" || ! KeyExistsQ[linearData, "linearEquations"], Return[linearData]];
-   ruleReport = validateCoefficientRules[rules];
+   ruleReport = validateCoefficientRules[rawRules];
    If[Lookup[ruleReport, "status", "ok"] =!= "ok",
     Return[Join[linearData, <|"status" -> "notReady", "reason" -> "invalidCoefficientRules", "coefficientRuleValidationReport" -> ruleReport|>]]
     ];
+   rules = normalizeCoefficientRulesForLinearData[rawRules, linearData];
    linearEquations = applyKiraCoefficientRulesToLinearEquation[#, rules] & /@ linearData["linearEquations"];
    coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    Join[linearData, <|
      "coefficientRulesApplied" -> rules,
+     "userCoefficientRulesApplied" -> userCoefficientRulesForLinearData[rules, linearData],
      "linearEquations" -> linearEquations,
      "linearQ" -> And @@ (Lookup[linearEquations, "linearQ"]),
      "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False],
@@ -3919,8 +4465,18 @@ bubbleMassiveCase = <|
    "extLegs" -> {{B, 1, p1}, {B, 2, p2}},
    "loopMomenta" -> {q1},
    "externalMomenta" -> {k},
-   "ispData" -> {}
+   "ispData" -> {},
+   "symmetryRules" -> {}
    |>;
+
+
+(* 用户只有在确认 nu1==nu2 且相关外腿参数相等后，才可把交换规则放入 case。
+   示例只展示输入形状；package 不自动检测这些物理条件。
+   "symmetryRules" -> {
+     HoldPattern[J[{av1_, av2_}, {pack1_, pack2_}, isp_]] :>
+       J[{av2, av1}, {pack2, pack1}, isp]
+     }
+*)
 
 
 bubbleMasslessCase = <|
@@ -4059,8 +4615,8 @@ mixedSunriseCase = <|
    "loopMomenta" -> {q1, q2},
    "externalMomenta" -> {k},
    "ispData" -> {
-     {ispQ1K, qk[1, 1], {0, 1}},
-     {ispQ2K, qk[2, 1], {0, 1}}
+     {ispQ1K, sp[q1, k], {0, 1}},
+     {ispQ2K, sp[q2, k], {0, 1}}
      },
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2},
    "sampleDiscreteRules" -> {
@@ -4121,11 +4677,14 @@ summarizeCase[case_Association] := Module[
     "expectedMomentumGeneratorCount" -> expectedMomentumGeneratorCount[topo],
     "scalarProducts" -> spData["scalarProducts"],
     "zExprs" -> spData["zExprs"],
-    "numericRules" -> topo["numericRules"],
-    "numericZExprs" -> (spData["zExprs"] /. topo["numericRules"]),
+    "numericRules" -> userNumericRules[topo],
+    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
+    "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
+    "numericZExprs" -> (spData["internalZExprs"] /. topo["numericRules"]),
     "seedRanges" -> topo["seedRanges"],
     "validationReport" -> topologyValidationReport[topo],
     "masslessBundleCandidates" -> masslessBundleCandidates[topo],
+    "masslessEndpointConventions" -> masslessEndpointConventionData[topo],
     "structuralNeededISPCount" -> spData["structuralNeededISPCount"],
     "ispCoverageQ" -> spData["coverageQ"],
     "ispIndependentQ" -> spData["independentQ"],

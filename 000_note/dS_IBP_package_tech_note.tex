@@ -34,7 +34,7 @@
   \item 同一顶点对多条 massless 线的 bundle theta 合并暂不作为当前实现要求，只作为未来减少冗余状态的优化。
 \end{itemize}
 
-因此，当前 momentum seed 中的传播子幂次项、shrunk-line $bS$ 幂次项、z/ISP 吸收、massive building-block 导数项、EOM/massless endpoint 门禁，以及 time-core seed 中的顶点幂次、外部相位、massive 端点导数、massless 端点翻转、massive theta boundary shrink、自动 shrink-sector 派生/联立和线性系统编号都只能作为前端 seed 与中间层回归；它们不能替代真实 Kira 文件导出和后端语法检查。
+当前 009 已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/canonical 门禁；time seed 已包含顶点幂次、外部相位、massive 端点导数、massless 有向 $0\leftrightarrow1$ regular 项、massive/massless theta-boundary shrink 以及目标 sector 的 coincident 抵消。Kira serializer 只转换经过这些门禁的后端中立线性系统，不替代任何前端关系。
 
 % ============================================================
 \section{h 函数及其性质}
@@ -310,12 +310,76 @@ $e^{\pi\text{Im}[\nu]}$ 是以下两个因素\textbf{共同作用}的结果：
 \begin{itemize}
   \item \textbf{h 模式}：$F_h = e^{\pi\text{Im}[\nu]} \frac{4i}{\pi} (-k\tau)^{-2\nu-1}$。幂次 $-(2\nu+1)$ 分解为整数 $-1$（进入指标）和非整数 $-2\nu$（进入零点）。prefactor $= e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}$。
   \item \textbf{H 模式}：$F_H = e^{\pi\text{Im}[\nu]} \frac{4i}{\pi} (-k\tau)^{-1}$（式~\eqref{Fresult_H}）。$\tau$ 依赖为纯 $1/z$（整数幂次 $-1$），零点无移位。prefactor $= e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}$，\textbf{与 h 模式相同}。
-  \item \textbf{无质量}：模式函数 $e^{\pm ik\tau}$，无 Hankel 缩并机制，prefactor $= 1$。
+  \item \textbf{无质量}：没有 Hankel Wronskian 型缩并；但双 theta 的 $n=1$ 端点导数仍产生 delta 缩并，第一/第二端点系数为 $-2/+2$，且 $bS_e=b_e$、prefactor $=1$。详见下一节。
 \end{itemize}
 
 \textbf{关键结论}：h 模式和 H 模式的缩并 prefactor 相同，均为 $e^{\pi\text{Im}[\nu]} \frac{4i}{\pi}$。差异仅在于 $\tau$ 幂次：h 模式为 $(-k\tau)^{-2\nu-1}$（含非整数部分 $-2\nu$，进入零点），H 模式为 $(-k\tau)^{-1}$（纯整数，零点无移位）。
 
 % ============================================================
+\section{Massless 双 theta 的 time-IBP 缩并与抵消}
+
+本 package 对纯 massless 与 massive/massless 混合积分族都采用逐传播子的双 theta 合并路线。对一条 masslessFull 线，\texttt{lineData["endpoints"]=\{u,v\}} 是有序数据；第一端点 $u$ 定义单指标 $n=1$ 的反对称方向。令 $\Delta=\tau_u-\tau_v$，并对 $++/--$ 分别取 $\sigma=+1/-1$，定义
+\begin{align}
+ M_0 &=
+ \theta(\Delta)e^{-i\sigma q\Delta}
+ +\theta(-\Delta)e^{+i\sigma q\Delta},\\
+ M_1 &=
+ -\theta(\Delta)e^{-i\sigma q\Delta}
+ +\theta(-\Delta)e^{+i\sigma q\Delta}.
+ \label{masslessM01Tech}
+\end{align}
+交换端点时 $M_0$ 不变而 $M_1$ 变号。若临时用双端点导数标签检查，则
+\begin{equation}
+ \{10\}=-\{01\},\qquad
+ \{20\}=\{02\}=-q^2\{00\},\qquad
+ \{11\}=+q^2\{00\}.
+ \label{masslessDerivativeCanonicalTech}
+\end{equation}
+因此正式积分只保存 $\{b_e,n_e\}$ 且 $n_e\in\{0,1\}$；不建立 massless $n=2$ 状态。
+
+\subsection{两个端点的 regular 与 theta-delta 项}
+
+完整 kernel 的端点导数为
+\begin{align}
+ \partial_{\tau_u}M_n
+ &=+i\sigma q\,M_{1-n}
+   -2n\,\delta(\tau_u-\tau_v),\\
+ \partial_{\tau_v}M_n
+ &=-i\sigma q\,M_{1-n}
+   +2n\,\delta(\tau_u-\tau_v).
+ \label{masslessTimeRulesTech}
+\end{align}
+regular 部分在指标语言中统一为
+\begin{align}
+ \tau_u:\quad
+ \{b_e,n_e\}&\longrightarrow\{b_e-1,1-n_e\},
+ &\text{系数 }+i\sigma,\\
+ \tau_v:\quad
+ \{b_e,n_e\}&\longrightarrow\{b_e-1,1-n_e\},
+ &\text{系数 }-i\sigma.
+\end{align}
+连续在同一端点作用两次回到原 $n_e$，并给出 $-q^2$，即指标上为 $-\{b_e-2,n_e\}$。这一步直接由两次 $0\leftrightarrow1$ 翻转实现，不产生临时 $n_e=2$。
+
+theta-delta 项只在 $n_e=1$ 时存在。第一端点系数为 $-2$，第二端点为 $+2$，并触发
+\begin{equation}
+ \{b_e,1\}\longrightarrow\{bS_e\},\qquad
+ bS_e=b_e,\qquad bS0_e=b0_e.
+ \label{masslessShrinkTech}
+\end{equation}
+delta 合并两个时间变量，
+\begin{equation}
+ a_{\rm merged}=a_u+a_v-1,\qquad
+ a0_{\rm merged}=a0_u+a0_v,
+\end{equation}
+且 massless 缩并没有 Hankel Wronskian prefactor，$\mathcal C_e=1$。这里 $bS_e=b_e$ 是强制区别：massive h/H 缩并才有 $bS_e=b_e+1$。
+
+\subsection{同点抵消与目标 sector canonical}
+
+若其它线的缩并使这条仍完整的 masslessFull 线的两个原端点映到同一个 active vertex，同一个 time 生成元必须同时作用两个端点。于是 regular 的 $+i\sigma/-i\sigma$ 项相消，theta-delta 的 $-2/+2$ 项相消，而且反对称态 $M_1(\tau,\tau)=0$。实现时不得用只返回第一个端点的搜索。
+
+该规则也必须作用于 top-sector 方程中刚产生的 sub-sector 项。009 根据每个输出 $J$ 中已经成为单元素 $\{bS\}$ 的 line packs 重建目标 sector 的代表顶点映射，再判断 coincident $n=1$；若继续使用 source topology 的端点映射，会留下错误的 sub-sector 项。
+
+masslessCross（$+-$ 或 $-+$）不含 theta，也没有离散 $n_e$ 或 shrink。它的 time-IBP 只对两端点指数相位求导。
 \section{维度参数约定}
 % ============================================================
 
@@ -562,12 +626,12 @@ ispData = {
 };
 \end{verbatim}
 
-\texttt{sp[p,r]} 是 006 起的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；其中 \texttt{p,r} 必须先是 \texttt{loopMomenta/externalMomenta} 的线性组合，不能写成 \texttt{q1\textasciicircum 2} 这类非线性表达式。内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。外动量--外动量不变量在输出端使用变量名；用户可用 \texttt{externalInvariantRules} 自定义，未指定时默认按 \texttt{externalMomenta} 顺序命名为 \texttt{sij}。\texttt{vertexEnergies} 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 \texttt{externalMomenta} 张成空间中的外部不变量是同一变量，应在 \texttt{vertexEnergies} 中显式写成外部不变量表达式，例如 \verb|Sqrt[s11]| 或 \verb|Sqrt[sigW]|；若不是，则作为独立 \texttt{ke[i]} 参数。$|ke_1+ke_2|$、$|ke_1|$、$|ke_2|$ 是三个独立参数时必须分别命名，例如 $|ke_1+ke_2|$ 另记为 \texttt{ke[3]}，不能自动等同于 \texttt{ke[1]+ke[2]}。这些 \texttt{ke[i]} 不进入 \texttt{externalMomenta} 或 ISP 完备性坐标；外腿能量参数之间不生成点积关系。该约定用于避免未复用关系造成约化结果冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 \texttt{ke[i]} 参数，package 不主动替用户拆分或合并。\texttt{vertexEnergies} 中不能直接写 \texttt{loopMomenta/externalMomenta} 的向量符号，也不能写圈相关 \verb|sp[q,k]|；属于外动量空间时写外部不变量变量名表达式，否则写独立 \texttt{ke[i]}。
+\texttt{sp[p,r]} 是当前主线的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；其中 \texttt{p,r} 必须先是 \texttt{loopMomenta/externalMomenta} 的线性组合，不能写成 \texttt{q1\textasciicircum 2} 这类非线性表达式。内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。外动量--外动量不变量在输出端使用变量名；用户可用 \texttt{externalInvariantRules} 自定义，未指定时默认按 \texttt{externalMomenta} 顺序命名为 \texttt{sij}。\texttt{vertexEnergies} 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 \texttt{externalMomenta} 张成空间中的外部不变量是同一变量，应在 \texttt{vertexEnergies} 中显式写成外部不变量表达式，例如 \verb|Sqrt[s11]| 或 \verb|Sqrt[sigW]|；若不是，则作为独立 \texttt{ke[i]} 参数。$|ke_1+ke_2|$、$|ke_1|$、$|ke_2|$ 是三个独立参数时必须分别命名，例如 $|ke_1+ke_2|$ 另记为 \texttt{ke[3]}，不能自动等同于 \texttt{ke[1]+ke[2]}。这些 \texttt{ke[i]} 不进入 \texttt{externalMomenta} 或 ISP 完备性坐标；外腿能量参数之间不生成点积关系。该约定用于避免未复用关系造成约化结果冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 \texttt{ke[i]} 参数，package 不主动替用户拆分或合并。\texttt{vertexEnergies} 中不能直接写 \texttt{loopMomenta/externalMomenta} 的向量符号，也不能写圈相关 \verb|sp[q,k]|；属于外动量空间时写外部不变量变量名表达式，否则写独立 \texttt{ke[i]}。
 
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}
   \item 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
-  \item ISP 之间线性无关；006 起 ISP 表达式可为 \texttt{sp[p,r]} 或其线性组合坐标，不要求直接是某个内部编号变量
+  \item ISP 之间线性无关；当前主线中 ISP 表达式可为 \texttt{sp[p,r]} 或其线性组合坐标，不要求直接是某个内部编号变量
   \item \texttt{zExprs} 与 ISP 坐标总数等于独立 loop-scalar-products 数量，即 $\# z_e+\#\text{ISP}=N_{\text{sp}}$
   \item line momentum 与 \texttt{sp[p,r]} 参数必须是声明动量基的线性组合；非线性输入会触发 \texttt{nonLinearLineMomenta} 或 \texttt{nonLinearScalarProductArguments}
   \item 数量闭合后必须能实际反解出 \texttt{repSP2Z}；重复或退化传播子动量会触发 \texttt{scalarProductCoordinateSolveFailed}
@@ -604,6 +668,20 @@ ispData = {
 \textbf{命名规则}：\texttt{IBP\_sector\_<shrunkLines>\_seed\_<seedIndex>.dat}
 
 例如：\texttt{IBP\_sector\_none\_seed\_001.dat}（top sector），\texttt{IBP\_sector\_e3\_seed\_012.dat}（线 3 缩并）。
+
+\subsection{后端中立的 linear-system 与 serializer}
+
+canonical seed 先由 \texttt{makeLinearSystemData} 转成后端中立的 \texttt{linearData}。这一层不属于 Kira，也不包含任何后端可执行文件路径。主要数据为：
+\begin{itemize}
+  \item \texttt{linearEquations}：按全局积分编号表示的线性方程；
+  \item \texttt{integralList} 与 \texttt{integralRules}：全 sector 统一排序的积分表及映射；
+  \item \texttt{sectorMetadataList}：每个 sector 的 compact $a$ 槽、line pack、缩并和原拓扑对应；
+  \item coefficient、ordering、coverage 与 readiness reports。
+\end{itemize}
+
+serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编号和文件布局，并执行后端特有的输入检查；它不重新生成 IBP seed，不重新应用 EOM，也不改变 sector convention。当前 Kira serializer 生成 \texttt{userSystem/ibp.kira}、\texttt{list}、\texttt{jobs.yaml}、积分映射和 metadata。未来若接 Rational Tracer，应新增独立 serializer，但 canonical seed 和 linear-system 主线无需重写。
+
+本 package 默认不安装、配置或运行 Kira/Rational Tracer，不保存本机 Kira/Fermat 路径，也不导入 reduction 或 master-integral 结果。
 
 % ============================================================
 \section{标量积变量与 $z=\xi^2$ 线性变换}
@@ -757,7 +835,7 @@ ispData = {
 \subsection{积分表示}
 
 \begin{itemize}
-  \item \textbf{Head}：统一使用 $J[\{a_v\}, \{\text{pack}_e\}]$。所有 sector（top 和 sub-sector）使用同一 Head。
+  \item \textbf{Head}：统一使用 $J[\{a_v\}, \{\text{pack}_e\}, \{n_{\text{isp}_j}\}]$。所有 sector（top 和 sub-sector）使用同一 Head。
   \item \textbf{massive 完整线 pack}：$\{b_e, n_{e,1}, n_{e,2}\}$（3 元素）。$b_e$ 为整数指标（分母幂次），$n_{e,a} \in \{0,1\}$ 为 building block 导数阶数。
   \item \textbf{massless 完整线 pack}：$\{b_e,n_e\}$（2 元素，双 theta 合并路线）。端点关系 $\{1,0\}=-\{0,1\}$ 和 $\{1,1\}=q_e^2\{0,0\}$ 已在 canonical 层吸收，因此 seed 输出保持逐线 $\{b_e,n_e\}$。
   \item \textbf{缩并线 pack}：$\{bS_e\}$（1 元素）。$bS_e$ 为整数指标。
@@ -801,14 +879,15 @@ ispData = {
 \subsection{缩并约定}
 
 \begin{itemize}
-  \item 缩并条件：$n_{e,1} + n_{e,2} = 1$（h/H 模式）。无质量传播子无 Hankel Wronskian 缩并条件；其 time-IBP theta 边界按双 theta 合并 canonical 关系处理。
+  \item 缩并条件：h/H 模式为 $n_{e,1}+n_{e,2}=1$；masslessFull 为单指标 $n_e=1$，第一/第二有序端点的 theta-delta 系数分别为 $-2/+2$。
   \item 缩并因子幂次（h 模式）：$-(2\nu_e+1)$。整数 $-1$ 进入指标，非整数 $-2\nu_e$ 进入零点。
   \item 缩并因子幂次（H 模式）：$-1$（纯整数，来自 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] \propto 1/z$）。零点无移位。
-  \item 缩并因子幂次（无质量）：无 Hankel 缩并机制；同一顶点对多条 massless 线的 bundle 合并暂列未来优化。
+  \item 缩并因子幂次（无质量）：没有额外 $1/q$ 或 $2\nu$ shift；theta-delta 直接把 $\{b_e,1\}$ 变成 $\{bS_e\}$。同一顶点对多条 massless 线的 bundle 合并暂列未来优化。
   \item $a$ 指标移位：$a_{\text{merged}} = a_u + a_v - 1$（两种模式整数部分相同）。
   \item $a$ 零点移位（h 模式）：$a0_{\text{merged}} = a0_u + a0_v - 2\nu_e$。
   \item $a$ 零点移位（H 模式）：$a0_{\text{merged}} = a0_u + a0_v$（无非整数部分）。
-  \item $b$ 指标移位：$bS_e = b_e + 1$（两种模式整数部分相同）。
+  \item $b$ 指标移位（h/H）：$bS_e=b_e+1$。
+  \item $b$ 指标移位（masslessFull）：$bS_e=b_e$。
   \item $b$ 零点移位（h 模式）：$bS0_e = b0_e + 2\nu_e$。
   \item $b$ 零点移位（H 模式）：$bS0_e = b0_e$（无非整数部分）。
   \item 常数 prefactor（h 模式）：$\mathcal{C}_e^{(h)} = \frac{4i}{\pi} e^{\pi \text{Im}[\nu_e]}$。
