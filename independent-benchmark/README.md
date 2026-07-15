@@ -4,6 +4,7 @@
 
 - 本 `README.md` 只说明目录边界；权威任务文件是 `independent-benchmark.md`。
 - `independent-benchmark.md` 本身就是交给其它 AI 的完整任务说明书，不是等待补充手推答案的结果文件。
+- 任务书自包含 SK 费曼规则、massive `h` 的 ODE/EOM、massless `++/--/+-/-+` 正负号与有序单 `n` convention，以及每个待测函数族的固定 topology/notation；外部 AI 不需要从 package note 补定义。
 - 独立推导者只读取本文件夹中的说明，不读取 `000_code/`、现有 check、expected 或运行结果。
 - 本项目自己的手推关系、程序 expected 和测试输出禁止放在本文件夹。
 - 外部 AI 的推导结果也应输出到它自己的独立目录，再由维护者人工审查后决定是否导入项目 check。
