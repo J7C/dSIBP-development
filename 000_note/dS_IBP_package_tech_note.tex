@@ -827,6 +827,72 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 这一框架使得动量 IBP 的链式法则完全转化为指标移位操作，与式~\eqref{zDef}--\eqref{zShift} 定义的指标体系自洽。
 
 % ============================================================
+\section{独立变量微分方程求导}
+% ============================================================
+
+微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。009 将独立变量分为两类：一类是只进入顶点相位的外腿能量参数，另一类是由外动量 Gram 坐标给出的外不变量。后一类沿用标准 Feynman 积分微分方程中的做法：先用外动量矢量导数表示不变量求导，再把矢量导数作用到被积函数并约化为指标移位。这里的 $i,j$ 都只遍历 \texttt{externalMomenta} 中声明的独立外动量向量。
+
+\subsection{顶点能量参数}
+
+设顶点相位写成
+\begin{equation}
+  v=+:\quad \exp[-iE_v\tau_v],
+  \qquad
+  v=-:\quad \exp[+iE_v\tau_v],
+\end{equation}
+并记
+\begin{equation}
+  \eta_v=
+  \begin{cases}
+  -i,& v=+,\\
+  +i,& v=-.
+  \end{cases}
+\end{equation}
+若 $y$ 是独立顶点能量参数，例如 \verb|ke[i]|，则它不参与动量标量积空间，只给出
+\begin{equation}
+  {\partial\over\partial y}J
+  =
+  \sum_v
+  \left[-\eta_v\,{\partial E_v\over\partial y}\right]
+  J[a_v\to a_v+1].
+  \label{vertexEnergyDerivative}
+\end{equation}
+式中负号来自时间幂 convention：$J$ 中保存的是 $(-\tau_v)^{a_v+a0_v}$，而相位求导产生的是 $\eta_v\tau_v=-\eta_v(-\tau_v)$。
+
+\subsection{外不变量的矢量导数分解}
+
+令外不变量坐标为
+\begin{equation}
+  x_a\in\{k_i\cdot k_j\}_{1\le i\le j\le K},
+\end{equation}
+或其用户命名版本。定义外动量矢量导数算符
+\begin{equation}
+  D_{ij}=k_i\cdot{\partial\over\partial k_j}.
+\end{equation}
+它在 Gram 坐标上的作用为
+\begin{equation}
+  D_{ij}(k_m\cdot k_n)
+  =
+  \delta_{jm}(k_i\cdot k_n)
+  +
+  \delta_{jn}(k_i\cdot k_m).
+  \label{externalVectorGramAction}
+\end{equation}
+
+因此对指定坐标 $x_a$ 求导时，先在约束坐标 $\{x_b\}$ 上解线性方程
+\begin{equation}
+  {\partial\over\partial x_a}
+  =
+  \sum_{ij}c^{(a)}_{ij}D_{ij},
+  \qquad
+  \sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
+  \label{externalInvariantDecomposition}
+\end{equation}
+完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。009 的默认实现选择上三角 external-vector basis 给出一组 canonical 解，并在 \verb|makeExternalInvariantDerivativeDecomposition| 中返回矩阵、所选系数、残差、\verb|nullity| 与 \verb|nonUniqueQ|。若某一物理问题要求不同切向代表元，应替换 operator basis，而不是把任意选择隐藏在求导核心中。
+
+每个 $D_{ij}$ 作用到被积函数时，传播子、massive/massless building block 与 ISP 的求导都按同一链式法则处理。若某个顶点能量在 \verb|vertexEnergies| 中写成外不变量函数，例如 \verb|Sqrt[s11]|，则 $D_{ij}$ 也会按式~\eqref{externalVectorGramAction} 作用到这部分相位能量。
+
+% ============================================================
 \section{Convention 汇总}
 % ============================================================
 

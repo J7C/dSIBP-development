@@ -356,7 +356,17 @@ IBP 中的 `k_v` 符号始终与 Feynman 规则一致，不需要根据顶点 ±
 
 dS 的特殊点是：一个顶点连着的所有外腿在时间相位里只通过打包后的 e 指数能量进入，这个量是标量参数，不是外部三动量向量。只有当某个外部三动量向量实际出现在内线动量偏移 `P_e` 中、从而在 `Q_e^2` 或 `q_l \cdot Q_e` 中和圈动量发生标量积时，才应放入 `externalMomenta` 并参与 `sp` 完备性。若某个外腿能量或能量组合永远只以顶点能量形式出现，则应保存在 `vertexEnergies` / `numericRules`，不进入 `externalMomenta`、`sp`、传播子坐标或 ISP 坐标。若顶点能量和 `externalMomenta` 空间的外部不变量是同一变量，应优先写成 `Sqrt[s11]`、`Sqrt[sigW]` 等外部不变量表达式；否则作为独立能量参数，建议写 `ke[i]`。若 `|ke1+ke2|`、`|ke1|`、`|ke2|` 独立，就必须分别命名，不能自动相加。外腿能量参数不是一组要做完备标量积的向量基，程序不需要生成 `ke[i] ke[j]` 这类外腿-外腿点积。`vertexEnergies` 中不能直接写 `loopMomenta/externalMomenta` 的向量符号，也不能写圈相关 `sp[q,k]`；属于外动量空间时写外部不变量变量名表达式，否则写独立 `ke[i]`。
 
-### 10.2 函数族扩展
+### 10.2 独立变量微分方程求导边界
+
+009 的微分方程 seed 只处理已经由 topology 输入声明清楚的独立变量，不主动替用户拆分或合并物理能量。规则如下：
+
+- `ke[i]` 等独立顶点能量参数只对 `vertexEnergies` 中的 e 指数相位做标量求导；它不进入 `externalMomenta`、`sp` 坐标或 ISP 完备性。
+- 默认 `sij` 或用户自定义外不变量名属于 `externalMomenta` 的 Gram 坐标。对它求导时，先在约束坐标上把 $\partial/\partial x_a$ 写成外动量矢量导数 $D_{ij}=k_i\cdot\partial/\partial k_j$ 的线性组合。
+- 系数由 $\sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}$ 解出。完整 $K^2$ 个 $D_{ij}$ 一般存在零空间，所以解不唯一；实现必须返回所选 basis、矩阵、系数、残差、`nullity` 和 `nonUniqueQ`。
+- 当前默认 basis 是上三角 `externalVector` generators。若物理问题要求其它切向选择，应通过 operator basis 覆盖，而不是在求导核心中硬编码。
+- 每个外动量矢量导数要作用到传播子、massive/massless building block、ISP/numerator，以及那些被写成外不变量函数的顶点能量表达式，例如 `Sqrt[s11]`。
+
+### 10.3 函数族扩展
 
 多圈积分家族需扩展为：
 
@@ -367,7 +377,7 @@ $$J[\{a_v\}; \{\text{pack}_e\}; \{n_{\text{isp}_j}\}]$$
 - $\{\text{pack}_e\}$：内线指标包（完整线或缩并线）
 - $\{n_{\text{isp}_j}\}$：ISP 分子幂次，$n_{\text{isp}_j} \geq 0$
 
-### 10.3 ISP 完备性验证
+### 10.4 ISP 完备性验证
 
 在生成 IBP 前，必须验证 ISP 集合的完备性：
 
@@ -382,7 +392,7 @@ $$J[\{a_v\}; \{\text{pack}_e\}; \{n_{\text{isp}_j}\}]$$
 
 本 package 的设计边界是：用户在初始化阶段给出完整的传播子动量和 ISP 定义，程序验证这组输入是否能闭合 IBP 中出现的 loop-scalar-products。对于通常的 dS 图，传播子动量加上用户指定 ISP 后应直接固定 family；多圈时常见情况是传播子平方少于全部标量积，需要 ISP 补齐，而不是程序自动从一堆 overcomplete propagators 中选 basis。若输入中存在重复/退化传播子、ISP 过多或不足、特殊数值外动量导致 rank 下降，当前主线不会自动丢弃传播子、也不会替用户重新选一组独立 propagator basis；validation 会报告 `scalarProductCoordinateCountMismatch`、`insufficientISPData` 或 `scalarProductCoordinateSolveFailed`，由用户修正 family 输入。
 
-### 10.4 IBP 生成元
+### 10.5 IBP 生成元
 
 对于 $L$ 圈图，完备的 IBP 生成元集合为：
 
@@ -395,7 +405,7 @@ $$\mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu$$
 
 总计 $L(L + K)$ 个独立生成元。普通散射记号中若用户正好选择 $K=E_{\rm ext}-1$，才退化为常见的 $L(L+E_{\rm ext}-1)$ 写法；这不是本 package 的输入 convention。
 
-### 10.5 链式法则实现
+### 10.6 链式法则实现
 
 IBP 生成时，对每个生成元 $\mathcal{O}_{l,v}$：
 
@@ -409,7 +419,7 @@ IBP 生成时，对每个生成元 $\mathcal{O}_{l,v}$：
    - ISP 部分：$n_{\text{isp}_j} \to n_{\text{isp}_j} \pm 1$
    - 顶点幂次：$a_v \to a_v \pm 1$
 
-### 10.6 分 Sector 存储
+### 10.7 分 Sector 存储
 
 IBP 方程按 sector 分组存储：
 

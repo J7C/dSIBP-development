@@ -1953,6 +1953,44 @@ momentumPropagatorDerivativeTerms[topo_Association, int_J, gen_Association, repS
    ];
 
 
+(* ISP 是 numerator 因子；momentum IBP 必须同时微分 ISP^r。
+   内部坐标使用 qq/qk/kk，方向导数后再沿现有 z/rho 坐标吸收到指标。 *)
+momentumDirectionalSPDerivative[topo_Association, expr_, gen_Association] := Module[
+   {dLoop = gen["dLoop"], vector = gen["vector"], loops = topo["loopMomenta"], exts = topo["externalMomenta"]},
+   Expand[
+    expr /. {
+      HoldPattern[qq[i_Integer, j_Integer]] :>
+       If[i === dLoop, expandDotExpr[vector, loops[[j]], topo], 0] +
+        If[j === dLoop, expandDotExpr[loops[[i]], vector, topo], 0],
+      HoldPattern[qk[i_Integer, j_Integer]] :>
+       If[i === dLoop, expandDotExpr[vector, exts[[j]], topo], 0],
+      HoldPattern[kk[_Integer, _Integer]] :> 0
+      }
+    ]
+   ];
+
+
+momentumISPDerivativeTerms[topo_Association, int_J, gen_Association, repSP2ZRules_List] := Module[
+   {ispExprs, exponent, derivative},
+   ispExprs = normalizeISPExprs[topo];
+   Total[
+    Table[
+     exponent = int[[3, j]];
+     If[zeroQ[exponent],
+      0,
+      derivative = Expand[momentumDirectionalSPDerivative[topo, ispExprs[[j]], gen] /. repSP2ZRules];
+      exponent absorbLinearFactor[
+        derivative,
+        shiftISPIndex[int, j, -1],
+        topo
+        ]
+      ],
+     {j, Length[ispExprs]}
+     ]
+    ]
+   ];
+
+
 applyMomentumGeneratorSeed::nosp =
    "拓扑 `1` 的标量积到 z/ISP 规则未生成：`2`。请补充 ISP 配置后再生成 momentum seed。";
 
@@ -1967,7 +2005,8 @@ applyMomentumGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
    Expand[
     momentumDivergenceTerm[int, gen] +
      momentumPropagatorDerivativeTerms[topo, int, gen, ruleData["repSP2Z"]] +
-     momentumBuildingBlockDerivativeTerms[topo, int, gen, ruleData["repSP2Z"]]
+     momentumBuildingBlockDerivativeTerms[topo, int, gen, ruleData["repSP2Z"]] +
+     momentumISPDerivativeTerms[topo, int, gen, ruleData["repSP2Z"]]
     ]
    ];
 
@@ -2529,6 +2568,321 @@ selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
 
 
 momentumGeneratorLabel[gen_Association] := {gen["type"], gen["dLoop"], gen["vectorType"], gen["vectorIndex"]};
+
+
+(* ::Chapter:: *)
+(*独立变量导数 seed*)
+
+(* 本章生成微分方程阶段使用的独立变量导数。顶点能量 ke[i] 只微分顶点相位；
+   外部不变量先在约束坐标中解成外动量矢量导数 k_i.d/dk_j 的线性组合，解的 basis 显式返回。 *)
+
+externalVectorDerivativeGenerators[topo_Association] := Flatten[
+   Table[
+    <|
+     "type" -> "externalVector",
+     "vectorIndex" -> i,
+     "dExternal" -> j,
+     "vector" -> topo["externalMomenta"][[i]]
+     |>,
+    {i, topo["nK"]}, {j, topo["nK"]}
+    ],
+   1
+   ];
+
+
+externalVectorDerivativeGeneratorBasis[topo_Association, Automatic] := externalVectorDerivativeGeneratorBasis[topo, "upperTriangular"];
+externalVectorDerivativeGeneratorBasis[topo_Association, "upperTriangular"] := Flatten[
+   Table[
+    If[i <= j,
+     <|
+      "type" -> "externalVector",
+      "vectorIndex" -> i,
+      "dExternal" -> j,
+      "vector" -> topo["externalMomenta"][[i]]
+      |>,
+     Nothing
+     ],
+    {i, topo["nK"]}, {j, topo["nK"]}
+    ],
+   1
+   ];
+externalVectorDerivativeGeneratorBasis[topo_Association, "all"] := externalVectorDerivativeGenerators[topo];
+externalVectorDerivativeGeneratorBasis[topo_Association, gens_List] := gens;
+externalVectorDerivativeGeneratorBasis[topo_Association, _] := externalVectorDerivativeGeneratorBasis[topo, "upperTriangular"];
+
+
+externalVectorDerivativeLabel[gen_Association] := {gen["type"], gen["vectorIndex"], gen["dExternal"]};
+
+
+externalVectorDirectionalSPDerivative[topo_Association, expr_, gen_Association] := Module[
+   {dExternal = gen["dExternal"], vector = gen["vector"], loops = topo["loopMomenta"], exts = topo["externalMomenta"]},
+   Expand[
+    expr /. {
+      HoldPattern[qq[_Integer, _Integer]] :> 0,
+      HoldPattern[qk[i_Integer, j_Integer]] :>
+       If[j === dExternal, expandDotExpr[loops[[i]], vector, topo], 0],
+      HoldPattern[kk[i_Integer, j_Integer]] :>
+       If[i === dExternal, expandDotExpr[vector, exts[[j]], topo], 0] +
+        If[j === dExternal, expandDotExpr[exts[[i]], vector, topo], 0]
+      }
+    ]
+   ];
+
+
+externalVectorPropagatorDerivativeTerms[topo_Association, int_J, gen_Association, repSP2ZRules_List] := Module[
+   {dExternal, vector, lineMomenta, extCoeff, vDotQ, shiftedInt},
+   dExternal = gen["dExternal"];
+   vector = gen["vector"];
+   lineMomenta = Lookup[topo["lines"], "momentum"];
+   Total[
+    Table[
+     extCoeff = Coefficient[lineMomenta[[e]], topo["externalMomenta"][[dExternal]]];
+     If[zeroQ[extCoeff],
+      0,
+      vDotQ = Expand[expandDotExpr[vector, lineMomenta[[e]], topo] /. repSP2ZRules];
+      shiftedInt = shiftLineB[int, e, 2];
+      -extCoeff linePowerIndex[topo, int, e] absorbLinearFactor[vDotQ, shiftedInt, topo]
+      ],
+     {e, topo["nE"]}
+     ]
+    ]
+   ];
+
+
+externalVectorBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Association, repSP2ZRules_List] := Module[
+   {dExternal, vector, lineMomenta, lines, extCoeff, vDotQ, endpointVertex,
+    shiftedInt, packType, sigma},
+   dExternal = gen["dExternal"];
+   vector = gen["vector"];
+   lineMomenta = Lookup[topo["lines"], "momentum"];
+   lines = topo["lines"];
+   Total[
+    Table[
+     extCoeff = Coefficient[lineMomenta[[e]], topo["externalMomenta"][[dExternal]]];
+     If[zeroQ[extCoeff],
+      0,
+      vDotQ = Expand[expandDotExpr[vector, lineMomenta[[e]], topo] /. repSP2ZRules];
+      packType = lines[[e]]["packType"];
+      Switch[packType,
+       "massiveFull" | "massiveCross",
+       Total[
+        Table[
+         endpointVertex = lines[[e]]["endpoints"][[endpointSlot]];
+         shiftedInt = shiftLinePackEntry[int, e, endpointSlot + 1, 1];
+         shiftedInt = shiftVertexA[shiftedInt, topo, endpointVertex, 1];
+         shiftedInt = shiftLineB[shiftedInt, e, 1];
+         extCoeff absorbLinearFactor[vDotQ, shiftedInt, topo],
+         {endpointSlot, 2}
+         ]
+        ],
+       "masslessFull",
+       sigma = masslessFullSKSign[lines[[e]]];
+       shiftedInt = shiftLineB[toggleMasslessLineState[int, e], e, 1];
+       extCoeff (
+         -I sigma absorbLinearFactor[
+           vDotQ,
+           shiftVertexA[shiftedInt, topo, lines[[e]]["endpoints"][[1]], 1],
+           topo
+           ] +
+          I sigma absorbLinearFactor[
+           vDotQ,
+           shiftVertexA[shiftedInt, topo, lines[[e]]["endpoints"][[2]], 1],
+           topo
+           ]
+         ),
+       "masslessCross",
+       shiftedInt = shiftLineB[int, e, 1];
+       extCoeff Total[
+         Table[
+          -I skEndpointPhaseSign[lines[[e]], endpointSlot] absorbLinearFactor[
+            vDotQ,
+            shiftVertexA[shiftedInt, topo, lines[[e]]["endpoints"][[endpointSlot]], 1],
+            topo
+            ],
+          {endpointSlot, 2}
+          ]
+         ],
+       _,
+       0
+       ]
+      ],
+     {e, topo["nE"]}
+     ]
+    ]
+   ];
+
+
+externalVectorISPDerivativeTerms[topo_Association, int_J, gen_Association, repSP2ZRules_List] := Module[
+   {ispExprs, exponent, derivative},
+   ispExprs = normalizeISPExprs[topo];
+   Total[
+    Table[
+     exponent = int[[3, j]];
+     If[zeroQ[exponent],
+      0,
+      derivative = Expand[externalVectorDirectionalSPDerivative[topo, ispExprs[[j]], gen] /. repSP2ZRules];
+      exponent absorbLinearFactor[
+        derivative,
+        shiftISPIndex[int, j, -1],
+        topo
+        ]
+      ],
+     {j, Length[ispExprs]}
+     ]
+    ]
+   ];
+
+
+externalVectorVertexEnergyDerivativeTerms[topo_Association, int_J, gen_Association] := Module[
+   {vertices = activeAVertexIds[topo], derivative},
+   Total[
+    Table[
+     derivative = externalVectorDirectionalSPDerivative[topo, vertexExternalEnergy[topo, vertexId], gen];
+     If[zeroQ[derivative],
+      0,
+      -vertexExternalPhaseDerivativeCoefficient[topo, vertexId] derivative shiftVertexA[int, topo, vertexId, 1]
+      ],
+     {vertexId, vertices}
+     ]
+    ]
+   ];
+
+
+applyExternalVectorDerivativeSeed::badgen = "external-vector seed 只能使用 externalVector 生成元，收到：`1`。";
+applyExternalVectorDerivativeSeed::nosp =
+   "拓扑 `1` 的标量积到 z/ISP 规则未生成：`2`。请补充 ISP 配置后再生成 external-vector seed。";
+
+
+applyExternalVectorDerivativeSeed[topo_Association, int_J, gen_Association] := Module[
+   {ruleData},
+   If[gen["type"] =!= "externalVector",
+    Message[applyExternalVectorDerivativeSeed::badgen, gen];
+    Return[$Failed]
+    ];
+   ruleData = makeScalarProductRules[topo];
+   If[Lookup[ruleData, "status", "notComputed"] =!= "computed",
+    Message[applyExternalVectorDerivativeSeed::nosp, topo["name"], Lookup[ruleData, "reason", Missing["reason"]]];
+    Return[$Failed]
+    ];
+   Expand[
+    externalVectorPropagatorDerivativeTerms[topo, int, gen, ruleData["repSP2Z"]] +
+     externalVectorBuildingBlockDerivativeTerms[topo, int, gen, ruleData["repSP2Z"]] +
+     externalVectorISPDerivativeTerms[topo, int, gen, ruleData["repSP2Z"]] +
+     externalVectorVertexEnergyDerivativeTerms[topo, int, gen]
+    ]
+   ];
+
+
+Options[makeExternalInvariantDerivativeDecomposition] = {
+   ExternalInvariantCoordinateVariables -> Automatic,
+   ExternalVectorOperatorBasis -> Automatic
+   };
+
+makeExternalInvariantDerivativeDecomposition::badvar =
+   "变量 `1` 不在当前外部不变量坐标 `2` 中；若它是组合变量，请显式给出 ExternalInvariantCoordinateVariables。";
+makeExternalInvariantDerivativeDecomposition::nosol =
+   "变量 `1` 无法由所选 external-vector operator basis `2` 解出。";
+
+
+normalizeExternalInvariantCoordinateList[topo_Association, Automatic] := externalInvariantVariables[topo];
+normalizeExternalInvariantCoordinateList[topo_Association, coords_List] := scalarProductInputToInternal[#, topo] & /@ coords;
+normalizeExternalInvariantCoordinateList[topo_Association, coord_] := {scalarProductInputToInternal[coord, topo]};
+
+
+makeExternalInvariantDerivativeDecomposition[topo_Association, var_, OptionsPattern[]] := Module[
+   {target, coords, targetPos, gens, matrix, coeffs, equations, solutions, selectedRules,
+    selectedCoefficients, residual, fullGens, fullMatrix, rank, nullity, freeCoeffRules},
+   target = scalarProductInputToInternal[var, topo];
+   coords = normalizeExternalInvariantCoordinateList[topo, OptionValue[ExternalInvariantCoordinateVariables]];
+   targetPos = FirstPosition[coords, target, Missing["NotFound"]];
+   If[Head[targetPos] === Missing,
+    Message[makeExternalInvariantDerivativeDecomposition::badvar, var, scalarProductInternalToUser[#, topo] & /@ coords];
+    Return[<|"status" -> "badVariable", "targetVariable" -> scalarProductInternalToUser[target, topo], "coordinateVariables" -> scalarProductInternalToUser[#, topo] & /@ coords|>]
+    ];
+   targetPos = First[targetPos];
+   gens = externalVectorDerivativeGeneratorBasis[topo, OptionValue[ExternalVectorOperatorBasis]];
+   matrix = Table[
+     externalVectorDirectionalSPDerivative[topo, coords[[r]], gens[[c]]],
+     {r, Length[coords]}, {c, Length[gens]}
+     ];
+   coeffs = Array[cv, Length[gens]];
+   equations = Thread[matrix . coeffs == UnitVector[Length[coords], targetPos]];
+   solutions = Quiet[Solve[equations, coeffs]];
+   If[solutions === {},
+    Message[makeExternalInvariantDerivativeDecomposition::nosol, var, externalVectorDerivativeLabel /@ gens];
+    Return[<|"status" -> "noSolution", "targetVariable" -> scalarProductInternalToUser[target, topo], "operatorBasis" -> externalVectorDerivativeLabel /@ gens, "matrix" -> matrix|>]
+    ];
+   selectedRules = First[solutions];
+   freeCoeffRules = Thread[Complement[coeffs, selectedRules[[All, 1]]] -> 0];
+   selectedCoefficients = Expand[coeffs /. selectedRules /. freeCoeffRules];
+   residual = Simplify[Expand[matrix . selectedCoefficients - UnitVector[Length[coords], targetPos]]];
+   fullGens = externalVectorDerivativeGenerators[topo];
+   fullMatrix = Table[
+     externalVectorDirectionalSPDerivative[topo, coords[[r]], fullGens[[c]]],
+     {r, Length[coords]}, {c, Length[fullGens]}
+     ];
+   rank = Quiet[MatrixRank[fullMatrix]];
+   nullity = If[IntegerQ[rank], Length[fullGens] - rank, Missing["SymbolicRankNotComputed"]];
+   <|
+    "status" -> "solved",
+    "targetVariable" -> scalarProductInternalToUser[target, topo],
+    "internalTargetVariable" -> target,
+    "coordinateVariables" -> (scalarProductInternalToUser[#, topo] & /@ coords),
+    "internalCoordinateVariables" -> coords,
+    "operatorBasis" -> (externalVectorDerivativeLabel /@ gens),
+    "operators" -> gens,
+    "matrix" -> matrix,
+    "coefficientRules" -> Thread[externalVectorDerivativeLabel /@ gens -> selectedCoefficients],
+    "coefficients" -> selectedCoefficients,
+    "residual" -> residual,
+    "solutionFamilyRules" -> solutions,
+    "fullOperatorCount" -> Length[fullGens],
+    "coordinateCount" -> Length[coords],
+    "fullOperatorRank" -> rank,
+    "nullity" -> nullity,
+    "nonUniqueQ" -> TrueQ[IntegerQ[nullity] && nullity > 0]
+    |>
+   ];
+
+
+directVertexEnergyVariableDerivativeSeed[topo_Association, int_J, var_] := Module[
+   {internalVar, vertices = activeAVertexIds[topo], derivative},
+   internalVar = scalarProductInputToInternal[var, topo];
+   Total[
+    Table[
+     derivative = D[vertexExternalEnergy[topo, vertexId], internalVar];
+     If[zeroQ[derivative],
+      0,
+      -vertexExternalPhaseDerivativeCoefficient[topo, vertexId] derivative shiftVertexA[int, topo, vertexId, 1]
+      ],
+     {vertexId, vertices}
+     ]
+    ]
+   ];
+
+
+Options[applyExternalInvariantVariableDerivativeSeed] = Options[makeExternalInvariantDerivativeDecomposition];
+applyExternalInvariantVariableDerivativeSeed[topo_Association, int_J, var_, opts : OptionsPattern[]] := Module[
+   {decomp, terms},
+   decomp = makeExternalInvariantDerivativeDecomposition[topo, var, FilterRules[{opts}, Options[makeExternalInvariantDerivativeDecomposition]]];
+   If[Lookup[decomp, "status", "failed"] =!= "solved", Return[$Failed]];
+   terms = MapThread[
+     #1 applyExternalVectorDerivativeSeed[topo, int, #2] &,
+     {decomp["coefficients"], decomp["operators"]}
+     ];
+   Expand[Total[terms]]
+   ];
+
+
+Options[applyIndependentVariableDerivativeSeed] = Options[makeExternalInvariantDerivativeDecomposition];
+applyIndependentVariableDerivativeSeed[topo_Association, int_J, var_, opts : OptionsPattern[]] := Module[
+   {internalVar},
+   internalVar = scalarProductInputToInternal[var, topo];
+   If[MemberQ[externalInvariantVariables[topo], internalVar],
+    Return[applyExternalInvariantVariableDerivativeSeed[topo, int, internalVar, opts]]
+    ];
+   Expand[directVertexEnergyVariableDerivativeSeed[topo, int, internalVar]]
+   ];
 
 
 Options[makeMomentumIBPSeedBatch] = {

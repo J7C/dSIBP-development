@@ -4,10 +4,12 @@
 (* ::Chapter:: *)
 (*初始化*)
 
-benchmarkDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{benchmarkDir, "..", "..", "..", "009_dS_ibp_general.wl"}]];
-Get[FileNameJoin[{benchmarkDir, "family.wl"}]];
-Get[FileNameJoin[{benchmarkDir, "expected.wl"}]];
+exampleDir = DirectoryName[$InputFileName];
+codeDir = DirectoryName[DirectoryName[exampleDir]];
+handDerivedDir = FileNameJoin[{codeDir, "check", "hand-derived-v2", "atomic_massive_line"}];
+Get[FileNameJoin[{codeDir, "009_dS_ibp_general.wl"}]];
+Get[FileNameJoin[{handDerivedDir, "family.wl"}]];
+Get[FileNameJoin[{handDerivedDir, "expected.wl"}]];
 
 topologyCache = Association[];
 getTopTopology[signKey_String, mode_String] := Module[

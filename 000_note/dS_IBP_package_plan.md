@@ -10,7 +10,7 @@
 - EOM 不是后处理选项，而是 seed 生成的一部分；任何 Hankel 二阶导数一旦产生 `n=2`，必须立刻用 EOM 递推消去。
 - time-IBP 与 momentum-IBP 同属必需 seed 来源；缺少 time-IBP 时，不允许声称已经得到完整 IBP 系统。
 - Kira 导出只消费 `makeLinearSystemData` 产生的 linear-system 数据，不直接消费 seed batch。`makeCanonicalSeedBatch` 会在 `MaxShrinkSectorCount` 保护内自动派生并联立 shrink sectors；若仍有 `n=2`、超过保护阈值的 shrink sector 或其它 pending feature，则不能进入 linear/Kira 阶段。当前 `makeKiraExportData` 已能写 user-defined system 文件，但调用前应先完成数值规则/撒点选择。
-- 当前 009 已完成 momentum seed 的传播子项、z/ISP 吸收、massive/massless building-block 导数、shrunk-line `bS` 幂次项和 EOM 门禁；time-IBP 已接入顶点幂次、按顶点 `+/-` 变化的外部相位、massive 端点导数、massless 有方向的 `0<->1` 翻转，以及 massive/massless theta boundary shrink。canonical batch 可在保护阈值内自动派生两类 shrink sectors 并合并其 qIBP/tIBP seed。
+- 当前 009 已完成 momentum seed 的传播子项、z/ISP 吸收、massive/massless building-block 导数、shrunk-line `bS` 幂次项和 EOM 门禁；time-IBP 已接入顶点幂次、按顶点 `+/-` 变化的外部相位、massive 端点导数、massless 有方向的 `0<->1` 翻转，以及 massive/massless theta boundary shrink。canonical batch 可在保护阈值内自动派生两类 shrink sectors 并合并其 qIBP/tIBP seed。微分方程方向已加入独立变量求导 seed：独立 `ke[i]` 顶点能量走标量相位求导，外不变量走 `k_i·∂/∂k_j` 矢量导数组合。
 
 **质量参数 $\nu$**：$\nu^2 = m^2/H^2 - d^2/4$（$d=3$ 时为 $m^2/H^2 - 9/4$）。本 package 只考虑纯实数 $\nu$（重场）和纯虚数 $\nu = i\mu$（轻场）。详见 tech note §1.1。
 
@@ -355,6 +355,53 @@ ispData = {
 
 例如：`IBP_sector_none_seed_001.dat`（top sector），`IBP_sector_e3_seed_012.dat`（线 3 缩并）。
 
+### 4.3.6 独立变量微分方程 seed
+
+微分方程阶段需要生成 $\partial_x J$。本 package 把独立变量分成两类：
+
+1. 顶点外腿能量参数，例如 `ke[i]`。这些变量只进入 `vertexEnergies` 中的 e 指数相位，不进入 `externalMomenta` 或 loop-scalar-product 完备性。
+2. 外动量不变量，例如默认 `s11/s12/...` 或用户在 `externalInvariantRules` 中指定的变量名。这些变量来自 `externalMomenta` 的 Gram 坐标。
+
+对顶点能量 $y$，求导只作用在顶点相位：
+
+$$
+\partial_y J
+=\sum_v\left[-\eta_v\,\partial_y E_v\right]J[a_v\to a_v+1],
+\qquad
+\eta_v=\begin{cases}-i,&v=+,\\ +i,&v=-.\end{cases}
+$$
+
+外不变量导数不能假定唯一。令
+
+$$
+D_{ij}=k_i\cdot{\partial\over\partial k_j},
+\qquad
+D_{ij}(k_m\cdot k_n)
+=\delta_{jm}(k_i\cdot k_n)+\delta_{jn}(k_i\cdot k_m).
+$$
+
+在外不变量坐标 $\{x_b\}$ 的约束面上求
+
+$$
+{\partial\over\partial x_a}
+=\sum_{ij}c^{(a)}_{ij}D_{ij},
+\qquad
+\sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
+$$
+
+完整 $K^2$ 个 $D_{ij}$ 一般存在零空间；系数解不是唯一的。009 默认选上三角 external-vector basis 作为 canonical 解，同时保留完整 decomposition 报告，包括线性方程矩阵、系数、残差、`nullity` 和 `nonUniqueQ`。若后续某个物理通道需要特定切向选择，应通过 operator basis 覆盖，而不是改写求导核心。
+
+当前接口：
+
+```mathematica
+makeExternalInvariantDerivativeDecomposition[topo, var]
+applyExternalVectorDerivativeSeed[topo, int, gen]
+applyExternalInvariantVariableDerivativeSeed[topo, int, var]
+applyIndependentVariableDerivativeSeed[topo, int, var]
+```
+
+`applyIndependentVariableDerivativeSeed` 自动判断 `var` 属于外不变量还是独立顶点能量。外不变量分支会把每个 $D_{ij}$ 作用到传播子、massive/massless building block、ISP/numerator 和可能写成 `Sqrt[sij]` 的顶点能量表达式。
+
 ### 4.4 标量积变量与 $z=\xi^2$ 线性变换
 
 #### 4.4.1 $z$ 变量定义
@@ -547,7 +594,7 @@ symmetryRules = {
 
 ## 7. 当前主线与工作流
 
-当前唯一权威实现是 `000_code/008_dS_ibp_general.wl`。文档不再维护旧脚本的功能差异或版本演进记录。
+当前唯一权威实现是 `000_code/009_dS_ibp_general.wl`。文档不再维护旧脚本的功能差异或版本演进记录。
 
 主线按照以下顺序工作：
 
@@ -567,6 +614,7 @@ symmetryRules = {
 - `massiveFull`、`massiveCross`、`masslessFull`、`masslessCross` 和 theta-boundary shrunk line 的统一 pack 分派。
 - 完整的 $L(L+K)$ 个 momentum generators，以及每个 active vertex 的 time generator。
 - massive/massless building-block 导数、massless 有序端点 canonical、两类 theta boundary shrink 和即时 EOM。
+- 独立变量求导 seed：`ke[i]` 只微分顶点 e 指数；外不变量先在约束坐标上分解为外动量矢量导数 `k_i·∂/∂k_j`，再复用传播子/ISP/building-block 求导。
 - 自动 massive/massless shrink subsector、compact `aList` 和全 sector metadata。
 - 解析 seed 保存、后端中立线性系统、数值/撒点层、全 sector 积分排序与基础 Kira 文件转换。
 
@@ -603,9 +651,9 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，不保存本机
 
 ## 9. 验证范围与性能红线
 
-009 当前通过：独立 massive 原子 104/104、独立 massless 全 sector/生成元 22/22 加易错点 8/8、pure massless bubble 70/70、symmetry/Vpm 11/11，以及 massless 27/27、`sp` 24/24、缓存 8/8、Kira serializer smoke 11/11。serializer 检查不运行 Kira/Fermat。旧的 mixed/bubble/triangle/sunrise expected 不再作为 009 证据；其余含 massless 的函数族必须按新 convention 独立重推。
+009 当前通过：独立 massive 原子 104/104、独立 massless 全 sector/生成元 22/22 加易错点 8/8、pure massless bubble 70/70、mixed bubble 138/138、mixed triangle 1800/1800、pure massive bubble reference 310/310、parallel massless 242/242、mixed sunrise 2178/2178、two-loop ISP toy 1230/1230、vertex energy signs 90/90，以及独立变量求导 example（`ke[i]`、`s11`、两外动量非唯一 decomposition）。serializer 检查不运行 Kira/Fermat。
 
-这些数字是检查断言数，不等于独立手推公式数。当前手推层只确认 massless 单线原子规则、四种 SK 端点符号和一个极小 all-sector batch；mixed/bubble/triangle/sunrise 的全 sector、全生成元公式库尚待按新格式重建。因此当前结论是“生成器未硬编码 bubble，并通过代表性 topology 回归”，不是“已对所有拓扑给出数学穷尽证明”。
+这些数字是检查断言数，不等于独立手推公式数。当前结论是“生成器未硬编码 bubble，并通过代表性 topology 与微分方程变量求导回归”，不是“已对所有拓扑给出数学穷尽证明”。
 
 - 严禁默认生成整族解析 IBP 方程组并做全局化简。
 - seed 可保持小规模解析；需要 rank/span 或后端验证时先给参数代数数值，再做小范围撒点。

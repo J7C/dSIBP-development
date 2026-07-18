@@ -35,7 +35,7 @@
 \author[a]{Su Yingze}
 \affiliation[a]{Institute not specified}
 \emailAdd{yingze.su@outlook.com}
-\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、EOM/缩并 canonical、拓扑输入、线性系统和验证方式。当前开发主线为 009。纯 massless 与 mixed case 都使用逐传播子的双 theta 合并路线；单 theta 路线不属于本 package。}
+\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、线性系统和验证方式。当前开发主线为 009。纯 massless 与 mixed case 都使用逐传播子的双 theta 合并路线；单 theta 路线不属于本 package。}
 
 \begin{document}
 \maketitle
@@ -48,7 +48,7 @@
 \begin{verbatim}
 000_code/009_dS_ibp_general.wl
 \end{verbatim}
-它已经实现 topology 解析、完整 time/loop-momentum 生成元、massive EOM、massless 有向单 $n$、massive/massless theta shrink、跨 sector coincident canonical、后端中立线性系统和基础 Kira serializer。
+它已经实现 topology 解析、完整 time/loop-momentum 生成元、massive EOM、massless 有向单 $n$、massive/massless theta shrink、跨 sector coincident canonical、外不变量/顶点能量独立变量求导 seed、后端中立线性系统和基础 Kira serializer。
 
 推荐工作流为
 \begin{enumerate}
@@ -57,6 +57,7 @@
   \item 在一个很小的连续 seed 点枚举全部离散 $n=0,1$；
   \item 生成每个 sector 的全部 time 与 loop-momentum seed；
   \item seed 层立即 EOM/canonical，并保存 Mathematica 表达式；
+  \item 若要建立微分方程，先用独立变量求导 seed 生成 $\partial_x J$ 的右端；
   \item 需要线性后端时才代入小型代数数值规则，构造 \texttt{linearData}；
   \item 按需调用 Kira 或其它 serializer。package 不运行 reduction。
 \end{enumerate}
@@ -382,6 +383,55 @@ sp[l3,k321+l3]
 
 特别地，$|k_1+k_2|$、$|k_1|$、$|k_2|$ 若物理上独立，就是三个参数。前者应另命名为新的 \texttt{ke[3]}，不能自动写成 \texttt{ke[1]+ke[2]}。
 
+\subsection{独立变量与微分方程求导}
+
+009 已加入 seed 层的独立变量求导接口。变量分两类：
+\begin{itemize}
+  \item \textbf{顶点外腿能量参数}，例如 \texttt{ke[i]}。它只作用于顶点相位，不进入动量标量积空间。
+  \item \textbf{外动量不变量}，例如默认的 \texttt{s11}、\texttt{s12} 或用户在 \texttt{externalInvariantRules} 中指定的名字。它们通过外动量矢量导数组合实现。
+\end{itemize}
+
+对顶点能量 $y$，
+\begin{equation}
+ \frac{\partial}{\partial y}J
+ =\sum_v
+ \left[-\,\eta_v\,\frac{\partial E_v}{\partial y}\right]
+ J[a_v\to a_v+1],
+ \qquad
+ \eta_v=
+ \begin{cases}
+ -i,&v=+,\\
+ +i,&v=-,
+ \end{cases}
+\end{equation}
+其中 $E_v=\texttt{vertexExternalEnergy[topo,v]}$。额外负号来自本 package 的时间幂 convention
+$(-\tau_v)^{a_v+a0_v}$：相位对 $E_v$ 求导产生 $\eta_v\tau_v=-\eta_v(-\tau_v)$。
+
+对外不变量 $x_a$，先引入外动量矢量导数
+\begin{equation}
+ D_{ij}=k_i\cdot\frac{\partial}{\partial k_j},
+ \qquad
+ D_{ij}(k_m\cdot k_n)
+ =\delta_{jm}(k_i\cdot k_n)+\delta_{jn}(k_i\cdot k_m).
+\end{equation}
+然后在选定外不变量坐标 $\{x_b\}$ 上解约束方程
+\begin{equation}
+ \frac{\partial}{\partial x_a}
+ =\sum_{ij}c^{(a)}_{ij}D_{ij},
+ \qquad
+ \sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
+\end{equation}
+完整 $K^2$ 个 $D_{ij}$ 通常含零空间，解不唯一；009 默认使用上三角 external-vector basis 取一组 canonical 解，并在 decomposition 数据中显式返回矩阵、系数、残差、\texttt{nullity} 与 \texttt{nonUniqueQ}。
+
+相关接口为
+\begin{verbatim}
+makeExternalInvariantDerivativeDecomposition[topo, var]
+applyExternalVectorDerivativeSeed[topo, int, gen]
+applyExternalInvariantVariableDerivativeSeed[topo, int, var]
+applyIndependentVariableDerivativeSeed[topo, int, var]
+\end{verbatim}
+\texttt{applyIndependentVariableDerivativeSeed} 会自动分派：若 \texttt{var} 是外不变量，先做上述 decomposition，再把每个 $D_{ij}$ 作用到传播子、building block、ISP 和可能写成 \texttt{Sqrt[sij]} 的顶点能量；否则按顶点能量标量参数处理。
+
 \subsection{用户对称性规则}
 
 积分族对称性依赖质量和外参条件。009 不自动检测，只读取用户 \texttt{symmetryRules}：
@@ -404,11 +454,11 @@ symmetry[expr_,topo_]
 \end{equation}
 总数 $L(L+K)$。不能漏掉 $d/dq_\ell\cdot q_m$ 的交叉项或 $d/dq_\ell\cdot k_j$。
 
-009 当前内部使用 \texttt{applyTimeGeneratorSeed} 与 \texttt{applyMomentumGeneratorSeed}。自动 batch 必须在给定离散 $n$ 后调用，再立即 EOM/canonical。
+009 当前内部使用 \texttt{applyTimeGeneratorSeed} 与 \texttt{applyMomentumGeneratorSeed}。微分方程方向的外部变量求导使用上一节列出的 \texttt{applyIndependentVariableDerivativeSeed} 等接口。自动 batch 必须在给定离散 $n$ 后调用，再立即 EOM/canonical。
 
 \subsection{后续原子 API}
 
-以下接口已经写入 plan/todolist，但尚未在 009 实现，不能当作当前功能：
+以下复合算子式公开接口已经写入 plan/todolist，但尚未在 009 封装成最终用户 API，不能当作当前功能：
 \begin{verbatim}
 dtau[i,expr_]
 dqq[i,j,expr_]
@@ -457,15 +507,23 @@ $2\times2$ 端点态、SK、delta、反转、coincident\\
 h/H、四种 SK、EOM、Wronskian $V_\pm$\\
 \texttt{pure\_massless\_bubble} & $70/70$ &
 全 sector、两种 momentum、目标 sector 抵消\\
-\texttt{009\_symmetry\_check.wl} & $11/11$ &
-\texttt{sp} Orderless、用户 symmetry、Vpm\\
+\texttt{mixed\_bubble} & $138/138$ &
+massive+massless、四种 SK、全 sector\\
+\texttt{mixed\_triangle} & $1800/1800$ &
+三顶点 mixed topology、全生成元\\
+\texttt{mixed\_sunrise} & $2178/2178$ &
+两圈 ISP、全 sector、6 个 qIBP 生成元\\
+\texttt{two\_loop\_isp\_toy} & $1230/1230$ &
+一般 \texttt{sp} ISP 与 numerator 导数\\
+\texttt{independent\_variable\_derivatives} & 通过 &
+\texttt{ke[i]}、\texttt{s11}、外动量导数非唯一性\\
 \bottomrule
 \end{tabular}
 \end{center}
 
 每条 expected 只记录 sector、vertex signs、generator、seed rules、equation 和 tags。README 必须说明函数族、动量路由、top/sub-sector、每个全微分生成元、SK signs、离散态、特殊功能标签、预期关系计数与零关系原因。
 
-尚待重推的主要函数族是 mixed bubble、mixed triangle、mixed sunrise、pure massive bubble reference 和 two-loop ISP toy。完成这些之前，不能宣称 package 对任意拓扑已被数学穷尽验证。
+这些检查是 seed 层和 package example 层的交叉验证，不等于对任意拓扑的数学穷尽证明。后续仍需把复合原子 API 封装、文档同步和更大规模 topology 的性能门禁继续补齐。
 
 \section{常见错误与当前限制}
 
