@@ -7,7 +7,9 @@
 exampleDir = DirectoryName[$InputFileName];
 codeDir = DirectoryName[DirectoryName[exampleDir]];
 handDerivedDir = FileNameJoin[{codeDir, "check", "hand-derived-v2", "atomic_massive_line"}];
-Get[FileNameJoin[{codeDir, "009_dS_ibp_general.wl"}]];
+versionUnderTest = Last[Select[$ScriptCommandLine, MemberQ[{"007", "008", "009", "010", "011"}, #] &], Environment["DSIBP_VERSION"]];
+If[!MemberQ[{"007", "008", "009", "010", "011"}, versionUnderTest], versionUnderTest = "011"];
+Get[FileNameJoin[{codeDir, versionUnderTest <> "_dS_ibp_general.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "family.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "expected.wl"}]];
 
@@ -77,6 +79,7 @@ failedByMode = If[failed === {}, <||>, Counts[Lookup[failed, "mode"]]];
 
 Print["atomic_massive_line relations: ",
   Count[Lookup[relationResults, "passQ"], True], "/", Length[relationResults]];
+Print["package version: ", versionUnderTest];
 Print["failed by sign: ", failedBySign];
 Print["failed by mode: ", failedByMode];
 

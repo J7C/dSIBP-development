@@ -1,10 +1,10 @@
 # dS IBP 独立 benchmark 推导任务书
 
-> **用途边界**：本文是交给其它 AI 的独立推导任务说明书，所在的 `independent-benchmark/` 目录只保存任务输入。不要把本项目的手推答案、expected、check 或运行产物写入此目录。独立推导者应把结果输出到自己的新目录，维护者审查后再决定是否导入项目。
+> **用途边界**：本文是交给其它 AI 的独立推导任务说明书。第一阶段只允许读取本文，不得打开同目录的 `package/`；手推结果和来源记录冻结后，第二阶段才可读取其中的当前程序与正式用户手册，自行学习调用和比较。不要把本项目的手推答案、expected、check 或运行产物写入此目录。独立推导者应把结果输出到自己的新目录，维护者审查后再决定是否导入项目。
 
 ## 1. 任务目标
 
-从本文给出的费曼规则、指标 convention 和函数族定义出发，独立推导小型 dS IBP seed，用来反查当前开发主线 `000_code/009_dS_ibp_general.wl`。独立推导时禁止读取主线代码、`000_code/check/`、旧 expected 或已有运行结果。
+从本文给出的费曼规则、指标 convention 和函数族定义出发，独立推导小型 dS IBP seed，用来反查当前 012 程序快照。独立推导阶段禁止读取 `package/`、主线代码、`000_code/check/`、旧 expected 或已有运行结果。冻结结果后，使用 `package/package_012.wl` 和 `package/package_012.pdf` 完成程序调用与对照；如何组织 actual/expected 比较由独立推导者自行决定。
 
 只做 seed-level 小型符号推导：
 
@@ -27,8 +27,8 @@
 
     endpoints[e] = {u[e],v[e]}
     Q[e] = Sum[c[e,l] q[l],l] + Sum[d[e,j] k[j],j]
-    x[e] = -q[e] tau
     q[e] = Sqrt[sp[Q[e],Q[e]]]
+    x[e,r] = -q[e] tau[endpoints[e][[r]]],  r=1,2
 
 其中第一端点永远是 u[e]，第二端点永远是 v[e]。端点顺序不是无关 metadata：massive 的 n[e,1]/n[e,2] 和 massless 的有向 n[e] 都依赖它。
 
@@ -39,10 +39,10 @@
     Product[q[e]^(-B[e]) PropagatorBlock[e],e]
     Product[ISP[r]^ispN[r],r]
 
-其中 A[v]=a[v]+a0[v]，B[e]=b[e]+b0[e]。顶点相位和导数固定为
+其中 A[v]=a[v]+a0[v]，B[e]=b[e]+b0[e]。顶点相位固定为
 
-    s[v]=+1: Exp[-I E[v] tau[v]],  d/dtau[v] -> -I E[v]
-    s[v]=-1: Exp[+I E[v] tau[v]],  d/dtau[v] -> +I E[v]
+    s[v]=+1: Exp[-I E[v] tau[v]]
+    s[v]=-1: Exp[+I E[v] tau[v]]
 
 只进入顶点相位的 E[v] 不自动属于 externalMomenta。对一个固定的 `vertexSigns` case，SK contour 顶点因子、耦合常数、整体动量守恒 delta、1/2、pi 和其它不依赖积分变量的 normalization 都是整条齐次 IBP 的共同因子，统一提出且不写入 `J`。不得把这些共同因子误当成端点导数符号；不能提出的是 theta 导数的相对符号和 massive shrink 的 Wronskian prefactor。
 
@@ -54,7 +54,7 @@ theta(x)+theta(-x)=1,
 theta(0)=1/2.
 ```
 
-最后一式只固定 coincidence 的对称取值；不得在 seed 中产生 `delta^2` 或对已经 shrink 的 theta 再求导。
+最后一式只固定单个未缩并传播子的对称 coincidence 值，不自动定义 delta 与不连续函数乘积。遇到这类乘积时，独立推导必须从第 2.1--2.4 节给出的完整原始被积函数出发，明确写出所采用的统一分布正则化并验证极限；不能仅靠点值代入决定结果。
 
 本文直接使用 Mathematica 标量积头 sp，并固定
 
@@ -62,61 +62,42 @@ theta(0)=1/2.
 
 这只表示 sp[p,r]=sp[r,p]，不表示图或积分族对称性。
 
-### 2.2 Massive h building block、ODE 与导数
+### 2.2 Massive h/H building block 定义
 
 质量参数采用
 
     nu[e]^2 = m[e]^2/H^2 - d^2/4
 
-并只考虑纯实 nu 或纯虚 nu。令 x=-q tau>0。归一化 building block 定义为
+并只考虑纯实 nu 或纯虚 nu。令 `x=-q tau>0`。本文只给函数定义，不给它们满足的微分方程或导数递推。
 
-    h1(nu,0,x) = x^(-nu) HankelH1[nu,x]
-    h2(nu,0,x) = x^(-nu) HankelH2[Conjugate[nu],x]
-    hs(nu,1,x) = d/dx hs(nu,0,x),  s=1,2
+归一化 h 模式定义为
 
-等价地，hs(nu,1,-q tau)=-(1/q) d/dtau hs(nu,0,-q tau)。对允许的纯实或纯虚 nu，两个 hs 都按本 family 的 nu 参数满足同一方程
+    F[h,1,0;nu,x] = x^(-nu) HankelH1[nu,x]
+    F[h,2,0;nu,x] = x^(-nu) HankelH2[Conjugate[nu],x]
 
-    d_tau^2 h + (2 nu+1)/tau d_tau h + q^2 h = 0
+裸 H 模式定义为
 
-或
+    F[H,1,0;nu,x] = HankelH1[nu,x]
+    F[H,2,0;nu,x] = HankelH2[Conjugate[nu],x]
 
-    d_x^2 h + (2 nu+1)/x d_x h + h = 0.
+两种模式的离散端点态都按同一槽位 convention 定义：
 
-必须使用的一阶递推为
+    F[type,s,1;nu,x] = partial_x F[type,s,0;nu,x]
+    type in {h,H},  s in {1,2}
 
-    d_tau h(nu,0,-q tau) = -q h(nu,1,-q tau)
-
-    d_tau h(nu,1,-q tau)
-      = -q ((2 nu+1)/(q tau) h(nu,1,-q tau)
-            - h(nu,0,-q tau))
-
-    d_q h(nu,0,-q tau) = -tau h(nu,1,-q tau)
-
-    d_q h(nu,1,-q tau)
-      = -tau ((2 nu+1)/(q tau) h(nu,1,-q tau)
-              - h(nu,0,-q tau)).
-
-若 family 使用裸 Hankel H 模式，则把 EOM 系数 2 nu+1 改为 2 nu；其余端点和 SK 记号不变。
-
-正式 seed 只允许 n=0,1。任何 massive n=2 一出现，立即应用
-
-    J[...,n[e,r]=2,...]
-      = -c2[e] J[...,n[e,r]=0,...]
-        -c1[e] J[...,a[u_r]-1,b[e]+1,n[e,r]=1,...]
-
-其中 h 模式 {c1,c2}={2 nu[e]+1,1}，H 模式 {c1,c2}={2 nu[e],1}，u_r 是发生导数的有序端点。另一端点的 n 不变。此式是 benchmark 的正式 EOM 指标规则；不得把 n=2 留给后端。
+正式 `J` 只保存 `n=0,1`。独立推导者必须仅从上述 Hankel 定义出发，分别推导 h 与 H 的闭合微分关系，再把导数产生的更高 `n` 消回该基底。本文不提供任何 H/h 微分方程、矩阵、递推系数或指标移位答案。
 
 ### 2.3 Massive 四种 SK 传播子
 
-对有序端点 {u,v}，令 Delta=tau[u]-tau[v]，并定义去掉 coefficient-only normalization 的 Wightman blocks
+对有序端点 `{u,v}`，令 `Delta=tau[u]-tau[v]`、`type=bbType[e]`，并定义去掉 coefficient-only normalization 的 Wightman blocks
 
     WGreater[e] =
-      h1(nu[e],n[e,1],-q[e] tau[u])
-      h2(nu[e],n[e,2],-q[e] tau[v])
+      F[type,1,n[e,1];nu[e],-q[e] tau[u]]
+      F[type,2,n[e,2];nu[e],-q[e] tau[v]]
 
     WLess[e] =
-      h2(nu[e],n[e,1],-q[e] tau[u])
-      h1(nu[e],n[e,2],-q[e] tau[v]).
+      F[type,2,n[e,1];nu[e],-q[e] tau[u]]
+      F[type,1,n[e,2];nu[e],-q[e] tau[v]].
 
 四种 SK kernel 固定为
 
@@ -125,20 +106,13 @@ theta(0)=1/2.
     G+- = WLess
     G-+ = WGreater.
 
-因此同分支 ++/-- 是 massiveFull，可由 theta 导数 shrink；异分支 +/-/-+ 是 massiveCross，没有 theta shrink，但两个端点仍各有 n[e,1],n[e,2]。
+同分支 `++/--` 记为 `massiveFull`；异分支 `+/-/-+` 记为 `massiveCross`。两类未缩并线都保留两个有序端点态 `n[e,1],n[e,2]`。
 
-massiveFull 只在 n[e,1]+n[e,2]=1 时产生 Wronskian shrink。端点 r 的正式系数为
-
-    C[e] (-1)^(n[e,r]+Vpm)
-    Vpm=1 for ++
-    Vpm=0 for --
-    C[e]=(4 I/Pi) Exp[Pi Im[nu[e]]].
-
-这不是可由推导者任意选择的符号。只有 familyDefinition 明确给出 thetaBoundarySignOffset 覆盖时才可改变默认 Vpm。
+对 `massiveFull`，独立推导者必须从 theta 导数与上述两个 Wightman block 出发，判断哪些 `n[e,1],n[e,2]` 产生非零 coincidence 项，分别推导 h/H 的 Wronskian 等式、端点符号、prefactor 及缩并后的时间/动量幂。本文不提供这些等式或具体 shrink 公式。`massiveCross` 是否存在相同机制也必须直接由所给 kernel 判断。
 
 ### 2.4 Massless 四种 SK 传播子与全部正负号
 
-对 massless 线仍使用有序端点 {u,v} 和 Delta=tau[u]-tau[v]。去掉共同 1/(2 q) 后，四种 kernel 固定为
+对 massless 线仍使用有序端点 `{u,v}` 和 `Delta=tau[u]-tau[v]`。标准共同因子 `1/(2q)` 中，数值 `1/2` 可作为 normalization 提出，固定动量幂 `q^-1` 必须计入该线输入的 `b0[e]`；下列 `D` 只表示余下的指数/theta kernel：
 
     D++ = theta[ Delta] Exp[-I q Delta]
         + theta[-Delta] Exp[+I q Delta]
@@ -149,25 +123,7 @@ massiveFull 只在 n[e,1]+n[e,2]=1 时产生 Wronskian shrink。端点 r 的正�
     D+- = Exp[+I q Delta]
     D-+ = Exp[-I q Delta].
 
-因此 masslessFull 的 sigma 定义没有自由度：
-
-    sigma=+1 for ++
-    sigma=-1 for --.
-
-masslessCross 可统一写成
-
-    D[s[u],s[v]] = Exp[I s[u] q Delta],  s[v]=-s[u].
-
-于是 cross line 在每个端点的 time 导数系数就是该端点的分支符号：
-
-    + endpoint: +I q
-    - endpoint: -I q.
-
-其模长导数为
-
-    d_q Dcross = I s[u] Delta Dcross.
-
-masslessFull 的两个正式状态 M[0],M[1]、theta-delta 项和端点反转规则在第 4 节给出。这里先固定最容易混淆的结论：第一端点是 n=1 的参考方向；++/-- 的 sigma 取值如上；+/- 与 -/+ 没有 n、theta 或 shrink。
+同分支 `++/--` 记为 `masslessFull`；异分支 `+/-/-+` 记为 `masslessCross`。`masslessFull` 的 `n=0,1` 基底定义见第 4 节；`masslessCross` 不设置离散 `n`。所有 time/momentum 导数、theta-delta、端点反转和 coincidence 结果都必须从这些 kernel 独立推出。
 
 ### 2.5 外腿能量、外部向量与输出不变量
 
@@ -178,6 +134,10 @@ externalMomenta 只列实际进入某个 Q[e] 并与圈动量形成 scalar-produ
 
 例如 |p1+p5| 若是一个独立模长，必须定义为新的 ke[3]，不能写成 ke[1]+ke[2]。外动量-外动量标量积输出为用户给定变量或默认 s[i,j]，不保留为 sp[k[i],k[j]]。
 
+### 2.6 独立推导边界
+
+第 2 节是允许使用的特殊函数与传播子输入全集。禁止从 package 代码、tech/design/plan note、现有 hand-derived expected 或其它项目文档补充 H/h EOM、Wronskian、缩并系数和指标移位。允许使用公开的标准 Hankel 恒等式，但必须在交付的 `derivation.md` 中写明采用的恒等式并完成推导。
+
 
 ## 3. 统一积分表示
 
@@ -187,14 +147,24 @@ externalMomenta 只列实际进入某个 Q[e] 并与圈动量形成 scalar-produ
 J[aList, linePacks, ispList]
 ```
 
-- `aList`：当前 sector 的 active/merged 顶点时间幂次。delta 合并顶点后只保留一个代表顶点的 `a`。
-- massive full/cross：`{b[e],n[e,1],n[e,2]}`。
-- massless full：`{b[e],n[e]}`。
-- massless cross：`{b[e]}`。
-- shrunk line：`{bS[e]}`。
-- ISP 指标只写在第三槽。
+三个顶层槽及其顺序固定如下，独立输出不得重排：
 
-质量、SK 分支、顶点能量、外不变量、zero-point 和 shrink prefactor 都属于 family 初始化信息，不写进指标槽。
+| 位置 | 数据 | 顺序与物理对象 |
+|---|---|---|
+| `J[[1]] = aList` | 顶点时间幂的整数指标 | 先按 sector 的顶点合并关系取每个连通类在 `vertexOrder` 中最早的顶点为代表，再按这些代表在 `vertexOrder` 中的次序排列；`aList[[i]]` 对应该代表顶点的时间幂 |
+| `J[[2]] = linePacks` | 每条原始内线的指标包 | `linePacks[[p]]` 永远对应 `e=lineOrder[[p]]`；即使线已缩并也保留该 line slot，只改变 pack 形状 |
+| `J[[3]] = ispList` | ISP numerator 的整数幂 | `ispList[[r]]` 对应 `ispData[[r]]`；被积函数使用 `ISP[r]^ispList[[r]]`，正指标表示 numerator 幂 |
+
+每个 line pack 内部的槽位也固定：
+
+| line 状态 | pack | 各槽对应的物理对象 |
+|---|---|---|
+| unshrunk massiveFull/massiveCross | `{b[e],n[e,1],n[e,2]}` | `b[e]` 是 `q[e]` 分母幂的整数部分；`n[e,1]` 对应 `endpoints[e][[1]]` 的 `partial_x` 阶数，`n[e,2]` 对应 `endpoints[e][[2]]` |
+| unshrunk masslessFull | `{b[e],n[e]}` | `b[e]` 同上；`n[e]` 选择第 4 节按第一端点定向的 `M[0]/M[1]` 基底 |
+| unshrunk masslessCross | `{b[e]}` | 只有 `q[e]` 分母幂；没有 theta 基底指标 |
+| shrunk line | `{bS[e]}` | 缩并后剩余 `q[e]` 幂的整数部分；不再保留端点 `n` |
+
+质量、SK 分支、顶点能量、外不变量、zero-point、normalization 和 shrink prefactor 都不是 `J` 指标，必须放在 family/sector metadata 或关系系数中。
 
 实际时间和线幂次分别为
 
@@ -204,83 +174,160 @@ B[e]  = b[e]  + b0[e]
 BS[e] = bS[e] + bS0[e]
 ```
 
-除旧 reference bubble 的单独 reference 对照外，所有新 benchmark 的 `a0/b0/bS0` 必须保持非零符号参数。连续整数指标可以在基点取 0，但不能把 zero-point 也取 0。
+输入只直接给 unshrunk 的 `a0[v]` 与 `b0[e]`。合并顶点的 zero-point、`bS0[e]` 和 shrink prefactor 是独立推导输出，不得从本文其它段落读取。连续整数指标可以在基点取 0，但不能在推导中把这些符号 zero-point 预先设为 0。旧 reference bubble 的数值化参数只作为另列的 reference-only 输入。
+
+### 3.1 从 `J` 机械还原被积函数
+
+设当前 sector 的 active/merged 顶点代表按第 3 节规则排列为 `{r1,...,rVa}`，`lineOrder={e1,...,eP}`，`ispData={rho1,...,rhoR}`。则
+
+```mathematica
+J[{a1,...,aVa},{pack1,...,packP},{z1,...,zR}]
+```
+
+表示的被积函数结构为
+
+```text
+Product[(-tau[ri])^(ai+a0Sector[ri]), i=1,...,Va]
+Product[LineBlock[ep,packp], p=1,...,P]
+Product[rhor^zr, r=1,...,R]
+```
+
+再乘第 2.1 节给定的 active 顶点相位、时间/圈动量测度和该 relation 的外部系数。`a0Sector` 是当前 sector 的时间 zero-point：top sector 等于输入 `a0`；发生顶点合并时的值必须独立推导。`ai` 只表示整数指标，不包含 zero-point。
+
+`LineBlock` 按 pack 形状精确定义如下：
+
+1. unshrunk massiveFull/massiveCross，`packp={b,nFirst,nSecond}`：
+
+   ```text
+   LineBlock[e,{b,nFirst,nSecond}]
+     = q[e]^(-(b+b0[e]))
+       G[s[u[e]],s[v[e]];e,nFirst,nSecond]
+   ```
+
+   `G` 是第 2.3 节的相应 SK kernel；`nFirst` 选择第一有序端点 `u[e]` 上的 `F[type,*,nFirst]`，`nSecond` 选择第二端点 `v[e]` 上的 `F[type,*,nSecond]`。二者都是 `partial_x` 阶数，正式值为 `0` 或 `1`。
+
+2. unshrunk masslessFull，`packp={b,n}`：
+
+   ```text
+   LineBlock[e,{b,n}]
+     = q[e]^(-(b+b0[e])) M[sigma[e],n;q[e],tau[u[e]]-tau[v[e]]]
+   ```
+
+   这里 `b` 是可移位的整数动量幂，`b0[e]` 包含 family 指定的固定幂（包括采用标准 `1/(2q)` normalization 时的 `q^-1`）。`n` 不是幂次，也不是“已经做了 n 次 time 导数”；它是第 4 节两个函数 `M[0]`、`M[1]` 的基底选择器。`n=1` 的方向由 `endpoints[e][[1]] -> endpoints[e][[2]]` 固定；`sigma[e]` 由该线是 `++` 还是 `--` 按第 4 节定义。
+
+3. unshrunk masslessCross，`packp={b}`：
+
+   ```text
+   LineBlock[e,{b}]
+     = q[e]^(-(b+b0[e])) D[s[u[e]],s[v[e]];e]
+   ```
+
+   `D` 是第 2.4 节的 `D+-` 或 `D-+`。cross pack 没有 `n` 槽，不能人为补成 `{b,0}`。
+
+4. shrunk line，`packp={bS}`：
+
+   ```text
+   LineBlock[e,{bS}] = q[e]^(-(bS+bS0Sector[e]))
+   ```
+
+   原传播子函数和端点 `n` 已不在 `J` 中；shrink prefactor 属于整条 relation 的系数。`bS0Sector[e]` 及 merged-time zero-point 是待独立推导的 sector metadata，上式只定义它们在最终记号中的位置，不规定其值。
+
+第三槽中 `zr` 是 `ispData[[r]]["expression"]` 的幂：`zr>0` 表示 numerator，`zr=0` 表示没有该因子，`zr<0` 表示其倒数。第三槽顺序只能跟随 `ispData`，不能按表达式名称重新排序。
+
+例如 atomic massless 同分支 top sector 的
+
+```mathematica
+J[{a1,a2},{{b1,n1}},{}]
+```
+
+明确代表
+
+```text
+(-tau1)^(a1+alpha1) (-tau2)^(a2+alpha2)
+Exp[-I s1 E1 tau1] Exp[-I s2 E2 tau2]
+q1^(-(b1+beta1)) M[sigma,n1;q1,tau1-tau2]
+```
+
+其中 `{s1,s2}={+1,+1}` 时 `sigma=+1`，`{-1,-1}` 时 `sigma=-1`，而 `M[0]/M[1]` 的函数定义见第 4 节。异分支使用 `J[{a1,a2},{{b1}},{}]` 和 `D+-/D-+`，不带 `n1`。
+
+### 3.2 幂次零点 convention
+
+零点用于固定每个积分族的指标原点。它把“固定但不参加整数移位的幂”与“IBP 关系中沿整数格点变化的指标”分开：
+
+| 对象 | `J` 中保存 | metadata 中保存 | 被积函数中的实际幂次 |
+|---|---|---|---|
+| active 顶点 `v` | `a[v]` | `a0Sector[v]` | `(-tau[v])^(a[v]+a0Sector[v])` |
+| unshrunk line `e` | `b[e]` | `b0[e]` | `q[e]^(-(b[e]+b0[e]))` |
+| shrunk line `e` | `bS[e]` | `bS0Sector[e]` | `q[e]^(-(bS[e]+bS0Sector[e]))` |
+| ISP `r` | `ispList[[r]]` | 无零点 | `ispData[[r]]["expression"]^ispList[[r]]` |
+
+这里的符号约定必须严格区分：`a` 是正的时间幂指标；`b/bS` 是分母幂指标，所以实际 `q` 指数前有负号。`a0/b0/bS0` 可以是符号、质量参数的函数或其它固定表达式，不要求为整数；`a/b/bS` 才是 IBP 后端使用的整数移位变量。
+
+对 top sector，family 输入必须为 `vertexOrder` 中每个顶点显式给出唯一的 `a0[v]`，并为 `lineOrder` 中每条 unshrunk line 显式给出唯一的 `b0[e]`。012 在缺少规则时技术上会回退到 0，但独立 benchmark 禁止依赖这个缺省，否则“确实为 0”和“漏填输入”无法区分。
+
+同一物理幂次形式上可以通过在整数指标与零点之间搬移整数来重写，例如 `(b,b0)` 与 `(b+1,b0-1)`；本 benchmark 不把它们视为同一比较键。family 一旦固定 `zeroPointRules`，后续所有 expected 必须保持同一分解，不得逐条 relation 重新选原点。
+
+若独立推导得到某条线的 shrink factor 含
+
+```text
+kappa[e] q[e]^(-s[e]-z[e]) (-tau)^(-s[e]-z[e]),
+```
+
+必须先固定 `s[e]` 为整数指标 shift、`z[e]` 为不进入整数格点的 zero-point shift，并按以下机械 convention 写回：
+
+```text
+bS[e]             = b[e] + s[e]
+bS0Sector[e]      = b0[e] + z[e]
+aMerged           = a[u] + a[v] - s[e]
+a0MergedSector    = a0[u] + a0[v] - z[e]
+relation coefficient *= kappa[e]
+```
+
+若一次独立推导得到的同一 contact 项同时改变多条 line packs，顶点合并只执行一次，但 `aMerged/a0MergedSector` 分别减去这些线的 `s[e]/z[e]` 之和，各条线的 `bS/bS0Sector` 仍逐线记录。这个段落只固定“已推导物理因子如何编码”的比较键，不给出任何具体传播子的 `s/z/kappa`；h、H、massless 的实际值仍必须从第 2 节定义独立推导。
+
+sector 改变时按以下 convention 处理：
+
+- 顶点没有合并、线没有缩并时，继续使用 top 输入的 `a0[v]`、`b0[e]`。
+- 顶点合并后，整数 `a` 写在该合并类按 `vertexOrder` 选出的代表槽；对应 `a0Sector[rep]` 是 sector metadata，不另占 `J` 槽。
+- 线缩并后，原 `{b,...n...}` pack 改为 `{bS}`；对应 `bS0Sector[e]` 是 sector metadata，不能继续误用 `b0[e]`，也不能把它附加到 `{bS}` pack 中。
+- 对本任务书从 unshrunk top 输入生成的 sector，merged `a0Sector` 与 `bS0Sector` 的具体表达式必须从原始传播子/shrink 推导，不能作为输入预填。若用户直接输入一个起始即为 shrunk 的 topology，则其 `bS0[e]` 必须像其它初始零点一样显式给出。
+
+零点不因普通 IBP 整数移位而改变。例如 `b -> b+1` 只改变 `J` 中的 `b`；该 family/sector 的 `b0` 保持固定。生成关系中的系数若依赖物理幂次，应使用完整和 `a+a0`、`b+b0` 或 `bS+bS0`，而不是只使用整数槽。
 
 ## 4. 有序 massless 单 n convention
 
 对同分支 massless full line，`lineData["endpoints"] -> {u,v}` 是有序输入。第一端点 `u` 定义反对称 `n=1` 的方向。令 `Delta=tau[u]-tau[v]`，`sigma=+1` 对应 `++`，`sigma=-1` 对应 `--`：
 
 ```text
-M[0] = theta[ Delta] exp[-i sigma q Delta]
-     + theta[-Delta] exp[ i sigma q Delta]
+M[sigma,0;q,Delta] = theta[ Delta] exp[-i sigma q Delta]
+                   + theta[-Delta] exp[ i sigma q Delta]
 
-M[1] = -theta[ Delta] exp[-i sigma q Delta]
-     +  theta[-Delta] exp[ i sigma q Delta]
+M[sigma,1;q,Delta] = -theta[ Delta] exp[-i sigma q Delta]
+                   +  theta[-Delta] exp[ i sigma q Delta]
 ```
 
-交换端点时 `M[0]` 不变、`M[1]` 变号。旧双端点标签只允许用于中间推导：
+这里两条式子只是 `n` 槽位所代表物理函数的定义，不是导数恒等式。正文简称为 `M[0]/M[1]`；正式指标只保留 `n=0,1`。
 
-```text
-{10} = -{01}
-{20} = {02} = -q^2 {00}
-{11} = +q^2 {00}
-```
+独立推导者必须分别对 `++`、`--` 和两个有序端点，从定义直接推导：
 
-正式指标只保留 `n=0,1`。端点导数为
+- `n=0` 与 `n=1` 的 time/momentum 导数闭合关系；
+- theta 导数产生的分布项及其端点符号；
+- 端点反转、同端点二阶导数和 coincidence 后的 canonical 关系；
+- 对每个 `n=0,1`，是否产生 shrink，以及产生时的系数、`bS` 和 sector zero-point。
 
-```text
-d_u M[n] =  i sigma q M[1-n] - 2 n delta(tau[u]-tau[v])
-d_v M[n] = -i sigma q M[1-n] + 2 n delta(tau[u]-tau[v])
-```
+本文不提供上述任何等式。massless cross line 的行为只允许从第 2.4 节给出的 `D+-/D-+` 直接推导。
 
-因此：
+## 5. Massive EOM、Wronskian 与 shrink 的独立推导要求
 
-- regular time 导数：`{b,n}->{b-1,1-n}`；
-- 第一端点系数 `+i sigma`，第二端点 `-i sigma`；
-- 同一端点连续求导两次回到原 `n`，regular 部分系数为 `-1` 且 `b->b-2`；
-- 只有 `n=1` 产生 theta-delta；第一端点 shrink 系数为 `-2`，第二端点为 `+2`；
-- massless shrink 使用 `bS=b`、`bS0=b0`，无 Hankel prefactor 或 `nu` zero-point shift；
-- 模长导数为 `d_q M[n]=i sigma (tau[u]-tau[v]) M[1-n]`；
-- 缩并后两原端点重合时，同一个 time 生成元必须同时作用两端：regular 的 `+i sigma/-i sigma` 相消，theta-delta 的 `-2/+2` 相消，反对称 `n=1` 状态为零；
-- top 方程产生 sub-sector 项后，必须根据该输出 `J` 的单元素 shrunk packs 重建目标 sector 代表顶点映射，再应用 coincident canonical。
+massive full/cross 在两个端点各保留 `n[e,1],n[e,2]`。对 h、H 两种 mode 必须分别完成以下推导，不能用其中一类的结果通过参数替换猜另一类：
 
-massless cross line 没有 theta、没有离散 `n`、没有 shrink。其每个端点的 time regular 导数系数由该端点分支决定：`+` 端点为 `+i`，`-` 端点为 `-i`，并令 `b->b-1`。对有序端点 `{u,v}`，其模长导数系数为 `i s[u] (tau[u]-tau[v])`。
+1. 从第 2.2 节的 Hankel 定义推导 `n=0,1` 基底的闭合微分关系，并把 time/momentum 导数翻译成 `J` 指标移位。
+2. 对导数产生的所有更高 `n` 给出消回 `n=0,1` 的过程；最终 expected 中不得保留 massive `n>=2`。
+3. 从第 2.3 节四种 SK kernel 逐一判断 theta boundary 是否存在。
+4. 对 `(n[e,1],n[e,2])=(0,0),(0,1),(1,0),(1,1)`，分别计算 coincidence 项；需要时推导对应的 Wronskian 等式、两个端点的符号和完整 prefactor。
+5. 对每个非零 shrink 结果，独立推导物理 factor，再严格按第 3.2 节固定的整数/zero-point 分解记录 merged vertex、`a/a0` 与 `bS/bS0`。
 
-## 5. Massive 导数、EOM 与 shrink
-
-massive full/cross 在两个端点各保留 `n[e,1],n[e,2]`。time 导数作用在端点 `r` 时先产生
-
-```text
-- J[..., b[e]-1, n[e,r]+1, ...]
-```
-
-若出现 `n[e,r]=2`，立刻使用
-
-```text
-J[..., n_r=2, ...]
- = -c2[e] J[..., n_r=0, ...]
-   -c1[e] J[..., a[r]-1, b[e]+1, n_r=1, ...]
-```
-
-其中：
-
-- h 模式：`{c1,c2}={2 nu[e]+1,1}`；
-- H 模式：`{c1,c2}={2 nu[e],1}`。
-
-EOM 只改变发生二阶导数的端点指标；另一端点状态保持不变。
-
-massive full 的 theta boundary 只在 `n1+n2=1` 时出现。系数必须严格使用第 2.3 节的 `C[e] (-1)^(n_endpoint+Vpm)`，其中 `Vpm=1` 对 `++`、`Vpm=0` 对 `--`；massive cross 没有 theta shrink。
-
-massive h shrink：
-
-```text
-aMerged      = a[u] + a[v] - 1
-a0Merged     = a0[u] + a0[v] - 2 nu[e]
-bS[e]        = b[e] + 1
-bS0[e]       = b0[e] + 2 nu[e]
-```
-
-massive H shrink 的整数关系相同，但两个 `2 nu[e]` zero-point shift 均为 0。多线 shrink 时按每个连通合并类累加顶点 zero-point，并乘所有 massive shrink prefactor。
+本节刻意不提供 H/h 微分方程、Wronskian 数值、非零 `n` 条件、SK sign offset、prefactor 或任何 shrink 指标公式。所有这些都是 benchmark 要比较的答案。
 
 ## 6. Time-IBP
 
@@ -290,15 +337,7 @@ massive H shrink 的整数关系相同，但两个 `2 nu[e]` zero-point shift �
 0 = integral d/dtau[v] (integrand)
 ```
 
-必须同时包含：
-
-1. 顶点幂次：`-A[v]` 乘 `a[v]->a[v]-1` 的积分。
-2. 外腿相位：
-   - `+` 顶点使用 `exp[-i E[v] tau[v]]`，导数为 `-i E[v]`；
-   - `-` 顶点使用 `exp[+i E[v] tau[v]]`，导数为 `+i E[v]`。
-3. 所有连接到该 active vertex 的 massive/massless building block 端点导数。
-4. 所有适用 theta-delta shrink 项。
-5. EOM 和 coincident massless canonical。
+必须直接对第 2.1 节的原始被积函数使用乘积法则，覆盖顶点幂、顶点相位以及所有连接到该 active vertex 的传播子端点。regular、分布项、EOM 和 coincidence canonical 的系数与指标变化均属于独立推导结果，本文不列公式。
 
 缩并后若某条未缩并线的两个原端点都映到同一个 active vertex，对该 active time 求导时两个端点贡献必须都算；不能只取第一个匹配端点。
 
@@ -339,10 +378,10 @@ v in {q_1,...,q_L,k_1,...,k_K}
    - massive 异分支：massiveCross，不 shrink；
    - massless 同分支：masslessFull，可 shrink；
    - massless 异分支：masslessCross，不 shrink。
-2. 枚举所有 theta-full 线的 shrink 子集，包括 top 空集。
-3. 每个 sector 重新确定 active/merged vertices、compact `aList`、coincident endpoints 和剩余离散变量。
-4. 每个 sector 必须覆盖全部 active time 生成元、全部 `L(L+K)` momentum 生成元和该 sector 全部离散 `0/1` 状态。
-5. 即使某条 canonical 关系变成 0，也保留记录并注明原因。
+2. 从 top 空集开始，直接对该 sign case 的完整原始 kernel 乘积做分布求导；每个独立推导得到的非零 shrink 结果定义一个候选 sector 转移，不得预先假设 sector 是 full-line 幂集或任何指定子集列表。
+3. 每次转移后重建当前代表顶点、端点 coincidence 和剩余原始 kernel，再独立判断后续 boundary 是否非零；只保留由这套推导实际到达的 line sets。
+4. 每个 sector 重新确定 active/merged vertices、compact `aList`、coincident endpoints 和剩余离散变量。
+5. 每个 sector 必须覆盖全部 active time 生成元、全部 `L(L+K)` momentum 生成元和该 sector 全部离散 `0/1` 状态。即使某条 canonical 关系变成 0，也保留记录并注明原因。
 
 不要给 cross line 伪造 shrink sector，也不要只按全 `+` case 的 sector 表套用到其它 SK case。
 
@@ -374,6 +413,8 @@ familyDefinition = <|
 
 `lineData` 中每条线必须逐项写明 `id`、`endpoints`、`momentum`、`massType`、`bbType` 和 `nu`。`endpoints->{u,v}` 是有序数据；对 massless 线，第一端点 `u` 就是 `n=1` 的正方向。即使所有线连接同一对顶点，也不允许省略该字段。
 
+各 family 输入块里的 `zeroPointRules` 只列 unshrunk `a0[v]`、`b0[e]`。独立输出应在 README/derivation 中另列由推导得到的 merged-vertex zero-point、`bS0[e]` 和 shrink normalization；不得把这些派生量倒填成任务输入。
+
 本文统一使用下列动态 pack 规则：
 
 ```text
@@ -385,7 +426,7 @@ shrunk:                       {bS[e]}
 
 各 family 数据块后展示的 top notation 就是 `topIntegralTemplate` 必须保存的值。它必须分别展示同分支与异分支时实际的 `J`，不能只写一个无法判断 pack 长度的占位符。ISP 被积函数约定为 `ISP[r]^ispN[r]`，故正 `ispN` 表示 numerator 幂，并按 `ispData` 顺序放入 `J` 第三槽。
 
-sector 名统一为 `"top"` 或按 `lineOrder` 排序的 `"e1"`、`"e1_e3"` 等。某 sign case 只枚举该 case 中 full 线的 shrink 子集；cross 线永不出现在 sector 名中。缩并后以 `vertexOrder` 中序号最小的顶点作为合并类代表，`aList` 按代表顶点的原顺序排列。
+sector 名统一为 `"top"` 或按 `lineOrder` 排序的 `"e1"`、`"e1_e3"` 等。某 sign case 只枚举由第 8 节独立推导实际到达的 line sets；cross 线没有 theta 导数，不应伪造 shrink sector。缩并后以 `vertexOrder` 中序号最小的顶点作为合并类代表，`aList` 按代表顶点的原顺序排列。
 
 生成元标签统一为 `dtau[v]`、`dqq[i,j]` 和 `dqk[i,j]`，分别表示
 
@@ -416,7 +457,7 @@ lineData = {
 ispData = {};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, bS0[1]->beta1
+  b0[1]->beta1
 };
 generatorList = {dtau[v1],dtau[v2],dqq[1,1]};
 symmetryRules = {};
@@ -430,7 +471,7 @@ J[{a1,a2},{{b1}},{}]
 J[{a12},{{bS1}},{}]
 ```
 
-sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。另建端点反转子例，只把 line 1 改为 `endpoints->{v2,v1}`；物理动量和其它输入不变，必须检查 `n=0` 不变而 `n=1` 变号。
+sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。另建端点反转子例，只把 line 1 改为 `endpoints->{v2,v1}`，物理动量和其它输入不变；端点反转对 `n=0,1` 的作用必须由第 4 节定义推导。
 
 专测：
 
@@ -438,9 +479,7 @@ sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。另建端点反转子例�
 - `++/--/+-/-+`；
 - 端点反转；
 - 同端点二阶导数；
-- theta-delta `-2/+2`；
-- massless shrink `bS=b`；
-- coincident `n=1` 为 0；
+- 两个 `n` 值各自的 theta-delta、shrink 和 coincidence 结果；
 - massless full/cross 的 momentum 指数核导数；
 - 顶点外部相位符号。
 
@@ -466,13 +505,13 @@ J[{a1,a2},{{b1,n11,n12}},{}]
 J[{a12},{{bS1}},{}]
 ```
 
-massive cross 的 top notation 与 full 完全相同，但没有 `e1` sector。sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。`generatorList={dtau[v1],dtau[v2],dqq[1,1]}`，`symmetryRules={}`。h/H 的 shrink zero-point 不另猜，严格使用第 5 节公式。
+massive cross 的 top notation 与 full 完全相同，但没有 `e1` sector。sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。`generatorList={dtau[v1],dtau[v2],dqq[1,1]}`，`symmetryRules={}`。h/H 的 shrink zero-point、prefactor 和指标移位必须分别从定义推导。
 
-分别测试 h/H：
+分别对 h 与裸 H 做物理检查：
 
 - 两端点 `n=0/1`；
 - time 导数后的即时 EOM；
-- `n1+n2=1` 的两个端点 Wronskian sign；
+- 四组 `(n1,n2)` 的 coincidence/Wronskian 结果及两个端点符号；
 - full/cross 区别；
 - h/H shrink zero-point；
 - 缩并后 compact `a`。
@@ -500,8 +539,7 @@ lineData = {
 ispData = {};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, b0[2]->beta2,
-  bS0[1]->beta1, bS0[2]->beta2
+  b0[1]->beta1, b0[2]->beta2
 };
 generatorList = {dtau[v1],dtau[v2],dqq[1,1],dqk[1,1]};
 symmetryRules = {};
@@ -514,7 +552,7 @@ symmetryRules = {};
 +- / -+ : J[{a1,a2},{{b1},{b2}},{}]
 ```
 
-同分支 sector 为 `{top,e1,e2,e1_e2}`；异分支只有 `top`。例如 `e1` sector 写成 `J[{a12},{{bS1},{b2,n2}},{}]`，而 coincident 的 `n2=1` 必须 canonical 为 0。
+各 sign case 的 sector 集合必须从两条传播子的完整乘积独立推导，不在任务书中预先给出。例如某个只缩并 line 1 的候选结果按指标槽写成 `J[{a12},{{bS1},{b2,n2}},{}]`；它是否非零、是否还有其它结果以及 coincident `n2` 如何 canonical，都必须从第 4 节定义判断。
 
 必须覆盖：
 
@@ -523,10 +561,7 @@ symmetryRules = {};
 - 每个 sector 全部 time 和 `d/dq.q`、`d/dq.k`；
 - 所有剩余 masslessFull `n=0/1`。
 
-另推两版多线 theta 处理：
-
-- `perLineMergedTheta`：每条线各自 `{b[e],n[e]}`，用于当前 package 比较；
-- `bundledMasslessFuture`：同一顶点对共享两个 theta 区域，只作未来参考，使用惰性 `JBundle[aList,bList,nBundle,ispList]`，不要求 009 通过，也不得与上面的逐线 `J` expected 混用。
+本 benchmark 保留当前逐线 `J` 表示：每条 masslessFull 线各自保留 `{b[e],n[e]}`。这只是输出槽 convention，不规定多传播子乘积的分布结果；独立推导必须从原始乘积确定各项，不能把 package 的实现或当前 expected 当作输入。
 
 ### 9.4 mixed_bubble
 
@@ -542,7 +577,7 @@ lineData = {
 ispData = {};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, b0[2]->beta2, bS0[2]->beta2
+  b0[1]->beta1, b0[2]->beta2
 };
 symmetryRules = {};
 ```
@@ -554,7 +589,7 @@ massless line 2 的方向固定为 `v1->v2`。top notation 为
 +- / -+ : J[{a1,a2},{{b1,n11,n12},{b2}},{}]
 ```
 
-同分支 sector 为 `{top,e1,e2,e1_e2}`，异分支只有 `top`。massive shrink 的 `bS0[1]` 与 merged `a0` 按第 5 节从 `beta1,alpha1,alpha2,nuM` 派生；不得把它设成 0。要求覆盖 massive/massless 两类 shrink、两线同时 shrink、cross case、EOM、目标 sector coincident canonical 和非零 zero-point。
+各 sign case 的 sector 集合必须从 mixed 原始乘积独立推导。massive/massless 的 shrink factor、`bS0` 与 merged `a0` 必须按第 3.2 和第 5 节要求独立推导并记录，不能预设为 0；同时覆盖 cross case、EOM、目标 sector coincidence 和非零 zero-point。
 
 ### 9.5 mixed_triangle
 
@@ -585,8 +620,7 @@ lineData = {
 ispData = {};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2, a0[v3]->alpha3,
-  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3,
-  bS0[3]->beta3
+  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3
 };
 generatorList = {dtau[v1],dtau[v2],dtau[v3],
   dqq[1,1],dqk[1,1],dqk[1,2]};
@@ -600,7 +634,7 @@ J[{a1,a2,a3},
   {{b1,n11,n12},{b2,n21,n22},masslessPack3},{}]
 ```
 
-其中 `masslessPack3={b3,n3}` 当 `s[v3]=s[v1]`，否则为 `{b3}`。每个 sign case 的可 shrink 线恰好是端点同分支的线；sector 是这些线的全部 shrink 子集，而不是固定照抄 `+++` 的八个 sector。massive line 1、2 等质量只表示共用 `nuM`，本 family 仍令 `symmetryRules={}`，不自动加入图对称性。
+其中 `masslessPack3={b3,n3}` 当 `s[v3]=s[v1]`，否则为 `{b3}`。每个 sign case 先确定实际 full/cross packs，再按第 8 节从原始乘积独立推导 sector；任务书不提供任何 sign case 的目标 sector 列表。massive line 1、2 等质量只表示共用 `nuM`，本 family 仍令 `symmetryRules={}`，不自动加入图对称性。
 
 要求：
 
@@ -638,8 +672,7 @@ ispData = {
 };
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3,
-  bS0[2]->beta2, bS0[3]->beta3
+  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3
 };
 generatorList = {dtau[v1],dtau[v2],
   dqq[1,1],dqq[1,2],dqk[1,1],
@@ -661,7 +694,7 @@ J[{a1,a2},
   {r1,r2}]
 ```
 
-同分支 sector 是 `{top,e1,e2,e3,e1_e2,e1_e3,e2_e3,e1_e2_e3}`，异分支只有 `top`。五个独立 loop scalar products 为 `q1^2,q1.q2,q2^2,q1.k,q2.k`；三个 propagator square 加上述两个 ISP 必须先证明可反解。不能只在 `ispN=0` 检查：至少另取 `{r1,r2}={1,0}` 和 `{0,1}` 各一个最小 seed，验证两个 ISP 因子自身求导。
+每个 sign case 的 sector 集合都从三条线的完整原始乘积独立推导，任务书不列出目标答案。五个独立 loop scalar products为 `q1^2,q1.q2,q2^2,q1.k,q2.k`；三个 propagator square 加上述两个 ISP 必须先证明可反解。不能只在 `ispN=0` 检查：至少另取 `{r1,r2}={1,0}` 和 `{0,1}` 各一个最小 seed，验证两个 ISP 因子自身求导。
 
 四个顶点符号组合、全部可达 sector、全部 active time，以及六个 momentum 生成元：
 
@@ -670,7 +703,7 @@ d/dq1.q1, d/dq1.q2, d/dq1.k
 d/dq2.q1, d/dq2.q2, d/dq2.k
 ```
 
-两条平行 massless 线同样给 `perLineMergedTheta` 与 `bundledMasslessFuture` 两版；009 只比较前者。future 版使用惰性 `JMixedBundle[aList,massivePacks,masslessBList,nBundle,ispList]`，不得写成当前三槽 `J`。
+三条线仍按当前逐线 `J` 表示分别保留 line pack；不得用其它 Head 替代这里的三槽 `J`，也不得由 pack 形状反推未经独立推导的分布结果。
 
 ### 9.7 pure_massive_bubble_reference
 
@@ -706,7 +739,7 @@ generatorList = {dtau[v1],dtau[v2],dqq[1,1],dqk[1,1]};
 J[{a1,a2},{{b1,n11,n12},{b2,n21,n22}},{}]
 ```
 
-同分支 sector 为 `{top,e1,e2,e1_e2}`，异分支只有 `top`。用统一 `J` 与新 sector metadata 重推。另存一组 reference-only 参数对照：`a0[v1]=a0[v2]=2 nuM`、`b0[1]=b0[2]=-2 nuM`、`d=3-2 ep`、`s11=1`、`E1=E2`；它只用于比较旧 reference code，正式 benchmark 仍保留上面的 `alpha/beta` 非零符号 zero-point。
+各 sign case 的 sector 集合必须从两条 massive kernel 的完整乘积独立推导，并用统一 `J` 与 sector metadata 记录。另存一组 reference-only 参数对照：`a0[v1]=a0[v2]=2 nuM`、`b0[1]=b0[2]=-2 nuM`、`d=3-2 ep`、`s11=1`、`E1=E2`；它只用于比较旧 reference code，正式 benchmark 仍保留上面的 `alpha/beta` 非零符号 zero-point。
 
 本函数族还必须单独给出用户 `symmetryRules`：
 
@@ -744,8 +777,7 @@ ispData = {
 };
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3,
-  bS0[1]->beta1, bS0[2]->beta2, bS0[3]->beta3
+  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3
 };
 generatorList = {dtau[v1],dtau[v2],
   dqq[1,1],dqq[1,2],dqk[1,1],
@@ -755,7 +787,7 @@ symmetryRules = {};
 
 `sp` 的 `Orderless` 必须让 `sp[k321,l3]` 与 `sp[l3,k321]` 自动一致，但不得展开或重命名用户的 `l3,k321,wdnmd`。三个 propagator square 与 `rho1=sp[l3,k321+l3]`、`rho2=sp[l3,wdnmd]` 必须显式证明可反解全部五个 loop scalar products。
 
-同分支 top notation 是 `J[{a1,a2},{{b1,n1},{b2,n2},{b3,n3}},{r1,r2}]`，异分支把三个 `{b,n}` 都改成 `{b}`。sector 规则与三条平行 full 线的所有 shrink 子集一致；异分支只有 top。专测：
+同分支 top notation 是 `J[{a1,a2},{{b1,n1},{b2,n2},{b3,n3}},{r1,r2}]`，异分支把三个 `{b,n}` 都改成 `{b}`。各 sign case 的 sector 集合必须独立推导。专测：
 
 - propagator 加 ISP 的闭合性；
 - `dqq` 对角与交叉；
@@ -790,17 +822,14 @@ lineData = {
 ispData = {};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3,
-  bS0[1]->beta1, bS0[2]->beta2, bS0[3]->beta3
+  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3
 };
 generatorList = {dtau[v1],dtau[v2],
   dqq[1,1],dqk[1,1],dqk[1,2]};
 symmetryRules = {};
 ```
 
-三条线的 `n[e]=1` 方向都固定为 `v1->v2`。当前逐线 top notation 是 `J[{a1,a2},{{b1,n1},{b2,n2},{b3,n3}},{}]`；同分支 sector 为三条线的全部 shrink 子集，异分支 top 则为 `J[{a1,a2},{{b1},{b2},{b3}},{}]`。
-
-另推共同 theta future 公式并使用 `JBundle[aList,bList,nBundle,ispList]`。必须明确它只有一个共同 `nBundle`，因此积分族维数和关系数不同；禁止把 future 公式写回三槽 `J`，也禁止拿它判定 009 失败。
+三条线的 `n[e]=1` 方向都固定为 `v1->v2`。当前逐线 top notation 是 `J[{a1,a2},{{b1,n1},{b2,n2},{b3,n3}},{}]`；异分支 top 则为 `J[{a1,a2},{{b1},{b2},{b3}},{}]`。该 family 的所有分布项、sector 和 coincidence 结果都必须直接从给定传播子定义独立推导，任务书不另给目标提示。
 
 ### 9.10 vertex_energy_signs
 
@@ -822,7 +851,7 @@ lineData = {
 ispData = {};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, bS0[1]->beta1
+  b0[1]->beta1
 };
 generatorList = {dtau[v1],dtau[v2],dqq[1,1],dqk[1,1]};
 symmetryRules = {};
@@ -856,7 +885,7 @@ bS[e] -> 0;
 ispN[j] -> 0;
 ```
 
-但始终保留 `a0[v]`、`b0[e]`、`bS0[e]`。若关系退化为 0，可增加一个最小非零整数点并写明原因。`mixed_sunrise` 与 `two_loop_isp_toy` 必须额外取一个 `ispN[j]->1` 点。
+但始终保留输入的 `a0[v]`、`b0[e]`，以及独立推导所得的 merged zero-point 与 `bS0[e]`。若关系退化为 0，可增加一个最小非零整数点并写明原因。`mixed_sunrise` 与 `two_loop_isp_toy` 必须额外取一个 `ispN[j]->1` 点。
 
 离散态不能抽样：每个当前 sector 的所有 massive `n1,n2` 和 masslessFull `n` 都遍历 `0/1`。最终关系中禁止 massive `n>=2` 和 massless 非 `0/1`。
 
@@ -902,7 +931,7 @@ vertexExchangeRules = {
   README.md
   family.wl
   expected.wl
-  derivation.md   (仅在确有必要时)
+  derivation.md
 ```
 
 `family.wl` 必须定义第 9.0 节的一层 `familyDefinition`，并把该 family 的固定信息全部落盘：
@@ -916,6 +945,8 @@ vertexExchangeRules = {
 - `sectorNaming`、`generatorList`、`symmetryRules`。
 
 `README.md` 用普通小节或表格复述 topology、notation、massless 方向、动量路由、sector、生成元、离散态、预期 relation 计数和特殊 tags。它必须能让审查者不运行 `family.wl` 也知道每个 `J` 槽位的含义。
+
+`derivation.md` 是必交的来源隔离记录。它必须从第 2 节允许的原始定义开始，列出实际使用的标准 Hankel 恒等式及来源，并展示得到 H/h 闭合关系、Wronskian、各 `n` shrink、massless endpoint 关系和 `J` 指标映射的中间步骤；不能只抄最终 expected。
 
 `expected.wl` 使用扁平列表：
 
@@ -946,7 +977,10 @@ expectedRelations = {
 每个函数族交付前确认：
 
 - [ ] 没有读取本项目代码或旧 expected。
+- [ ] `derivation.md` 已记录外部恒等式来源和从原始定义到最终关系的推导链。
+- [ ] H/h EOM、Wronskian、shrink 系数与 zero-point 均为独立推导，没有从 package note 补读。
 - [ ] `family.wl` 的 `familyDefinition` 已包含第 9.0 节全部固定字段。
+- [ ] README 已按 `vertexOrder/lineOrder/ispData` 顺序逐槽说明 `J[aList,linePacks,ispList]` 的物理对象。
 - [ ] README 已逐条写出每条 massless 线的有序端点和 `n=1` 方向。
 - [ ] 所有顶点符号组合已覆盖。
 - [ ] 每个符号 case 的所有可达 sector 已覆盖。
@@ -958,4 +992,4 @@ expectedRelations = {
 - [ ] 非零 zero-point 已保留。
 - [ ] ISP 非零指标点已在两圈 ISP 例中检查。
 - [ ] 输出没有写回 `independent-benchmark/`。
-- [ ] current per-line 与 future bundle 版本没有混用。
+- [ ] 保持当前逐线三槽 `J`，并已从原始乘积及明确的统一分布正则化独立推导全部非零 boundary 与可达 sector；未引入其它 Head，也未从任务书外补读答案。

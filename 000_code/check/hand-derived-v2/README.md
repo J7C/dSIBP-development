@@ -1,6 +1,6 @@
 # hand-derived-v2
 
-本目录只保存按 009 当前 convention 重新独立推导并经人工审查的项目内 benchmark。旧 `hand-derived/` 已整体删除；禁止从旧 expected 复制、改名或做 notation 迁移。
+本目录只保存按当前 convention 重新独立推导并经人工审查的项目内 benchmark。旧 `hand-derived/` 已整体删除，禁止从旧 expected 复制、改名或做 notation 迁移。`atomic_massive_line` 的 h/H expected 均从各自微分方程推导；H 必须显式含 `nu^2/x^2` 二次-pole 项。
 
 推导任务以根目录 `independent-benchmark/independent-benchmark.md` 为准，但本目录不是给外部 AI 的任务输入目录。外部 AI 的原始结果应先留在它自己的目录，审查通过后才能整理到这里。
 
@@ -31,7 +31,7 @@
 - 非零符号 `a0/b0/bS0`。
 - massive `n=2` 即时 EOM；massless 只允许 `0/1`。
 - expected 不调用主线 seed 生成函数。
-- expected 可以调用本目录下的独立手推 helper，但不得调用 `000_code/009_dS_ibp_general.wl` 或主线 seed 生成函数。
+- expected 可以调用本目录下的独立手推 helper，但不得调用 `000_code/011_dS_ibp_general.wl` 或主线 seed 生成函数。
 - 每完成一个函数族立即单独运行对应 package example，并把计数写回根目录 `研究计划与研究进度.md`。
 - 禁止大范围解析生成、宽范围撒点和运行 Kira/Fermat。
 

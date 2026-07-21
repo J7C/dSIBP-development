@@ -13,11 +13,15 @@
 - `000_note/dS_IBP_package_tech_note.tex`：技术笔记，包含完整公式推导和 convention 汇总
 - `研究计划与研究进度.md`：当前任务、完成状态、验证记录和交接顺序；每次收到新任务必须先更新
 - `independent-benchmark/independent-benchmark.md`：交给独立推导者的 benchmark 规范
+- `independent-benchmark/package/`：独立推导结果冻结后使用的当前程序、正式用户手册和少量应用 examples；不得放 expected、验证脚本或开发文档
+- `000_note/2026-07-21_common_theta_correctness_todo.md`：共同-theta、`WT`、指标/零点、可达 sector 与下游模块的最高优先级正确性验收清单
 
 ## 代码结构
 
-- `000_code/009_dS_ibp_general.wl`：当前开发主线脚本
-- `000_code/006_dS_ibp_general.wl`：上一稳定接口版
+- `000_code/012_dS_ibp_general.wl`：当前开发主线脚本
+- `000_code/011_dS_ibp_general.wl`：上一开发版，保留 v011 报告对应行为
+- `000_code/010_dS_ibp_general.wl`：再上一开发版
+- `000_code/009_dS_ibp_general.wl`、`000_code/008_dS_ibp_general.wl`、`000_code/007_dS_ibp_general.wl`：保留的历史版本；001--006 及其专用检查不再保留
 - `000_code/check/`：当前主线验证脚本
 - `000_code/test/`：临时测试脚本
 - `000_code/test/results_test/`：测试输出
@@ -36,6 +40,21 @@
 - 来源：cross-order Wronskian W[H_ν^(1), H_{ν*}^(2)] = -e^{π Im[ν]} 4i/(πz)（已数值验证）
 - H 模式 τ 依赖为纯 1/z（整数幂次 -1，零点无移位）
 - h 模式为 (-kτ)^{-2ν-1}（整数 -1 → 指标，非整数 -2ν → 零点）
+
+### Common-theta 正确性门禁
+
+- 同一当前代表顶点对的 full lines 必须作为一个共同时间差的 bundle 处理；该模块是正确性门禁，不是 future optimization。
+- massive contact 必须消费最终 `WT=Det[T]W -> shrinkTerms`；不得绕过编译结果重新硬编码 Wronskian。
+- simultaneous contact 只合并一次顶点，但每条选中线的整数 shift 与 zero-point shift 都必须累加到最终 `J` 和 sector metadata。
+- 未选中 coincident full lines 必须立即 canonical；sector 只能来自 contact-reachable 状态。
+- 两种等价分布方案的证明放在 tech note 附录；主实现固定使用共同-theta odd-subset canonical。
+- 独立 benchmark 的正式交付文件名为 `package_012.wl` 和 `package_012.pdf`；更新版本时删除旧 package/manual，不保留无版本名副本。
+
+### H 模式 EOM
+
+- 裸 Hankel 导数基底 `H0=H_ν(x), H1=∂x H0` 的一阶矩阵必须含 `ν²/x²` 二次 pole。
+- 007--010 的内置 H EOM 与 011/012 的 H preset 都必须使用 `H2=-H0-H1/x+ν² H0/x²`，对应第三项 `a_v->a_v-2, b_e->b_e+2, n->n-2`。
+- 从 004 起传承的错误 `{2ν,1}` 递推已从保留版本和正式 benchmark 删除；不得重新引入。
 
 ### 多圈 IBP 生成元
 

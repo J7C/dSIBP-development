@@ -1,11 +1,13 @@
 # independent-benchmark 文件夹用途
 
-本文件夹只用于保存“交给其它 AI 独立推导 benchmark”的任务说明。它是独立验证任务的输入目录，不是本项目手推结果不完整的输出目录。
+本文件夹用于交付独立推导任务和推导冻结后使用的程序。它不是本项目现有 expected、check 或运行结果的输出目录。
 
 - 本 `README.md` 只说明目录边界；权威任务文件是 `independent-benchmark.md`。
 - `independent-benchmark.md` 本身就是交给其它 AI 的完整任务说明书，不是等待补充手推答案的结果文件。
-- 任务书自包含 SK 费曼规则、massive `h` 的 ODE/EOM、massless `++/--/+-/-+` 正负号与有序单 `n` convention，以及每个待测函数族的固定 topology/notation；外部 AI 不需要从 package note 补定义。
-- 独立推导者只读取本文件夹中的说明，不读取 `000_code/`、现有 check、expected 或运行结果。
+- `package/` 只含当前程序 `package_012.wl`、正式用户手册 `package_012.pdf` 和 `examples/` 下三个典型应用文件；不含无版本名旧副本、expected、验证脚本、plan、design 或技术笔记。
+- 任务书只自包含最基本的函数定义、SK 费曼规则、massless 有序单 `n` 基底 convention、统一 `J` 的逐槽物理含义，以及每个待测函数族的固定 topology/notation。
+- H/h 的微分方程、Wronskian、导数递推和具体 shrink 公式是独立 benchmark 的待推导答案，不在输入目录中提供；外部 AI 也不得从 package note 补读这些结论。
+- 第一阶段只读任务书，不得读取 `package/`、`000_code/`、现有 check、expected 或运行结果。手推结果与推导记录冻结后，第二阶段才可打开 `package/`，按正式手册学习调用并自行比较。
 - 本项目自己的手推关系、程序 expected 和测试输出禁止放在本文件夹。
 - 外部 AI 的推导结果也应输出到它自己的独立目录，再由维护者人工审查后决定是否导入项目 check。
 
@@ -13,4 +15,4 @@
 
 `000_code/check/hand-derived-v2/<family-name>/`
 
-当前重建期间，项目内旧手推目录会被整体清除；新结果只在重新推导并审查后进入 `hand-derived-v2/`。
+新的外部推导结果只有在完成来源隔离、逐式人工审查和 package 对照后，才可进入 `hand-derived-v2/`。

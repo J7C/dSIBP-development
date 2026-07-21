@@ -968,11 +968,12 @@ actualLinePackType[topo_Association, e_Integer, pack_List] := Module[
    ];
 
 
+(* Bare H has a quadratic pole and is reduced separately in eomReduceIntegralAt. *)
 bbEOMCoefficients[line_Association] := Module[{bbType = Lookup[line, "bbType", "h"], nu = Lookup[line, "nu", nu]},
    Which[
     KeyExistsQ[line, "eomCoefficients"], line["eomCoefficients"],
     bbType === "h", {2 nu + 1, 1},
-    bbType === "H", {2 nu, 1},
+    bbType === "H", Missing["BareHUsesMatrixEOM"],
     ListQ[bbType] && Length[bbType] >= 2, bbType[[1 ;; 2]],
     True, Missing["NoHankelEOM"]
     ]
@@ -1000,20 +1001,27 @@ massiveEOMTarget[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
 
 
 eomReduceIntegralAt[topo_Association, int_J, target_Association] := Module[
-   {e, endpointSlot, nValue, line, coeffs, c1, c2, nPackPos, endpointVertex, termNMinus2, termNMinus1},
+   {e, endpointSlot, nValue, line, bbType, nuValue, coeffs, c1, c2, nPackPos, endpointVertex, termNMinus2, termNMinus1, termQuadraticPole},
    e = target["lineIndex"];
    endpointSlot = target["endpointSlot"];
    nValue = target["nValue"];
    line = topo["lines"][[e]];
-   coeffs = bbEOMCoefficients[line];
-   If[Head[coeffs] === Missing, Return[int]];
-   {c1, c2} = coeffs;
+   bbType = Lookup[line, "bbType", "h"];
+   nuValue = Lookup[line, "nu", nu];
    nPackPos = endpointSlot + 1;
    endpointVertex = line["endpoints"][[endpointSlot]];
    termNMinus2 = setLinePackEntry[int, e, nPackPos, nValue - 2];
    termNMinus1 = setLinePackEntry[int, e, nPackPos, nValue - 1];
    termNMinus1 = shiftLineB[termNMinus1, e, 1];
    termNMinus1 = shiftVertexA[termNMinus1, topo, endpointVertex, -1];
+   If[bbType === "H" && !KeyExistsQ[line, "eomCoefficients"],
+    termQuadraticPole = shiftLineB[termNMinus2, e, 2];
+    termQuadraticPole = shiftVertexA[termQuadraticPole, topo, endpointVertex, -2];
+    Return[Expand[-termNMinus2 - termNMinus1 + nuValue^2 termQuadraticPole]]
+    ];
+   coeffs = bbEOMCoefficients[line];
+   If[Head[coeffs] === Missing, Return[int]];
+   {c1, c2} = coeffs;
    Expand[-c2 termNMinus2 - c1 termNMinus1]
    ];
 

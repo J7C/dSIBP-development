@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* pure_massive_bubble_reference：读取独立 expected，并作为 009 程序包交叉验证 example。 *)
+(* pure_massive_bubble_reference：读取独立 h/H expected，并作为 011 程序包交叉验证 example。 *)
 
 (* ::Chapter:: *)
 (*初始化*)
@@ -7,26 +7,27 @@
 exampleDir = DirectoryName[$InputFileName];
 codeDir = DirectoryName[DirectoryName[exampleDir]];
 handDerivedDir = FileNameJoin[{codeDir, "check", "hand-derived-v2", "pure_massive_bubble_reference"}];
-Get[FileNameJoin[{codeDir, "009_dS_ibp_general.wl"}]];
+Get[FileNameJoin[{codeDir, "011_dS_ibp_general.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "family.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "expected.wl"}]];
 
 topologyCache = Association[];
-getPureMassiveBubbleTop[signKey_String] := If[
-   KeyExistsQ[topologyCache, signKey],
-   topologyCache[signKey],
-   topologyCache[signKey] = parseTopology[makePureMassiveBubbleReferenceCase[signKey]]
+getPureMassiveBubbleTop[signKey_String, mode_String] := Module[{key = mode <> ":" <> signKey}, If[
+   KeyExistsQ[topologyCache, key],
+   topologyCache[key],
+   topologyCache[key] = parseTopology[makePureMassiveBubbleReferenceCase[signKey, mode]]
+   ]
    ];
 
-getPureMassiveBubbleSector[signKey_String, "top"] := getPureMassiveBubbleTop[signKey];
-getPureMassiveBubbleSector[signKey_String, sector_String] := shrinkSectorTopology[
-   getPureMassiveBubbleTop[signKey],
+getPureMassiveBubbleSector[signKey_String, mode_String, "top"] := getPureMassiveBubbleTop[signKey, mode];
+getPureMassiveBubbleSector[signKey_String, mode_String, sector_String] := shrinkSectorTopology[
+   getPureMassiveBubbleTop[signKey, mode],
    manualShrunkLines[sector]
    ];
 
 pureMassiveBubbleActual[relation_Association] := Module[
    {topo, int, label, generator, raw},
-   topo = getPureMassiveBubbleSector[relation["vertexSigns"], relation["sector"]];
+   topo = getPureMassiveBubbleSector[relation["vertexSigns"], relation["mode"], relation["sector"]];
    int = makeBaseIntegral[topo] /. relation["seedRules"];
    label = relation["generator"];
    generator = First @ Select[
@@ -53,6 +54,7 @@ relationResults = MapIndexed[
      difference = Expand[actual - relation["equation"]];
      <|
       "index" -> First[index],
+      "mode" -> relation["mode"],
       "sector" -> relation["sector"],
       "vertexSigns" -> relation["vertexSigns"],
       "generator" -> relation["generator"],
@@ -67,12 +69,13 @@ relationResults = MapIndexed[
    ];
 
 failed = Select[relationResults, ! TrueQ[#["passQ"]] &];
-actualCounts = Counts[({#["vertexSigns"], #["sector"]} &) /@ expectedRelations];
+actualCounts = Counts[({#["mode"], #["vertexSigns"], #["sector"]} &) /@ expectedRelations];
 
 Print["pure_massive_bubble_reference relations: ",
   Count[Lookup[relationResults, "passQ"], True], "/", Length[relationResults]];
 Print["relation counts correct: ", SameQ[actualCounts, pureMassiveBubbleExpectedCounts]];
 Print["expected total: ", pureMassiveBubbleExpectedTotal];
+Print["relations by mode: ", Counts[Lookup[expectedRelations, "mode"]]];
 
 If[! SameQ[actualCounts, pureMassiveBubbleExpectedCounts], Exit[1]];
 If[failed =!= {}, Print["First failed relations: ", Take[failed, UpTo[12]]]; Exit[1]];

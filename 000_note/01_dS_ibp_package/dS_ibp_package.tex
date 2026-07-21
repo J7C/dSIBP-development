@@ -12,6 +12,7 @@
 \usepackage{braket}
 \usepackage{bm}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{cancel}
 \usepackage[svgnames]{xcolor}
 \usepackage{hepunits}
@@ -35,7 +36,7 @@
 \author[a]{Su Yingze}
 \affiliation[a]{Institute not specified}
 \emailAdd{yingze.su@outlook.com}
-\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、线性系统和验证方式。当前开发主线为 009。纯 massless 与 mixed case 都使用逐传播子的双 theta 合并路线；单 theta 路线不属于本 package。}
+\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开原子 API、线性系统和 serializer。当前开发主线为 012；逐线 pack 保持不变，同一代表顶点对的 full lines 在 time boundary 层使用共同-theta odd-subset contact。}
 
 \begin{document}
 \maketitle
@@ -46,9 +47,17 @@
 
 本 package 生成 dS 圈图的 canonical IBP seed。支持目标是任意圈数、任意拓扑以及 massive/massless 混合内线。当前主线文件为
 \begin{verbatim}
-000_code/009_dS_ibp_general.wl
+000_code/012_dS_ibp_general.wl
 \end{verbatim}
-它已经实现 topology 解析、完整 time/loop-momentum 生成元、massive EOM、massless 有向单 $n$、massive/massless theta shrink、跨 sector coincident canonical、外不变量/顶点能量独立变量求导 seed、后端中立线性系统和基础 Kira serializer。
+它已经实现 topology 解析、完整 time/loop-momentum 生成元、massive EOM、massless 有向单 $n$、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、外不变量/顶点能量独立变量求导 seed、后端中立线性系统和基础 Kira serializer。
+
+仓库内可直接加载主线；独立 benchmark 交付目录使用版本化文件名：
+\begin{verbatim}
+Get["000_code/012_dS_ibp_general.wl"]
+Get["independent-benchmark/package/package_012.wl"]
+\end{verbatim}
+该文件当前是可直接 \texttt{Get} 的 Wolfram Language 科研脚本，不是 Paclet 或
+\texttt{BeginPackage} context。建议在新的 kernel 中只加载一次。
 
 推荐工作流为
 \begin{enumerate}
@@ -65,6 +74,36 @@
 \begin{proofbox}
 解析 seed 只允许小规模生成。禁止默认展开整族解析 IBP，也禁止为了验证做宽范围撒点。所有 WolframScript 检查必须显示消息运行，不能用 \texttt{Quiet} 掩盖问题。
 \end{proofbox}
+
+给定下文的 \texttt{case} 后，最短的可执行调用链是
+\begin{verbatim}
+topo = parseTopology[case];
+report = topologyValidationReport[topo];
+base = makeBaseIntegral[topo];
+gens = makeIBPGenerators[topo];
+
+batch = makeCanonicalSeedBatch[
+  topo,
+  DiscreteMode -> "all",
+  GenerateShrinkSectors -> True
+];
+coverage = makeCanonicalSeedCoverageReport[batch];
+
+linearData = makeLinearSystemData[batch,topo];
+{report["status"],batch["status"],coverage["passQ"],
+ linearData["status"]}
+\end{verbatim}
+每个批量接口都返回 Association；必须先检查 \texttt{"status"}，再读取方程或传给下一阶段。
+
+独立 benchmark 的 \texttt{package/examples/} 提供三个可直接运行的应用例子：
+\begin{verbatim}
+01_mixed_bubble_workflow.wl
+02_function_system_hankel.wl
+03_two_loop_isp.wl
+\end{verbatim}
+它们分别展示 mixed massive/massless 完整工作流、一般 \texttt{P,Q,T,W}
+函数系统输入，以及两圈 ISP 与交叉 momentum generator。每个文件只有一个集中
+\texttt{case} 输入块和后续固定调用，不含 expected、验证目录或结果比较逻辑。
 
 \section{SK 费曼规则到积分族}
 
@@ -189,22 +228,67 @@ massive full/cross 的两个端点态均取 $n_{e,r}=0,1$。time 导数先产生
  \partial_{\tau_r}:\qquad
  -J[\ldots,\{b_e-1,n_{e,r}+1,\ldots\},\ldots].
 \end{equation}
-若 $n_{e,r}=1$，二阶态必须立刻 EOM：
+若 $n_{e,r}=1$，二阶态必须立刻 EOM。对 h：
 \begin{equation}
  J[n_{e,r}=2]
- =-c_{2,e}J[n_{e,r}=0]
-  -c_{1,e}J[a_r-1,b_e+1,n_{e,r}=1].
+ =-J[n_{e,r}=0]
+  -(2\nu_e+1)J[a_r-1,b_e+1,n_{e,r}=1].
  \label{massiveEOM}
 \end{equation}
-另一端点指标不变。对 $h$ 与 $H$ building block，
+对裸 H：
 \begin{equation}
- (c_{1,e},c_{2,e})=
- \begin{cases}
- (2\nu_e+1,1),&h,\\
- (2\nu_e,1),&H.
- \end{cases}
+ J_H[n_{e,r}=2]
+ =-J_H[n_{e,r}=0]
+  -J_H[a_r-1,b_e+1,n_{e,r}=1]
+  +\nu_e^2J_H[a_r-2,b_e+2,n_{e,r}=0].
+ \label{bareHEOM}
 \end{equation}
-loop-momentum 导数若产生 $n=2$，同样在 seed 层立即使用式~\eqref{massiveEOM}。
+另一端点指标不变。最后一项就是 $\nu_e^2/x^2$ 二次 pole；loop-momentum 导数若产生 $n=2$，同样在 seed 层立即使用对应 EOM。007--010 使用内置递推，012 由统一函数系统编译得到同样结果。
+
+\subsection{通用 $2\times2$ 函数系统输入}
+
+012 对每条 massive line 输入
+\begin{equation}
+ f''+P(x)f'+Q(x)f=0,
+ \qquad \mathbf F=T(x)(f,f')^T,
+ \qquad x=-\xi\tau,
+\end{equation}
+其中 $P$ 是一阶导系数、$Q$ 是零阶系数，$T$ 缺省为单位矩阵；还必须给原始导数基底的完整 Wronskian $W$。初始化层统一生成
+\begin{equation}
+ A_0=\begin{pmatrix}0&1\\-Q&-P\end{pmatrix},
+ \qquad
+ A_T=T'T^{-1}+TA_0T^{-1},
+ \qquad
+ W_T=\det(T)W.
+\end{equation}
+IBP 的 time/radial 导数只调用由 $A_T$ 编译的移位数据，theta shrink 只调用由 $W_T$ 编译的数据；不在 IBP 层重算 $P,Q,T,W$。缺省 massive 模式是 h，直接取 $P_h=(2\nu+1)/x$、$Q_h=1$、$T=I_2$ 与完整 $W_h$，所以 $W_T=W_h$。裸 H 是另一个 $T=I_2$ preset。若从 H 输入经一般基变换构造 h，则
+\begin{equation}
+ \mathbf h=x^{-\nu}\begin{pmatrix}1&0\\-\nu/x&1\end{pmatrix}\mathbf H,
+ \qquad W_h=x^{-2\nu}W_H.
+\end{equation}
+该编译接口已在 012 实现；显式 $W_T$ 只作 $W_T=\det(T)W$ 的一致性校验。缺省 h、裸 H、一般 $T$ 和非法输入由函数系统专项检查覆盖，h/H 另有独立物理 benchmark。Wronskian 的标准推导见技术笔记专门 subsection。
+
+用户输入一般函数系统时，在对应 massive line 中加入
+\begin{verbatim}
+"functionSystem" -> <|
+  "variable" -> x,
+  "P" -> Pexpr,
+  "Q" -> Qexpr,
+  "T" -> {{t11,t12},{t21,t22}},
+  "W" -> Wexpr,
+  "WT" -> Automatic,
+  "shrinkBShift" -> 1,
+  "shrinkZeroPointShift" -> zeroShift
+|>
+\end{verbatim}
+也可在放入 line 前调用
+\begin{verbatim}
+compiled = compileFunctionSystem[functionSystem];
+compiled["status"]
+compiled["AT"]
+compiled["WT"]
+\end{verbatim}
+检查编译结果。\texttt{T} 省略时为单位矩阵；输入必须通过可逆性、Abel/Wronskian 一致性和有限 Laurent 编译门禁。
 
 \subsection{Massive theta shrink}
 
@@ -221,7 +305,7 @@ loop-momentum 导数若产生 $n=2$，同样在 seed 层立即使用式~\eqref{m
  {\cal C}_e=\frac{4i}{\pi}e^{\pi\,\mathrm{Im}\nu_e}.
  \label{massiveShrinkSign}
 \end{equation}
-009 允许 line/case 显式覆盖 sign offset，但默认值遵循式~\eqref{massiveShrinkSign}。
+012 允许 line/case 显式覆盖 sign offset，但默认值遵循式~\eqref{massiveShrinkSign}。
 
 对 $h$ 模式：
 \begin{align}
@@ -253,7 +337,7 @@ loop-momentum 导数若产生 $n=2$，同样在 seed 层立即使用式~\eqref{m
 \end{equation}
 正式 $J$ 从不保存这些双端点标签，只使用 $\{b_e,n_e\}$，其中 $n_e=0,1$。
 
-专门的纯 massless 单 theta 路线只作为其它项目的背景；本 package 的 pure/mixed case 一律使用逐传播子的双 theta 合并路线。
+每条 massless line 仍保留自己的 $\{b_e,n_e\}$ pack；只有共享同一当前代表顶点对的 time boundary 按共同 theta 组合。
 
 \subsection{两个端点的 regular 与 delta 规则}
 
@@ -300,7 +384,7 @@ $n$ & 端点 & regular 指标变化与系数\\
 \end{equation}
 massless shrink 没有 Hankel Wronskian prefactor，也没有 $2\nu$ shift：
 \begin{equation}
- a_{\rm merged}=a_u+a_v-1,\qquad
+ a_{\rm merged}=a_u+a_v,\qquad
  a0_{\rm merged}=a0_u+a0_v,\qquad
  bS_e=b_e,\qquad bS0_e=b0_e.
  \label{masslessShrink}
@@ -313,7 +397,7 @@ massless shrink 没有 Hankel Wronskian prefactor，也没有 $2\nu$ shift：
   \item 两个 theta-delta 贡献的 $-2/+2$ 系数相消，不再产生 shrink 项；
   \item 反对称态 $n=1$ 在 coincident endpoint 恒为零。
 \end{enumerate}
-这个零关系也必须作用于从 top 方程产生的目标 sub-sector 项。009 根据每个 $J$ 中已经变成单元素 pack 的 shrunk lines，重建目标 sector 的顶点代表映射，再判定 coincident $n=1$；不能只读取 source top 的 endpoints。
+这个零关系也必须作用于从 top 方程产生的目标 sub-sector 项。012 根据每个 $J$ 中已经变成单元素 pack 的 shrunk lines，重建目标 sector 的顶点代表映射，再判定 coincident $n=1$；不能只读取 source top 的 endpoints。
 
 对 $+-$ 或 $-+$ masslessCross，没有 $n$、theta 或 shrink。端点 regular 系数由该端点分支决定：
 \begin{equation}
@@ -322,9 +406,38 @@ massless shrink 没有 Hankel Wronskian prefactor，也没有 $2\nu$ shift：
  -\text{端点}:\ -i\,\{b-1\}.
 \end{equation}
 
-\subsection{同一顶点对多条 massless 线}
+\subsection{同一顶点对多条 full lines}
 
-当前实现逐线保留 $\{b_e,n_e\}$。严格地说，多条平行 massless 线共享同一对 theta 区域，还可进一步 bundle 合并。该优化会改变积分族维数和关系数，目前只通过 \texttt{masslessBundleCandidates} 记录，不进入 009 canonical 或 expected。逐线路线必须先保证 theta shrink 和目标 sector 抵消正确。
+同一当前代表顶点对的 massive/massless full lines 共享时间差 $\Delta$。写
+\begin{equation}
+ G_e=\theta(\Delta)A_e+\theta(-\Delta)B_e,
+\end{equation}
+则整个 bundle 的 boundary 只有
+\begin{equation}
+ \delta(\Delta)\left(\prod_eA_e-\prod_eB_e\right).
+\end{equation}
+定义 $J_e=(A_e+B_e)/2$、$D_e=A_e-B_e$，可保持现有逐线 pack：
+\begin{equation}
+ \prod_eA_e-\prod_eB_e
+ =\sum_{\substack{\varnothing\ne S\subseteq B\\|S|\ {\rm odd}}}
+ 2^{1-|S|}\prod_{e\in S}D_e\prod_{e\notin S}J_e.
+ \label{manualOddSubsetContact}
+\end{equation}
+一次事件可同时 shrink 任意非空奇数条 bundle 线，系数为 $2^{1-|S|}$，但只合并一次顶点且只含一个 delta。两线只有 single contacts；三线另有系数 $1/4$ 的 triple contact。未选择的 coincident full lines 立即应用 massless $n=1$ 为零和 massive endpoint-swap canonical，不会再次产生 theta boundary。
+
+sector 只允许连接两个不同当前代表类的 contact 事件，按 BFS 枚举；事件之间形成 forest，但单个事件可选择多条平行线。单传播子的对称 equal-time 值取 $\theta(0)=1/2$，但不把它作为 $\delta\theta^m$ 的点值乘法规则。保留逐线 theta 时，统一 Gaussian mollifier 给出的线别积分在求和后严格等价于式~\eqref{manualOddSubsetContact}。
+
+例如三条同向 masslessFull 线均取 $n_1=n_2=n_3=1$，并从第一有序端点求导。此时每条线的对称等时因子为零、contact difference 为 $-2$，所以三个 single-contact 项都因未选中线的等时因子为零而消失，只剩
+\begin{equation}
+ \frac14(-2)^3=-2.
+\end{equation}
+指标上即
+\begin{equation}
+ J[\{a_u,a_v\},\{\{b_1,1\},\{b_2,1\},\{b_3,1\}\},\{\cdots\}]
+ \longrightarrow
+ -2J[\{a_u+a_v\},\{\{b_1\},\{b_2\},\{b_3\}\},\{\cdots\}],
+\end{equation}
+三个 pack 同时 shrink，但只合并一次顶点且没有额外 massless 幂次 shift。共同-theta与 Gaussian 逐线方案的完整推导、massive $W_T$ 例子和等价条件见技术笔记附录。
 
 \section{Topology、标量积、ISP 与外腿能量}
 
@@ -354,6 +467,18 @@ case = <|
 |>;
 \end{verbatim}
 \texttt{endpoints} 对 masslessFull 是有序输入；交换顺序会改变 $n=1$ 表示的符号。
+
+输入后推荐立即运行
+\begin{verbatim}
+topo = parseTopology[case];
+If[topo === $Failed,Abort[]];
+validation = topologyValidationReport[topo];
+topologyData = makeTopologyData[case];
+numericNeeds = numericRuleRequirementReport[topo];
+numericTemplate = makeNumericRuleTemplate[topo];
+\end{verbatim}
+\texttt{validation["issues"]} 给出 topology/ISP/函数系统问题；
+\texttt{numericNeeds["missingNumericVariables"]} 给出 numeric 线性阶段尚缺的变量。
 
 \subsection{\texttt{sp} 与外不变量}
 
@@ -385,7 +510,7 @@ sp[l3,k321+l3]
 
 \subsection{独立变量与微分方程求导}
 
-009 已加入 seed 层的独立变量求导接口。变量分两类：
+012 已加入 seed 层的独立变量求导接口。变量分两类：
 \begin{itemize}
   \item \textbf{顶点外腿能量参数}，例如 \texttt{ke[i]}。它只作用于顶点相位，不进入动量标量积空间。
   \item \textbf{外动量不变量}，例如默认的 \texttt{s11}、\texttt{s12} 或用户在 \texttt{externalInvariantRules} 中指定的名字。它们通过外动量矢量导数组合实现。
@@ -421,7 +546,7 @@ $(-\tau_v)^{a_v+a0_v}$：相位对 $E_v$ 求导产生 $\eta_v\tau_v=-\eta_v(-\ta
  \qquad
  \sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
 \end{equation}
-完整 $K^2$ 个 $D_{ij}$ 通常含零空间，解不唯一；009 默认使用上三角 external-vector basis 取一组 canonical 解，并在 decomposition 数据中显式返回矩阵、系数、残差、\texttt{nullity} 与 \texttt{nonUniqueQ}。
+完整 $K^2$ 个 $D_{ij}$ 通常含零空间，解不唯一；012 默认使用上三角 external-vector basis 取一组 canonical 解，并在 decomposition 数据中显式返回矩阵、系数、残差、\texttt{nullity} 与 \texttt{nonUniqueQ}。
 
 相关接口为
 \begin{verbatim}
@@ -432,9 +557,11 @@ applyIndependentVariableDerivativeSeed[topo, int, var]
 \end{verbatim}
 \texttt{applyIndependentVariableDerivativeSeed} 会自动分派：若 \texttt{var} 是外不变量，先做上述 decomposition，再把每个 $D_{ij}$ 作用到传播子、building block、ISP 和可能写成 \texttt{Sqrt[sij]} 的顶点能量；否则按顶点能量标量参数处理。
 
+对 massive building block，external-vector/外不变量导数与 qIBP、tIBP 自动使用同一份 line-local \texttt{compiledFunctionSystem}。普通导数只读取最终 $A_T$ 编译的 \texttt{derivativeTerms}，因此用户选择 h、裸 H 或一般 $P,Q,T,W$ 后不需要为微分方程另设 convention。$W_T=\det(T)W$ 及其 \texttt{shrinkTerms} 只用于 time-IBP 的 theta coincidence/Wronskian shrink；普通动力学量导数不产生 theta shrink，因而不调用 $W_T$。
+
 \subsection{用户对称性规则}
 
-积分族对称性依赖质量和外参条件。009 不自动检测，只读取用户 \texttt{symmetryRules}：
+积分族对称性依赖质量和外参条件。012 不自动检测，只读取用户 \texttt{symmetryRules}：
 \begin{verbatim}
 repSymmetry0[topo_]
 symmetry[expr_,topo_]
@@ -454,24 +581,37 @@ symmetry[expr_,topo_]
 \end{equation}
 总数 $L(L+K)$。不能漏掉 $d/dq_\ell\cdot q_m$ 的交叉项或 $d/dq_\ell\cdot k_j$。
 
-009 当前内部使用 \texttt{applyTimeGeneratorSeed} 与 \texttt{applyMomentumGeneratorSeed}。微分方程方向的外部变量求导使用上一节列出的 \texttt{applyIndependentVariableDerivativeSeed} 等接口。自动 batch 必须在给定离散 $n$ 后调用，再立即 EOM/canonical。
+012 当前内部使用 \texttt{applyTimeGeneratorSeed} 与 \texttt{applyMomentumGeneratorSeed}。微分方程方向的外部变量求导使用上一节列出的 \texttt{applyIndependentVariableDerivativeSeed} 等接口。自动 batch 必须在给定离散 $n$ 后调用，再立即 EOM/canonical。
 
-\subsection{后续原子 API}
+\subsection{012 公开原子 API}
 
-以下复合算子式公开接口已经写入 plan/todolist，但尚未在 009 封装成最终用户 API，不能当作当前功能：
+012 已实现以下接口。推荐显式传入 topology；若先调用 \texttt{setIBPTopologyContext[topo]}，也可使用短签名：
 \begin{verbatim}
-dtau[i,expr_]
-dqq[i,j,expr_]
-dqk[i,j,expr_]
-rep2innerform[expr_]
-rep2outform[expr_]
-rep2Integrand[expr_]
+dtau[i,expr,topo]       or dtau[i,expr]
+dqq[i,j,expr,topo]      or dqq[i,j,expr]
+dqk[i,j,expr,topo]      or dqk[i,j,expr]
+rep2innerform[expr,topo]
+rep2outform[expr,topo]
+rep2Integrand[expr,topo]
 \end{verbatim}
-前三个复合算子将分别表示 $d/d\tau_i$、$d/dq_i\cdot q_j$、$d/dq_i\cdot k_j$，并对 $J$ 的线性组合保持线性。自动 seed 将通过遍历这些原子算子构造，而不复制公式。
+前三个复合算子分别表示 $d/d\tau_i$、$d/dq_i\cdot q_j$、$d/dq_i\cdot k_j$，对 $J$ 的线性组合保持线性，并复用现有 EOM、theta boundary 与 canonical。
 
-\texttt{rep2innerform}/\texttt{rep2outform} 计划转换用户动量与内部编号、\texttt{sp} 与 $qq/qk/kk$、外不变量名、ISP 名和 coefficient-only 参数。它们不得改变 $J$ 的三个指标槽、line pack 次序或任何 $a/b/n/\mathrm{ispN}$ 值。
+例如先把离散态替换为字面 $0/1$，再调用
+\begin{verbatim}
+int = makeBaseIntegral[topo] /. seedRules;
+timeRelation = dtau[v1,int,topo];
+qqRelation = dqq[1,1,int,topo];
+qkRelation = dqk[1,1,int,topo];
 
-\texttt{rep2Integrand} 计划把 $J$ 展开为被积函数。普通时间幂和分母幂直接相乘；每条未缩并传播子的非平凡 Hankel/指数/theta block 用惰性 \texttt{Hh[...]} 包装。它不积分、不生成 IBP、不应用 EOM。
+setIBPTopologyContext[topo];
+sameTimeRelation = dtau[v1,int];
+clearIBPTopologyContext[];
+\end{verbatim}
+短签名依赖唯一的已注册 topology；同时处理多个 topology 时应始终使用显式参数。
+
+\texttt{rep2innerform}/\texttt{rep2outform} 转换用户动量与内部编号、\texttt{sp} 与 $qq/qk/kk$、外不变量名和 ISP 名。实现会先保护所有 $J$，因此不改变三个指标槽、line pack 次序或任何 $a/b/n/\mathrm{ispN}$ 值。
+
+\texttt{rep2Integrand} 把 $J$ 展开为被积函数。普通时间幂、顶点相位、分母幂和 ISP 直接相乘；每条未缩并传播子的非平凡 Hankel/指数/theta block 用惰性 \texttt{Hh[...]} 包装。它不积分、不生成 IBP、不应用 EOM。
 
 \section{Seed、linearData 与 serializer}
 
@@ -480,7 +620,7 @@ canonical seed 必须满足：
   \item 每个实际 sector 都有全部 active time 和 $L(L+K)$ momentum generators；
   \item massive 无 $n\ge2$；
   \item masslessFull 只有 $n=0,1$；
-  \item massless theta shrink 与 coincident 抵消已按目标 sector 处理；
+  \item 共同-theta odd-subset contact、contact 可达 sector 与 coincident canonical 已处理；
   \item 解析 seed 保留非零 $a0/b0/bS0$。
 \end{itemize}
 
@@ -488,42 +628,48 @@ canonical seed 必须满足：
 
 serializer 只转换 \texttt{linearData} 的编号和语法。Kira serializer 默认只写基础 \texttt{ibp.kira}、\texttt{list}、\texttt{jobs.yaml}、映射和 metadata，不保存本机 Kira/Fermat 路径，也不运行 Kira。
 
-\section{独立手推验证}
-
-项目内新手推结果位于
+完整应用方式为
 \begin{verbatim}
-000_code/check/hand-derived-v2/<family-name>/
+batch = makeCanonicalSeedBatch[
+  topo,
+  DiscreteMode -> "all",
+  GenerateShrinkSectors -> True
+];
+
+seedSave = writeSeedBatchMMA[
+  batch,
+  OutputDirectory -> "output/seeds"
+];
+
+linearData = makeLinearSystemData[batch,topo];
+sampled = makeSampledLinearSystemData[
+  batch,topo,
+  CoefficientRules -> {dim->3,s11->5,nuM->2}
+];
+
+kiraPreview = makeKiraExportData[sampled];
+kiraFiles = makeKiraExportData[
+  sampled,
+  OutputDirectory -> "output/kira"
+];
 \end{verbatim}
-每个目录只含简短 README、family 输入、扁平 expected、check 和必要时的代表推导。expected 不调用主线 seed 生成函数；check 才生成 actual。
+\texttt{makeKiraExportData} 只接受由完整 canonical batch 得到的 linear-system 数据；seed batch 不能直接导出 Kira。
 
-\begin{center}
-\begin{tabular}{lll}
-\toprule
-目录/检查 & 当前结果 & 主要易错点\\
-\midrule
-\texttt{atomic\_massless\_line} & $22/22+8/8$ &
-$2\times2$ 端点态、SK、delta、反转、coincident\\
-\texttt{atomic\_massive\_line} & $104/104$ &
-h/H、四种 SK、EOM、Wronskian $V_\pm$\\
-\texttt{pure\_massless\_bubble} & $70/70$ &
-全 sector、两种 momentum、目标 sector 抵消\\
-\texttt{mixed\_bubble} & $138/138$ &
-massive+massless、四种 SK、全 sector\\
-\texttt{mixed\_triangle} & $1800/1800$ &
-三顶点 mixed topology、全生成元\\
-\texttt{mixed\_sunrise} & $2178/2178$ &
-两圈 ISP、全 sector、6 个 qIBP 生成元\\
-\texttt{two\_loop\_isp\_toy} & $1230/1230$ &
-一般 \texttt{sp} ISP 与 numerator 导数\\
-\texttt{independent\_variable\_derivatives} & 通过 &
-\texttt{ke[i]}、\texttt{s11}、外动量导数非唯一性\\
-\bottomrule
-\end{tabular}
-\end{center}
-
-每条 expected 只记录 sector、vertex signs、generator、seed rules、equation 和 tags。README 必须说明函数族、动量路由、top/sub-sector、每个全微分生成元、SK signs、离散态、特殊功能标签、预期关系计数与零关系原因。
-
-这些检查是 seed 层和 package example 层的交叉验证，不等于对任意拓扑的数学穷尽证明。后续仍需把复合原子 API 封装、文档同步和更大规模 topology 的性能门禁继续补齐。
+也可用一站式接口串联门禁：
+\begin{verbatim}
+workflow = makeIBPWorkflowData[
+  case,
+  DiscreteMode -> "all",
+  LinearSystemMode -> "symbolic",
+  ExportKira -> False
+];
+ready = makeIBPReadinessReport[
+  case,
+  DiscreteMode -> "all",
+  LinearSystemMode -> "symbolic"
+];
+\end{verbatim}
+\texttt{LinearSystemMode} 可取 \texttt{"symbolic"}、\texttt{"sampled"} 或 \texttt{"numeric"}；numeric 模式要求 \texttt{numericRules} 覆盖报告中列出的外不变量、顶点能量和线参数。
 
 \section{常见错误与当前限制}
 
@@ -531,14 +677,17 @@ massive+massless、四种 SK、全 sector\\
   \item 把 \texttt{sp} 的 Orderless 当作图对称性：错误。
   \item massless line 交换 endpoints 却不翻转 $n=1$ 表示：错误。
   \item massless $n=1$ theta 导数漏掉 $-2/+2$ shrink：错误。
-  \item top 方程的 sub-sector 项仍用 source endpoints canonical：错误，009 已修复。
-  \item massive $++$ 与 $--$ 使用同一 Wronskian offset：错误，008 起已修复。
+  \item 对 $\delta\theta^m$ 直接代入 $\theta(0)^m=2^{-m}$：错误；必须先合并共同 theta 或统一正则化整个乘积。
+  \item massive/massless shrink 都令 merged $a$ 减 1：错误；只有 massive Wronskian 有该整数移位。
+  \item 把所有 full lines 的幂集当作 sector：错误；只枚举 contact 可达状态。
+  \item top 方程的 sub-sector 项仍用 source endpoints canonical：错误，012 已继承修复。
+  \item massive $++$ 与 $--$ 使用同一 Wronskian offset：错误；当前实现使用各自正确的 offset。
   \item 在 EOM 前保留符号 $n$ 或把 $n=2$ 留给后端：错误。
   \item shrink 后仍在 $J$ 保留两个独立 $a$：错误。
   \item 把 \texttt{ke[i]} 放入 momentum generators：错误。
   \item seed 直接导出 Kira：错误；先构造 \texttt{linearData}。
 \end{itemize}
 
-当前未实现：平行 massless 线的 bundle canonical、自动图对称性、scaleless/parity 全自动前端、自动选择 propagator basis、正式 Mathematica context 封装、后续原子 API 和实际 reduction。
+当前未实现：自动图对称性、scaleless/parity 全自动前端、自动选择 propagator basis、正式 Mathematica context 封装和实际 reduction。
 
 \end{document}

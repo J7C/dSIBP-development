@@ -23,7 +23,6 @@ Thumbs.db
 ibp_equations*.m
 
 # Project generated outputs
-000_code/test/
 000_code/**/results_test/
 000_code/results/
 000_code/results_temp/
@@ -38,7 +37,7 @@ results_ignore/
 **/result/
 **/temp/
 
-# Keep only the latest three main package scripts (007/008/009).
+# Retain package scripts from 007 onward; ignore retired 001--006 versions.
 000_code/001_*.wl
 000_code/002_*.wl
 000_code/003_*.wl

@@ -7,7 +7,7 @@
 exampleDir = DirectoryName[$InputFileName];
 codeDir = DirectoryName[DirectoryName[exampleDir]];
 handDerivedDir = FileNameJoin[{codeDir, "check", "hand-derived-v2", "pure_massless_bubble"}];
-Get[FileNameJoin[{codeDir, "009_dS_ibp_general.wl"}]];
+Get[FileNameJoin[{codeDir, "011_dS_ibp_general.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "family.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "expected.wl"}]];
 

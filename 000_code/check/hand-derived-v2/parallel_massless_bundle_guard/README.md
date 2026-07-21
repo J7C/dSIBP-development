@@ -20,4 +20,4 @@
 
 ## guard 目的
 
-本 family 只比较当前 package 的 per-line merged-theta 版本。future bundle 版本应使用独立的 bundle 表示，不写回当前三槽 `J`，也不用于判定 009 失败。
+本 family 只比较当前 package 的 per-line merged-theta 版本。future bundle 版本应使用独立的 bundle 表示，不写回当前三槽 `J`，也不用于判定 011 失败。

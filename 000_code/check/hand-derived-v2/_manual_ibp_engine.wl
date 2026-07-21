@@ -1,6 +1,6 @@
 (* ::Package:: *)
 (* 独立手推 helper：从 familyDefinition 生成 seed-level time/q-IBP expected。
-   本文件不加载 009 package，只使用 benchmark 文档中的通用公式。 *)
+   本文件不加载 010 package，只使用 benchmark 文档中的通用公式。 *)
 
 (* ::Chapter:: *)
 (*基本工具*)
@@ -18,6 +18,7 @@ manualLineById[def_Association, lineId_] := def["lineData"][[manualLinePosition[
 manualLineEndpoints[def_Association, lineId_] := manualLineById[def, lineId]["endpoints"];
 manualLineMass[def_Association, lineId_] := manualLineById[def, lineId]["massType"];
 manualLineNu[def_Association, lineId_] := Lookup[manualLineById[def, lineId], "nu", nu];
+manualLineMode[def_Association, lineId_] := Lookup[manualLineById[def, lineId], "bbType", "h"];
 
 manualZeroPoint[def_Association, lhs_, default_: 0] := Module[{hits},
    hits = Cases[Lookup[def, "zeroPointRules", {}], (Rule | RuleDelayed)[x_, y_] /; x === lhs :> y];
@@ -27,7 +28,11 @@ manualZeroPoint[def_Association, lhs_, default_: 0] := Module[{hits},
 manualAlpha[def_Association, vertex_] := manualZeroPoint[def, a0[vertex]];
 manualBeta[def_Association, lineId_] := manualZeroPoint[def, b0[lineId]];
 manualBetaS[def_Association, lineId_] := manualZeroPoint[def, bS0[lineId], manualBeta[def, lineId]];
-manualLineZeroShift[def_Association, lineId_] := If[manualLineMass[def, lineId] === "massive", 2 manualLineNu[def, lineId], 0];
+manualLineZeroShift[def_Association, lineId_] := Which[
+   manualLineMass[def, lineId] =!= "massive", 0,
+   manualLineMode[def, lineId] === "H", 0,
+   True, 2 manualLineNu[def, lineId]
+   ];
 manualLineShrinkBShift[def_Association, lineId_] := If[manualLineMass[def, lineId] === "massive", 1, 0];
 
 manualPhase["+"] := -I;
@@ -53,6 +58,7 @@ manualSectorName[{}] := "top";
 manualSectorName[lines_List] := StringRiffle["e" <> ToString[#] & /@ Sort[lines], "_"];
 manualShrunkLines["top"] := {};
 manualShrunkLines[sector_String] := ToExpression /@ StringDrop[StringSplit[sector, "_"], 1];
+
 manualSectors[def_Association, signKey_String] := manualSectorName /@ Subsets[manualFullLines[def, signKey]];
 
 (* ::Chapter:: *)
@@ -254,13 +260,24 @@ manualSeedRules[def_Association, signKey_String, sector_String, stateRules_List,
 (*time-IBP*)
 
 manualMassiveTimeEndpoint[def_Association, int_J, sector_String, lineId_, endpointSlot_Integer] := Module[
-   {line = manualLinePosition[def, lineId], nValue, endpointVertex},
+   {line = manualLinePosition[def, lineId], nValue, endpointVertex, mode, nuValue},
    nValue = int[[2, line, endpointSlot + 1]];
    endpointVertex = manualLineEndpoints[def, lineId][[endpointSlot]];
+   mode = manualLineMode[def, lineId];
+   nuValue = manualLineNu[def, lineId];
    If[nValue === 0,
     -manualShiftB[manualSetN[int, line, endpointSlot, 1], line, -1],
-    manualShiftB[manualSetN[int, line, endpointSlot, 0], line, -1] +
-     manualMassiveC1[def, lineId] manualShiftA[def, int, sector, endpointVertex, -1]
+    If[mode === "H",
+     manualShiftB[manualSetN[int, line, endpointSlot, 0], line, -1] +
+      manualShiftA[def, int, sector, endpointVertex, -1] -
+      nuValue^2 manualShiftA[
+       def,
+       manualShiftB[manualSetN[int, line, endpointSlot, 0], line, 1],
+       sector, endpointVertex, -2
+       ],
+     manualShiftB[manualSetN[int, line, endpointSlot, 0], line, -1] +
+      manualMassiveC1[def, lineId] manualShiftA[def, int, sector, endpointVertex, -1]
+     ]
     ]
    ];
 
@@ -397,15 +414,30 @@ manualVDotQ[def_Association, scalarRules_, vectorType_String, vectorIndex_Intege
    ];
 
 manualMassiveMomentumEndpoint[def_Association, int_J, sector_String, lineId_, endpointSlot_Integer, factor_] := Module[
-   {line = manualLinePosition[def, lineId], nValue, endpointVertex},
+   {line = manualLinePosition[def, lineId], nValue, endpointVertex, mode, nuValue},
    nValue = int[[2, line, endpointSlot + 1]];
    endpointVertex = manualLineEndpoints[def, lineId][[endpointSlot]];
+   mode = manualLineMode[def, lineId];
+   nuValue = manualLineNu[def, lineId];
    If[nValue === 0,
     manualAbsorb[def, factor,
      manualShiftA[def, manualShiftB[manualSetN[int, line, endpointSlot, 1], line, 1], sector, endpointVertex, 1]],
-    -manualAbsorb[def, factor,
-      manualShiftA[def, manualShiftB[manualSetN[int, line, endpointSlot, 0], line, 1], sector, endpointVertex, 1]] -
-     manualMassiveC1[def, lineId] manualAbsorb[def, factor, manualShiftB[int, line, 2]]
+    If[mode === "H",
+     -manualAbsorb[def, factor,
+       manualShiftA[def, manualShiftB[manualSetN[int, line, endpointSlot, 0], line, 1], sector, endpointVertex, 1]] -
+      manualAbsorb[def, factor, manualShiftB[int, line, 2]] +
+      nuValue^2 manualAbsorb[
+       def, factor,
+       manualShiftA[
+        def,
+        manualShiftB[manualSetN[int, line, endpointSlot, 0], line, 3],
+        sector, endpointVertex, -1
+        ]
+       ],
+     -manualAbsorb[def, factor,
+       manualShiftA[def, manualShiftB[manualSetN[int, line, endpointSlot, 0], line, 1], sector, endpointVertex, 1]] -
+      manualMassiveC1[def, lineId] manualAbsorb[def, factor, manualShiftB[int, line, 2]]
+     ]
     ]
    ];
 

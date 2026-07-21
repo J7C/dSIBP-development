@@ -4,7 +4,7 @@
 
 边界：
 
-- 本目录可以加载 `000_code/009_dS_ibp_general.wl`。
+- 本目录加载 `000_code/011_dS_ibp_general.wl`。
 - 本目录读取 `000_code/check/hand-derived-v2/<family>/family.wl` 和 `expected.wl`。
 - `hand-derived-v2` 目录只保存独立手推输入与 expected，不保存调用程序包 actual 的 check 脚本。
 - 这些脚本是 package examples，不运行 Kira/Fermat，不做 reduction。

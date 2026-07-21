@@ -31,10 +31,10 @@
   \item 对每个 sector 先枚举离散 $n=0,1$ 状态，再作用生成元；
   \item 生成元作用后一旦出现 $n=2$ 或更高 Hankel 导数态，立刻用 EOM 递推消去；
   \item 输出 seed 中所有完整线的 $n$ 指标均已 canonical 到 $0/1$，massless 线保持双 theta 合并指标包 $\{b_e,n_e\}$；
-  \item 同一顶点对多条 massless 线的 bundle theta 合并暂不作为当前实现要求，只作为未来减少冗余状态的优化。
+  \item 同一代表顶点对的 full lines 按共同 theta 生成 odd-subset contact；sector 只枚举这些事件可达的状态。
 \end{itemize}
 
-当前 009 已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/canonical 门禁；time seed 已包含顶点幂次、外部相位、massive 端点导数、massless 有向 $0\leftrightarrow1$ regular 项、massive/massless theta-boundary shrink 以及目标 sector 的 coincident 抵消。Kira serializer 只转换经过这些门禁的后端中立线性系统，不替代任何前端关系。
+当前 012 已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/canonical 门禁；time seed 已包含顶点幂次、外部相位、massive 端点导数、massless 有向 $0\leftrightarrow1$ regular 项、massive/massless theta-boundary shrink 以及目标 sector 的 coincident 抵消，并提供公开原子 IBP/表示转换接口。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，不替代任何前端关系。
 
 % ============================================================
 \section{h 函数及其性质}
@@ -141,7 +141,73 @@ EOM 递推系数总结：
   \label{EOMcoeffs}
 \end{equation}
 
-对 Hankel 函数 $H_\nu^{(1)}$（无 $(-k\tau)^{-\nu}$ 归一化），递推系数为 $c_1 = 2\nu$, $c_2 = 1$。
+对裸 Hankel，若 $H_0=H_\nu(x)$、$H_1=\partial_xH_0$，Bessel 方程给
+\begin{equation}
+ H_2=-H_0-\frac{1}{x}H_1+\frac{\nu^2}{x^2}H_0.
+ \label{bareHEOMrecurrence}
+\end{equation}
+因此它不能压成常数二元系数。007--010 的内置 H 分支以及 012 的 H preset 在指标语言中实现为
+\begin{equation}
+ J_H[n=2]=-J_H[n=0]-J_H[a_v-1,b_e+1,n=1]
+ +\nu_e^2J_H[a_v-2,b_e+2,n=0].
+ \label{bareHEOMindex}
+\end{equation}
+
+\subsection{$P,Q,T,W$ 输入与 $2\times2$ 编译}
+
+012 输入下一 subsection 统一定义的 $P,Q$、基变换 $T$（缺省单位矩阵）和原始导数基底带完整归一化的 Wronskian $W$。初始化层由 $P,Q,T,W$ 编译 $A_T$ 与 $W_T$，再分别生成 IBP 使用的导数移位和 shrink 数据；IBP 层不重算这些原始输入。
+
+编译后的 h/H 一阶矩阵应分别为
+\begin{equation}
+ A_h(x)=
+ \begin{pmatrix}0&1\\-1&-(2\nu+1)/x\end{pmatrix},
+ \qquad
+ A_H(x)=
+ \begin{pmatrix}0&1\\\nu^2/x^2-1&-1/x\end{pmatrix}.
+ \label{hH2x2Presets}
+\end{equation}
+这里 $h_1=\partial_xh_0$、$H_1=\partial_xH_0$。第二个矩阵直接来自
+$H_0''+x^{-1}H_0'+(1-\nu^2/x^2)H_0=0$。012 的缺省 h 直接取 $P_h=(2\nu+1)/x$、$Q_h=1$、$T=I_2$ 和完整 $W_h$，故 $W_T=W_h$；裸 H 使用独立 preset。两者及一般 $T$ 均由专项检查和独立 EOM expected 验证。
+
+\subsection{Wronskian：$P,Q$ 标准型与 $T$ 变换}
+\label{wronskianPQTransform}
+
+统一取二阶方程
+\begin{equation}
+ f''+P(x)f'+Q(x)f=0,
+ \qquad
+ A_0=\begin{pmatrix}0&1\\-Q&-P\end{pmatrix},
+ \label{PQStandardODE}
+\end{equation}
+其中 $P$ 是一阶导系数，$Q$ 是零阶系数。对两个独立解定义
+$W=f_1f_2'-f_1'f_2$。直接代入式~\eqref{PQStandardODE}，
+\begin{equation}
+ W'=f_1f_2''-f_1''f_2=-P\bigl(f_1f_2'-f_1'f_2\bigr)=-PW,
+ \qquad
+ W=C\exp\!\left(-\int P\,dx\right).
+ \label{AbelPQ}
+\end{equation}
+$Q$ 项在相减时抵消；因此 $P$ 决定 $W$ 的变量依赖，解的归一化决定常数 $C$。
+
+令 $\mathbf F=(f,f')^T$，两个独立解组成基本解矩阵
+$\Phi=(\mathbf F^{(1)},\mathbf F^{(2)})$，故 $W=\det\Phi$。若同一个可逆矩阵 $T(x)$ 作用于两个解，$\Phi_T=T\Phi$，则
+\begin{align}
+ W_T&=\det(T)W,
+ & A_T&=T'T^{-1}+TA_0T^{-1}, \notag\\
+ \frac{W_T'}{W_T}
+ &=\frac{W'}{W}+\frac{d}{dx}\log\det T
+ =\operatorname{tr}A_T.
+ \label{WronskianTTransform}
+\end{align}
+这同时给出 Wronskian 的代数变换和微分检验。
+
+裸 Hankel 方程有 $P_H=1/x$、$Q_H=1-\nu^2/x^2$，故 $W_H=C_H/x$。对
+\begin{equation}
+ \mathbf h=x^{-\nu}
+ \begin{pmatrix}1&0\\-\nu/x&1\end{pmatrix}\mathbf H,
+ \qquad \det T=x^{-2\nu},
+\end{equation}
+式~\eqref{WronskianTTransform} 立即给出 $W_h=x^{-2\nu}W_H\propto x^{-2\nu-1}$。
 
 % ============================================================
 \section{线缩并（Shrink）机制}
@@ -175,11 +241,16 @@ delta 函数将两个顶点 $u[e]$ 和 $v[e]$ 粘合为同一时间点，线 $e$
   \label{Fdef}
 \end{equation}
 
-利用 Hankel 函数的 Wronskian $W[H_\nu^{(1)}(z), H_\nu^{(2)}(z)] = -4i/(\pi z)$ 以及 $h$ 的定义 \eqref{hdef0}--\eqref{hdef1}，计算：
+采用标准方向 $W_z[f,g]=fg'-gf'$。利用 $W[H_\nu^{(1)}(z), H_\nu^{(2)}(z)] = -4i/(\pi z)$ 以及 $h$ 的定义 \eqref{hdef0}--\eqref{hdef1}，计算：
 \begin{align}
   h^{(1)}(\nu, 1; z) &= -\frac{1}{k} \partial_\tau [(-k\tau)^{-\nu} H_\nu^{(1)}(-k\tau)] \notag \\
-  &= (-k\tau)^{-\nu} \left[ \frac{\nu}{\tau} H_\nu^{(1)} - k H_\nu^{(1)\prime} \right].
+  &= z^{-\nu}\left[{H_\nu^{(1)}}'-\frac{\nu}{z}H_\nu^{(1)}\right].
 \end{align}
+因此式~\eqref{Fdef} 的方向是标准 Wronskian 的负号，
+\begin{equation}
+ F=-z^{-2\nu}W_z[H_\nu^{(1)},H_{\nu^*}^{(2)}].
+ \label{FminusWronskian}
+\end{equation}
 
 代入 Wronskian 并化简（详细代数略），得到文献 Eq.~28：
 \begin{equation}
@@ -249,7 +320,8 @@ delta 函数将两个顶点 $u[e]$ 和 $v[e]$ 粘合为同一时间点，线 $e$
 缩并因子为 $F = h^{(1)}(\nu,1) h^{(2)}(\nu,0) - h^{(2)}(\nu,1) h^{(1)}(\nu,0)$（文献 Eq.~27）。令 $z = -k\tau > 0$：
 
 \begin{align}
-  F &= z^{-2\nu} (-k) \left[ H_\nu^{(1)} {H_{\nu^*}^{(2)}}' - H_{\nu^*}^{(2)} {H_\nu^{(1)}}' \right] = z^{-2\nu} (-k) \cdot W_z[H_\nu^{(1)}, H_{\nu^*}^{(2)}].
+  F &=-z^{-2\nu}\left[H_\nu^{(1)}{H_{\nu^*}^{(2)}}'-H_{\nu^*}^{(2)}{H_\nu^{(1)}}'\right]
+     =-z^{-2\nu}W_z[H_\nu^{(1)},H_{\nu^*}^{(2)}].
 \end{align}
 
 这里出现的是 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$（\textbf{不同阶} $\nu$ 与 $\nu^*$），而非标准的 $W[H_\nu^{(1)}, H_\nu^{(2)}]$（同阶 $\nu$）。
@@ -277,7 +349,7 @@ delta 函数将两个顶点 $u[e]$ 和 $v[e]$ 粘合为同一时间点，线 $e$
 
 H 模式使用裸 Hankel 函数（无 $(-k\tau)^{-\nu}$ 归一化），但仍遵循 SK 约定 $H_\nu^{(1)}$/$H_{\nu^*}^{(2)}$：
 \begin{equation}
-  F_H(-k\tau) = (-k) \cdot W[H_\nu^{(1)}, H_{\nu^*}^{(2)}].
+  F_H(-k\tau) = -W_z[H_\nu^{(1)}, H_{\nu^*}^{(2)}].
 \end{equation}
 
 \textbf{数值验证结果}（见 \texttt{test/test\_wronskian.wl}，纯实数和纯虚数 $\nu$ 均测试，精度 $\sim 77$ 位）：
@@ -366,9 +438,9 @@ theta-delta 项只在 $n_e=1$ 时存在。第一端点系数为 $-2$，第二端
  bS_e=b_e,\qquad bS0_e=b0_e.
  \label{masslessShrinkTech}
 \end{equation}
-delta 合并两个时间变量，
+ delta 合并两个时间变量；massless delta 没有额外 $1/(-\tau)$，故
 \begin{equation}
- a_{\rm merged}=a_u+a_v-1,\qquad
+ a_{\rm merged}=a_u+a_v,\qquad
  a0_{\rm merged}=a0_u+a0_v,
 \end{equation}
 且 massless 缩并没有 Hankel Wronskian prefactor，$\mathcal C_e=1$。这里 $bS_e=b_e$ 是强制区别：massive h/H 缩并才有 $bS_e=b_e+1$。
@@ -377,9 +449,120 @@ delta 合并两个时间变量，
 
 若其它线的缩并使这条仍完整的 masslessFull 线的两个原端点映到同一个 active vertex，同一个 time 生成元必须同时作用两个端点。于是 regular 的 $+i\sigma/-i\sigma$ 项相消，theta-delta 的 $-2/+2$ 项相消，而且反对称态 $M_1(\tau,\tau)=0$。实现时不得用只返回第一个端点的搜索。
 
-该规则也必须作用于 top-sector 方程中刚产生的 sub-sector 项。009 根据每个输出 $J$ 中已经成为单元素 $\{bS\}$ 的 line packs 重建目标 sector 的代表顶点映射，再判断 coincident $n=1$；若继续使用 source topology 的端点映射，会留下错误的 sub-sector 项。
+该规则也必须作用于 top-sector 方程中刚产生的 sub-sector 项。012 根据每个输出 $J$ 中已经成为单元素 $\{bS\}$ 的 line packs 重建目标 sector 的代表顶点映射，再判断 coincident $n=1$；若继续使用 source topology 的端点映射，会留下错误的 sub-sector 项。
 
 masslessCross（$+-$ 或 $-+$）不含 theta，也没有离散 $n_e$ 或 shrink。它的 time-IBP 只对两端点指数相位求导。
+
+\subsection{共同-theta contact 到最终指标表示}
+
+本节给出 package 采用的权威链路。两种分布实现的完整推导及等价条件见附录~\ref{app:commonThetaDerivation} 和附录~\ref{app:gaussianDerivation}。
+
+设同一当前代表顶点对 $(u,v)$ 之间的 massive/massless full lines 构成 bundle $\mathcal B$，并统一用 $\Delta=\tau_u-\tau_v$ 表示时间差。逐线写成
+\begin{equation}
+ G_e=\theta(\Delta)A_e+\theta(-\Delta)B_e.
+ \label{bundleSingleLine}
+\end{equation}
+共同 theta 先在整个乘积上合并：
+\begin{equation}
+ \prod_{e\in\mathcal B}G_e
+ =\theta(\Delta)\prod_{e\in\mathcal B}A_e
+ +\theta(-\Delta)\prod_{e\in\mathcal B}B_e.
+ \label{bundleCommonThetaProduct}
+\end{equation}
+因此 time derivative 的奇异部分只有一个共同 delta，绝不产生 $\delta^k$：
+\begin{equation}
+ \left.\partial_\Delta\prod_{e\in\mathcal B}G_e\right|_{\rm contact}
+ =\delta(\Delta)
+ \left(\prod_{e\in\mathcal B}A_e-\prod_{e\in\mathcal B}B_e\right).
+ \label{bundleUniqueBoundary}
+\end{equation}
+
+为保持逐线 pack，定义局部对称/跃变基底
+\begin{equation}
+ \mathsf J_e=\frac{A_e+B_e}{2},\qquad D_e=A_e-B_e.
+ \label{bundleJDDefinition}
+\end{equation}
+这里 $\mathsf J_e$ 是一条线的等时对称因子，不是三槽积分 Head $J[\cdots]$。代数展开给出
+\begin{equation}
+ \prod_eA_e-\prod_eB_e
+ =\sum_{\substack{\varnothing\ne S\subseteq\mathcal B\\ |S|\ {\rm odd}}}
+ 2^{1-|S|}\prod_{e\in S}D_e\prod_{e\notin S}\mathsf J_e.
+ \label{commonThetaOddSubset}
+\end{equation}
+
+下一步必须把每个 $D_e$ 落到 line-local contact 数据，不能停在抽象 Wronskian。对 massiveFull 线，初始化先编译
+\begin{equation}
+ W_{T,e}(x_e)=\det T_e(x_e)\,W_e(x_e)
+ =\sum_{\alpha}w_{e\alpha}x_e^{p_{e\alpha}},
+ \qquad x_e=-q_e\tau,
+ \label{WTLaurentContact}
+\end{equation}
+并把每个幂次唯一拆成
+\begin{equation}
+ p_{e\alpha}=-s_{e\alpha}-z_e,
+ \qquad s_{e\alpha}\in\mathbb Z.
+ \label{WTShiftSplit}
+\end{equation}
+同一条线所有 Laurent 项必须具有相同 $z_e$，否则函数系统不能编译。由于实际 shrink factor 是 $-W_{T,e}$，端点 $r$ 的 atomic contact 项为
+\begin{equation}
+ D_{e,r}\ \longmapsto\
+ \delta_{n_{e,1}+n_{e,2},1}
+ (-1)^{n_{e,r}+V_\pm}
+ \sum_\alpha(-w_{e\alpha})x_e^{-s_{e\alpha}-z_e},
+ \qquad V_+=1,\quad V_-=0.
+ \label{massiveDToWT}
+\end{equation}
+这正是代码中的
+\begin{center}
+\texttt{compiledFunctionSystem["WT"]}
+$\longrightarrow$
+\texttt{shrinkTerms}
+$\longrightarrow$
+\texttt{thetaBoundaryAtomicTerms}。
+\end{center}
+对 h preset，$s_e=1,z_e=2\nu_e$ 且 $-W_{T,e}=\mathcal C_ex_e^{-2\nu_e-1}$；对 H preset，$s_e=1,z_e=0$ 且 $-W_{T,e}=\mathcal C_ex_e^{-1}$，其中
+\begin{equation}
+ \mathcal C_e=\frac{4i}{\pi}e^{\pi\operatorname{Im}\nu_e}.
+\end{equation}
+对 masslessFull，只有 $n_e=1$ 有 contact；第一/第二有序端点的系数为 $-2/+2$，并等价于 $s_e=z_e=0$ 的 atomic term，不调用 $W_T$。
+
+现在选取式~\eqref{commonThetaOddSubset} 中一个奇数子集 $S$，并对每条 massive $e\in S$ 选定一个 Laurent 项 $\alpha_e$。记包含端点、SK 与 $-w_{e\alpha_e}$ 的完整 atomic 系数为 $c_{e\alpha_e}$。该项的总系数为
+\begin{equation}
+ C_{S,\boldsymbol\alpha}
+ =2^{1-|S|}\prod_{e\in S}c_{e\alpha_e}.
+ \label{bundleIndexCoefficient}
+\end{equation}
+若 bundle 两端在 sector 中对应 $a_u,a_v$，最终三槽积分的指标映射为
+\begin{align}
+ a_{uv}'&=a_u+a_v-\sum_{e\in S}s_{e\alpha_e},
+ &
+ a0_{uv}'&=a0_u+a0_v-\sum_{e\in S}z_e,
+ \label{bundleMergedAShift}\\
+ \{b_e,n_{e,1},n_{e,2}\}&\longrightarrow\{b_e+s_{e\alpha_e}\},
+ &
+ bS0_e&=b0_e+z_e,
+ \qquad e\in S\text{ massive},
+ \label{bundleMassivePackShift}\\
+ \{b_e,1\}&\longrightarrow\{b_e\},
+ &
+ bS0_e&=b0_e,
+ \qquad e\in S\text{ massless}.
+ \label{bundleMasslessPackShift}
+\end{align}
+因此这一项最终写成
+\begin{equation}
+ C_{S,\boldsymbol\alpha}\,
+ J\!\left[
+  \{\ldots,a_{uv}',\ldots\},
+  \{\ldots,\{b_e+s_{e\alpha_e}\}_{e\in S},
+          \text{full packs}_{e\notin S},\ldots\},
+  \mathrm{ispList}
+ \right].
+ \label{bundleFinalJIndexForm}
+\end{equation}
+式~\eqref{bundleMergedAShift}--\eqref{bundleFinalJIndexForm} 中，所有选中线只触发一次顶点合并，但其整数与 zero-point shift 分别求和；各 shrunk line 的 $bS/bS0$ 仍逐线记录。未选中的 full lines 在合并后成为 coincident：massless $n=1$ 立即置零，massiveFull 应用 $\{b,1,0\}\to\{b,0,1\}$；它们不再产生 theta boundary。sector 由这些非零 contact 事件做 BFS 得到，不能用 full-line 幂集代替。
+
+单传播子的对称等时值取 $\theta(0)=1/2$，对应式~\eqref{bundleJDDefinition} 的 $\mathsf J_e$。这只定义单线等时平均，不定义 $\delta\theta^m$；后者必须使用式~\eqref{bundleUniqueBoundary}，或附录~\ref{app:gaussianDerivation} 的统一正则化。
 \section{维度参数约定}
 % ============================================================
 
@@ -396,21 +579,19 @@ masslessCross（$+-$ 或 $-+$）不含 theta，也没有离散 $n_e$ 或 shrink�
 \section{Building Block 参数体系}
 % ============================================================
 
-每条完整线 $e$ 的 building block 类型由参数 $\text{bbType}_e$ 指定，展开为三元组 $\{c_1, c_2, \text{sp}\}$：
+每条 massive 完整线 $e$ 在 012 中都带编译后的 \texttt{functionSystem}。推荐直接输入 $P,Q,T,W$；旧 $\text{bbType}_e$ 与二元 $\texttt{eomCoefficients}$ 只作为初始化兼容入口。若旧输入给出 $\{c_1,c_2\}$，初始化层解释为：
 
 \begin{itemize}
-  \item $c_1$：EOM 递推中 $n=1$ 项的系数（式~\eqref{EOMcoeffs}）。
-  \item $c_2$：EOM 递推中 $n=0$ 项的系数。
-  \item $\text{sp}$：缩并产生的 $k\tau$ 幂次（式~\eqref{bSdef}，$\text{sp} = -(2\nu+1)$）。
+  \item $P=c_1/x$、$Q=c_2$、$T=I_2$；
+  \item $W=-\mathcal C x^{-c_1}$，整数 shrink shift 缺省取 $1$，zero-point shift 为 $c_1-1$。
 \end{itemize}
 
-内置缺省值：
+内置缺省值为
 \begin{align}
-  \texttt{"h"} &\to \{2\nu+1,\; 1,\; -(2\nu+1)\}, \label{bbH} \\
-  \texttt{"H"} &\to \{2\nu,\; 1,\; -1\}. \label{bbHankel}
+  \texttt{"h"} &\to \{P_h=(2\nu+1)/x,\;Q_h=1,\;T_h=I_2,\;W_h\}, \label{bbH} \\
+  \texttt{"H"} &\to \{P_H=1/x,\;Q_H=1-\nu^2/x^2,\;T_H=I_2,\;W_H\}. \label{bbHankel}
 \end{align}
-
-用户自定义：$\texttt{\{c1, c2, sp\}}$ 直接指定三元组。
+其中 $A_H$ 是式~\eqref{hH2x2Presets}，由式~\eqref{bareHEOMindex} 编译为三项指标移位。缺省 h preset 取 $T=I_2$、$W=W_h$，所以 $W_T=W_h$；H preset 取 $T=I_2$、$W=W_H$。显式 $W_T$ 只用于核对 $W_T=\det(T)W$，不能覆盖编译结果。
 
 % ============================================================
 \section{指标零点体系}
@@ -477,7 +658,7 @@ masslessCross（$+-$ 或 $-+$）不含 theta，也没有离散 $n_e$ 或 shrink�
 
 H 模式使用裸 Hankel 函数 $H_\nu^{(1)}$/$H_{\nu^*}^{(2)}$（无 $(-k\tau)^{-\nu}$ 归一化），零点缺省为 0（式~\eqref{zeroHmodeH}）。
 
-缩并因子为 $F_H = (-k) \cdot W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$。对本 package 允许的纯实数和纯虚数 $\nu$，数值验证给出
+缩并反对称组合为 $F_H=-W_z[H_\nu^{(1)},H_{\nu^*}^{(2)}]$。对本 package 允许的纯实数和纯虚数 $\nu$，数值验证给出
 \begin{equation}
   W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -e^{\pi\text{Im}[\nu]} \frac{4i}{\pi z}.
 \end{equation}
@@ -505,7 +686,7 @@ H 模式使用裸 Hankel 函数 $H_\nu^{(1)}$/$H_{\nu^*}^{(2)}$（无 $(-k\tau)^
 
 当 $\nu_e$ 为实数时 $\text{Im}[\nu_e] = 0$，prefactor 简化为 $4i/\pi$。当 $\nu_e = i\mu$ 为纯虚数（轻场）时，$e^{\pi\mu}$ 给出指数增强。
 
-\textbf{H 模式}：缩并因子为 $F_H = (-k) \cdot W[H_\nu^{(1)}, H_{\nu^*}^{(2)}]$。对纯实数和纯虚数 $\nu$，已数值验证
+\textbf{H 模式}：缩并反对称组合为 $F_H=-W_z[H_\nu^{(1)},H_{\nu^*}^{(2)}]$。对纯实数和纯虚数 $\nu$，已数值验证
 \begin{equation}
   W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -e^{\pi\text{Im}[\nu]} \frac{4i}{\pi z}.
   \label{WcrossOrder}
@@ -522,7 +703,7 @@ H 模式使用裸 Hankel 函数 $H_\nu^{(1)}$/$H_{\nu^*}^{(2)}$（无 $(-k\tau)^
 \begin{equation}
   W[e^{ik\tau}, e^{-ik\tau}] = -2ik.
 \end{equation}
-无 Hankel 缩并机制，故无 $\mathcal{C}_e$ prefactor（或等价地 $\mathcal{C}_e^{(\text{massless})} = 1$）。这里说的“无缩并机制”只指没有 Hankel Wronskian 型的 $h/H$ 塌缩 prefactor；massless 的 Heaviside 边界与双 theta 合并关系仍需在 time-IBP 的 canonical 步骤中处理，并保持逐线指标包 $\{b_e,n_e\}$。若同一顶点对之间有多条 massless 线，严格支撑可进一步 bundle 合并；当前实现先不做此优化。
+无 Hankel 缩并机制，故无 $\mathcal{C}_e$ prefactor（或等价地 $\mathcal{C}_e^{(\text{massless})} = 1$）。这里说的“无缩并机制”只指没有 Hankel Wronskian 型的 $h/H$ 塌缩 prefactor；massless 的 Heaviside boundary 仍按式~\eqref{commonThetaOddSubset} 与同顶点对的其它 full lines 一起处理，并保持逐线指标包 $\{b_e,n_e\}$。
 
 \textbf{多次缩并}：当多条线同时缩并时（如 2-line shrink），总 prefactor 为各线 prefactor 之积：
 \begin{equation}
@@ -579,8 +760,8 @@ IBP 恒等式来自全微分在维正规化下积分为零：
 
 每一项的作用：
 \begin{itemize}
-  \item $\frac{\partial}{\partial \xi_e}$ 作用在传播子上：$b_e \to b_e + 1$（因为 $\partial_{\xi_e} \xi_e^{-b} = -b\, \xi_e^{-b-1}$，再乘以 $1/\xi_e$ 得 $\xi_e^{-b-2}$，对应 $b \to b+2$；但通常与分子中的 $Q_{e,\mu} Q_{e,\nu}$ 缩并后简化为 $b \to b+1$）
-  \item $\frac{\partial}{\partial \xi_e}$ 作用在 h-函数上：$n_{e,a} \to n_{e,a} \pm 1$，由 ODE 递推
+  \item $\frac{1}{\xi_e}\frac{\partial}{\partial \xi_e}$ 作用在传播子上时，先产生 $\xi_e^{-2}$，即在吸收 $v\cdot Q_e$ 前执行 $b_e\to b_e+2$；随后 $v\cdot Q_e$ 的 $z$/ISP 分解再决定各项的进一步指标移位。
+  \item $\frac{\partial}{\partial \xi_e}$ 作用在 massive building block 上时，只读取该线最终 $A_T$ 编译成的 \texttt{derivativeTerms}；每个 $x=-\xi_e\tau$ Laurent 项同时给出目标基底态和整数 $a/b$ 移位，不再假设一般基底满足简单的 $n\to n+1$。
   \item $\frac{\partial}{\partial\, \text{isp}_j}$ 作用在 ISP 因子上：$n_{\text{isp}_j} \to n_{\text{isp}_j} - 1$
 \end{itemize}
 
@@ -802,9 +983,20 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \label{chainRuleXi}
 \end{equation}
 
-利用 $\xi_e = z_e^{1/2}$，即 $\partial / \partial \xi_e = 2\xi_e\, \partial / \partial z_e = 2 z_e\, \partial / \partial z_e$，以及 $z_e\, \partial / \partial z_e = \frac{1}{2}\, \partial / \partial(\ln z_e)$，得到
+利用 $\xi_e=z_e^{1/2}$，有
 \begin{equation}
-  q_l \cdot \frac{\partial}{\partial q_l} = \sum_e c_{e,l}\, \frac{q_l \cdot Q_e}{z_e} \cdot \frac{1}{2}\, \frac{\partial}{\partial(\ln z_e)}.
+ \frac{\partial}{\partial\xi_e}
+ =2\xi_e\frac{\partial}{\partial z_e},
+ \qquad
+ z_e\frac{\partial}{\partial z_e}
+ =\frac{\partial}{\partial\ln z_e}.
+\end{equation}
+因此
+\begin{equation}
+  q_l \cdot \frac{\partial}{\partial q_l}
+  =2\sum_e c_{e,l}(q_l\cdot Q_e)\frac{\partial}{\partial z_e}
+  =2\sum_e c_{e,l}\frac{q_l\cdot Q_e}{z_e}
+     \frac{\partial}{\partial\ln z_e}.
   \label{chainRuleZ}
 \end{equation}
 
@@ -820,8 +1012,8 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \textbf{实现步骤}：
 \begin{enumerate}
   \item 用替换规则将每个 $q_l \cdot Q_e$ 表示为 $\{z_e\}$ 和外部不变量名（默认 $s_{ij}$ 或用户自定义名）的线性组合。
-  \item 将 $\frac{1}{z_e} \cdot \frac{1}{2}\, \partial / \partial(\ln z_e)$ 分解为对传播子的移位算符。
-  \item $z_e^n$ 作用在 $z_e^{-(b_e+b0_e)/2}$ 上 $\to$ 移位 $b_e \to b_e - 2n$。
+  \item $2\,\partial/\partial z_e$ 作用在 $z_e^{-(b_e+b0_e)/2}$ 上，产生系数 $-(b_e+b0_e)$ 和基础移位 $b_e\to b_e+2$。
+  \item 再把 $q_l\cdot Q_e$ 中的每个 $z_e^n$ 或 ISP 单项式吸收到指标；$z_e^n$ 对应进一步移位 $b_e\to b_e-2n$。
 \end{enumerate}
 
 这一框架使得动量 IBP 的链式法则完全转化为指标移位操作，与式~\eqref{zDef}--\eqref{zShift} 定义的指标体系自洽。
@@ -830,7 +1022,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \section{独立变量微分方程求导}
 % ============================================================
 
-微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。009 将独立变量分为两类：一类是只进入顶点相位的外腿能量参数，另一类是由外动量 Gram 坐标给出的外不变量。后一类沿用标准 Feynman 积分微分方程中的做法：先用外动量矢量导数表示不变量求导，再把矢量导数作用到被积函数并约化为指标移位。这里的 $i,j$ 都只遍历 \texttt{externalMomenta} 中声明的独立外动量向量。
+微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。012 将独立变量分为两类：一类是只进入顶点相位的外腿能量参数，另一类是由外动量 Gram 坐标给出的外不变量。后一类沿用标准 Feynman 积分微分方程中的做法：先用外动量矢量导数表示不变量求导，再把矢量导数作用到被积函数并约化为指标移位。这里的 $i,j$ 都只遍历 \texttt{externalMomenta} 中声明的独立外动量向量。
 
 \subsection{顶点能量参数}
 
@@ -888,9 +1080,15 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
   \label{externalInvariantDecomposition}
 \end{equation}
-完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。009 的默认实现选择上三角 external-vector basis 给出一组 canonical 解，并在 \verb|makeExternalInvariantDerivativeDecomposition| 中返回矩阵、所选系数、残差、\verb|nullity| 与 \verb|nonUniqueQ|。若某一物理问题要求不同切向代表元，应替换 operator basis，而不是把任意选择隐藏在求导核心中。
+完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。012 的默认实现选择上三角 external-vector basis 给出一组 canonical 解。实际返回接口是
+\begin{center}
+  \texttt{makeExternalInvariantDerivativeDecomposition},
+\end{center}
+它返回矩阵、所选系数、残差、\verb|nullity| 与 \verb|nonUniqueQ|。若某一物理问题要求不同切向代表元，应替换 operator basis，而不是把任意选择隐藏在求导核心中。
 
 每个 $D_{ij}$ 作用到被积函数时，传播子、massive/massless building block 与 ISP 的求导都按同一链式法则处理。若某个顶点能量在 \verb|vertexEnergies| 中写成外不变量函数，例如 \verb|Sqrt[s11]|，则 $D_{ij}$ 也会按式~\eqref{externalVectorGramAction} 作用到这部分相位能量。
+
+对 massive building block，loop-momentum IBP、time-IBP 与这里的 external-vector/外不变量导数共享同一个 line-local \texttt{compiledFunction\allowbreak System}：普通导数只读取最终 $A_T$ 编译的 \texttt{derivative\allowbreak Terms}。最终 $W_T=\det(T)W$ 及其 \texttt{shrink\allowbreak Terms} 只在 time-IBP 的 theta coincidence/Wronskian shrink 中使用；动力学量导数不微分 theta ordering，因此不调用 $W_T$。
 
 % ============================================================
 \section{Convention 汇总}
@@ -921,10 +1119,10 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \subsection{Building Block 类型}
 
 \begin{itemize}
-  \item $\text{bbType}_e$：线 $e$ 的 building block 类型。展开为 $\{c_1, c_2, \text{sp}\}$。
+  \item $\text{bbType}_e$：线 $e$ 的 building block 类型。
   \item \texttt{"h"} $\to \{2\nu+1, 1, -(2\nu+1)\}$：h 函数（归一化 Hankel）。
-  \item \texttt{"H"} $\to \{2\nu, 1, -1\}$：Hankel 函数。
-  \item \texttt{\{c1, c2, sp\}}：自定义。
+  \item \texttt{"H"}：裸 Hankel 矩阵 EOM，含 $\nu^2/x^2$ 二次 pole；shrink power 为 $-1$。
+  \item \texttt{\{c1,c2\}} 或 line-local \texttt{eomCoefficients}：旧输入兼容；初始化时转换为 $P=c_1/x,Q=c_2,T=I_2,W=-\mathcal Cx^{-c_1}$。
 \end{itemize}
 
 \subsection{维度参数}
@@ -948,8 +1146,9 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \item 缩并条件：h/H 模式为 $n_{e,1}+n_{e,2}=1$；masslessFull 为单指标 $n_e=1$，第一/第二有序端点的 theta-delta 系数分别为 $-2/+2$。
   \item 缩并因子幂次（h 模式）：$-(2\nu_e+1)$。整数 $-1$ 进入指标，非整数 $-2\nu_e$ 进入零点。
   \item 缩并因子幂次（H 模式）：$-1$（纯整数，来自 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] \propto 1/z$）。零点无移位。
-  \item 缩并因子幂次（无质量）：没有额外 $1/q$ 或 $2\nu$ shift；theta-delta 直接把 $\{b_e,1\}$ 变成 $\{bS_e\}$。同一顶点对多条 massless 线的 bundle 合并暂列未来优化。
-  \item $a$ 指标移位：$a_{\text{merged}} = a_u + a_v - 1$（两种模式整数部分相同）。
+  \item 缩并因子幂次（无质量）：没有额外 $1/q$、$1/(-\tau)$ 或 $2\nu$ shift；theta-delta contact 把 $\{b_e,1\}$ 变成 $\{bS_e\}$。
+  \item $a$ 指标移位（h/H）：$a_{\text{merged}} = a_u + a_v - 1$。
+  \item $a$ 指标移位（masslessFull）：$a_{\text{merged}} = a_u + a_v$。
   \item $a$ 零点移位（h 模式）：$a0_{\text{merged}} = a0_u + a0_v - 2\nu_e$。
   \item $a$ 零点移位（H 模式）：$a0_{\text{merged}} = a0_u + a0_v$（无非整数部分）。
   \item $b$ 指标移位（h/H）：$bS_e=b_e+1$。
@@ -959,7 +1158,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \item 常数 prefactor（h 模式）：$\mathcal{C}_e^{(h)} = \frac{4i}{\pi} e^{\pi \text{Im}[\nu_e]}$。
   \item 常数 prefactor（H 模式）：$\mathcal{C}_e^{(H)} = \frac{4i}{\pi} e^{\pi \text{Im}[\nu_e]}$（与 h 模式相同，来自 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] = -e^{\pi \text{Im}[\nu]} \frac{4i}{\pi z}$，已数值验证）。
   \item 常数 prefactor（无质量）：$\mathcal{C}_e = 1$（无 prefactor）。
-  \item 多次缩并：$\mathcal{C}_{\text{total}} = \prod_{e \in \text{shrunk}} \mathcal{C}_e$。
+  \item 同一 contact 事件选中 $k$ 条线时：系数另乘 $2^{1-k}$，prefactor 为所选线 $\mathcal C_e$ 的乘积；整个事件仍只有一个 delta。
   \item Sub-sector 中塌缩线的 $\nu$ 消失：$\nu_e \to 0$（参考代码约定）。
 \end{itemize}
 
@@ -971,5 +1170,200 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \item 圈动量符号：$q_l$（$l$ 为圈编号）。
   \item 外部能量符号：$P_v$（$v$ 为顶点编号）或 $k_v$。
 \end{itemize}
+
+\appendix
+
+% ============================================================
+\section{共同-theta 方案的完整推导}
+\label{app:commonThetaDerivation}
+% ============================================================
+
+设有限条 full lines 共享同一变量 $\Delta$，并满足式~\eqref{bundleSingleLine}。在 $\Delta>0$ 的开区域，每条线都取 $A_e$；在 $\Delta<0$ 的开区域，每条线都取 $B_e$。任何同时含 $\theta(\Delta)$ 与 $\theta(-\Delta)$ 的交叉项只可能位于单点 $\Delta=0$，作为局部可积函数按 almost-everywhere 意义为零。因此乘积作为 distribution 与式~\eqref{bundleCommonThetaProduct} 相同。
+
+对其求分布导数，regular 部分来自 $A_e,B_e$ 的普通导数；奇异部分为
+\begin{equation}
+ \partial_\Delta\theta(\Delta)\prod_eA_e
+ +\partial_\Delta\theta(-\Delta)\prod_eB_e
+ =\delta(\Delta)\left(\prod_eA_e-\prod_eB_e\right).
+ \label{appCommonBoundary}
+\end{equation}
+所以整个 bundle 只有一个 delta。该结论先于且独立于任何 $\theta(0)$ 点值约定。
+
+由式~\eqref{bundleJDDefinition}，
+\begin{equation}
+ A_e=\mathsf J_e+\frac{D_e}{2},
+ \qquad
+ B_e=\mathsf J_e-\frac{D_e}{2}.
+\end{equation}
+展开两个乘积时，选择子集 $S$ 表示哪些因子取 $D_e$。两个乘积中同一子集的系数之差为
+\begin{equation}
+ \left(\frac12\right)^{|S|}
+ -\left(-\frac12\right)^{|S|}
+ =
+ \begin{cases}
+ 0,&|S|\text{ 为偶数},\\
+ 2^{1-|S|},&|S|\text{ 为奇数}.
+ \end{cases}
+\end{equation}
+这就得到式~\eqref{commonThetaOddSubset}。偶数 contact 的消失是左右区域交换下的奇偶性，不是额外 sector 规则。
+
+若采用对称点值 $\theta(0)=1/2$，单线等时值是 $\mathsf J_e$。但式~\eqref{appCommonBoundary} 不能通过把每个未求导 theta 独立替换为 $1/2$ 得到；这种替换会丢失三个及以上传播子中的高阶奇数 $D$ 项。正确的指标映射必须继续使用正文式~\eqref{massiveDToWT}--\eqref{bundleFinalJIndexForm}。
+
+\subsection{三线 worked examples}
+
+三条线共享同一 $\Delta$ 时，直接代入 $A_e=\mathsf J_e+D_e/2$、$B_e=\mathsf J_e-D_e/2$ 得
+\begin{align}
+ A_1A_2A_3-B_1B_2B_3
+ ={}&D_1\mathsf J_2\mathsf J_3
+ +\mathsf J_1D_2\mathsf J_3
+ +\mathsf J_1\mathsf J_2D_3
+ +\frac14D_1D_2D_3.
+ \label{threeLineDirectExpansion}
+\end{align}
+前三项分别选择一条线 contact，最后一项同时选择三条线；四项都乘同一个 $\delta(\Delta)$。
+
+先取三条同向 masslessFull 线，均为 $n_e=1$，并从它们的第一有序端点求导。由 $\mathsf J_e=0,D_e=-2$，三个 single 项均因含未选中线的 $\mathsf J=0$ 而消失，只剩
+\begin{equation}
+ \frac14D_1D_2D_3=\frac14(-2)^3=-2.
+\end{equation}
+因此
+\begin{equation}
+ J\!\left[\{a_u,a_v\},
+   \{\{b_1,1\},\{b_2,1\},\{b_3,1\}\},\mathrm{ispList}\right]
+ \longrightarrow
+ -2J\!\left[\{a_u+a_v\},
+   \{\{b_1\},\{b_2\},\{b_3\}\},\mathrm{ispList}\right].
+ \label{threeMasslessIndexExample}
+\end{equation}
+没有 $a/b$ 整数或 zero-point shift；三个 line packs 同时变为 shrunk，但顶点只合并一次。
+
+再取 line 1 为 h-mode massiveFull，line 2、3 为同向 masslessFull。令 line 1 在 $++$ case 的第一端点状态为 $\{n_{1,1},n_{1,2}\}=\{1,0\}$，则
+\begin{equation}
+ -W_{T,1}=\mathcal C_1x_1^{-2\nu_1-1},
+ \qquad D_1\longmapsto\mathcal C_1x_1^{-2\nu_1-1}.
+\end{equation}
+若两条 massless 线仍取 $n_2=n_3=1$，则 $\mathsf J_2=\mathsf J_3=0$、$D_2=D_3=-2$。式~\eqref{threeLineDirectExpansion} 仍只剩 triple 项，其系数为
+\begin{equation}
+ \frac14\mathcal C_1(-2)(-2)=\mathcal C_1.
+\end{equation}
+最终指标与零点是
+\begin{align}
+ &J\!\left[\{a_u,a_v\},
+  \{\{b_1,1,0\},\{b_2,1\},\{b_3,1\}\},\mathrm{ispList}\right]
+ \nonumber\\
+ &\qquad\longrightarrow
+ \mathcal C_1
+ J\!\left[\{a_u+a_v-1\},
+  \{\{b_1+1\},\{b_2\},\{b_3\}\},\mathrm{ispList}\right],
+ \label{mixedThreeLineIndexExample}
+\end{align}
+并配套使用
+\begin{equation}
+ a0_{uv}'=a0_u+a0_v-2\nu_1,
+ \qquad bS0_1=b0_1+2\nu_1,
+ \qquad bS0_2=b0_2,
+ \qquad bS0_3=b0_3.
+\end{equation}
+这展示了 $W_T$ 的整数 $1$ 与 zero-point $2\nu_1$ 必须同时进入最终 $J$；两条 massless contact 不附加幂次 shift。
+
+% ============================================================
+\section{统一 Gaussian 逐线方案及其与共同-theta的等价性}
+\label{app:gaussianDerivation}
+% ============================================================
+
+取 Gaussian approximate identity
+\begin{equation}
+ \rho_\epsilon(x)=\frac{e^{-x^2/\epsilon^2}}{\sqrt\pi\,\epsilon},
+ \qquad
+ H_\epsilon(x)=\int_{-\infty}^{x}\rho_\epsilon(y)\,dy.
+ \label{gaussianMollifier}
+\end{equation}
+则 $H_\epsilon'=\rho_\epsilon$、$H_\epsilon(0)=1/2$，且 $H_\epsilon(\pm\infty)=1,0$。同一 bundle 的所有线必须使用同一个 $H_\epsilon$：
+\begin{equation}
+ G_{e,\epsilon}=B_e+H_\epsilon D_e.
+ \label{regularizedLine}
+\end{equation}
+
+先证明基本分布极限。对任意测试函数 $\varphi$ 和连续函数 $F$，令 $h=H_\epsilon(x)$，则 $dh=\rho_\epsilon(x)dx$。过渡层在 $\epsilon\to0$ 时收缩到 $x=0$，所以
+\begin{align}
+ \lim_{\epsilon\to0}
+ \int dx\,\varphi(x)\rho_\epsilon(x)F(H_\epsilon(x))
+ &=\varphi(0)\int_0^1F(h)\,dh,\\
+ \rho_\epsilon F(H_\epsilon)
+ &\longrightarrow
+ \delta(x)\int_0^1F(h)\,dh.
+ \label{rhoFDistributionLimit}
+\end{align}
+特别地，
+\begin{equation}
+ \rho_\epsilon H_\epsilon^m\longrightarrow\frac{1}{m+1}\delta,
+ \qquad
+ \rho_\epsilon H_\epsilon^r(1-H_\epsilon)^s
+ \longrightarrow {\rm B}(r+1,s+1)\delta.
+ \label{rhoPowerLimits}
+\end{equation}
+因此不能把 $H_\epsilon(0)^m=2^{-m}$ 直接乘到 delta 上；delta 正则层扫描的是整个 $0\le h\le1$，不是只取中心点。
+
+对 $P_\epsilon=\prod_eG_{e,\epsilon}$ 求导，并把 $H_\epsilon'$ 归因到第 $i$ 条线，其奇异部分为
+\begin{equation}
+ {\cal B}_{i,\epsilon}
+ =\rho_\epsilon D_i
+ \prod_{j\ne i}(B_j+H_\epsilon D_j).
+\end{equation}
+由式~\eqref{rhoFDistributionLimit}，
+\begin{equation}
+ {\cal B}_i
+ =\delta(x)D_i\int_0^1dh
+ \prod_{j\ne i}(B_j+hD_j).
+ \label{lineResolvedBoundary}
+\end{equation}
+这一定义保留了逐传播子 theta，但单条 $i$ 的分配依赖所选共同 regulator；物理上不依赖 regulator 的是所有 $i$ 的总和。
+
+令 $t=h-1/2$，则 $B_j+hD_j=\mathsf J_j+tD_j$。对固定 $i$ 展开得
+\begin{equation}
+ {\cal B}_i
+ =\delta D_i
+ \sum_{\substack{T\subseteq\mathcal B\setminus\{i\}\\|T|\ {\rm even}}}
+ \frac{1}{2^{|T|}(|T|+1)}
+ \prod_{j\in T}D_j
+ \prod_{j\notin T\cup\{i\}}\mathsf J_j,
+ \label{lineResolvedMomentExpansion}
+\end{equation}
+因为
+\begin{equation}
+ \int_{-1/2}^{1/2}t^m dt
+ =0\quad(m\text{ 奇}),
+ \qquad
+ \int_{-1/2}^{1/2}t^m dt
+ =\frac{1}{2^m(m+1)}\quad(m\text{ 偶}).
+\end{equation}
+所以每个逐线项都含奇数个 $D$。
+
+例如三条线时，
+\begin{align}
+ {\cal B}_1&=\delta\left(D_1\mathsf J_2\mathsf J_3+\frac1{12}D_1D_2D_3\right),\\
+ {\cal B}_2&=\delta\left(\mathsf J_1D_2\mathsf J_3+\frac1{12}D_1D_2D_3\right),\\
+ {\cal B}_3&=\delta\left(\mathsf J_1\mathsf J_2D_3+\frac1{12}D_1D_2D_3\right).
+\end{align}
+其中 $1/12=\int_0^1(h-1/2)^2dh$。求和后 triple coefficient 是 $3/12=1/4$。
+
+一般地，固定一个含 $k$ 条线的奇数子集 $S$。在某个 $i\in S$ 的逐线贡献中，其余 $k-1$ 个 $D$ 来自中心矩，系数为
+\begin{equation}
+ \frac{1}{2^{k-1}k}.
+\end{equation}
+共有 $k$ 个 $i\in S$ 可以承担 $H_\epsilon'$，故总系数为
+\begin{equation}
+ k\frac{1}{2^{k-1}k}=2^{1-k},
+\end{equation}
+与式~\eqref{commonThetaOddSubset} 完全相同。也可以直接观察
+\begin{align}
+ \sum_iD_i\prod_{j\ne i}(B_j+hD_j)
+ &=\frac{d}{dh}\prod_j(B_j+hD_j),\\
+ \sum_i{\cal B}_i
+ &=\delta\int_0^1dh\frac{d}{dh}\prod_j(B_j+hD_j)
+ =\delta\left(\prod_jA_j-\prod_jB_j\right).
+\end{align}
+
+因此两种方案对总 boundary 完全等价，前提是同一 bundle 使用同一个 regulator，并保留全部逐线贡献及其中心矩项。package 可以任选其一作为 canonical；012 选择共同-theta方案，因为它无 regulator 与逐线归因依赖，直接给出式~\eqref{commonThetaOddSubset}。不同线使用不同 regulator、只取 $H(0)=1/2$、丢弃高阶奇数项，或把 simultaneous contact 写成 $\delta^k$，都不属于上述等价类。
 
 \end{document}

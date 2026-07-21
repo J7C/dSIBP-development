@@ -6,6 +6,7 @@
 
 - 当前任务、真实完成状态和交接顺序：`研究计划与研究进度.md`
 - 用户手册：`000_note/01_dS_ibp_package/dS_ibp_package.tex`，PDF 同目录
+- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；冻结手推结果后使用 `independent-benchmark/package/package_012.wl`、`package_012.pdf` 和三个典型应用 examples
 - 长期总体架构：`000_note/dS_IBP_package_plan.md`
 - 设计约定：`000_note/dS_IBP_package_design_note.md`
 - 技术公式：`000_note/dS_IBP_package_tech_note.tex`
@@ -15,29 +16,44 @@
 
 ## 当前主线
 
-- `000_code/009_dS_ibp_general.wl`：当前开发主线。
-- `000_code/008_dS_ibp_general.wl`：上一开发版。
-- `000_code/007_dS_ibp_general.wl`、`000_code/006_dS_ibp_general.wl`：历史/旧稳定接口参考。
+- `000_code/012_dS_ibp_general.wl`：当前开发主线。
+- `000_code/011_dS_ibp_general.wl`：上一开发版，保留 v011 报告对应行为。
+- `000_code/010_dS_ibp_general.wl`、`000_code/009_dS_ibp_general.wl`、`000_code/008_dS_ibp_general.wl`、`000_code/007_dS_ibp_general.wl`：工作树内保留的历史版本。001--006 及其专用检查不再保留。
 
-009 已实现：
+012 已实现：
 
 - topology-driven 输入解析，不硬编码 bubble。
 - 统一积分表示 `J[aList, linePacks, ispList]`。
 - massive/massless full/cross line pack 与 theta-boundary shrunk sector。
 - 完整 `L(L+K)` 个 loop-momentum IBP 生成元和每个 active vertex 的 time 生成元。
-- massive EOM、massless 有序端点 `n=0/1` canonical、massive/massless theta shrink。
+- massive EOM、massless 有序端点 `n=0/1` canonical、coincident massive endpoint canonical、massive/massless theta shrink。
+- 同一代表顶点对的 full lines 使用共同-theta odd-subset contact；一次事件只合并一次顶点，shrink sectors 只枚举 contact 可达状态。
 - momentum IBP 对传播子、building block 和 ISP/numerator 因子求导。
 - 独立变量微分方程 seed：`ke[i]` 顶点能量标量求导，以及外不变量经 `k_i.d/dk_j` 矢量导数组合求导。
 - 解析 seed 保存、后端中立 `linearData`、基础 Kira serializer。
+- 公开原子 API：`dtau/dqq/dqk`、`rep2innerform/rep2outform/rep2Integrand`；支持显式 topology 或已注册 context。
+- massive line 的 `P,Q,T,W[,WT]` 初始化编译层；`AT` 编译为 `derivativeTerms`，`WT=Det[T] W` 编译为 `shrinkTerms`，time/momentum IBP 与 theta shrink 只读取编译结果。
+- h/H 纯数据 presets。缺省 massive 模式是 h：`T=IdentityMatrix[2]`、`W=WT=W_h`；裸 H preset 的 `AT` 含 `nu^2/x^2` 二次 pole。
 
-尚未封装成最终公开 API：
+共同-theta boundary 是当前最高优先级正确性门禁，不是可选优化。完整链路必须同时覆盖 `WT -> shrinkTerms`、simultaneous integer/zero-point shift、coincident canonical、contact-reachable sector、linearData 和 serializer；专项清单见 `000_note/2026-07-21_common_theta_correctness_todo.md`，两种等价分布方案的证明见技术笔记附录。
 
-- `dtau[i, expr_]`
-- `dqq[i, j, expr_]`
-- `dqk[i, j, expr_]`
-- `rep2innerform[expr_]`
-- `rep2outform[expr_]`
-- `rep2Integrand[expr_]`
+公开 API 示例：
+
+```mathematica
+dtau[v, expr, topo]
+dqq[i, j, expr, topo]
+dqk[i, j, expr, topo]
+rep2innerform[expr, topo]
+rep2outform[expr, topo]
+rep2Integrand[expr, topo]
+
+setIBPTopologyContext[topo];
+dtau[v, expr]  (* short form *)
+```
+
+当前仍未完成：
+
+- 正式 Mathematica `BeginPackage` context。
 
 ## 核心表示
 
@@ -48,11 +64,13 @@ J[aList, linePacks, ispList]
 ```
 
 - massive full/cross：`{b[e], n[e,1], n[e,2]}`
-- massless full：`{b[e], n[e]}`，采用双 theta 合并路线
+- massless full：`{b[e], n[e]}`；仍保留逐线 pack，但共享顶点对的 boundary 按共同 theta 处理
 - massless cross：`{b[e]}`
 - shrunk line：`{bS[e]}`
 - massive shrink：整数指标 `bS=b+1`
 - massless shrink：整数指标 `bS=b`
+- massive Wronskian 的整数 `1/(-tau)` 使 merged `a` 减 1；massless delta 不产生该移位
+- 一次共同 boundary 可同时 shrink 任意非空奇数条 bundle 线，系数为 `2^(1-k)`；它仍只有一个 delta
 - 缩并后 delta 积掉一个时间变量，合并顶点只保留一个 compact `a`
 
 实际幂次包含用户给出的非零零点 `a0/b0/bS0`。新 benchmark 禁止把这些零点偷偷设为 0。
@@ -75,7 +93,7 @@ J[aList, linePacks, ispList]
 
 ## 微分方程变量求导
 
-009 提供 seed 层接口：
+012 提供 seed 层接口：
 
 ```mathematica
 makeExternalInvariantDerivativeDecomposition[topo, var]
@@ -89,6 +107,8 @@ applyIndependentVariableDerivativeSeed[topo, int, var]
 - 若 `var` 是 `ke[i]` 等独立顶点能量参数，只对顶点指数相位做标量求导。
 - 若 `var` 是外不变量，先在外不变量约束坐标上把 `∂/∂var` 解成 `k_i . ∂/∂k_j` 的线性组合，再作用到传播子、building block、ISP 和相关顶点能量表达式。
 
+massive building block 的动力学量导数与 qIBP、tIBP 自动读取同一份最终 `AT -> derivativeTerms`，因此 h、裸 H 和一般 `P,Q,T,W` 不会出现两套导数 convention。`WT/shrinkTerms` 只用于 time-IBP 的 theta/Wronskian shrink，普通动力学量导数不使用它。
+
 外动量矢量导数分解的完整 `K^2` 算符空间一般有零空间，解不唯一。当前默认使用上三角 canonical basis，并在 decomposition 数据中返回矩阵、系数、残差、`nullity` 与 `nonUniqueQ`。
 
 ## 验证
@@ -97,16 +117,17 @@ applyIndependentVariableDerivativeSeed[topo, int, var]
 
 - `atomic_massless_line`：22/22 + 8/8
 - `atomic_massive_line`：104/104
-- `pure_massless_bubble`：70/70
-- `mixed_bubble`：138/138
-- `mixed_triangle`：1800/1800
-- `pure_massive_bubble_reference`：310/310
-- `parallel_massless_bundle_guard`：242/242
-- `mixed_sunrise`：2178/2178
-- `two_loop_isp_toy`：1230/1230
+- `pure_massless_bubble`：64/64
+- `mixed_bubble`：132/132
+- `mixed_triangle`：1792/1792
+- `pure_massive_bubble_reference`：608/608（h/H 各 304）
+- `parallel_massless_bundle_guard`：194/194
+- `mixed_sunrise`：1842/1842
+- `two_loop_isp_toy`：978/978
 - `vertex_energy_signs`：90/90
 - `independent_variable_derivatives_check.wl`：覆盖 `ke[i]`、`s11` 和两外动量时的非唯一 decomposition
-- `009_symmetry_check.wl`、`009_massless_direction_check.wl`、`009_sp_interface_check.wl`、`009_scalar_product_cache_check.wl`、`009_kira_export_smoke_check.wl`
+- `000_code/test/012_theta_bundle_and_report_audit_test.wl`：30/30
+- 011 的 function-system、public API、symmetry、massless direction、SP/cache 与 serializer 检查作为 012 的继承回归输入；012 的新增测试只放在 `000_code/test/`。
 
 这些是 seed/example 层验证记录，不等于对任意拓扑的数学穷尽证明。serializer 检查不运行 Kira/Fermat。
 
@@ -114,6 +135,7 @@ applyIndependentVariableDerivativeSeed[topo, int, var]
 
 ```powershell
 wolframscript -file '000_code\examples\independent_variable_derivatives_check.wl'
+wolframscript -file '000_code\test\012_theta_bundle_and_report_audit_test.wl'
 wolframscript -file '000_code\examples\hand_derived_cross_checks\mixed_bubble_check.wl'
 ```
 
