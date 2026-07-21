@@ -1088,7 +1088,31 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 
 每个 $D_{ij}$ 作用到被积函数时，传播子、massive/massless building block 与 ISP 的求导都按同一链式法则处理。若某个顶点能量在 \verb|vertexEnergies| 中写成外不变量函数，例如 \verb|Sqrt[s11]|，则 $D_{ij}$ 也会按式~\eqref{externalVectorGramAction} 作用到这部分相位能量。
 
+对一般非线性函数 $F(x_1,\ldots,x_N)$，程序必须显式使用
+\begin{equation}
+  D_{ij}F
+  =\sum_a {\partial F\over\partial x_a}D_{ij}x_a.
+  \label{externalVectorFunctionChainRule}
+\end{equation}
+因此 $F=\sqrt{s_{11}}$ 给出普通的 $1/(2\sqrt{s_{11}})$ 链式因子。把每个坐标直接替换成 $D_{ij}x_a$ 只对线性 $F$ 成立，不能用于顶点能量或其它非线性动力学量系数。
+
 对 massive building block，loop-momentum IBP、time-IBP 与这里的 external-vector/外不变量导数共享同一个 line-local \texttt{compiledFunction\allowbreak System}：普通导数只读取最终 $A_T$ 编译的 \texttt{derivative\allowbreak Terms}。最终 $W_T=\det(T)W$ 及其 \texttt{shrink\allowbreak Terms} 只在 time-IBP 的 theta coincidence/Wronskian shrink 中使用；动力学量导数不微分 theta ordering，因此不调用 $W_T$。
+
+\subsection{带动力学量系数的表达式总导数}
+
+微分方程基或约化结果一般是
+\begin{equation}
+  \mathcal I(s)=\sum_r c_r(s)J_r(s)+c_0(s),
+\end{equation}
+而不是单个指标积分。公开接口 \verb|ds[expr,sij]| 使用 family 初始化时的外部变量名，并严格实现
+\begin{equation}
+  {\partial\mathcal I\over\partial s}
+  =\sum_r c'_r(s)J_r(s)
+  +\sum_r c_r(s){\partial J_r\over\partial s}
+  +c'_0(s).
+  \label{expressionTotalDerivative}
+\end{equation}
+实现时先把各个 $J_r$ 替换为惰性 token，让 Mathematica 的 \texttt{D} 只作用于显式系数；随后逐项调用单积分导数核心，合并后再统一执行 EOM、symmetry 与 canonical。接口拒绝内部 \texttt{kk[i,j]} 名称及 $J_iJ_j$ 等非线性输入，输出恢复到 \texttt{sij} 或用户自定义的外部表示。
 
 % ============================================================
 \section{Convention 汇总}

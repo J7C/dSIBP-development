@@ -100,12 +100,23 @@ makeExternalInvariantDerivativeDecomposition[topo, var]
 applyExternalVectorDerivativeSeed[topo, int, gen]
 applyExternalInvariantVariableDerivativeSeed[topo, int, var]
 applyIndependentVariableDerivativeSeed[topo, int, var]
+independentVariableDerivativeVariables[topo]
+makeIndependentVariableDerivativeGenerators[topo]
+makeIndependentVariableDerivativeSeedBatch[topo, int]
+ds[expr, sij, topo]
+ds[expr, sij]
 ```
 
 `applyIndependentVariableDerivativeSeed` 自动分派：
 
 - 若 `var` 是 `ke[i]` 等独立顶点能量参数，只对顶点指数相位做标量求导。
 - 若 `var` 是外不变量，先在外不变量约束坐标上把 `∂/∂var` 解成 `k_i . ∂/∂k_j` 的线性组合，再作用到传播子、building block、ISP 和相关顶点能量表达式。
+
+`makeIndependentVariableDerivativeSeedBatch` 自动枚举全部外不变量坐标和未被其表达的独立顶点能量参数，并逐变量返回 derivative、decomposition、状态、forbidden-`n` 与 canonical 检查。
+
+公开入口 `ds[expr,sij]` 使用 family 初始化时约定的外部变量名，例如 `s11`、`s12` 或 `ke[i]`。`expr` 可为单个 `J` 或带动力学量系数的 `J` 线性组合；程序同时计算显式系数导数和每个积分的指标导数，再统一执行 EOM、symmetry 与 canonical。内部 `kk[i,j]` 不是该接口的合法变量名，非线性 `J_i J_j` 输入会被拒绝。
+
+外动量矢量导数对 `Sqrt[s11]` 等非线性函数显式使用链式法则 `D F=Sum[(∂F/∂x_a) D x_a]`，不能把 `x_a` 直接替换成 `D x_a`。
 
 massive building block 的动力学量导数与 qIBP、tIBP 自动读取同一份最终 `AT -> derivativeTerms`，因此 h、裸 H 和一般 `P,Q,T,W` 不会出现两套导数 convention。`WT/shrinkTerms` 只用于 time-IBP 的 theta/Wronskian shrink，普通动力学量导数不使用它。
 
@@ -125,6 +136,8 @@ massive building block 的动力学量导数与 qIBP、tIBP 自动读取同一�
 - `mixed_sunrise`：1842/1842
 - `two_loop_isp_toy`：978/978
 - `vertex_energy_signs`：90/90
+- `tadpole_symmetry`：8/8（含 shared-loop 与 `G+-` 防误用门禁）
+- `ds_total_derivative`：9/9（单积分、系数导数、线性组合、外部变量与线性门禁）
 - `independent_variable_derivatives_check.wl`：覆盖 `ke[i]`、`s11` 和两外动量时的非唯一 decomposition
 - `000_code/test/012_theta_bundle_and_report_audit_test.wl`：30/30
 - 011 的 function-system、public API、symmetry、massless direction、SP/cache 与 serializer 检查作为 012 的继承回归输入；012 的新增测试只放在 `000_code/test/`。

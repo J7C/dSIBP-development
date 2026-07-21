@@ -370,15 +370,15 @@ IBP 产生的移位：
 
 ### 用户对称性规则的边界
 
-`sp` 的 `Orderless` 只实现标量积交换性 `sp[p,q]=sp[q,p]`，不代表 Feynman 图或积分族对称性。积分族对称性依赖质量、外腿能量和动量等物理条件，当前不允许 package 自动猜测。
+`sp` 的 `Orderless` 只实现标量积交换性 `sp[p,q]=sp[q,p]`，不代表一般 Feynman 图或积分族对称性。积分族对称性依赖质量、外腿能量和动量等物理条件，package 不自动猜测一般图 automorphism。
 
-当前 012 case 可选输入 `symmetryRules`。`repSymmetry0[topo_]` 返回原始规则，`symmetry[expr_,topo_]` 只执行一次 `/.`；空规则保持表达式不变。pure massive bubble reference 的 README 只记录等质量内线交换及特定外腿参数下可由用户启用的附加规则，正式 hand-derived expected 与其它 benchmark 一样保持 `symmetryRules={}`。
+当前 012 case 可选输入 `symmetryRules`。`repSymmetry0[topo_]` 只返回用户原始规则；`effectiveSymmetryRules0[topo_]` 将其与自动 tadpole rules 去重合并，`symmetry[expr_,topo_]` 对并集只执行一次 `/.`。自动规则只识别 `originalEndpoints` 已相同的 self-loop：massive full 规范化 `{1,0}->{0,1}`，massless full 的 `n=1` 归零；odd ISP 还要求该 loop momentum 不出现在其它传播子中。cross propagator 与 shrink 后才 coincident 的普通线均不匹配。
 ## 8. IBP 生成要点
 
 IBP seed 包括：
 - 时间 IBP：`d/d\tau_v`（`V` 个算子），处理 Heaviside delta 塌缩
 - 圈动量 IBP：`q_l^\mu \partial/\partial q_l^\mu`（`L` 个标度算子），多圈时添加 `q_l^\mu \partial/\partial q_m^\mu`
-- 前端关系：massless full/cross endpoint canonical；`symmetry` 单次应用用户输入规则，apart/scaleless 仍待实现
+- 前端关系：massless full/cross endpoint canonical；`symmetry` 单次应用自动 tadpole 与用户规则并集，apart/scaleless 仍待实现
 
 生成流程：
 1. 读取 family 配置，并验证 ISP/零点/numericRules/seedRanges 已定义
@@ -435,7 +435,7 @@ dS 的特殊点是：一个顶点连着的所有外腿在时间相位里只通�
 
 ### 10.2 独立变量微分方程求导边界
 
-011 的微分方程 seed 只处理已经由 topology 输入声明清楚的独立变量，不主动替用户拆分或合并物理能量。规则如下：
+012 的微分方程 seed 只处理已经由 topology 输入声明清楚的独立变量，不主动替用户拆分或合并物理能量。规则如下：
 
 - `ke[i]` 等独立顶点能量参数只对 `vertexEnergies` 中的 e 指数相位做标量求导；它不进入 `externalMomenta`、`sp` 坐标或 ISP 完备性。
 - 默认 `sij` 或用户自定义外不变量名属于 `externalMomenta` 的 Gram 坐标。对它求导时，先在约束坐标上把 $\partial/\partial x_a$ 写成外动量矢量导数 $D_{ij}=k_i\cdot\partial/\partial k_j$ 的线性组合。
@@ -443,6 +443,14 @@ dS 的特殊点是：一个顶点连着的所有外腿在时间相位里只通�
 - 当前默认 basis 是上三角 `externalVector` generators。若物理问题要求其它切向选择，应通过 operator basis 覆盖，而不是在求导核心中硬编码。
 - 每个外动量矢量导数要作用到传播子、massive/massless building block、ISP/numerator，以及那些被写成外不变量函数的顶点能量表达式，例如 `Sqrt[s11]`。
 - massive building block 的 external-vector/外不变量导数与 qIBP、tIBP 共享 line-local 最终 `AT -> derivativeTerms`，不能另行假设 `n->n+1`。`WT/shrinkTerms` 只属于 time-IBP 的 theta coincidence，不参与普通动力学量导数。
+
+公开入口为 `ds[expr,sij,topo]` 或已注册 context 下的 `ds[expr,sij]`。`sij` 必须使用 topology 初始化后的外部名字；内部 `kk[i,j]` 不接受。程序用惰性 token 固定每个 `J`，先由 `D` 产生显式系数导数，再用单积分核心补上指标导数，因此严格满足
+$$
+\partial_s\sum_r c_r(s)J_r=\sum_r c'_r(s)J_r+\sum_r c_r(s)\partial_sJ_r.
+$$
+允许常数项和任意 `J` 线性组合，不允许 `J_iJ_j` 或非多项式 `J` 依赖。
+
+external-vector 对标量积函数的作用按坐标链式法则实现：先抽取表达式中的 `qq/qk/kk` 坐标，再求 `D[expr,coordinate] D_ij(coordinate)`。这保证 `Sqrt[s11]` 等非线性顶点能量得到正确的 $1/(2\sqrt{s_{11}})$，而不是错误的 `Sqrt[D_ij s11]`。
 
 ### 10.3 函数族扩展
 
@@ -647,14 +655,14 @@ delta 缩并后，`J` 只保留仍独立的 compact `aList`；原顶点、代表
 
 ### 13.4 当前验证结论与剩余设计项
 
-012 当前通过 10 个修正后 hand-derived family 的 package cross-check：atomic massive 104/104、atomic massless 22/22 加易错点 8/8、pure massless bubble 64/64、mixed bubble 132/132、mixed triangle 1792/1792、mixed sunrise 1842/1842、pure massive bubble reference 608/608（h/H 各 304）、two-loop ISP toy 978/978、parallel massless bundle guard 194/194、vertex energy signs 90/90。另有 theta/report audit 30/30；011 的函数系统、独立变量求导、公开 API 和 serializer 检查作为继承回归。serializer 检查不运行 Kira/Fermat。
+012 当前通过 12 个修正后 hand-derived family 的 package cross-check：atomic massive 104/104、atomic massless 22/22 加易错点 8/8、pure massless bubble 64/64、mixed bubble 132/132、mixed triangle 1792/1792、mixed sunrise 1842/1842、pure massive bubble reference 608/608（h/H 各 304）、two-loop ISP toy 978/978、parallel massless bundle guard 194/194、vertex energy signs 90/90、tadpole symmetry 8/8、ds total derivative 9/9。另有 theta/report audit 30/30；011 的函数系统、独立变量求导、公开 API 和 serializer 检查作为继承回归。serializer 检查不运行 Kira/Fermat reduction。
 
 这些检查覆盖约定的顶点符号、可达 sector、离散态和 qIBP/tIBP 生成元，但不是任意拓扑的数学穷尽证明。011 时代的 expected/helper 保留在 `000_code/check/hand-derived-v2/`，用于审计旧 oracle 为何会与旧实现同向通过；012 的修正 expected 和 actual adapters 位于 `000_code/test/012_hand-derived/`、`000_code/test/012_hand_derived_cross_checks/`。
 
 仍保留的设计项：
 
 1. 正式 Mathematica package/context；012 已提供显式 topology 或已注册 context 的公开原子 API，但尚未迁入正式 `BeginPackage` context。
-2. 将独立 benchmark 扩展到当前 10 个已完成 family 之外的新 topology；现有指定 family 已完成全 sector、全顶点符号与全生成元覆盖。
+2. 将独立 benchmark 扩展到当前 12 个已完成 family 之外的新 topology；现有指定 family 已完成全 sector、全顶点符号与全生成元覆盖。
 3. 高圈 seed 的 streaming/chunking 与规模报告。
 4. 自动图 automorphism/参数对称性检测，以及 scaleless、parity 等可选前端 canonical；用户输入 `symmetryRules` 与 `symmetry[expr_,topo_]` 的单次应用已经实现。
 5. Rational Tracer 或其它后端 serializer。

@@ -54,6 +54,19 @@ decompPassQ = TrueQ[
     decompS11["residual"] === {0}
    ];
 
+derivativeBatchBpp = makeIndependentVariableDerivativeSeedBatch[topBpp, intBpp];
+batchS11Equation = SelectFirst[
+   derivativeBatchBpp["equations"],
+   #["userVariable"] === s11 &,
+   Missing["NotFound"]
+   ];
+batchDerivativePassQ = TrueQ[
+   derivativeBatchBpp["status"] === "generated" &&
+    Lookup[derivativeBatchBpp["variables"], "userVariable"] === {s11, ke[2]} &&
+    AssociationQ[batchS11Equation] &&
+    Expand[batchS11Equation["derivative"] - actualDS11] === 0
+   ];
+
 
 (* ::Chapter:: *)
 (*多外动量时的非唯一性*)
@@ -106,6 +119,7 @@ nonUniquePassQ = TrueQ[
 Print["independent variable derivative ke check: ", kePassQ];
 Print["independent variable derivative s11 check: ", s11PassQ];
 Print["s11 decomposition check: ", decompPassQ];
+Print["independent variable derivative batch check: ", batchDerivativePassQ];
 Print["two-external non-unique decomposition recorded: ", nonUniquePassQ];
 
 If[! nonUniquePassQ,
@@ -113,4 +127,4 @@ If[! nonUniquePassQ,
  Print["two-external all-basis data: ", decompS12All[[{"status", "operatorBasis", "coefficients", "residual", "nullity", "nonUniqueQ"}]]];
  ];
 
-If[! And[kePassQ, s11PassQ, decompPassQ, nonUniquePassQ], Exit[1]];
+If[! And[kePassQ, s11PassQ, decompPassQ, batchDerivativePassQ, nonUniquePassQ], Exit[1]];

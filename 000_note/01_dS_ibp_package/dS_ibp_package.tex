@@ -554,19 +554,35 @@ makeExternalInvariantDerivativeDecomposition[topo, var]
 applyExternalVectorDerivativeSeed[topo, int, gen]
 applyExternalInvariantVariableDerivativeSeed[topo, int, var]
 applyIndependentVariableDerivativeSeed[topo, int, var]
+ds[expr, sij, topo]
+ds[expr, sij]
 \end{verbatim}
 \texttt{applyIndependentVariableDerivativeSeed} 会自动分派：若 \texttt{var} 是外不变量，先做上述 decomposition，再把每个 $D_{ij}$ 作用到传播子、building block、ISP 和可能写成 \texttt{Sqrt[sij]} 的顶点能量；否则按顶点能量标量参数处理。
+
+\texttt{ds} 是表达式级总导数入口。变量必须使用函数族初始化后的外部名字；内部 \texttt{kk[i,j]} 不接受。若
+\begin{equation}
+ \mathcal I(s)=\sum_r c_r(s)J_r(s)+c_0(s),
+\end{equation}
+则
+\begin{equation}
+ \partial_s\mathcal I
+ =\sum_r c'_r(s)J_r(s)+\sum_r c_r(s)\partial_sJ_r+c'_0(s).
+\end{equation}
+程序先将 $J_r$ 替换为惰性 token 求显式系数导数，再补上每个积分的指标导数，合并后统一执行 EOM、symmetry 与 canonical。它接受单个 $J$ 和任意线性组合，拒绝 $J_iJ_j$ 等非线性输入。
+
+外动量矢量导数对 \texttt{Sqrt[s11]} 等非线性表达式显式执行 $D F=\sum_a(\partial F/\partial x_a)D x_a$；不能把 $x_a$ 直接替换为 $D x_a$。
 
 对 massive building block，external-vector/外不变量导数与 qIBP、tIBP 自动使用同一份 line-local \texttt{compiledFunctionSystem}。普通导数只读取最终 $A_T$ 编译的 \texttt{derivativeTerms}，因此用户选择 h、裸 H 或一般 $P,Q,T,W$ 后不需要为微分方程另设 convention。$W_T=\det(T)W$ 及其 \texttt{shrinkTerms} 只用于 time-IBP 的 theta coincidence/Wronskian shrink；普通动力学量导数不产生 theta shrink，因而不调用 $W_T$。
 
 \subsection{用户对称性规则}
 
-积分族对称性依赖质量和外参条件。012 不自动检测，只读取用户 \texttt{symmetryRules}：
+一般积分族对称性依赖质量和外参条件，012 不自动猜测一般图 automorphism。程序会自动加入受门禁保护的原始 self-loop tadpole 规则，并与用户 \texttt{symmetryRules} 取去重并集：
 \begin{verbatim}
 repSymmetry0[topo_]
+effectiveSymmetryRules0[topo_]
 symmetry[expr_,topo_]
 \end{verbatim}
-后者只做一次替换；空规则返回原表达式。pure massive bubble reference 会测试等质量内线交换，以及参考参数中两外腿动量/能量相等后才成立的附加对称性。其它 benchmark 暂不输入对称性。
+\texttt{repSymmetry0} 只返回用户原始规则；\texttt{symmetry} 对并集只做一次替换。自动规则只识别原始端点相同的 self-loop，不作用于 cross propagator 或 shrink 后才 coincident 的普通线；odd ISP 归零还要求对应 loop momentum 不被其它传播子共享。
 
 \section{IBP 生成元与公开接口状态}
 
@@ -590,6 +606,7 @@ symmetry[expr_,topo_]
 dtau[i,expr,topo]       or dtau[i,expr]
 dqq[i,j,expr,topo]      or dqq[i,j,expr]
 dqk[i,j,expr,topo]      or dqk[i,j,expr]
+ds[expr,sij,topo]       or ds[expr,sij]
 rep2innerform[expr,topo]
 rep2outform[expr,topo]
 rep2Integrand[expr,topo]

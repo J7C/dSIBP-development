@@ -1344,7 +1344,13 @@ applyMassiveCoincidentCanonical[expr_, topo_Association] := Expand[
 
 
 applySeedCanonical[expr_, topo_Association] :=
-  applyMasslessEndpointCanonical[applyMassiveCoincidentCanonical[applyEOM[expr, topo], topo], topo];
+  symmetry[
+   applyMasslessEndpointCanonical[
+    applyMassiveCoincidentCanonical[applyEOM[expr, topo], topo],
+    topo
+    ],
+   topo
+   ];
 
 
 forbiddenNDataForIntegral[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
@@ -1403,8 +1409,155 @@ repSymmetry0[topo_Association] := Lookup[topo, "symmetryRules", {}];
 symmetry::badrules = "symmetryRules 必须是 Rule/RuleDelayed 的列表。";
 
 
+(* tadpole symmetry 只识别可由单个 loop momentum reversal 证明的 self-loop。*)
+tadpoleLoopReversalData[topo_Association] := Module[
+   {loops = Lookup[topo, "loopMomenta", {}], lines = Lookup[topo, "lines", {}], candidates, momentum, endpoints, loopIndex, exclusiveLoopQ, data = {}},
+   Do[
+    endpoints = Lookup[lines[[e]], "originalEndpoints", Lookup[lines[[e]], "endpoints", {}]];
+    If[SameQ @@ endpoints,
+     momentum = Expand[Lookup[lines[[e]], "momentum", 0]];
+     candidates = Select[
+       Range[Length[loops]],
+       Function[l,
+        With[{coefficient = Coefficient[momentum, loops[[l]]]},
+         coefficient =!= 0 && Expand[momentum - coefficient loops[[l]]] === 0
+         ]
+        ]
+       ];
+     If[Length[candidates] === 1,
+      loopIndex = First[candidates];
+      exclusiveLoopQ = And @@ Table[
+         otherLine === e || Coefficient[Expand[Lookup[lines[[otherLine]], "momentum", 0]], loops[[loopIndex]]] === 0,
+         {otherLine, Length[lines]}
+         ];
+      AppendTo[data, <|
+        "lineIndex" -> e,
+        "lineId" -> Lookup[lines[[e]], "id", e],
+        "packType" -> Lookup[lines[[e]], "packType", Missing["packType"]],
+        "endpoints" -> endpoints,
+        "loopIndex" -> loopIndex,
+        "loopMomentum" -> loops[[loopIndex]],
+        "exclusiveLoopQ" -> exclusiveLoopQ
+        |>]
+      ]
+     ],
+    {e, Length[lines]}
+    ];
+   data
+   ];
+
+
+reverseLoopScalarProductExpr[expr_, loopIndex_Integer] := Expand[
+   expr /. {
+     HoldPattern[qq[i_Integer, j_Integer]] :> (-1)^Count[{i, j}, loopIndex] qq[i, j],
+     HoldPattern[qk[i_Integer, j_Integer]] :> (-1)^Count[{i}, loopIndex] qk[i, j]
+     }
+   ];
+
+
+tadpoleISPParity[topo_Association, loopIndex_Integer, ispIndex_Integer] := Module[
+   {exprs = normalizeISPExprs[topo], expr, reversed},
+   If[ispIndex < 1 || ispIndex > Length[exprs], Return[0]];
+   expr = exprs[[ispIndex]];
+   reversed = reverseLoopScalarProductExpr[expr, loopIndex];
+   Which[
+    Expand[reversed - expr] === 0, 1,
+    Expand[reversed + expr] === 0, -1,
+    True, 0
+    ]
+   ];
+
+
+tadpoleOddISPIntegralQ[topo_Association, J[_, _, ispList_]] := Module[{loopData, oddPowers},
+   loopData = Select[
+     tadpoleLoopReversalData[topo],
+     MemberQ[{"massiveFull", "masslessFull"}, #["packType"]] && TrueQ[#["exclusiveLoopQ"]] &
+     ];
+   AnyTrue[
+    loopData,
+    Function[data,
+     oddPowers = Select[
+       Table[
+        If[tadpoleISPParity[topo, data["loopIndex"], j] === -1, ispList[[j]], Nothing],
+        {j, Length[ispList]}
+        ],
+       IntegerQ
+       ];
+     oddPowers =!= {} && And @@ (IntegerQ /@ oddPowers) && OddQ[Total[oddPowers]]
+     ]
+    ]
+   ];
+
+
+tadpoleMassiveSwapNeededQ[topo_Association, lineIndex_Integer, J[_, linePacks_, _]] :=
+  lineIndex <= Length[linePacks] &&
+   Lookup[topo["lines"][[lineIndex]], "packType", Missing["packType"]] === "massiveFull" &&
+   Length[linePacks[[lineIndex]]] >= 3 && linePacks[[lineIndex, {2, 3}]] === {1, 0};
+
+
+tadpoleMasslessZeroQ[topo_Association, lineIndex_Integer, J[_, linePacks_, _]] :=
+  lineIndex <= Length[linePacks] &&
+   Lookup[topo["lines"][[lineIndex]], "packType", Missing["packType"]] === "masslessFull" &&
+   Length[linePacks[[lineIndex]]] >= 2 && linePacks[[lineIndex, 2]] === 1;
+
+
+tadpoleSwapLinePack[J[aList_, linePacks_, ispList_], lineIndex_Integer] := Module[
+   {newPacks = linePacks},
+   newPacks[[lineIndex, {2, 3}]] = newPacks[[lineIndex, {3, 2}]];
+   J[aList, newPacks, ispList]
+   ];
+
+
+tadpoleSymmetryRules0[topo_Association] := Module[{data, rules = {}},
+   data = tadpoleLoopReversalData[topo];
+   AppendTo[rules,
+    HoldPattern[(int_J /; tadpoleOddISPIntegralQ[topo, int])] :> 0
+    ];
+   Do[
+    Switch[dataItem["packType"],
+     "massiveFull",
+     With[{lineIndex = dataItem["lineIndex"]},
+      AppendTo[rules,
+       HoldPattern[(int_J /; tadpoleMassiveSwapNeededQ[topo, lineIndex, int])] :>
+        tadpoleSwapLinePack[int, lineIndex]
+       ]
+      ],
+     "masslessFull",
+     With[{lineIndex = dataItem["lineIndex"]},
+      AppendTo[rules,
+       HoldPattern[(int_J /; tadpoleMasslessZeroQ[topo, lineIndex, int])] :> 0
+       ]
+      ],
+     _, Null
+     ],
+    {dataItem, data}
+    ];
+   rules
+   ];
+
+
+effectiveSymmetryRules0[topo_Association] := Module[{userRules = repSymmetry0[topo]},
+   If[! ListQ[userRules], Return[userRules]];
+   DeleteDuplicates@Join[tadpoleSymmetryRules0[topo], userRules]
+   ];
+
+
+tadpoleSymmetryData[topo_Association] := Module[{data = tadpoleLoopReversalData[topo]},
+   <|
+    "status" -> "generated",
+    "loopReversalData" -> data,
+    "massiveFullLineIndices" -> Lookup[Select[data, #["packType"] === "massiveFull" &], "lineIndex"],
+    "masslessFullLineIndices" -> Lookup[Select[data, #["packType"] === "masslessFull" &], "lineIndex"],
+    "automaticRuleCount" -> Length[tadpoleSymmetryRules0[topo]],
+    "automaticRules" -> tadpoleSymmetryRules0[topo],
+    "userRuleCount" -> Length[repSymmetry0[topo]],
+    "effectiveRuleCount" -> Length[effectiveSymmetryRules0[topo]]
+    |>
+   ];
+
+
 symmetry[expr_, topo_Association] := Module[
-   {rules = repSymmetry0[topo]},
+   {rules = effectiveSymmetryRules0[topo]},
    If[
     ! ListQ[rules] || ! And @@ (validDiscreteReplacementRuleQ /@ rules),
     Message[symmetry::badrules];
@@ -2994,10 +3147,10 @@ externalVectorDerivativeGeneratorBasis[topo_Association, _] := externalVectorDer
 externalVectorDerivativeLabel[gen_Association] := {gen["type"], gen["vectorIndex"], gen["dExternal"]};
 
 
-externalVectorDirectionalSPDerivative[topo_Association, expr_, gen_Association] := Module[
+externalVectorSPCoordinateDerivative[topo_Association, coordinate_, gen_Association] := Module[
    {dExternal = gen["dExternal"], vector = gen["vector"], loops = topo["loopMomenta"], exts = topo["externalMomenta"]},
    Expand[
-    expr /. {
+    coordinate /. {
       HoldPattern[qq[_Integer, _Integer]] :> 0,
       HoldPattern[qk[i_Integer, j_Integer]] :>
        If[j === dExternal, expandDotExpr[loops[[i]], vector, topo], 0],
@@ -3005,7 +3158,17 @@ externalVectorDirectionalSPDerivative[topo_Association, expr_, gen_Association] 
        If[i === dExternal, expandDotExpr[vector, exts[[j]], topo], 0] +
         If[j === dExternal, expandDotExpr[exts[[i]], vector, topo], 0]
       }
-    ]
+   ]
+   ];
+
+
+(* 对非线性动力学量表达式必须显式执行链式法则，不能把坐标直接替成其方向导数。 *)
+externalVectorDirectionalSPDerivative[topo_Association, expr_, gen_Association] := Module[
+   {coordinates},
+   coordinates = DeleteDuplicates[Cases[expr, _qq | _qk | _kk, {0, Infinity}]];
+   Expand[Total[
+     D[expr, #] externalVectorSPCoordinateDerivative[topo, #, gen] & /@ coordinates
+     ]]
    ];
 
 
@@ -3264,6 +3427,80 @@ applyIndependentVariableDerivativeSeed[topo_Association, int_J, var_, opts : Opt
    ];
 
 
+(* 独立变量集合按 external invariant 坐标与未被其表达的顶点能量参数组成。*)
+independentVariableDerivativeVariables[topo_Association] := DeleteDuplicates@Join[
+   externalInvariantVariables[topo],
+   Complement[vertexEnergyVariables[topo], externalInvariantVariables[topo]]
+   ];
+
+
+independentVariableDerivativeKind[topo_Association, var_] := If[
+   MemberQ[externalInvariantVariables[topo], var],
+   "externalInvariant",
+   "vertexEnergy"
+   ];
+
+
+makeIndependentVariableDerivativeGenerators[topo_Association] :=
+  (<|
+      "variable" -> #,
+      "userVariable" -> scalarProductInternalToUser[#, topo],
+      "kind" -> independentVariableDerivativeKind[topo, #]
+      |> &) /@ independentVariableDerivativeVariables[topo];
+
+
+Options[makeIndependentVariableDerivativeSeedBatch] = Options[makeExternalInvariantDerivativeDecomposition];
+makeIndependentVariableDerivativeSeedBatch[topo_Association, int_J, opts : OptionsPattern[]] := Module[
+   {generators, results, derivative, decomposition, kind, variable, failureQ},
+   generators = makeIndependentVariableDerivativeGenerators[topo];
+   results = Table[
+     variable = generator["variable"];
+     kind = generator["kind"];
+     decomposition = If[kind === "externalInvariant",
+       makeExternalInvariantDerivativeDecomposition[
+        topo,
+        variable,
+        FilterRules[{opts}, Options[makeExternalInvariantDerivativeDecomposition]]
+        ],
+       Missing["NotApplicable"]
+       ];
+     derivative = If[kind === "externalInvariant" && Lookup[decomposition, "status", "failed"] =!= "solved",
+       $Failed,
+       applyIndependentVariableDerivativeSeed[
+        topo,
+        int,
+        variable,
+        Sequence @@ FilterRules[{opts}, Options[makeExternalInvariantDerivativeDecomposition]]
+        ]
+       ];
+     derivative = If[derivative === $Failed, $Failed, applySeedCanonical[Expand[derivative], topo]];
+     <|
+      "variable" -> variable,
+      "userVariable" -> generator["userVariable"],
+      "kind" -> kind,
+      "decomposition" -> decomposition,
+      "derivative" -> derivative,
+      "status" -> If[derivative === $Failed, "failed", "generated"],
+      "forbiddenNData" -> If[derivative === $Failed, {}, forbiddenNData[topo, derivative]],
+      "canonicalQ" -> If[derivative === $Failed, False, ! containsForbiddenNQ[topo, derivative]]
+      |>,
+     {generator, generators}
+     ];
+   failureQ = AnyTrue[results, Lookup[#, "status", "failed"] =!= "generated" &];
+   <|
+    "status" -> If[failureQ, "failed", "generated"],
+    "caseName" -> Lookup[topo, "name", Missing["caseName"]],
+    "variables" -> generators,
+    "variableCount" -> Length[generators],
+    "integral" -> int,
+    "equationCount" -> Length[results],
+    "equations" -> results,
+    "allCanonicalQ" -> And @@ Lookup[results, "canonicalQ", True],
+    "failedVariables" -> Lookup[Select[results, Lookup[#, "status", "failed"] =!= "generated" &], "userVariable", {}]
+    |>
+   ];
+
+
 Options[makeMomentumIBPSeedBatch] = {
    UseSampleOnly -> Automatic,
    MaxSeedRuleCount -> Automatic,
@@ -3463,9 +3700,11 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      |>;
    sectorTopo = Join[parseTopology[newCase], <|"sectorShrunkLines" -> shrunkLines|>];
    Join[sectorTopo, <|
-     "sectorMetadata" -> makeSectorMetadata[sectorTopo],
-     "sampleDiscreteRules" -> filterSampleDiscreteRulesForTopology[topo["sampleDiscreteRules"], sectorTopo]
-     |>]
+    "sectorMetadata" -> makeSectorMetadata[sectorTopo],
+    "tadpoleSymmetryData" -> tadpoleSymmetryData[sectorTopo],
+    "effectiveSymmetryRules" -> effectiveSymmetryRules0[sectorTopo],
+    "sampleDiscreteRules" -> filterSampleDiscreteRulesForTopology[topo["sampleDiscreteRules"], sectorTopo]
+    |>]
    ];
 
 
@@ -3936,8 +4175,10 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      "seedSummary" -> makeTopologySeedSummary[topo],
      "validationReport" -> topologyValidationReport[topo],
      "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
-     "numericRuleTemplate" -> makeNumericRuleTemplate[topo],
-     "masslessBundleCandidates" -> masslessBundleCandidates[topo],
+    "numericRuleTemplate" -> makeNumericRuleTemplate[topo],
+    "tadpoleSymmetryData" -> tadpoleSymmetryData[topo],
+    "effectiveSymmetryRules" -> effectiveSymmetryRules0[topo],
+    "masslessBundleCandidates" -> masslessBundleCandidates[topo],
      "masslessEndpointConventions" -> masslessEndpointConventionData[topo],
      "precomputedShrinkSectorSummary" -> KeyDrop[subsetData, "subsets"],
      "precomputedShrinkSectorKeys" -> Lookup[sectorMetadataList, "sectorKey"]
@@ -5181,7 +5422,10 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
    orderingSpec = resolveKiraOrderingSpec[batch, topo, OptionValue[KiraOrdering]];
    integrals = sortIntegralsForKira[integralObjectsInBatch[batch], orderingSpec, metadataList];
    integralIndex = makeIntegralIndex[integrals];
-   equations = Lookup[batch, "equations", {}];
+   equations = symmetry[Lookup[batch, "equations", {}], topo];
+   If[equations === $Failed,
+    Return[<|"status" -> "notReady", "caseName" -> Lookup[batch, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalidSymmetryRules"|>]
+    ];
    linearEquations = linearizeSeedEquation[#, integralIndex] & /@ equations;
    coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    metadata = If[metadataList === {}, Missing["NoSectorMetadata"], First[metadataList]];
@@ -5201,6 +5445,8 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     "sectorMetadataList" -> metadataList,
     "topologyValidationReport" -> topologyReport,
     "seedCoverageReport" -> seedCoverageReport,
+    "tadpoleSymmetryData" -> tadpoleSymmetryData[topo],
+    "effectiveSymmetryRules" -> effectiveSymmetryRules0[topo],
     "linearEquations" -> linearEquations,
     "linearQ" -> And @@ (Lookup[linearEquations, "linearQ"]),
     "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ"], False],
@@ -5263,6 +5509,9 @@ dSIBPPublicAPI::badtopo = "topology context 无效或解析失败：`1`。";
 dSIBPPublicAPI::badshape = "表达式中的 J 与 topology context 不兼容：`1`。";
 dSIBPPublicAPI::badstate = "IBP 公开算子要求所有 full-line 离散态已显式取 0/1：`1`。";
 dSIBPPublicAPI::badgen = "找不到请求的 IBP 生成元：`1`。";
+dSIBPPublicAPI::badvar = "变量 `1` 不在当前 topology 初始化的外部独立变量列表 `2` 中。";
+dSIBPPublicAPI::nonlinear = "ds 只接受 J 的线性组合；检测到非线性或非多项式 J 依赖：`1`。";
+dSIBPPublicAPI::derivativefailed = "变量 `1` 的积分导数生成失败。";
 
 
 setIBPTopologyContext[spec_Association] := Module[{topo = normalizeTopologySpec[spec]},
@@ -5470,6 +5719,100 @@ rep2outform[expr_, topoSpec_Association] := Module[{topo},
    ];
 rep2outform[expr_] := Module[{topo = resolvePublicTopologyContext[]},
    If[topo === $Failed, $Failed, rep2outform[expr, topo]]
+   ];
+
+
+(* ::Section:: *)
+(*外部动力学变量总导数*)
+
+(* ds 的变量必须使用 topology 初始化时的外部名称；内部 kk 坐标只在底层导数中出现。 *)
+publicIndependentVariableDerivativeData[topo_Association] := makeIndependentVariableDerivativeGenerators[topo];
+
+
+resolvePublicIndependentVariableDerivativeData[topo_Association, userVariable_] := SelectFirst[
+   publicIndependentVariableDerivativeData[topo],
+   SameQ[Lookup[#, "userVariable", Missing["userVariable"]], userVariable] &,
+   Missing["UnknownIndependentVariable", userVariable]
+   ];
+
+
+(* 先把每个不同的 J 替成惰性 token；这样 D 只作用于显式系数，不会进入指标。 *)
+publicLinearIntegralDecomposition[expr_] := Module[
+   {expanded, integrals, tokens, forwardRules, backwardRules, heldExpression,
+    constantTerm, coefficients, reconstructed},
+   expanded = Expand[expr];
+   integrals = publicExpressionIntegrals[expanded];
+   tokens = Table[Unique["heldJ$"], {Length[integrals]}];
+   forwardRules = Thread[integrals -> tokens];
+   backwardRules = Thread[tokens -> integrals];
+   heldExpression = Expand[expanded /. forwardRules];
+   constantTerm = Expand[heldExpression /. Thread[tokens -> 0]];
+   coefficients = Coefficient[heldExpression, #] & /@ tokens;
+   reconstructed = Expand[constantTerm + Total[MapThread[#1 #2 &, {coefficients, tokens}]]];
+   If[! TrueQ[Expand[heldExpression - reconstructed] === 0],
+    Return[<|
+      "status" -> "nonlinear",
+      "heldExpression" -> heldExpression,
+      "integrals" -> integrals
+      |>]
+    ];
+   <|
+    "status" -> "linear",
+    "expression" -> expanded,
+    "heldExpression" -> heldExpression,
+    "integrals" -> integrals,
+    "tokens" -> tokens,
+    "coefficients" -> coefficients,
+    "constantTerm" -> constantTerm,
+    "backwardRules" -> backwardRules
+    |>
+   ];
+
+
+(* 乘积法则：显式系数导数与每个 J 的指标导数分别生成，合并后再统一 canonical。 *)
+ds[expr_, userVariable_, topoSpec_Association] := Module[
+   {topo, variableData, userVariables, userExpr, linearData, internalVariable,
+    coefficientDerivative, integralDerivativeTerms, result},
+   topo = resolvePublicTopologyContext[topoSpec];
+   If[topo === $Failed, Return[$Failed]];
+   userVariables = Lookup[publicIndependentVariableDerivativeData[topo], "userVariable", {}];
+   variableData = resolvePublicIndependentVariableDerivativeData[topo, userVariable];
+   If[Head[variableData] === Missing,
+    Message[dSIBPPublicAPI::badvar, userVariable, userVariables];
+    Return[$Failed]
+    ];
+   userExpr = rep2outform[expr, topo];
+   If[userExpr === $Failed || ! validatePublicExpression[userExpr, topo, True], Return[$Failed]];
+   linearData = publicLinearIntegralDecomposition[userExpr];
+   If[Lookup[linearData, "status", "failed"] =!= "linear",
+    Message[dSIBPPublicAPI::nonlinear, Lookup[linearData, "heldExpression", userExpr]];
+    Return[$Failed]
+    ];
+   internalVariable = variableData["variable"];
+   coefficientDerivative = Expand[
+     D[linearData["heldExpression"], userVariable] /. linearData["backwardRules"]
+     ];
+   integralDerivativeTerms = MapThread[
+     Function[{coefficient, int},
+      With[{term = applyIndependentVariableDerivativeSeed[topo, int, internalVariable]},
+       If[term === $Failed, $Failed, coefficient term]
+       ]
+      ],
+     {linearData["coefficients"], linearData["integrals"]}
+     ];
+   If[! FreeQ[integralDerivativeTerms, $Failed],
+    Message[dSIBPPublicAPI::derivativefailed, userVariable];
+    Return[$Failed]
+    ];
+   result = applySeedCanonical[
+     Expand[coefficientDerivative + Total[integralDerivativeTerms]],
+     topo
+     ];
+   If[result === $Failed, Return[$Failed]];
+   rep2outform[result, topo]
+   ];
+ds[expr_, userVariable_] := Module[{topo = resolvePublicTopologyContext[]},
+   If[topo === $Failed, $Failed, ds[expr, userVariable, topo]]
    ];
 
 

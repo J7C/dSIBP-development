@@ -22,6 +22,8 @@ pure_massive_bubble_reference_check.wl
 two_loop_isp_toy_check.wl
 parallel_massless_bundle_guard_check.wl
 vertex_energy_signs_check.wl
+tadpole_symmetry_check.wl
+ds_total_derivative_check.wl
 ```
 
 运行方式：
