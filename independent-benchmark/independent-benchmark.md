@@ -972,7 +972,59 @@ expectedRelations = {
 - 每 sector 离散态数；
 - 总 relation 数；
 - 零关系数及原因。
-## 13. 完成检查表
+
+动力学量总导数另存为扁平列表 `expectedDerivatives`。每条记录至少包含 `sector`、`vertexSigns`、`mode`、`variable`、`expression`、`derivative` 和 `tags`；`expression` 必须是带动力学量系数的两个 `J` 的线性组合并含纯系数项，不能只保存单积分导数。
+
+## 13. 动力学量总导数与 reference bubble 对齐
+
+### 13.1 独立总导数要求
+
+对第 9 节全部函数族、全部 sign/mode、所有 contact-reachable sector 和 family 初始化后的每个独立外部变量 `sij` 或 `ke[i]`，独立推导
+
+```text
+d/ds Sum_r c_r(s) J_r(s)
+  = Sum_r c'_r(s) J_r(s) + Sum_r c_r(s) dJ_r(s)/ds.
+```
+
+连续时间指标、线指标和 ISP 指标必须保持为 general 符号；massive/massless 函数基底的离散态仍按定义显式取 `0/1`。每个 case 至少同时放入一个全零离散态积分和一个覆盖所有适用 `n=1` 分支的积分。系数必须真正依赖当前求导变量，并加入一个不乘积分的纯系数项，以单独检查显式系数导数。
+
+独立推导阶段不得调用 package 的 `ds`、`applyIndependentVariableDerivativeSeed`、external-vector decomposition、指标移位 helper 或现有 derivative expected。外不变量导数必须直接从
+
+```text
+D_ij = k_i . partial/partial k_j
+```
+
+对传播子幂、massive/massless building block、ISP 和顶点相位逐项求导，再解出 `partial/partial sij`。顶点能量若为 `Sqrt[s11]` 等非线性函数，必须显式保留普通链式法则。整个乘积法则结果最后统一做 EOM、massless/massive coincidence canonical、family symmetry 和 parity；不能只 canonical 积分导数项而遗漏 `c'_r(s)J_r`。
+
+冻结 `derivation.md` 与 `expectedDerivatives` 后，第二阶段加载 `package/package_012.wl`，用
+
+```mathematica
+ds[expression, variable, topo]
+```
+
+逐条比较。差值必须在相同 convention 下严格为零，并检查输出只含初始化后的外部变量名、没有 forbidden `n`。内部 `kk[i,j]`、未知变量和非线性 `J_i J_j` 的拒绝门禁另列检查。
+
+### 13.2 Reference bubble 的 convention 映射
+
+`pure_massive_bubble_reference` 还必须做一条 reference-only 求导对照。此项独立阶段允许额外读取且只允许读取：
+
+```text
+reference/ref_code/codebubble/001 bubble_ibp_sym.m
+reference/ref_code/codebubble/002 bubble_de.m
+```
+
+比较前必须显式记录并实施以下映射：
+
+- reference `Vpm=0` 映射 package 的 `--`；顶点能量 convention 必须使 reference `dk0Term` 的两个 top 顶点 shift 和 R1 的系数 2 与 package 相同。
+- `G[{n1,n2,n3,n4},{a1,a2},{b1,b2}]` 映射 top `J[{a1,a2},{{b1,n1,n2},{b2,n3,n4}},{}]`。
+- `R1`、`R2` 分别映射 line 1、line 2 shrink；reference 在求导 basis 前已执行 `R2->R1`，所以 R2 必须先由 package `symmetry` canonical 到 R1，不能作为携带另一套 sector metadata 的独立 DE basis。
+- top 使用 `a0=2 nu`、`b0=-2 nu`；必须检查 shrink 后 `a0R=2 nu`、shrunk-line `bS0=0`、未缩并线 `b0=-2 nu`。
+- reference 的 `ks` 是外动量模长，package 使用 `s11=k^2=ks^2`；比较时使用 `partial_ks=2 ks partial_s11`。
+- reference 的 vertex exchange、line exchange、R2-to-R1、R1 endpoint canonical 和 `reppowerselection` parity 必须全部作为该 case 的 `symmetryRules` 交给 package `symmetry` 模块；不得在 package actual 之外另写后处理冒充 symmetry。
+
+reference 对照必须覆盖实际保留的 top/R1 basis 的全部端点 `n=0/1` 状态、general 连续指标、`dk0/dks` 单积分导数和带参数系数的积分组合；另用原子例子逐项检查 R2-to-R1、所有 canonical tie-break 和四类 parity 零条件。
+
+## 14. 完成检查表
 
 每个函数族交付前确认：
 
@@ -991,5 +1043,11 @@ expectedRelations = {
 - [ ] massless theta-delta 与有序端点符号已检查。
 - [ ] 非零 zero-point 已保留。
 - [ ] ISP 非零指标点已在两圈 ISP 例中检查。
+- [ ] 每个函数族、sign/mode、可达 sector 和独立外部变量均已有 general-index `expectedDerivatives`。
+- [ ] 每条总导数检查同时覆盖显式系数导数、两个积分的指标导数和纯系数项，最后对完整结果统一 canonical。
+- [ ] 外不变量求导从 `D_ij` 独立推导；`Sqrt[s11]` 等非线性顶点能量已按链式法则处理。
+- [ ] Reference bubble 已完成 `G/R1/R2 -> J`、`Vpm=0 -> --`、zero-point 与 `ks^2=s11` 对齐。
+- [ ] Reference 的 symmetry 与 parity 已通过 package `symmetryRules` 应用；R2 在求导 basis 前 canonical 到 R1。
+- [ ] 冻结 expected 后才调用 `ds[expression,variable,topo]`，全部差值为零且无 forbidden `n`/内部 `kk`。
 - [ ] 输出没有写回 `independent-benchmark/`。
 - [ ] 保持当前逐线三槽 `J`，并已从原始乘积及明确的统一分布正则化独立推导全部非零 boundary 与可达 sector；未引入其它 Head，也未从任务书外补读答案。

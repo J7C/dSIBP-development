@@ -1114,6 +1114,8 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \end{equation}
 实现时先把各个 $J_r$ 替换为惰性 token，让 Mathematica 的 \texttt{D} 只作用于显式系数；随后逐项调用单积分导数核心，合并后再统一执行 EOM、symmetry 与 canonical。接口拒绝内部 \texttt{kk[i,j]} 名称及 $J_iJ_j$ 等非线性输入，输出恢复到 \texttt{sij} 或用户自定义的外部表示。
 
+独立验证分为两层。第一层对十个物理函数族的全部 sign/mode、contact-reachable sector 和初始化独立变量，从 $D_{ij}=k_i\cdot\partial_{k_j}$ 重新手推传播子幂、building block、ISP 与相位导数；连续 $a/b/\mathrm{ISP}$ 指标保持 general，并对带参量系数的双积分组合比较，共通过 $468/468$。第二层把旧 reference bubble 的 $G/R1/R2$、$Vpm=0$、zero-point、symmetry、parity 与 $s_{11}=k_s^2$ 显式映射到统一 $J$；在 reference 实际保留的 top/R1 basis 上，\texttt{dk0/dks} 与 \texttt{ds} 的单积分和总导数比较通过 $80/80$。其中 R2 按 reference 顺序先由 package \texttt{symmetry} canonical 到 R1，不作为另一套 sector metadata 下的独立 DE basis。
+
 % ============================================================
 \section{Convention 汇总}
 % ============================================================

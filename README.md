@@ -138,6 +138,8 @@ massive building block 的动力学量导数与 qIBP、tIBP 自动读取同一�
 - `vertex_energy_signs`：90/90
 - `tadpole_symmetry`：8/8（含 shared-loop 与 `G+-` 防误用门禁）
 - `ds_total_derivative`：9/9（单积分、系数导数、线性组合、外部变量与线性门禁）
+- `all_family_total_derivative`：468/468（10 个物理 family 的全部 sign/mode、可达 sector 和独立变量；`a/b/ISP` 保持 general）
+- `reference_bubble_derivative`：80/80，另有 symmetry、parity、zero-point 与 `ks^2=s11` convention 原子检查
 - `independent_variable_derivatives_check.wl`：覆盖 `ke[i]`、`s11` 和两外动量时的非唯一 decomposition
 - `000_code/test/012_theta_bundle_and_report_audit_test.wl`：30/30
 - 011 的 function-system、public API、symmetry、massless direction、SP/cache 与 serializer 检查作为 012 的继承回归输入；012 的新增测试只放在 `000_code/test/`。
@@ -150,6 +152,8 @@ massive building block 的动力学量导数与 qIBP、tIBP 自动读取同一�
 wolframscript -file '000_code\examples\independent_variable_derivatives_check.wl'
 wolframscript -file '000_code\test\012_theta_bundle_and_report_audit_test.wl'
 wolframscript -file '000_code\examples\hand_derived_cross_checks\mixed_bubble_check.wl'
+wolframscript -file '000_code\test\012_hand_derived_cross_checks\all_family_total_derivative_check.wl'
+wolframscript -file '000_code\test\012_hand_derived_cross_checks\reference_bubble_derivative_check.wl'
 ```
 
 所有 WolframScript 检查应显式输出结果；不要用 `Quiet` 掩盖消息。

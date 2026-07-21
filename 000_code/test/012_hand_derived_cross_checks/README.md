@@ -24,7 +24,11 @@ parallel_massless_bundle_guard_check.wl
 vertex_energy_signs_check.wl
 tadpole_symmetry_check.wl
 ds_total_derivative_check.wl
+all_family_total_derivative_check.wl
+reference_bubble_derivative_check.wl
 ```
+
+其中 `all_family_total_derivative` 对 10 个物理 family 的 general `a/b/ISP` 指标和带参量系数积分组合做 468 项总导数比较；`reference_bubble_derivative` 先对齐 `G/R1/R2`、`Vpm`、zero-point、symmetry、parity 与 `ks^2=s11`，再比较 reference `dk0/dks` 与公开 `ds`。
 
 运行方式：
 

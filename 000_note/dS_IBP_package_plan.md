@@ -759,7 +759,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，不保存本机
 
 ## 9. 验证范围与性能红线
 
-012 当前通过：修正后 12 family 回归（atomic massless 22/22+8/8、atomic massive 104/104、pure massless 64/64、mixed bubble 132/132、triangle 1792/1792、pure massive 608/608、parallel massless 194/194、mixed sunrise 1842/1842、two-loop ISP 978/978、vertex energy 90/90、tadpole symmetry 8/8、ds total derivative 9/9）及 theta/report audit 30/30。011 的函数系统、独立变量、公开 API 与 serializer 检查作为继承回归；不运行 Kira/Fermat reduction。
+012 当前通过：10 个物理 family 的 IBP 回归（atomic massless 22/22+8/8、atomic massive 104/104、pure massless 64/64、mixed bubble 132/132、triangle 1792/1792、pure massive 608/608、parallel massless 194/194、mixed sunrise 1842/1842、two-loop ISP 978/978、vertex energy 90/90），以及 tadpole symmetry 8/8、基础 `ds` 9/9、全 family general-index 总导数 468/468、reference bubble 同 convention 导数 80/80 和 theta/report audit 30/30。reference 专项另确认 symmetry、parity、zero-point 与 `ks^2=s11` 映射。011 的函数系统、独立变量、公开 API 与 serializer 检查作为继承回归；不运行 Kira/Fermat reduction。
 
 这些数字是检查断言数，不等于独立手推公式数。当前结论是“生成器未硬编码 bubble，并通过代表性 topology 与微分方程变量求导回归”，不是“已对所有拓扑给出数学穷尽证明”。
 
@@ -841,4 +841,4 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，不保存本机
 - `symmetry[expr_,topo_]`：单次函数化应用自动 tadpole rules 与 `repSymmetry0[topo]` 的去重并集；用户规则不被覆盖。
 - 没有规则时返回原表达式。
 - package 暂不自动检测图 automorphism 或由特殊参数取值产生的额外对称性，也不使用 `ReplaceRepeated` 自动迭代规则。
-- 新 benchmark 只在 pure massive bubble reference 中输入对称性：既测等质量内线交换，也测参考参数中两外腿动量/能量相同带来的额外关系；其它函数族保持 `symmetryRules -> {}`。
+- 物理 family benchmark 只在 pure massive bubble reference 中输入其确认成立的对称性；reference bubble 导数专项另把旧代码的 vertex/line exchange、`R2->R1` 与 parity selection 全部作为 case `symmetryRules` 交给 package `symmetry`。其它函数族保持 `symmetryRules -> {}`。

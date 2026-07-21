@@ -655,14 +655,14 @@ delta 缩并后，`J` 只保留仍独立的 compact `aList`；原顶点、代表
 
 ### 13.4 当前验证结论与剩余设计项
 
-012 当前通过 12 个修正后 hand-derived family 的 package cross-check：atomic massive 104/104、atomic massless 22/22 加易错点 8/8、pure massless bubble 64/64、mixed bubble 132/132、mixed triangle 1792/1792、mixed sunrise 1842/1842、pure massive bubble reference 608/608（h/H 各 304）、two-loop ISP toy 978/978、parallel massless bundle guard 194/194、vertex energy signs 90/90、tadpole symmetry 8/8、ds total derivative 9/9。另有 theta/report audit 30/30；011 的函数系统、独立变量求导、公开 API 和 serializer 检查作为继承回归。serializer 检查不运行 Kira/Fermat reduction。
+012 当前通过 10 个修正后物理 family 的 package IBP cross-check：atomic massive 104/104、atomic massless 22/22 加易错点 8/8、pure massless bubble 64/64、mixed bubble 132/132、mixed triangle 1792/1792、mixed sunrise 1842/1842、pure massive bubble reference 608/608（h/H 各 304）、two-loop ISP toy 978/978、parallel massless bundle guard 194/194、vertex energy signs 90/90。功能与微分方程专项还包括 tadpole symmetry 8/8、基础 `ds` 9/9、全 family general-index 总导数 468/468、reference bubble 同 convention 导数 80/80 和 theta/report audit 30/30；reference 专项的 symmetry、parity、zero-point 与变量映射原子检查均通过。011 的函数系统、独立变量求导、公开 API 和 serializer 检查作为继承回归。serializer 检查不运行 Kira/Fermat reduction。
 
 这些检查覆盖约定的顶点符号、可达 sector、离散态和 qIBP/tIBP 生成元，但不是任意拓扑的数学穷尽证明。011 时代的 expected/helper 保留在 `000_code/check/hand-derived-v2/`，用于审计旧 oracle 为何会与旧实现同向通过；012 的修正 expected 和 actual adapters 位于 `000_code/test/012_hand-derived/`、`000_code/test/012_hand_derived_cross_checks/`。
 
 仍保留的设计项：
 
 1. 正式 Mathematica package/context；012 已提供显式 topology 或已注册 context 的公开原子 API，但尚未迁入正式 `BeginPackage` context。
-2. 将独立 benchmark 扩展到当前 12 个已完成 family 之外的新 topology；现有指定 family 已完成全 sector、全顶点符号与全生成元覆盖。
+2. 将独立 benchmark 扩展到当前 10 个已完成物理 family 之外的新 topology；现有指定 family 已完成全 sector、全顶点符号、全生成元和 general-index 总导数覆盖。
 3. 高圈 seed 的 streaming/chunking 与规模报告。
 4. 自动图 automorphism/参数对称性检测，以及 scaleless、parity 等可选前端 canonical；用户输入 `symmetryRules` 与 `symmetry[expr_,topo_]` 的单次应用已经实现。
 5. Rational Tracer 或其它后端 serializer。

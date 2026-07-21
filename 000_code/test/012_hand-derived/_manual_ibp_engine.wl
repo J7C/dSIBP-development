@@ -622,6 +622,197 @@ manualMomentumEquation[def_Association, signKey_String, sector_String, stateRule
    manualCanonical[def, Expand[divergence + lineTerms + ispTerms], sector]
    ];
 
+
+(* ::Chapter:: *)
+(*外部动力学变量的独立总导数*)
+
+(* 本章直接从 D_ij=k_i.d/dk_j 构造外不变量导数；只复用本文件的手推指标操作，
+   不读取 package 的 external-vector decomposition 或独立变量求导 helper。 *)
+
+manualExternalInvariantRules[def_Association] := Lookup[def, "externalInvariantRules", {}];
+
+
+manualExternalInvariantVariables[def_Association] := DeleteDuplicates[
+   Variables[Last /@ manualExternalInvariantRules[def]]
+   ];
+
+
+manualIndependentDerivativeVariables[def_Association, signKey_String, sector_String] := Module[
+   {external, energies},
+   external = manualExternalInvariantVariables[def];
+   energies = manualVertexEnergy[def, signKey, sector, #] & /@ manualActiveVertices[def, sector];
+   DeleteDuplicates@Join[external, Complement[Variables[energies], external]]
+   ];
+
+
+manualExternalVectorGenerators[def_Association] := Flatten[
+   Table[
+    If[i <= j, <|"vectorIndex" -> i, "dExternal" -> j|>, Nothing],
+    {i, Length[def["externalMomenta"]]},
+    {j, Length[def["externalMomenta"]]}
+    ],
+   1
+   ];
+
+
+manualExternalCoordinateExpression[def_Association, variable_] := Module[{rules, hit},
+   rules = manualExternalInvariantRules[def];
+   hit = SelectFirst[rules, SameQ[Last[#], variable] &, Missing["UnknownExternalVariable", variable]];
+   If[Head[hit] === Missing, hit, First[hit]]
+   ];
+
+
+manualExternalVectorCoordinateDerivative[
+   def_Association,
+   variable_,
+   generator_Association
+   ] := Module[{coordinate, vector, dExternal},
+   coordinate = manualExternalCoordinateExpression[def, variable];
+   If[Head[coordinate] === Missing, Return[$Failed]];
+   vector = def["externalMomenta"][[generator["vectorIndex"]]];
+   dExternal = def["externalMomenta"][[generator["dExternal"]]];
+   Expand[
+    manualDirectionalSPDerivative[def, coordinate, dExternal, vector] /.
+     manualExternalInvariantRules[def]
+    ]
+   ];
+
+
+manualExternalInvariantDecomposition[def_Association, variable_] := Module[
+   {variables, position, generators, matrix, coefficients},
+   variables = manualExternalInvariantVariables[def];
+   position = FirstPosition[variables, variable, Missing["UnknownExternalVariable", variable]];
+   If[Head[position] === Missing, Return[$Failed]];
+   generators = manualExternalVectorGenerators[def];
+   matrix = Table[
+     manualExternalVectorCoordinateDerivative[def, variables[[row]], generators[[column]]],
+     {row, Length[variables]}, {column, Length[generators]}
+     ];
+   coefficients = Quiet[Check[
+      LinearSolve[matrix, UnitVector[Length[variables], First[position]]],
+      $Failed
+      ]];
+   If[coefficients === $Failed, Return[$Failed]];
+   <|"generators" -> generators, "coefficients" -> Expand /@ coefficients, "matrix" -> matrix|>
+   ];
+
+
+manualExternalVectorISPDerivativeTerms[
+   def_Association,
+   scalarRules_List,
+   int_J,
+   generator_Association
+   ] := Module[{ispData, vector, dExternal, expr, derivative},
+   ispData = Lookup[def, "ispData", {}];
+   If[ispData === {}, Return[0]];
+   vector = def["externalMomenta"][[generator["vectorIndex"]]];
+   dExternal = def["externalMomenta"][[generator["dExternal"]]];
+   Total[Table[
+     expr = Lookup[ispData[[r]], "expression", Lookup[ispData[[r]], "expr"]];
+     derivative = Expand[
+       manualDirectionalSPDerivative[def, expr, dExternal, vector] /. scalarRules
+       ];
+     int[[3, r]] manualAbsorb[def, derivative, manualShiftISP[int, r, -1]],
+     {r, Length[ispData]}
+     ]]
+   ];
+
+
+manualExternalVectorLineTerms[
+   def_Association,
+   signKey_String,
+   sector_String,
+   scalarRules_List,
+   int_J,
+   generator_Association,
+   lineId_
+   ] := Module[
+   {line, dExternal, externalCoeff, factor, fullPower, denominator},
+   line = manualLinePosition[def, lineId];
+   dExternal = def["externalMomenta"][[generator["dExternal"]]];
+   externalCoeff = Coefficient[manualLineById[def, lineId]["momentum"], dExternal];
+   If[externalCoeff === 0, Return[0]];
+   factor = manualVDotQ[def, scalarRules, "external", generator["vectorIndex"], lineId];
+   fullPower = int[[2, line, 1]] + manualLineZeroPoint[def, sector, lineId];
+   denominator = -externalCoeff fullPower manualAbsorb[
+      def, factor, manualShiftB[int, line, 2]
+      ];
+   If[MemberQ[manualShrunkLines[sector], lineId], Return[Expand[denominator]]];
+   If[manualLineMass[def, lineId] === "massive",
+    Expand[denominator + externalCoeff Total[
+       manualMassiveMomentumEndpoint[def, int, sector, lineId, #, factor] & /@ {1, 2}
+       ]],
+    Expand[denominator + externalCoeff manualMasslessMomentumBuilding[
+       def, signKey, sector, int, lineId, factor
+       ]]
+    ]
+   ];
+
+
+manualExternalVectorIntegralDerivative[
+   def_Association,
+   signKey_String,
+   sector_String,
+   int_J,
+   generator_Association
+   ] := Module[{scalarRules, lineTerms, ispTerms},
+   scalarRules = manualScalarRules[def];
+   If[scalarRules === $Failed, Return[$Failed]];
+   lineTerms = Total[
+     manualExternalVectorLineTerms[
+        def, signKey, sector, scalarRules, int, generator, #
+        ] & /@ manualLineIds[def]
+     ];
+   ispTerms = manualExternalVectorISPDerivativeTerms[def, scalarRules, int, generator];
+   Expand[lineTerms + ispTerms]
+   ];
+
+
+manualVertexEnergyVariableDerivative[
+   def_Association,
+   signKey_String,
+   sector_String,
+   int_J,
+   variable_
+   ] := Total[Table[
+     With[
+      {derivative = D[manualVertexEnergy[def, signKey, sector, vertex], variable]},
+      If[derivative === 0,
+       0,
+       -manualPhase[manualVertexBranch[def, signKey, sector, vertex]] derivative *
+        manualShiftA[def, int, sector, vertex, 1]
+       ]
+      ],
+     {vertex, manualActiveVertices[def, sector]}
+     ]];
+
+
+manualIndependentVariableDerivative[
+   def_Association,
+   signKey_String,
+   sector_String,
+   int_J,
+   variable_
+   ] := Module[{externalTerms = 0, decomposition},
+   If[MemberQ[manualExternalInvariantVariables[def], variable],
+    decomposition = manualExternalInvariantDecomposition[def, variable];
+    If[decomposition === $Failed, Return[$Failed]];
+    externalTerms = Total[MapThread[
+       #1 manualExternalVectorIntegralDerivative[def, signKey, sector, int, #2] &,
+       {decomposition["coefficients"], decomposition["generators"]}
+       ]]
+    ];
+   manualCanonical[
+    def,
+    Expand[
+     externalTerms + manualVertexEnergyVariableDerivative[
+       def, signKey, sector, int, variable
+       ]
+     ],
+    sector
+    ]
+   ];
+
 (* ::Chapter:: *)
 (*扁平 relations*)
 
