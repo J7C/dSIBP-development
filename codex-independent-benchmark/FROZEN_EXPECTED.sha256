@@ -1,0 +1,7 @@
+# Atomic massive post-audit v5 route snapshot. It supersedes the historical
+# 104-relation h/H freeze and now contains 78 fixed-sign direct-h/bare-H/H-to-h
+# relations. This file does not claim a pristine pre-package blind boundary.
+74BA3C45ACD033AEC8795B0D6238775424AFFE8E62895C894B40C9F0EAEDDEEB  atomic_massive_line/family.wl
+19CE999EB54AC6C765D8DB269FBA1D271CCF11107E671CAF47BFB1B6DE971A56  atomic_massive_line/derivation.md
+E6F25FCC547216449743E55A2CE21994C1DDB8467112014CFEF460F17622B3FB  atomic_massive_line/expected.wl
+39814885107EF13E3F967AD537631CB591F2F0EDF025108B12EA5A6EEB0E3D35  atomic_massive_line/independent_formula_check.wl

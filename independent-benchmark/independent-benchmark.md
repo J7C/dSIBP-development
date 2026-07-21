@@ -62,6 +62,14 @@ theta(0)=1/2.
 
 这只表示 sp[p,r]=sp[r,p]，不表示图或积分族对称性。
 
+对按 `externalMomenta={k1,...,kK}` 排序的独立外动量，外部标量积坐标统一命名为
+
+```text
+s_ij := sp[k_i,k_j] = s_ji,    1 <= i <= j <= K.
+```
+
+在 Mathematica 输入中写成符号 `s11,s12,...`。名称 `sij` 专指对称的外部不变量坐标，不用来命名方向导数算符；`externalInvariantRules` 只列 `i<=j` 的坐标，不得同时引入 `sij` 与 `sji` 两个名字。
+
 ### 2.2 Massive h/H building block 定义
 
 质量参数采用
@@ -85,7 +93,7 @@ theta(0)=1/2.
     F[type,s,1;nu,x] = partial_x F[type,s,0;nu,x]
     type in {h,H},  s in {1,2}
 
-正式 `J` 只保存 `n=0,1`。独立推导者必须仅从上述 Hankel 定义出发，分别推导 h 与 H 的闭合微分关系，再把导数产生的更高 `n` 消回该基底。本文不提供任何 H/h 微分方程、矩阵、递推系数或指标移位答案。
+正式 `J` 只保存 `n=0,1`。独立推导者必须仅从上述 Hankel 定义出发推导 h 的闭合微分关系；第 9.0 节点名的两个 H family 还必须独立推导裸 H 的闭合关系，再把导数产生的更高 `n` 消回各自基底。本文不提供任何 H/h 微分方程、矩阵、递推系数或指标移位答案。
 
 ### 2.3 Massive 四种 SK 传播子
 
@@ -108,7 +116,7 @@ theta(0)=1/2.
 
 同分支 `++/--` 记为 `massiveFull`；异分支 `+/-/-+` 记为 `massiveCross`。两类未缩并线都保留两个有序端点态 `n[e,1],n[e,2]`。
 
-对 `massiveFull`，独立推导者必须从 theta 导数与上述两个 Wightman block 出发，判断哪些 `n[e,1],n[e,2]` 产生非零 coincidence 项，分别推导 h/H 的 Wronskian 等式、端点符号、prefactor 及缩并后的时间/动量幂。本文不提供这些等式或具体 shrink 公式。`massiveCross` 是否存在相同机制也必须直接由所给 kernel 判断。
+对 `massiveFull`，独立推导者必须从 theta 导数与上述两个 Wightman block 出发，判断哪些 `n[e,1],n[e,2]` 产生非零 coincidence 项，并推导直接 h 的 Wronskian 等式、端点符号、prefactor 及缩并后的时间/动量幂。第 9.0 节点名的两个 H family 还要对裸 H 独立完成同样推导。本文不提供这些等式或具体 shrink 公式。`massiveCross` 是否存在相同机制也必须直接由所给 kernel 判断。
 
 ### 2.4 Massless 四种 SK 传播子与全部正负号
 
@@ -319,7 +327,7 @@ M[sigma,1;q,Delta] = -theta[ Delta] exp[-i sigma q Delta]
 
 ## 5. Massive EOM、Wronskian 与 shrink 的独立推导要求
 
-massive full/cross 在两个端点各保留 `n[e,1],n[e,2]`。对 h、H 两种 mode 必须分别完成以下推导，不能用其中一类的结果通过参数替换猜另一类：
+massive full/cross 在两个端点各保留 `n[e,1],n[e,2]`。所有含 massive line 的 family 都必须对直接 h 基底完成以下推导。裸 H 只在第 9.0 节固定的 `atomic_massive_line` 与 `pure_massive_bubble_reference` 两个 family 中手推；这两个 family 不能用 h 的结果通过参数替换猜 H：
 
 1. 从第 2.2 节的 Hankel 定义推导 `n=0,1` 基底的闭合微分关系，并把 time/momentum 导数翻译成 `J` 指标移位。
 2. 对导数产生的所有更高 `n` 给出消回 `n=0,1` 的过程；最终 expected 中不得保留 massive `n>=2`。
@@ -328,6 +336,8 @@ massive full/cross 在两个端点各保留 `n[e,1],n[e,2]`。对 h、H 两种 m
 5. 对每个非零 shrink 结果，独立推导物理 factor，再严格按第 3.2 节固定的整数/zero-point 分解记录 merged vertex、`a/a0` 与 `bS/bS0`。
 
 本节刻意不提供 H/h 微分方程、Wronskian 数值、非零 `n` 条件、SK sign offset、prefactor 或任何 shrink 指标公式。所有这些都是 benchmark 要比较的答案。
+
+上述两个 H family 还必须从第 2.2 节定义独立导出把裸 H 导数基底变到 h 导数基底的矩阵 `T_Htoh`。第二阶段分别把同一裸 H 的 `P_H,Q_H,W_H` 与 `T=IdentityMatrix[2]`、`T=T_Htoh` 交给 package；不得直接抄 package 中的 preset 或变换矩阵作为手推输入。三路 package 验收见第 13.3 节。
 
 ## 6. Time-IBP
 
@@ -428,6 +438,23 @@ shrunk:                       {bS[e]}
 
 sector 名统一为 `"top"` 或按 `lineOrder` 排序的 `"e1"`、`"e1_e3"` 等。某 sign case 只枚举由第 8 节独立推导实际到达的 line sets；cross 线没有 theta 导数，不应伪造 shrink sector。缩并后以 `vertexOrder` 中序号最小的顶点作为合并类代表，`aList` 按代表顶点的原顺序排列。
 
+本 benchmark 的 sign 分支不在运行时抽样。每个 family 固定一个纯同号分支和一个混合分支；`vertexSignCases` 只写下表两项。分支数量被收缩，但两个入选分支内部不得再抽样：必须遍历全部 contact-reachable sector、全部 active time 生成元、全部 `L(L+K)` momentum 生成元和全部剩余离散态，从而生成这两个分支的全部 IBP seeds。
+
+| family | 固定纯同号分支 | 固定混合分支 | massive 基底范围 |
+| --- | --- | --- | --- |
+| `atomic_massless_line` | `++` | `+-` | 不适用 |
+| `atomic_massive_line` | `--` | `-+` | 直接 h；裸 H `T=I`；H 经 `T_Htoh` 变到 h |
+| `pure_massless_bubble` | `--` | `+-` | 不适用 |
+| `mixed_bubble` | `++` | `-+` | 直接 h |
+| `mixed_triangle` | `---` | `+-+` | 直接 h |
+| `mixed_sunrise` | `++` | `+-` | 直接 h |
+| `pure_massive_bubble_reference` | `--` | `-+` | 直接 h；裸 H `T=I`；H 经 `T_Htoh` 变到 h |
+| `two_loop_isp_toy` | `++` | `-+` | 不适用 |
+| `parallel_massless_bundle_guard` | `--` | `+-` | 不适用 |
+| `vertex_energy_signs` | `++` | `-+` | 不适用；三组 energy case 均使用这两个 sign 分支 |
+
+这张表就是冻结后的选择，不需要随机种子，也不得由执行脚本重新选择。所有含 massive line 的 family 都手推并运行直接 h 的 package 对照；H 只允许出现在表中点名的两个 family。
+
 生成元标签统一为 `dtau[v]`、`dqq[i,j]` 和 `dqk[i,j]`，分别表示
 
 ```text
@@ -443,8 +470,7 @@ d/dtau[v],  d/dq[i].q[j],  d/dq[i].k[j].
 ```mathematica
 vertexOrder = {v1,v2};
 vertexSignCases = <|
-  "++"->{+1,+1}, "--"->{-1,-1},
-  "+-"->{+1,-1}, "-+"->{-1,+1}|>;
+  "++"->{+1,+1}, "+-"->{+1,-1}|>;
 loopMomenta = {ell};
 externalMomenta = {};
 externalInvariantRules = {};
@@ -471,12 +497,12 @@ J[{a1,a2},{{b1}},{}]
 J[{a12},{{bS1}},{}]
 ```
 
-sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。另建端点反转子例，只把 line 1 改为 `endpoints->{v2,v1}`，物理动量和其它输入不变；端点反转对 `n=0,1` 的作用必须由第 4 节定义推导。
+sector 为：`++ -> {top,e1}`，`+- -> {top}`。另建端点反转子例，只把 line 1 改为 `endpoints->{v2,v1}`，物理动量和其它输入不变；端点反转对 `n=0,1` 的作用必须由第 4 节定义推导。
 
 专测：
 
 - `n=0/1 × 第一/第二端点`；
-- `++/--/+-/-+`；
+- 固定的 `++` 与 `+-` 两个分支；
 - 端点反转；
 - 同端点二阶导数；
 - 两个 `n` 值各自的 theta-delta、shrink 和 coincidence 结果；
@@ -485,14 +511,14 @@ sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。另建端点反转子例�
 
 ### 9.2 atomic_massive_line
 
-固定定义与 9.1 相同，但 line 1 改为
+除 sign 分支按第 9.0 节固定为 `--` 与 `-+` 外，其余定义与 9.1 相同；line 1 改为
 
 ```mathematica
 lineData = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->ell,
     "massType"->"massive", "bbType"->mode, "nu"->nuM|>
 };
-modeCases = {"h","H"};
+basisRoutes = {"h","HIdentity","HToh"};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2, b0[1]->beta1
 };
@@ -505,9 +531,9 @@ J[{a1,a2},{{b1,n11,n12}},{}]
 J[{a12},{{bS1}},{}]
 ```
 
-massive cross 的 top notation 与 full 完全相同，但没有 `e1` sector。sector 为：`++/-- -> {top,e1}`，`+-/-+ -> {top}`。`generatorList={dtau[v1],dtau[v2],dqq[1,1]}`，`symmetryRules={}`。h/H 的 shrink zero-point、prefactor 和指标移位必须分别从定义推导。
+massive cross 的 top notation 与 full 完全相同，但没有 `e1` sector。sector 为：`-- -> {top,e1}`，`-+ -> {top}`。`generatorList={dtau[v1],dtau[v2],dqq[1,1]}`，`symmetryRules={}`。直接 h 与裸 H 的 shrink zero-point、prefactor 和指标移位必须分别从定义推导；`HToh` 使用同一裸 H 输入与独立推导的 `T_Htoh`，不是第三种物理传播子。
 
-分别对 h 与裸 H 做物理检查：
+分别对直接 h 与裸 H 做物理检查，并对 `HToh` 做第 13.3 节的等价性检查：
 
 - 两端点 `n=0/1`；
 - time 导数后的即时 EOM；
@@ -523,8 +549,7 @@ massive cross 的 top notation 与 full 完全相同，但没有 `e1` sector。s
 ```mathematica
 vertexOrder = {v1,v2};
 vertexSignCases = <|
-  "++"->{+1,+1}, "--"->{-1,-1},
-  "+-"->{+1,-1}, "-+"->{-1,+1}|>;
+  "--"->{-1,-1}, "+-"->{+1,-1}|>;
 loopMomenta = {q};
 externalMomenta = {k};
 externalInvariantRules = {sp[k,k]->s11};
@@ -548,15 +573,15 @@ symmetryRules = {};
 两条 massless 线的第一端点都固定为 `v1`，所以两个 `n[e]=1` 都以 `v1->v2` 为正方向。top notation 为
 
 ```text
-++ / -- : J[{a1,a2},{{b1,n1},{b2,n2}},{}]
-+- / -+ : J[{a1,a2},{{b1},{b2}},{}]
+-- : J[{a1,a2},{{b1,n1},{b2,n2}},{}]
++- : J[{a1,a2},{{b1},{b2}},{}]
 ```
 
 各 sign case 的 sector 集合必须从两条传播子的完整乘积独立推导，不在任务书中预先给出。例如某个只缩并 line 1 的候选结果按指标槽写成 `J[{a12},{{bS1},{b2,n2}},{}]`；它是否非零、是否还有其它结果以及 coincident `n2` 如何 canonical，都必须从第 4 节定义判断。
 
 必须覆盖：
 
-- 四个顶点符号组合；
+- 固定的 `--` 与 `+-` 两个分支；
 - 每个 case 的全部可达 sector；
 - 每个 sector 全部 time 和 `d/dq.q`、`d/dq.k`；
 - 所有剩余 masslessFull `n=0/1`。
@@ -565,7 +590,7 @@ symmetryRules = {};
 
 ### 9.4 mixed_bubble
 
-固定使用 9.3 的顶点、sign cases、动量空间、外不变量、能量和生成元；只改 line 1 为 massive h：
+固定使用 9.3 的顶点、动量空间、外不变量、能量和生成元，但 sign 分支按第 9.0 节改为 `++` 与 `-+`；line 1 改为 massive h：
 
 ```mathematica
 lineData = {
@@ -585,8 +610,8 @@ symmetryRules = {};
 massless line 2 的方向固定为 `v1->v2`。top notation 为
 
 ```text
-++ / -- : J[{a1,a2},{{b1,n11,n12},{b2,n2}},{}]
-+- / -+ : J[{a1,a2},{{b1,n11,n12},{b2}},{}]
+++ : J[{a1,a2},{{b1,n11,n12},{b2,n2}},{}]
+-+ : J[{a1,a2},{{b1,n11,n12},{b2}},{}]
 ```
 
 各 sign case 的 sector 集合必须从 mixed 原始乘积独立推导。massive/massless 的 shrink factor、`bS0` 与 merged `a0` 必须按第 3.2 和第 5 节要求独立推导并记录，不能预设为 0；同时覆盖 cross case、EOM、目标 sector coincidence 和非零 zero-point。
@@ -597,11 +622,8 @@ massless line 2 的方向固定为 `v1->v2`。top notation 为
 
 ```mathematica
 vertexOrder = {v1,v2,v3};
-vertexSignCases = AssociationThread[
-  {"+++","++-","+-+","+--","-++","-+-","--+","---"},
-  {{+1,+1,+1},{+1,+1,-1},{+1,-1,+1},{+1,-1,-1},
-   {-1,+1,+1},{-1,+1,-1},{-1,-1,+1},{-1,-1,-1}}
-];
+vertexSignCases = <|
+  "---"->{-1,-1,-1}, "+-+"->{+1,-1,+1}|>;
 loopMomenta = {q};
 externalMomenta = {k1,k2};
 externalInvariantRules = {
@@ -638,7 +660,7 @@ J[{a1,a2,a3},
 
 要求：
 
-- 三个顶点的 8 个 `+/-` 组合；
+- 固定的 `---` 与 `+-+` 两个分支；
 - 每个 sector 的全部 active time；
 - `d/dq.q`、`d/dq.k1`、`d/dq.k2`；
 - 全部剩余 massive/massless 离散状态；
@@ -651,8 +673,7 @@ J[{a1,a2,a3},
 ```mathematica
 vertexOrder = {v1,v2};
 vertexSignCases = <|
-  "++"->{+1,+1}, "--"->{-1,-1},
-  "+-"->{+1,-1}, "-+"->{-1,+1}|>;
+  "++"->{+1,+1}, "+-"->{+1,-1}|>;
 loopMomenta = {q1,q2};
 externalMomenta = {k};
 externalInvariantRules = {sp[k,k]->s11};
@@ -696,7 +717,7 @@ J[{a1,a2},
 
 每个 sign case 的 sector 集合都从三条线的完整原始乘积独立推导，任务书不列出目标答案。五个独立 loop scalar products为 `q1^2,q1.q2,q2^2,q1.k,q2.k`；三个 propagator square 加上述两个 ISP 必须先证明可反解。不能只在 `ispN=0` 检查：至少另取 `{r1,r2}={1,0}` 和 `{0,1}` 各一个最小 seed，验证两个 ISP 因子自身求导。
 
-四个顶点符号组合、全部可达 sector、全部 active time，以及六个 momentum 生成元：
+固定的 `++` 与 `+-` 两个分支、全部可达 sector、全部 active time，以及六个 momentum 生成元：
 
 ```text
 d/dq1.q1, d/dq1.q2, d/dq1.k
@@ -712,8 +733,7 @@ d/dq2.q1, d/dq2.q2, d/dq2.k
 ```mathematica
 vertexOrder = {v1,v2};
 vertexSignCases = <|
-  "++"->{+1,+1}, "--"->{-1,-1},
-  "+-"->{+1,-1}, "-+"->{-1,+1}|>;
+  "--"->{-1,-1}, "-+"->{-1,+1}|>;
 loopMomenta = {q};
 externalMomenta = {k};
 externalInvariantRules = {sp[k,k]->s11};
@@ -721,10 +741,11 @@ vertexEnergies = <|v1->E1,v2->E2|>;
 lineOrder = {1,2};
 lineData = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->q,
-    "massType"->"massive", "bbType"->"h", "nu"->nuM|>,
+    "massType"->"massive", "bbType"->mode, "nu"->nuM|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->q-k,
-    "massType"->"massive", "bbType"->"h", "nu"->nuM|>
+    "massType"->"massive", "bbType"->mode, "nu"->nuM|>
 };
+basisRoutes = {"h","HIdentity","HToh"};
 ispData = {};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
@@ -733,7 +754,9 @@ zeroPointRules = {
 generatorList = {dtau[v1],dtau[v2],dqq[1,1],dqk[1,1]};
 ```
 
-所有 sign case 的 top notation 都是
+`mode="h"` 表示直接 h。`HIdentity` 与 `HToh` 都以裸 H 的 `P_H,Q_H,W_H` 为输入；前者取 `T=IdentityMatrix[2]`，后者取独立推导的 `T_Htoh`，不得把 `HToh` 当成 package 内置 mode 字符串。
+
+两个固定 sign case 的 top notation 都是
 
 ```mathematica
 J[{a1,a2},{{b1,n11,n12},{b2,n21,n22}},{}]
@@ -755,8 +778,7 @@ J[{a1,a2},{{b1,n11,n12},{b2,n21,n22}},{}]
 ```mathematica
 vertexOrder = {v1,v2};
 vertexSignCases = <|
-  "++"->{+1,+1}, "--"->{-1,-1},
-  "+-"->{+1,-1}, "-+"->{-1,+1}|>;
+  "++"->{+1,+1}, "-+"->{-1,+1}|>;
 loopMomenta = {l3,k321};
 externalMomenta = {wdnmd};
 externalInvariantRules = {sp[wdnmd,wdnmd]->s11};
@@ -802,8 +824,7 @@ symmetryRules = {};
 ```mathematica
 vertexOrder = {v1,v2};
 vertexSignCases = <|
-  "++"->{+1,+1}, "--"->{-1,-1},
-  "+-"->{+1,-1}, "-+"->{-1,+1}|>;
+  "--"->{-1,-1}, "+-"->{+1,-1}|>;
 loopMomenta = {q};
 externalMomenta = {k1,k2};
 externalInvariantRules = {
@@ -838,8 +859,7 @@ symmetryRules = {};
 ```mathematica
 vertexOrder = {v1,v2};
 vertexSignCases = <|
-  "++"->{+1,+1}, "--"->{-1,-1},
-  "+-"->{+1,-1}, "-+"->{-1,+1}|>;
+  "++"->{+1,+1}, "-+"->{-1,+1}|>;
 loopMomenta = {ell};
 externalMomenta = {k};
 externalInvariantRules = {sp[k,k]->s11};
@@ -848,7 +868,9 @@ lineData = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->ell-k,
     "massType"->"massless", "bbType"->"exp", "nu"->0|>
 };
-ispData = {};
+ispData = {
+  <|"id"->1, "expression"->sp[ell,k]|>
+};
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
   b0[1]->beta1
@@ -865,11 +887,30 @@ energyCaseB = <|v1->Sqrt[s11],   v2->ke[2]|>;
 energyCaseC = <|v1->ke[3],       v2->ke[2]|>;
 ```
 
-`ke[3]` 代表独立的 `|p1+p2|`，不是 `ke[1]+ke[2]`，且 `p1,p2` 不进入 `externalMomenta`。只有 case B 明确声明顶点能量与圈外动量不变量为同一变量。notation 和 sector 与 9.1 相同，但这里 momentum generator 还包括 `dqk[1,1]`。
+`ke[3]` 代表独立的 `|p1+p2|`，不是 `ke[1]+ke[2]`，且 `p1,p2` 不进入 `externalMomenta`。只有 case B 明确声明顶点能量与圈外动量不变量为同一变量。新增 ISP 记为
+
+```text
+rho1 = sp[ell,k].
+```
+
+它与 `D1=(ell-k)^2` 独立，并给出完整反解
+
+```text
+ell.k = rho1,
+ell^2 = D1 + 2 rho1 - s11.
+```
+
+因此两个 momentum generators `dqq[1,1]`、`dqk[1,1]` 都必须生成。三种 sector 的 notation 为
+
+```mathematica
+++ top: J[{a1,a2},{{b1,n1}},{r1}]
+++ e1:  J[{a1},{{bS1}},{r1}]
+-+ top: J[{a1,a2},{{b1}},{r1}]
+```
 
 专测：
 
-- `++/--/+-/-+` 顶点相位；
+- 三组 energy case 中固定的 `++` 与 `-+` 顶点相位；
 - 独立 `ke[i]`；
 - 顶点能量复用 `Sqrt[s11]`；
 - 独立 `|ke1+ke2|` 另记 `ke[3]`；
@@ -885,9 +926,11 @@ bS[e] -> 0;
 ispN[j] -> 0;
 ```
 
-但始终保留输入的 `a0[v]`、`b0[e]`，以及独立推导所得的 merged zero-point 与 `bS0[e]`。若关系退化为 0，可增加一个最小非零整数点并写明原因。`mixed_sunrise` 与 `two_loop_isp_toy` 必须额外取一个 `ispN[j]->1` 点。
+但始终保留输入的 `a0[v]`、`b0[e]`，以及独立推导所得的 merged zero-point 与 `bS0[e]`。若关系退化为 0，可增加一个最小非零整数点并写明原因。`mixed_sunrise`、`two_loop_isp_toy` 与 `vertex_energy_signs` 必须额外取一个 `ispN[j]->1` 点；`vertex_energy_signs` 的固定点为 `{{0},{1}}`。
 
 离散态不能抽样：每个当前 sector 的所有 massive `n1,n2` 和 masslessFull `n` 都遍历 `0/1`。最终关系中禁止 massive `n>=2` 和 massless 非 `0/1`。
+
+第 9.0 节已经完成唯一一次 sign 分支选择。这里的 seed 取值不得再次对子集抽样：两个固定分支的每个可达 sector 都必须完整枚举上述连续基点/ISP 补点、全部离散态和全部适用生成元。README 必须分别记录两个分支的 seed 计数，不能只给合计数。
 
 
 ## 11. 用户输入的积分族对称性
@@ -946,7 +989,7 @@ vertexExchangeRules = {
 
 `README.md` 用普通小节或表格复述 topology、notation、massless 方向、动量路由、sector、生成元、离散态、预期 relation 计数和特殊 tags。它必须能让审查者不运行 `family.wl` 也知道每个 `J` 槽位的含义。
 
-`derivation.md` 是必交的来源隔离记录。它必须从第 2 节允许的原始定义开始，列出实际使用的标准 Hankel 恒等式及来源，并展示得到 H/h 闭合关系、Wronskian、各 `n` shrink、massless endpoint 关系和 `J` 指标映射的中间步骤；不能只抄最终 expected。
+`derivation.md` 是必交的来源隔离记录。它必须从第 2 节允许的原始定义开始，列出实际使用的标准 Hankel 恒等式及来源，并展示适用基底路线的 H/h 闭合关系、Wronskian、各 `n` shrink、massless endpoint 关系和 `J` 指标映射的中间步骤；不能只抄最终 expected。没有 H 路线的 family 不得为了形式完整而复制其它 family 的 H 推导。
 
 `expected.wl` 使用扁平列表：
 
@@ -979,7 +1022,7 @@ expectedRelations = {
 
 ### 13.1 独立总导数要求
 
-对第 9 节全部函数族、全部 sign/mode、所有 contact-reachable sector 和 family 初始化后的每个独立外部变量 `sij` 或 `ke[i]`，独立推导
+对第 9 节全部函数族、第 9.0 节固定的两个 sign 分支、规定的基底路线、所有 contact-reachable sector 和 family 初始化后的每个独立外部变量 `sij` 或 `ke[i]`，独立推导
 
 ```text
 d/ds Sum_r c_r(s) J_r(s)
@@ -988,13 +1031,27 @@ d/ds Sum_r c_r(s) J_r(s)
 
 连续时间指标、线指标和 ISP 指标必须保持为 general 符号；massive/massless 函数基底的离散态仍按定义显式取 `0/1`。每个 case 至少同时放入一个全零离散态积分和一个覆盖所有适用 `n=1` 分支的积分。系数必须真正依赖当前求导变量，并加入一个不乘积分的纯系数项，以单独检查显式系数导数。
 
-独立推导阶段不得调用 package 的 `ds`、`applyIndependentVariableDerivativeSeed`、external-vector decomposition、指标移位 helper 或现有 derivative expected。外不变量导数必须直接从
+独立推导阶段不得调用 package 的 `ds`、`applyIndependentVariableDerivativeSeed`、external-vector decomposition、指标移位 helper 或现有 derivative expected。外不变量导数必须直接从有序方向导数算符
 
 ```text
 D_ij = k_i . partial/partial k_j
 ```
 
-对传播子幂、massive/massless building block、ISP 和顶点相位逐项求导，再解出 `partial/partial sij`。顶点能量若为 `Sqrt[s11]` 等非线性函数，必须显式保留普通链式法则。整个乘积法则结果最后统一做 EOM、massless/massive coincidence canonical、family symmetry 和 parity；不能只 canonical 积分导数项而遗漏 `c'_r(s)J_r`。
+对传播子幂、massive/massless building block、ISP 和顶点相位逐项求导，再解出 `partial/partial sij`。这里 `sij` 与 `Dij` 是不同对象：
+
+```text
+s_ij = k_i.k_j = s_ji,
+D_ij = k_i.partial_{k_j},      D_ij != D_ji in general,
+D_ij s_ab = delta_{ja} s_ib + delta_{jb} s_ai.
+```
+
+`Orderless` 只 canonical `sij` 的两个标量积参数，不得用于交换 `Dij` 的“左乘向量”和“被求导外动量”两个角色。为使未约化 raw `J` 结果可逐项 strict-zero 比较，本 benchmark 正式固定
+
+```text
+ExternalVectorOperatorBasis = {D_ij | 1 <= i <= j <= K},
+```
+
+并按 `i` 后 `j` 的字典序排列，例如 `K=2` 时必须使用 `{D11,D12,D22}`，不得改用同样满秩但给出不同 raw representative 的 `{D11,D12,D21}`。若该 basis 在指定运动学或所选外不变量坐标上不满秩，必须报告输入/坐标不闭合，不得静默换 basis。顶点能量若为 `Sqrt[s11]` 等非线性函数，必须显式保留普通链式法则。整个乘积法则结果最后统一做 EOM、massless/massive coincidence canonical、family symmetry 和 parity；不能只 canonical 积分导数项而遗漏 `c'_r(s)J_r`。
 
 冻结 `derivation.md` 与 `expectedDerivatives` 后，第二阶段加载 `package/package_012.wl`，用
 
@@ -1024,17 +1081,28 @@ reference/ref_code/codebubble/002 bubble_de.m
 
 reference 对照必须覆盖实际保留的 top/R1 basis 的全部端点 `n=0/1` 状态、general 连续指标、`dk0/dks` 单积分导数和带参数系数的积分组合；另用原子例子逐项检查 R2-to-R1、所有 canonical tie-break 和四类 parity 零条件。
 
+### 13.3 h、裸 H 与 H 经 T 变到 h 的 package 验收
+
+只在 `atomic_massive_line` 和 `pure_massive_bubble_reference` 两个 family 上执行 H 路线；两者都使用第 9.0 节固定的纯同号与混合分支，并覆盖这两个分支的全部 IBP seeds 和 general-index 动力学量总导数。验证分三路：
+
+1. `direct-h`：从 h 定义独立手推 expected，package 使用直接 h 输入。
+2. `bare-H`：从裸 H 定义独立手推 expected，package 使用同一 `P_H,Q_H,W_H` 和 `T=IdentityMatrix[2]`。
+3. `H-to-h`：仍输入裸 H 的 `P_H,Q_H,W_H`，但使用从 `h=x^{-nu}H` 及导数基底独立推导的 `T_Htoh`；package 必须消费最终 `AT=T'.Inverse[T]+T.A0.Inverse[T]` 和 `WT=Det[T] W_H`。
+
+`direct-h` 与 `bare-H` 各自和对应独立 expected 逐项比较。`H-to-h` 既要和独立变换后的 expected 比较，也要在相同 `J` 指标基底、zero-point、sector metadata、symmetry/parity 和外部变量表示下，与 `direct-h` 的 package 结果逐条相减。IBP relation、`ds` 总导数、`AT` 编译项和 `WT/shrinkTerms` 四层差值都必须严格为零；只比较矩阵而不比较全部 seeds 不算完成。裸 H `T=I` 与直接 h 属于不同基底，不能跳过 `T_Htoh` 直接声称两者的 `J` 关系相等。
+
 ## 14. 完成检查表
 
 每个函数族交付前确认：
 
 - [ ] 没有读取本项目代码或旧 expected。
 - [ ] `derivation.md` 已记录外部恒等式来源和从原始定义到最终关系的推导链。
-- [ ] H/h EOM、Wronskian、shrink 系数与 zero-point 均为独立推导，没有从 package note 补读。
+- [ ] 所有含 massive line 的 family 都完成直接 h 手推与 package 对照；裸 H 只在指定的两个 family 中独立手推，没有从 package note 补读。
 - [ ] `family.wl` 的 `familyDefinition` 已包含第 9.0 节全部固定字段。
 - [ ] README 已按 `vertexOrder/lineOrder/ispData` 顺序逐槽说明 `J[aList,linePacks,ispList]` 的物理对象。
 - [ ] README 已逐条写出每条 massless 线的有序端点和 `n=1` 方向。
-- [ ] 所有顶点符号组合已覆盖。
+- [ ] 每个 family 的 `vertexSignCases` 与第 9.0 节冻结表完全一致：恰有一个纯同号和一个混合分支，没有运行时随机选择。
+- [ ] 两个固定 sign 分支内部的全部 IBP seeds 已覆盖，没有再对子集抽样。
 - [ ] 每个符号 case 的所有可达 sector 已覆盖。
 - [ ] 每个 sector 的所有 active time 生成元已覆盖。
 - [ ] 每个 sector 的所有 `L(L+K)` momentum 生成元已覆盖。
@@ -1042,12 +1110,13 @@ reference 对照必须覆盖实际保留的 top/R1 basis 的全部端点 `n=0/1`
 - [ ] massive `n=2` 已立即 EOM。
 - [ ] massless theta-delta 与有序端点符号已检查。
 - [ ] 非零 zero-point 已保留。
-- [ ] ISP 非零指标点已在两圈 ISP 例中检查。
-- [ ] 每个函数族、sign/mode、可达 sector 和独立外部变量均已有 general-index `expectedDerivatives`。
+- [ ] ISP 非零指标点已在两圈 ISP 例和 `vertex_energy_signs` 中检查。
+- [ ] 每个函数族、固定 sign 分支、规定基底路线、可达 sector 和独立外部变量均已有 general-index `expectedDerivatives`。
 - [ ] 每条总导数检查同时覆盖显式系数导数、两个积分的指标导数和纯系数项，最后对完整结果统一 canonical。
-- [ ] 外不变量求导从 `D_ij` 独立推导；`Sqrt[s11]` 等非线性顶点能量已按链式法则处理。
+- [ ] 外不变量求导从有序 `D_ij` 独立推导，raw 反解严格使用 `{D_ij|i<=j}`；`Sqrt[s11]` 等非线性顶点能量已按链式法则处理。
 - [ ] Reference bubble 已完成 `G/R1/R2 -> J`、`Vpm=0 -> --`、zero-point 与 `ks^2=s11` 对齐。
 - [ ] Reference 的 symmetry 与 parity 已通过 package `symmetryRules` 应用；R2 在求导 basis 前 canonical 到 R1。
+- [ ] 两个 H family 的 `bare-H(T=I)` 与 `H-to-h` 均已和独立 expected 比较；`H-to-h` 的全部 IBP seeds、`ds`、`AT` 与 `WT/shrinkTerms` 还已和 `direct-h` 逐项比较为零。
 - [ ] 冻结 expected 后才调用 `ds[expression,variable,topo]`，全部差值为零且无 forbidden `n`/内部 `kk`。
 - [ ] 输出没有写回 `independent-benchmark/`。
 - [ ] 保持当前逐线三槽 `J`，并已从原始乘积及明确的统一分布正则化独立推导全部非零 boundary 与可达 sector；未引入其它 Head，也未从任务书外补读答案。

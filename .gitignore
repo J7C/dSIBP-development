@@ -3,6 +3,7 @@
 Thumbs.db
 *.tmp
 *.bak
+.qoder/
 
 # Mathematica / notebooks autosave
 *.nb~
@@ -29,6 +30,7 @@ ibp_equations*.m
 000_code/results_ignore/
 results_temp/
 results_ignore/
+codex-independent-benchmark/todolist_temp.md
 
 # Kira / reduction outputs generated during checks or reference runs
 **/kira_export*/

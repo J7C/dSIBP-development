@@ -253,6 +253,6 @@ Do[
  ];
 
 failed = Keys@Select[checks, Not];
-Print["theta bundle/report audit checks: ", Count[Values[checks], True], "/", Length[checks]];
+Print["theta bundle audit checks: ", Count[Values[checks], True], "/", Length[checks]];
 If[failed =!= {}, Print["FAILED: ", failed]; Exit[1]];
 Exit[0];
