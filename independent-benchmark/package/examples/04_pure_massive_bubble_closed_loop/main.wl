@@ -1,12 +1,13 @@
 (* ::Package:: *)
-(* 014 pure massive bubble：固定 -- branch/parity，从 topology 到 Kira 取回、DE 与标度检查。 *)
+(* 016 pure massive bubble：固定 -- branch/parity，从 topology 到 Kira 取回、DE 与标度检查。 *)
 
 (* ::Chapter:: *)
 (*标准 package 加载*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = DirectoryName[DirectoryName[exampleDir]];
-Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "..", "000_code", "016_dSIBP"}]];
+If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
+Needs["dSIBP`"];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 
@@ -22,7 +23,7 @@ parameterProbeRules = {dim -> 37/11, nu -> 7/13, etaNu -> 23/17};
 (* s11=k.k 与 P0 是 ds 的独立变量；P_pkg=P0=+I k0，reference P1=P2=-P0=-I k0。 *)
 (* J 只保存整数指标；a0=2 nu、b0=-2 nu 留在 metadata，并在 shrink/tree 投影时进入完整物理幂次。 *)
 caseInput = <|
-   "name" -> "014PureMassiveBubbleClosedLoopMinusMinus",
+   "name" -> "016PureMassiveBubbleClosedLoopMinusMinus",
    "vertexData" -> {{v1, "-"}, {v2, "-"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
@@ -31,7 +32,9 @@ caseInput = <|
        "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>
      },
    "loopMomenta" -> {q},
-   "externalMomenta" -> {k},
+   "loopExternalMomenta" -> {k},
+   "independentExternalMomenta" -> {},
+   "ibpMode" -> "full",
    "externalInvariantRules" -> {sp[k, k] -> s11},
    "vertexEnergies" -> <|v1 -> P0, v2 -> P0|>,
    "ispData" -> {},
@@ -172,6 +175,6 @@ closedLoopSummary = If[
     "requiredFiles" -> requiredKiraResults
     |>
    ];
-Print["014 pure massive bubble closed-loop summary: ", closedLoopSummary];
+Print["016 pure massive bubble closed-loop summary: ", closedLoopSummary];
 
 closedLoopResult

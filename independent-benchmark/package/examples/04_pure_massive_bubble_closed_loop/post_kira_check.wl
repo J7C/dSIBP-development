@@ -6,8 +6,9 @@
 (*标准 package 与 family convention*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = DirectoryName[DirectoryName[exampleDir]];
-Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "..", "000_code", "016_dSIBP"}]];
+If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
+Needs["dSIBP`"];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 
@@ -21,7 +22,7 @@ parameterProbeRules = {dim -> 37/11, nu -> 7/13, etaNu -> 23/17};
 
 (* 顶点交换 symmetry 只在 reference P1=P2=-P0 时成立；独立 P1/P2 family 不得复用本配置。 *)
 caseInput = <|
-   "name" -> "014PureMassiveBubbleClosedLoopMinusMinus",
+   "name" -> "016PureMassiveBubbleClosedLoopMinusMinus",
    "vertexData" -> {{v1, "-"}, {v2, "-"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
@@ -30,7 +31,9 @@ caseInput = <|
        "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>
      },
    "loopMomenta" -> {q},
-   "externalMomenta" -> {k},
+   "loopExternalMomenta" -> {k},
+   "independentExternalMomenta" -> {},
+   "ibpMode" -> "full",
    "externalInvariantRules" -> {sp[k, k] -> s11},
    "vertexEnergies" -> <|v1 -> P0, v2 -> P0|>,
    "ispData" -> {},
@@ -61,7 +64,7 @@ context = DSInit[
 kiraDir = FileNameJoin[{exampleDir, "kira"}];
 deDir = FileNameJoin[{exampleDir, "results", "dlogDE"}];
 savedDEFile = FileNameJoin[{deDir, "manifest.wl"}];
-buildDESource = FileNameJoin[{packageDir, "package_014.wl"}];
+buildDESource = FileNameJoin[{packageDir, "Kernel", "dSIBP.wl"}];
 summaryFile = FileNameJoin[{exampleDir, "results", "post_kira_summary.wl"}];
 
 reductionData = DSKiraImport[kiraDir, context];

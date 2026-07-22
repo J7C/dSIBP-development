@@ -20,12 +20,13 @@
 
 ## 程序与目录
 
-- 当前主线版本由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/015_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- `000_code/015_dS_ibp_general.wl` 是 015 的单文件兼容入口；`000_code/010_dS_ibp_general.wl` 至 `014_dS_ibp_general.wl` 及其模块目录是只读基线/历史版本，不在新任务中回写。
+- 当前主线版本由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/016_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
+- 016 的冻结单文件兼容入口是 `independent-benchmark/package/package_016.wl`；`000_code/010_dS_ibp_general.wl` 至 `015_dS_ibp_general.wl` 及其模块目录是只读基线/历史版本，不在新任务中回写。
 - `000_code/check/` 保存当前主线正式验证脚本。
 - `000_code/test/` 保存临时测试脚本，运行产物只放 `000_code/test/results_test/`。
 - `independent-benchmark/package/` 只保留当前版本化程序 `package_<version>.wl`、同版本正式用户手册 `package_<version>.pdf` 和少量应用 examples；更新版本时覆盖当前交付并删除旧版本或无版本名副本。
 - `independent-benchmark/package/` 不得放 expected、验证脚本、开发文档、报告或 reduction 输出。
+- 每个发布版本必须维护 `independent-benchmark/package/examples/coverage_manifest.wl`：列出全部需要用户掌握的公开函数及其成品 example；正式检查必须与 package 的 `DSPublicAPI[]` 比较并验证源码调用覆盖，缺项不得发布。
 - `000-report/` 是本项目唯一的独立检验报告归档目录；除目录说明 `README.md` 外，不在其它项目目录散放报告。
 
 新建、移动、清理程序目录时遵守 `program-directory-layout` skill：正式可复用结果进 `results/`，临时测试进 `test/results_test/`，可重跑中间产物进 `results_temp/`；不得误删用户未提交改动。
@@ -62,8 +63,11 @@
 - h/H 模式、质量参数、缩并 prefactor、zero-point 和 H EOM 必须使用当前 tech note 与 preset；不得从历史版本重新引入旧递推。
 - 多圈动量 IBP 生成元必须覆盖当前 plan/tech note 规定的完备集合；ISP 由用户定义并在生成关系前验证闭合性。
 - topology、sector metadata、canonical seed、`linearData` 和 serializer 之间的状态必须一致；backend 只消费 backend-neutral `linearData`。
-- `externalMomenta` 只表示进入内线偏移、圈标量积空间和 loop IBP 生成元的独立外动量；015 缺省公开坐标为 `ssij=Sqrt[sp[ki,kj]]`，内部原子坐标仍为 `kk[i,j]=sp[ki,kj]`。
-- `externalLegMomenta` 只声明可出现在无圈动量线/相位中的向量；015 仅对 topology 中实际出现的不同无圈动量组合按首次出现顺序生成 `sE1,sE2,...` 模长原子，不自动生成外腿向量的交叉点积，且这些向量不得进入 loop IBP 生成元或 ISP 闭合性检查。与已声明动量无关的顶点相位能量仍可使用独立标量参数。
+- 016 要求用户分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。旧 `externalMomenta/externalLegMomenta` 只作为字段别名兼容。
+- 加减号和复合方向必须保留精确系数。整体反号的无圈动量模长可 canonical 成同一对象，但 `p_1+p_2` 与 `p_1-p_2` 不得合并；实际模长只生成 `sE1,sE2,...` 或 dependent binding，不主动输出外腿交叉点积。
+- 016 缺省公开 loop 坐标为 `ssij=Sqrt[sp[p_i,p_j]]`，内部原子仍为 `kk[i,j]`。编号只依赖推断后列表顺序；任一类别总数超过 9 时按总数位宽补零，旧 `sij` 兼容名使用同一规则。
+- 动量列表或动力学规则欠完备时必须红色报错，返回缺失方向/零空间表达式并拒绝初始化；所有下游入口读取 capability gate。过完备时 warning 后允许 symbolic IBP，但 `ds/DSDE` 与唯一反变换必须关闭。
+- root topology 决定圈数、loop space 与 cycle/bridge line-power schema；contact/shrink sector 必须继承这些 metadata，只改变端点代表、pack 状态、零点和对称性，不得重新降圈。
 - 根号坐标求导必须通过链式法则复用平方不变量原子导数：`d/dssij=2 ssij d/d(sp[ki,kj])`；不得复制或重写一套 loop 外动量导数实现。显式用户规则 `sp[ki,kj]->sij` 保持单位 Jacobian 的兼容语义。
 
 ## Mathematica 实现约定

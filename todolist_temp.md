@@ -1,5 +1,24 @@
 # 013 pure time-IBP/tree 与 014 工程化闭环
 
+# 016 显式动量角色、图论门禁与桥边指标重建
+
+- [x] 作废未完成的自动角色分类方案，在研究进度登记通盘设计、矛盾点和验收标准。
+- [x] 盘点未完成 016 文件与 015 冻结哈希，清理旧草稿并从 015 重建 016。
+- [x] 实现多重图圈数、bridge/cycle line、incidence-cycle 与 loop-routing rank 审计及正负 smoke。
+- [x] 实现 affine loop-shift 商空间及 loop 外动量 exact/over/under 完备性底层审计。
+- [x] 分离传播子向量分解基与独立外动量模长坐标，完成模长 exact/over/under 底层审计。
+- [x] 完成 `full/timeOnly` 全部下游 capability gate；context、seed、IBP、`ds`、`DSDE`、serializer 与 tree 均已审计。
+- [x] 完成逐线 pack schema：cycle `{b,n...}`、bridge `{n...}`，并迁移 sector、shrink、serializer 与 tree projection。
+- [x] 完成 bridge 固定/衍生动量幂显式系数及 shrink zero-point/contact 手推与实现。
+- [x] 完成 momentum IBP 只消费 cycle `xi` 的全链门禁。
+- [x] 完成逐调用点 pack-schema 审计，清除 topology-blind 槽位判定。
+- [x] 完成 `DSRedefineParameters` 欠/过完备、短签名和超过十项补零 notation 专项。
+- [x] 让 `timeOnly` 直接使用 pure-time/tree 指标表示并与现有 tree 两路线交叉。
+- [x] 实现 notation 报告、`DSRedefineParameters` 和 seed/DE 参数规则贯通。
+- [x] 建立 bubble+bridge+三点双外腿 example、错误输入 bench 与公开 API example 覆盖 manifest。
+- [x] 更新 AGENTS、README、plan/design/tech note、用户手册和独立 benchmark。
+- [x] 构建 016 模块/单文件/PDF，完成新增手推、受影响全回归、内部报告和临时产物清理。
+
 - [x] 在进度文件登记任务、阶段和验收标准。
 - [x] 核对 loop/tree 论文、bubble reference code 与当前 012 边界。
 - [x] 冻结 plan/design/tech/manual 的 013/014 分版设计。
@@ -87,3 +106,20 @@
 - [x] 明确 bubble reference 当前不是完整 dlog DE；删除 primitive、letters、pole 检查，dlog 双路线只保留给 tree。
 - [x] 按 `P_pkg=-P_ref` 修正 active 17 与辅助 20/21 的能量映射，重建 package，并从空目录完整重跑 export、WSL Kira、import、DE 与 scaling。
 - [x] 更新 benchmark、验证矩阵、014 内部报告和最终 package 哈希；保持 frozen 手推 expected 不变。
+# 016 发布收口（2026-07-22）
+
+- [x] 修复 `timeOnly` 全 active line 的 fixed-coefficient 表示和无圈模长审计。
+- [x] 修复 contact sector 重新降圈，改为继承 root loop-space 与 line-power schema。
+- [x] 接通 context/linearData/serializer capability 和 input-hash 门禁。
+- [x] 建立 29 项公开 API manifest 与 7 项 example coverage 检查。
+- [x] 清理权威文档中“统一 externalMomenta 自动猜角色”和“欠完备仍继续”的废弃合同。
+- [x] 在技术笔记补齐 016 图论、affine routing、cycle/fixed pack、显式幂系数、time/momentum IBP 与 root-sector 继承推导。
+- [x] 构建并验证单文件 `package_016.wl`，删除 package 交付目录中的 015 旧版本。
+- [x] 编译并目视检查用户手册和技术笔记 PDF，交付 `package_016.pdf`。
+- [x] 修正当前权威文档中仍把 loop 外动量主字段写成 `externalMomenta` 的残留；保留 015 历史任务和兼容性输入语境。
+- [x] 按更新后的独立任务书完成 source-isolated 手推与 package 单向比较：175/175，非零差值 0。
+- [x] 重跑 016 专项、成品 examples和受影响的 014/015 历史回归。
+- [x] 修复 raw `repIterative` source-aware 路线错误复用 loop 投影而丢失显式 `treeEnergy`；两/三顶点符号与有理 probe 均通过。
+- [x] 让 atomic topology 参数统一接受 parsed topology 或完整 `DSInit` context，并验证 mixed-coordinate `ds` 的系数乘积法则。
+- [x] 修复 `rep2innerform` 绕过 topology inverse capability 的最终独立检验缺陷，新增过完备 loop 声明负例。
+- [x] 复核冻结哈希、独立报告和 `git diff --check`，完成发布记录。

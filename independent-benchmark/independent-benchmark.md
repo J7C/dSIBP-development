@@ -4,7 +4,7 @@
 
 ## 1. 任务目标
 
-从本文给出的费曼规则、指标 convention 和函数族定义出发，独立推导小型 dS IBP seed。第 2--15 节反查冻结的 014 快照；第 16 节只验证 015 的根号动力学坐标增量。独立推导阶段禁止读取 `package/`、主线代码、`000_code/check/`、旧 expected 或已有运行结果。冻结结果后，分别使用同版本 `package/package_014.wl/pdf` 或 `package/package_015.wl/pdf` 完成程序调用与对照。
+从本文给出的费曼规则、指标 convention 和函数族定义出发，独立推导小型 dS IBP seed。第 2--15 节保存冻结的 014 物理任务，第 16 节保存 015 根号坐标任务，第 17 节验证 016 的显式双动量列表、图论/routing、cycle/fixed pack、pure-time 与参数重定义增量。独立推导阶段禁止读取 `package/`、主线代码、`000_code/check/`、旧 expected 或已有运行结果。全部 expected 冻结后，只使用当前 `package/package_016.wl/pdf` 完成向后兼容与新增功能对照。
 
 除第 15.3 节明确要求的单个真实 Kira 闭环外，只做 seed-level 小型符号推导：
 
@@ -1232,7 +1232,43 @@ partial_ssij = 2 ssij partial_xij
 
 冻结后才加载 `package/package_015.wl`。新 kernel 中要求 `$dSIBPVersion==="015"`，逐项比较上述坐标、Jacobian、相位导数、系数乘积法则、数值映射和 generator/ISP 隔离门禁。报告给出 passed/total、非零差值数、首个失败、`package_015.wl/pdf` 哈希，以及 `package_014.wl/pdf` 的复核哈希；014 任一哈希变化都视为发布失败。
 
-## 17. 完成检查表
+## 17. 016 显式动量角色、图论与 fixed-line 增量 benchmark
+
+本节不得重做第 2--16 节的既有 expected，只为 016 建立新的 source-isolated 手推目录。第一阶段只读取本任务书和公开文献，从 topology 输入独立构造 expected；不得读取 package、主线代码、`000_code/check/`、旧 actual 或已有 016 结果。用户必须分别给出有序列表 `loopExternalMomenta` 与 `independentExternalMomenta`；符号可任意命名，程序只验证声明，不得从名字、首次出现位置或统一动量表猜角色。
+
+### 17.1 结构圈数、routing 与声明完备性
+
+固定一个单圈 bubble 加一条 bridge、第三顶点再接两条外腿的多重图，并增加自环和三条平行边两个最小图论 probe。独立冻结：
+
+1. 内部边多重图的结构圈数 $L=E-V+C$；平行边逐条计数、自环各贡献一圈、`extLegs` 不计入 $E$。逐边删边后连通分量增加者为 bridge，其余为 cycle line。
+2. 对 $Q=Aq+r$ 选择满秩参考行 $A_R$，以 $q'=A_Rq+r_R$ 消去 routing shift，冻结 $r'=r-AA_R^{-1}r_R$。例 `{q+k1,q+k1+k2}` 的 shift-invariant 需求只有 `k2`；加减号必须以精确有理系数保留。
+3. `ibpMode->"full"` 时，`Length[loopMomenta]` 必须等于结构圈数，routing 的圈系数矩阵满秩且属于 incidence cycle space；圈数不足、bridge 错带独立圈流和非法 cycle support 分别作负例。
+4. 将实际 routing/ISP 所需 loop-external 向量空间与用户 `loopExternalMomenta` 比较。恰完备通过；多给方向为过完备 warning；少给方向为欠完备 error，并冻结 `missingDirections` 及零空间表达式。
+5. 将 topology 实际出现的无圈 line/phase 模长平方，在完整 loop Gram 基上与 `independentExternalMomenta` 声明逐项比较。`p1,p2,p1+p2` 可是三个独立模长变量，不主动生成 `sp[p1,p2]`；整体反号 canonical，但 `p1+p2` 与 `p1-p2` 不合并。恰完备、过完备和欠完备各冻结一例。
+
+欠完备的两个列表或动力学规则都必须令 `DSInit` 失败，`initializationUsableQ=False`，后续 `DSSeeds/dtau/dqq/dqk/ds/DSDE/DSLinear/DSKiraExport` 均不得绕过 capability gate。过完备允许初始化并生成 symbolic seeds，但 `derivativeUsableQ=False`、`ds/DSDE` 与唯一 `rep2innerform` 必须拒绝；不得把冗余方向的导数暗设为零。特别检查共同 affine shift 的额外声明不会增加实际 `nK`：原列表保留作 declared metadata，而核心 Gram/`dqk`/ISP 使用 `effectiveLoopExternalMomenta` 必要基。
+
+### 17.2 cycle、fixed 与 pure-time 指标表示
+
+对同一 bubble+bridge family 手推 loop 表示 `J[aList,linePacks,ispList]`。cycle line pack 为 `{b,n...}`；bridge/non-cycle line pack 只有 `{n...}`，masslessCross bridge 可为空。fixed line 的物理幂 $B_e$ 不成为 `b/bS` 指标；任一导数引起的 $B_e\mapsto B_e+\Delta B$ 均通过显式模长因子 $r_e^{-\Delta B}$ 贡献到系数。
+
+独立冻结并逐项比较：
+
+1. `dqq/dqk` 的复合算子只遍历 cycle-line $\xi_e$ 与 ISP；bridge 不产生 $z_e$、`b` shift 或 momentum building-block 项。
+2. `dtau` 遍历该顶点连接的全部 active lines；bridge massive h 的 endpoint derivative 同时产生正确的 $a/n$ shift 与显式模长系数。
+3. contact sector 继承 root topology 的 loop space、cycle/bridge 和 line-power schema；全 cycle lines 同时 shrink 后也不得把结构圈数重算为零或把原 cycle pack 改成 fixed pack。
+4. `ibpMode->"timeOnly"` 时所有 active lines 都是 `fixedCoefficient`，使用 direct `J[vertexPacks]` pure-time 表示；即使底层图含圈也不生成 `b/bS`、momentum generator 或 ISP 门禁，但所有 active line 模长进入独立无圈模长审计。
+5. 用同一有序 master 列表比较 direct pure-time seed/naive DE 与公式 `repIterative`/`DSTreeDLogDE`；两路线不得共享 reduction rules。两顶点和三顶点 massive 例均需包含 seed 与迭代关系的确定性数值交叉验证。
+
+### 17.3 参数 notation、重定义与公开接口覆盖
+
+独立冻结缺省 notation：`loopExternalMomenta` 的完整 Gram 根号依序命名 `ssij`，`independentExternalMomenta` 只命名各自模长 `sEi`；类别总数超过 9 时按总数位宽补零。边界表固定为 `N=9` 得 `ss19/sE9`，`N=10` 得 `ss0101,ss0110,sE01`，`N=100` 得 `ss001100,sE001`。
+
+在 bubble+bridge 例中先检查 `DSParameterNotation[context]`，再用 `DSRedefineParameters[context,rules]` 把完整坐标改成一个满秩混合参数化。独立用 Jacobian 链式法则手推 `ds[c(u)J_1+d(u)J_2,u]`，必须同时包含显式系数导数、cycle 原子导数、fixed-line 径向导数与顶点相位；重定义后的 seed/DE metadata 使用新规则和新 `inputHash`。另给欠完备与过完备规则负例。
+
+最后比较 `DSPublicAPI[]` 与 `package/examples/coverage_manifest.wl`：每个公开函数至少有一个成品 example，手册汇总表不得漏项。第一阶段 expected 全部冻结后才加载 `package/package_016.wl`，要求 `$dSIBPVersion==="016"`，报告每组 passed/total、非零差值数、首个失败、程序/PDF 哈希，以及冻结 015 核心哈希是否保持不变。
+
+## 18. 完成检查表
 
 每个函数族交付前确认：
 
@@ -1268,3 +1304,7 @@ partial_ssij = 2 ssij partial_xij
 - [ ] Tree `++`/`+-` 已在同序 normalized masters 下完成 `DSTreeNaiveIBP -> DSTreeNaiveDE` 与直接 dlog 双路线；传播子能量、顶点能量、`D[N_s]`、solve residual 和 mixed-contact guard 全部通过。
 - [ ] 015 根号坐标 expected 在加载 package 前冻结；`ssij` Jacobian、`sEij` 相位/系数导数、numeric square mapping、旧 `sij` 单位 Jacobian和 loop-generator/ISP 隔离全部通过。
 - [ ] 015 单文件和手册哈希已记录，冻结的 014 程序与手册哈希复核不变。
+- [ ] 016 双显式动量列表、任意命名、复合方向、加减号、结构圈数、routing/cycle-space 与 exact/over/under 均按冻结 expected 通过。
+- [ ] 016 欠完备拒绝初始化且所有下游 capability gate 生效；过完备只允许 symbolic seed，`ds/DSDE` 与唯一逆变换拒绝。
+- [ ] 016 cycle/fixed pack、显式幂系数、timeOnly direct pure-time、root sector 继承及 naive/公式 tree 双路线逐项通过。
+- [ ] 016 的 notation/redefinition、9/10/100 补零和 29 项 API/example coverage 通过；当前 `package_016.wl/pdf` 哈希已记录，冻结的 015 源码哈希复核不变。

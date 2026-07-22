@@ -1,4 +1,4 @@
-\documentclass[a4paper,11pt]{article}
+﻿\documentclass[a4paper,11pt]{article}
 \pdfoutput=1
 \pdfminorversion=7
 \usepackage[utf8]{inputenc}
@@ -767,7 +767,14 @@ IBP 恒等式来自全微分在维正规化下积分为零：
 
 \subsection{完备 IBP 生成元集合}
 
-参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，设 \texttt{externalMomenta} 中有 $K$ 个独立外动量向量。它们实际进入含圈动量的 $Q_e=\sum_l c_{e,l}q_l+P_e$，平方 Gram 原子为 $x_{ij}=\operatorname{sp}(k_i,k_j)$，015 的缺省公开变量为 $\sqrt{x_{ij}}$。\texttt{externalLegMomenta} 则只声明可出现在无圈 line momentum 或顶点相位中的向量。程序把实际出现的 $\operatorname{sp}(P_{E,a},P_{E,a})$ 在声明向量的形式 Gram 线性空间展开，先放入完整 loop Gram 行，再按首次出现顺序只保留增加秩的无圈模长平方；未入基项保存为所选平方坐标的 dependent binding。该形式 Gram 空间只用于秩与 binding，不向用户输出新的外腿交叉点积。例如 $k_{E,1}$、$k_{E,2}$ 与 $k_{E,1}+k_{E,2}$ 同时出现时仍给出三个独立 $r_a$，而 $2k_{E,1}$ 绑定为 $4r_1^2$。这些向量不计入 $K$、loop IBP 生成元或 ISP 空间。完备的 IBP 生成元为：
+参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，016 要求用户显式给出有序的 \texttt{loopExternalMomenta} 基 $\{k_1,\ldots,k_K\}$；程序不按名字或 line 首次出现自动选择角色。该基的平方 Gram 原子为 $x_{ij}=\operatorname{sp}(k_i,k_j)$，公开变量为 $\sqrt{x_{ij}}$。另一个显式列表 \texttt{independentExternalMomenta} 只声明实际无圈 line/phase 的独立模长；这些对象不计入 $K$、loop IBP 生成元或 ISP 空间，也不自动产生彼此交叉点积。
+
+实际需要的 loop-external 空间由 affine routing 独立审计。若所有 line momentum 写成 $Q=Aq+r$，取一组满秩参考行 $A_R$ 并定义
+\begin{equation}
+ q'=A_Rq+r_R,\qquad r'=r-AA_R^{-1}r_R.
+ \label{affineRoutingInvariant}
+\end{equation}
+$r'$ 的行空间及 ISP 中与圈动量耦合的外方向才是 shift-invariant 需求。例如 $\{q+k_1,q+k_1+k_2\}$ 只要求 $k_2$。程序把该需求与用户基比较以判断 exact/over/under，但不替用户改写输入。若声明过完备，原列表保留为 declared metadata，而实际用于 $K$、Gram 原子、$dqk$ 和 ISP 闭合的 $\texttt{effectiveLoopExternalMomenta}$ 取 $r'$ 需求空间的一组独立基。否则可吸收到 $q'$ 的共同平移方向会虚增 $q\cdot k$ 原子，并错误触发 ISP 不足。完备的 IBP 生成元为：
 
 \begin{equation}
   \mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_K^\mu\}
@@ -798,8 +805,8 @@ ISP 指标 $n_{\text{isp}_j} \geq 0$（仅出现在分子，不出现在分母�
 \textbf{用户输入}：
 \begin{verbatim}
 loopMomenta = {l3, k321};
-externalMomenta = {wdnmd};
-externalLegMomenta = {kE1};
+loopExternalMomenta = {wdnmd};
+independentExternalMomenta = {kE1};
 vertexEnergies = <|1 -> ke[1], 2 -> Sqrt[sp[wdnmd,wdnmd]],
   3 -> Sqrt[sp[kE1,kE1]]|>;
 
@@ -809,7 +816,7 @@ ispData = {
 };
 \end{verbatim}
 
-\texttt{sp[p,r]} 是用户口 scalar-product convention，并具有 \texttt{Orderless} 属性。含圈 line momentum 与 ISP 中的参数必须由 \texttt{loopMomenta/externalMomenta} 线性张成；无圈 line momentum 还可使用 \texttt{externalLegMomenta}。内部 \texttt{qq/qk/kk} 只服务 loop 线性代数。015 对 loop Gram 使用短名 \texttt{ssij}，对实际出现的无圈模长独立基按首次出现顺序使用 \texttt{sE1,sE2,...}。若候选可由 loop Gram 与此前无圈平方坐标线性表示，就只保存 binding，不再创建 \texttt{sEe}。与全部动量声明无关的相位标量仍可写成 \texttt{ke[i]}。
+\texttt{sp[p,r]} 是用户口 scalar-product convention，并具有 \texttt{Orderless} 属性。所有含圈 line momentum 与 ISP 参数必须由 \texttt{loopMomenta} 和 \texttt{loopExternalMomenta} 线性张成；实际无圈 line/phase 模长必须由 \texttt{independentExternalMomenta} 完备声明。016 对 loop Gram 使用短名 \texttt{ssij}，对独立无圈模长使用 \texttt{sE1,sE2,...}。类别总数超过 9 时按总数位宽补零。与两类动量声明都无关的相位标量仍可写成 \texttt{ke[i]}。
 
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}
@@ -818,7 +825,7 @@ ispData = {
   \item \texttt{zExprs} 与 ISP 坐标总数等于独立 loop-scalar-products 数量，即 $\# z_e+\#\text{ISP}=N_{\text{sp}}$
   \item line momentum 与 \texttt{sp[p,r]} 参数必须是声明动量基的线性组合；非线性输入会触发 \texttt{nonLinearLineMomenta} 或 \texttt{nonLinearScalarProductArguments}
   \item 数量闭合后必须能实际反解出 \texttt{repSP2Z}；重复或退化传播子动量会触发 \texttt{scalarProductCoordinateSolveFailed}
-  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；015 缺省给根号坐标赋值，例如 \verb|ss11 -> value| 或 \verb|sE1 -> value|，程序在内部映射为平方值。显式旧规则或自定义名保持其声明语义；独立顶点能量写 \verb|ke[3] -> value|。
+  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；016 缺省给根号坐标赋值，例如 \verb|ss11 -> value| 或 \verb|sE1 -> value|，程序在内部映射为平方值。显式旧规则或自定义名保持其声明语义；独立顶点能量写 \verb|ke[3] -> value|。
 \end{enumerate}
 
 这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动从传播子中选择独立子集；若输入中存在重复/退化传播子、ISP 不足或特殊数值外动量导致不可反解，应由用户修正 family 输入。
@@ -829,7 +836,7 @@ ispData = {
 \begin{enumerate}
   \item 读取拓扑 + ISP 配置
   \item 验证 ISP 完备性
-  \item 构造 IBP 生成元集合 $\{\mathcal{O}_{l,v}\}$（$L(L+K)$ 个，$K=\#\texttt{externalMomenta}$）
+  \item 构造 IBP 生成元集合 $\{\mathcal{O}_{l,v}\}$（$L(L+K)$ 个，$K=\#\texttt{loopExternalMomenta}$）
   \item 对每个 sector（由缩并线集合标记）：
   \begin{enumerate}
     \item 构造该 sector 的连续指标盒子 $\{a_v, b_e, n_{\text{isp}}\}$ 与离散 $n$ 状态集合
@@ -894,12 +901,12 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 
 \subsection{标量积变量约定}
 
-独立标量积分为三类，其中 $K=\#\texttt{externalMomenta}$ 只统计进入内线动量偏移的外部三动量向量：
+独立标量积分为三类，其中 $K=\#\texttt{loopExternalMomenta}$ 只统计进入 loop scalar-product 空间的外部三动量向量：
 
 \begin{itemize}
   \item \textbf{圈--圈}：$q_l \cdot q_m$（$l \leq m$），共 $L(L+1)/2$ 个。
   \item \textbf{圈--外}：$q_l \cdot k_j$，共 $LK$ 个。
-  \item \textbf{外--外}：$k_i \cdot k_j$ 定义为独立符号，不保持矢量点积结构；输出端使用 \texttt{externalInvariantRules} 给出的变量名，未指定时默认按 \texttt{externalMomenta} 的位置记为 $s_{ij}$。在 IBP 生成中这些量作为常数参数处理。
+  \item \textbf{外--外}：$k_i \cdot k_j$ 定义为独立符号，不保持矢量点积结构；016 未指定 \texttt{KinematicRules} 时，按 \texttt{loopExternalMomenta} 的位置生成 $\operatorname{sp}(k_i,k_j)\to ss_{ij}^{,2}$。在 IBP 生成中这些量作为常数参数处理。
 \end{itemize}
 
 总独立标量积数目为
@@ -924,14 +931,14 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \label{zeExpandFull}
 \end{equation}
 
-其中 $P_e$ 为外动量组合，$P_e^2$ 和 $q_l \cdot P_e$ 中的外动量点积均以输出不变量名（默认 $s_{ij}$，或用户自定义名）替代。因此 $z_e$ 是标量积变量 $\vec{s}$ 的线性函数加上常数项。
+其中 $P_e$ 为外动量组合，$P_e^2$ 和 $q_l \cdot P_e$ 中的外动量点积均以当前动力学坐标替代；016 缺省写成 $ss_{ij}^{,2}$，也可由用户重定义。因此 $z_e$ 是标量积变量 $\vec{s}$ 的线性函数加上常数项。
 
 对所有线 $e$ 写为矩阵形式：
 \begin{equation}
   \vec{z} = M \vec{s} + \vec{c},
   \label{zLinear}
 \end{equation}
-其中 $M$ 是 $N_z \times N_{\text{sp}}$ 矩阵（$N_z$ 为用户输入的传播子平方方程数），$\vec{c}$ 的分量为各 $P_e^2$（用默认 $s_{ij}$ 或用户自定义外部不变量名表示）。
+其中 $M$ 是 $N_z \times N_{\text{sp}}$ 矩阵（$N_z$ 为用户输入的传播子平方方程数），$\vec{c}$ 的分量为各 $P_e^2$（用缺省 $ss_{ij}^{,2}$ 或用户自定义坐标表达式表示）。
 
 当 \texttt{zExprs} 数等于独立标量积数（$N_z = N_{\text{sp}}$，即无 ISP）时，$M$ 为方阵且可逆，逆变换为
 \begin{equation}
@@ -975,7 +982,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   q_1 \cdot Q_2 &= q_1 \cdot (q_1 - k) = q_1^2 - q_1 \cdot k = z_1 - \frac{1}{2}(z_1 + s_{11} - z_2) = \frac{1}{2}(z_1 + z_2 - s_{11}). \label{q1Q2}
 \end{align}
 
-这些关系表明 $q_l \cdot Q_e$ 可以表示为 $z$ 变量和外动量不变量（默认 $s_{ij}$ 或用户自定义名）的线性组合。
+这些关系表明 $q_l \cdot Q_e$ 可以表示为 $z$ 变量和外动量不变量（缺省 $ss_{ij}^{,2}$ 或用户自定义坐标表达式）的线性组合。
 
 \subsection{在动量 IBP 链式法则中的应用}
 
@@ -1013,7 +1020,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 
 \textbf{实现步骤}：
 \begin{enumerate}
-  \item 用替换规则将每个 $q_l \cdot Q_e$ 表示为 $\{z_e\}$ 和外部不变量名（默认 $s_{ij}$ 或用户自定义名）的线性组合。
+  \item 用替换规则将每个 $q_l \cdot Q_e$ 表示为 $\{z_e\}$ 和外部不变量（缺省 $ss_{ij}^{,2}$ 或用户自定义坐标表达式）的线性组合。
   \item $2\,\partial/\partial z_e$ 作用在 $z_e^{-(b_e+b0_e)/2}$ 上，产生系数 $-(b_e+b0_e)$ 和基础移位 $b_e\to b_e+2$。
   \item 再把 $q_l\cdot Q_e$ 中的每个 $z_e^n$ 或 ISP 单项式吸收到指标；$z_e^n$ 对应进一步移位 $b_e\to b_e-2n$。
 \end{enumerate}
@@ -1024,7 +1031,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \section{独立变量微分方程求导}
 % ============================================================
 
-微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。015 将独立变量分为三类：由 \texttt{externalMomenta} 完整 Gram 坐标得到的模长、topology 中实际出现的无圈动量模长，以及与任何动量向量都无关的独立标量能量。第一类沿用标准外动量矢量导数；第二类对绑定的 line momentum 作标量径向导数并同时微分相位；第三类只按显式系数与顶点相位依赖求导。构造 $D_{ij}$ 时，$i,j$ 只遍历 \texttt{externalMomenta}。
+微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。016 将独立变量分为三类：由 \texttt{loopExternalMomenta} 完整 Gram 坐标得到的模长、\texttt{independentExternalMomenta} 声明且在 topology 中实际出现的无圈动量模长，以及与任何动量向量都无关的独立标量能量。第一类沿用标准外动量矢量导数；第二类对绑定的 line momentum 作标量径向导数并同时微分相位；第三类只按显式系数与顶点相位依赖求导。构造 $D_{ij}$ 时，$i,j$ 只遍历 \texttt{loopExternalMomenta}。
 
 \subsection{顶点能量参数}
 
@@ -1082,7 +1089,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
   \label{externalInvariantDecomposition}
 \end{equation}
-完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。原子实现选择上三角 external-vector basis 给出一组 canonical 解。015 不重写该分解；对直接模长
+完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。原子实现选择上三角 external-vector basis 给出一组 canonical 解。016 不重写该分解；对直接模长
 \begin{equation}
   r_a=\sqrt{x_a}=\sqrt{\operatorname{sp}(k_i,k_j)}
 \end{equation}
@@ -1173,7 +1180,7 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线同
  \texttt{DSKinematics[input,rules]},\\
  \texttt{DSInit[input,KinematicRules->rules]}.
 \end{center}
-第一条返回缺省规则、从属模长 binding、可复制修改的 \texttt{selectionTemplate} 和上述秩/零空间；第二条只审计候选规则，第三条才初始化。该接口不会用 \texttt{Input[]} 阻塞 notebook、命令行或 batch。欠完备规则被拒绝。过完备规则允许继续生成内部 IBP seed，但冗余坐标的 \texttt{ds} 被禁用，且 \texttt{rep2innerform} 不声称存在唯一反向映射。一般满秩混合坐标与从属 binding 都由式~\eqref{generalKinematicCoordinateChainRule} 求导；若其逆映射不是单值的简单符号/平方规则，\texttt{rep2innerform} 同样明确返回失败。
+第一条同时返回 topology/routing、显式双动量列表、缺省规则、从属模长 binding、可复制修改的 \texttt{selectionTemplate} 和上述秩/零空间；第二条只审计候选规则，第三条才初始化。该接口不会用 \texttt{Input[]} 阻塞 notebook、命令行或 batch。欠完备声明或规则是 error：返回 missing/null-space 证据并令初始化失败，后续 seed、求导、linearData 与 serializer 都由 capability gate 拒绝。过完备允许初始化并生成 symbolic IBP seed，但 $\texttt{derivativeUsableQ=False}$，故 \texttt{ds/DSDE} 与唯一 \texttt{rep2innerform} 均禁用。只有 exact 且满秩的坐标系统可按式~\eqref{generalKinematicCoordinateChainRule} 求导。
 
 \subsection{带动力学量系数的表达式总导数}
 
@@ -1181,7 +1188,7 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线同
 \begin{equation}
   \mathcal I(s)=\sum_r c_r(s)J_r(s)+c_0(s),
 \end{equation}
-而不是单个指标积分。公开接口 \verb|ds[expr,var]| 使用 family 初始化时的外部变量名；015 缺省为根号坐标的 API 短名，并严格实现
+而不是单个指标积分。公开接口 \verb|ds[expr,var]| 使用 family 初始化时的外部变量名；016 缺省为根号坐标的 API 短名，并严格实现
 \begin{equation}
   {\partial\mathcal I\over\partial s}
   =\sum_r c'_r(s)J_r(s)
@@ -1401,7 +1408,7 @@ Tree family 不保留 loop 的 $b$ 槽，因此投影必须把完整物理幂次
 \begin{verbatim}
 repIterative[expr_, end_:Automatic]
 \end{verbatim}
-把每个顶点的 $a_e$ 迭代到指定终点；\texttt{Automatic} 表示全零终点。显式终点的长度必须等于顶点数，且每段步数必须是可判定整数。多 sector 情形按 contact-reachable sector DAG 从低到高处理，避免把含 source 的非齐次关系当作齐次 replacement repeated。
+把每个顶点的 $a_e$ 迭代到指定终点；\texttt{Automatic} 表示全零终点。显式终点的长度必须等于顶点数，且每段步数必须是可判定整数。多 sector 情形按 contact-reachable sector DAG 从低到高处理，避免把含 source 的非齐次关系当作齐次 replacement repeated。016 中凡 sector 含 theta/contact source，raw 与 sector-tagged 迭代均从同一个 direct pure-time seed 生成单步关系；旧三槽 loop 投影只作交叉验证。这个要求保证用户显式给出的 \texttt{treeEnergy} 不会被 fixed-line notation \texttt{sEi} 替换。
 
 % ============================================================
 \section{Tree 的 dlog DE 与 SK branch}
@@ -1666,5 +1673,87 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
 \end{align}
 
 因此两种方案对总 boundary 完全等价，前提是同一 bundle 使用同一个 regulator，并保留全部逐线贡献及其中心矩项。package 可以任选其一作为 canonical；012 选择共同-theta方案，因为它无 regulator 与逐线归因依赖，直接给出式~\eqref{commonThetaOddSubset}。不同线使用不同 regulator、只取 $H(0)=1/2$、丢弃高阶奇数项，或把 simultaneous contact 写成 $\delta^k$，都不属于上述等价类。
+
+\section{016 图论、fixed line 与 pure-time 表示}
+
+\subsection{结构圈数和 root loop space}
+
+令内部传播子构成无向多重图 $G=(V,E)$，连通分量数为 $C$。结构圈数是第一 Betti 数
+\begin{equation}
+ L=E-V+C.
+ \label{graphBettiLoopCount}
+\end{equation}
+平行边分别计入 $E$，自环各增加一圈，外腿不属于内部边。删除边 $e$ 后若连通分量增加，则 $e$ 是 bridge；否则是 cycle line。式~\eqref{graphBettiLoopCount} 只给拓扑圈数，不能证明用户 routing 正确；还必须检查 loop-coefficient matrix 的秩及其 incidence-cycle support。
+
+所有 contact-reachable sector 继承 root topology 的 $L$、loop basis、cycle/bridge 分类和 line-power schema。sector 只改变 full/shrunk 状态、端点代表、zero-point 与 symmetry。特别地，即使一个 contact sector 中所有 cycle lines 都已 shrink，也不得重新按剩余图计算较小的 $L$；否则 triple contact 会丢失原来的 loop-scalar-product 空间和 $b_S$ 指标。
+
+\subsection{cycle pack、fixed pack 与显式幂系数}
+
+full loop 模式下统一积分仍写成
+\begin{equation}
+ J[\{a_v\},\{P_e\},\{n_{\rm isp}\}].
+\end{equation}
+但逐线 pack 由 root schema 决定：
+\begin{equation}
+ P_e=
+ \begin{cases}
+  \{b_e,n_{e1},\ldots\},&e\text{ 为 full cycle line},\\
+  \{b_{S,e},\ldots\},&e\text{ 为 shrunk cycle line},\\
+  \{n_{e1},\ldots\},&e\text{ 为 fixed massive/massless full line},\\
+  \{\},&e\text{ 为不带离散端点态的 fixed 或 cross line}.
+ \end{cases}
+ \label{cycleFixedPackSchema}
+\end{equation}
+因此不能由 pack 第一槽或长度猜测 $b$；必须读取 sector metadata。
+
+设某项要求物理分母幂 $B_e\to B_e+\Delta_e$。统一 line-power 操作为
+\begin{equation}
+ \operatorname{shiftPower}_e(\Delta_e):
+ \begin{cases}
+  cJ[\ldots,b_e,\ldots]\mapsto cJ[\ldots,b_e+\Delta_e,\ldots],&e\text{ cycle},\\
+  cJ[\ldots,P_e,\ldots]\mapsto c\,r_e^{-\Delta_e}J[\ldots,P_e,\ldots],&e\text{ fixed},
+ \end{cases}
+ \label{shiftLinePowerBranches}
+\end{equation}
+其中 $r_e=|Q_e|$ 是该 fixed line 已声明的模长。zero-point $B_{0,e}$ 本来就包含在显式因子 $r_e^{-B_{0,e}}$ 中；EOM、time derivative、外模长导数及 Wronskian/contact 引入的每个额外幂都按式~\eqref{shiftLinePowerBranches} 乘到显式系数，不能伪造一个 $b_e$ 指标。
+
+\subsection{momentum IBP 与 time IBP 的作用域}
+
+momentum IBP 的链式法则只对 cycle line 定义 $z_e=\xi_e^2$：
+\begin{equation}
+ v\cdot\partial_{q_l}F
+ =\sum_{e\in E_{\rm cycle}}c_{el}{v\cdot Q_e\over\xi_e}
+ {\partial F\over\partial\xi_e}
+ +\sum_j(v\cdot\partial_{q_l}\rho_j){\partial F\over\partial\rho_j}.
+ \label{cycleOnlyMomentumIBP}
+\end{equation}
+bridge/fixed line 不含独立 loop flow，所以不进入 $z$ 坐标、复合 momentum generator、$b$ shift 或 momentum building-block derivative。这并不意味着它从积分中消失：其 $r_e^{-B_e}$ 和 building block 仍是显式动力学依赖，按外变量链式法则求导。
+
+time IBP 的作用域不同。对顶点 $v$ 做 $\tau_v$ total derivative 时，所有 incident active lines 的 endpoint building block 都依赖 $\tau_v$，故
+\begin{equation}
+ \partial_{\tau_v}\prod_{e\ni v}{\cal B}_e
+ =\sum_{e\ni v}(\partial_{\tau_v}{\cal B}_e)
+  \prod_{f\ni v,f\ne e}{\cal B}_f.
+ \label{timeIBPAllIncidentLines}
+\end{equation}
+这个和式必须包含 cycle 与 fixed lines。fixed line 的 $a/n$ shift 与式~\eqref{shiftLinePowerBranches} 的显式模长因子同时保留；共同-theta bundle、$W_T$ shrink 和 simultaneous contact 也在这一层处理。
+
+\subsection{direct pure-time 模式和能力门禁}
+
+树图缺省、圈图可选的 \texttt{ibpMode->"timeOnly"} 不构造残缺的 loop family。所有 active lines 统一标为 \texttt{fixedCoefficient}，使用
+\begin{equation}
+ J[\{\{a_v,n_{e_1v},\ldots,n_{e_pv}\}\}_v]
+ \label{directPureTimeJ}
+\end{equation}
+的 vertex-pack 表示，并把全部 active line 模长纳入 \texttt{independentExternalMomenta} 审计。此模式没有 momentum generator、$z$/ISP 闭合和 $b/b_S$；\texttt{DSTreeSeeds} 直接生成 pure-time sector rules，\texttt{repIterative} 的 source-aware 首步也消费同一 direct relation，旧 loop 投影只作为独立交叉验证。\texttt{repIterative}、naive time-IBP/DE 与直接 dlog DE 必须使用同序 master 列表比较。
+
+用户列表和动力学规则的综合状态决定 context capabilities：exact 开放初始化、time IBP、full 模式下的 momentum IBP、求导及唯一反变换；undercomplete 返回 missing/null-space 后拒绝初始化；overcomplete 允许 symbolic seed，但关闭 \texttt{ds/DSDE} 与唯一反变换。\texttt{DSLinear} 还校验 seed 与 context 的 \texttt{inputHash}，serializer 只消费通过该门禁的 backend-neutral \texttt{linearData}。
+
+缺省 notation 为
+\begin{equation}
+ \texttt{ssij}=\sqrt{\operatorname{sp}(k_i,k_j)},\qquad
+ \texttt{sEi}=\sqrt{\operatorname{sp}(p_i,p_i)},
+\end{equation}
+其中 $k_i$ 与 $p_i$ 分别按两个显式用户列表排序。\texttt{DSRedefineParameters} 只接受覆盖完整基础坐标的规则，并通过 Jacobian 链式法则复用平方 Gram 原子导数；不另写第二套动量微分核心。
 
 \end{document}

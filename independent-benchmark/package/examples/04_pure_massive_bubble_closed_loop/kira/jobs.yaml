@@ -1,0 +1,11 @@
+jobs:
+  - reduce_user_defined_system:
+      input_system: {files: ["userSystem"], config: false}
+      select_integrals:
+        select_mandatory_list:
+          - [list]
+      run_initiate: true
+      run_firefly: true
+  - kira2math:
+      target:
+       - [list]

@@ -1,4 +1,4 @@
-\documentclass[a4paper,11pt]{article}
+﻿\documentclass[a4paper,11pt]{article}
 % !TeX program = pdflatex
 \pdfoutput=1
 \pdfminorversion=7
@@ -36,7 +36,7 @@
 \author[a]{Su Yingze}
 \affiliation[a]{Institute not specified}
 \emailAdd{yingze.su@outlook.com}
-\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前稳定主线为 015：圈线相关独立外动量使用完整 \texttt{ssij} 根号 Gram 坐标；其它实际出现的无圈动量模长平方按首次出现顺序选独立基并绑定为 \texttt{sE1,sE2,...}，从属项保存 binding，同时复用 014 的平方 Gram 原子导数；package 只生成、序列化和验证关系，不运行 reduction。}
+\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前主线为 016：用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。前者使用完整 \texttt{ssij} 根号 Gram 坐标，后者只为用户声明的实际无圈模长生成 \texttt{sE1,sE2,...}。package 只生成、序列化和验证关系，不运行 reduction。}
 
 \begin{document}
 \maketitle
@@ -45,21 +45,21 @@
 
 \section{快速开始与当前边界}
 
-本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定主线为模块化 015，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和单文件兼容入口分别为
+本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定主线为模块化 016，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和冻结单文件兼容入口分别为
 \begin{verbatim}
-000_code/015_dSIBP/
-000_code/015_dS_ibp_general.wl
+000_code/016_dSIBP/
+independent-benchmark/package/package_016.wl
 \end{verbatim}
-010--014 是只读历史/基线版本。015 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、massless 有向单 $n$、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、tree 迭代与 dlog、Kira serializer/importer 以及 DE/scaling 检查，并增加根号动力学坐标 adapter。
+010--015 是只读历史/基线版本。016 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、massless 有向单 $n$、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、tree 迭代与 dlog、Kira serializer/importer 以及 DE/scaling 检查，并增加显式双动量列表、图论/routing 审计、cycle/fixed line pack、direct pure-time 路线、参数重定义和 capability 门禁。
 
 仓库内标准加载与独立 benchmark 单文件加载是两个等价入口，应在新 kernel 中任选其一：
 \begin{verbatim}
-packageDir = FileNameJoin[{Directory[],"000_code","015_dSIBP"}];
+packageDir = FileNameJoin[{Directory[],"000_code","016_dSIBP"}];
 If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
 Needs["dSIBP`"];
 
 (* 独立 benchmark 的自包含单文件入口： *)
-Get["independent-benchmark/package/package_015.wl"];
+Get["independent-benchmark/package/package_016.wl"];
 \end{verbatim}
 两者都提供 \texttt{dSIBP`} 公开 context；独立交付文件不依赖主线模块路径。不要在同一 kernel 重复加载两个入口。
 
@@ -101,7 +101,7 @@ linearData = DSLinear[seeds,context];
 05_tree_two_vertex_time_ibp/main.wl
 06_root_kinematic_coordinates/main.wl
 \end{verbatim}
-它们分别展示 mixed massive/massless 工作流、一般 \texttt{P,Q,T,W} 函数系统、两圈 ISP、pure massive bubble 的外部 Kira 闭环、两顶点 tree pure-time/dlog 路线，以及 015 的 \texttt{ssij/sEe} 初始化与总导数。examples 不含独立 expected；Kira example 只写输入并取回已有结果，不启动 reduction。
+它们分别展示 mixed massive/massless 工作流、一般 \texttt{P,Q,T,W} 函数系统、两圈 ISP、pure massive bubble 的外部 Kira 闭环、两顶点 tree pure-time/dlog 路线，以及 016 的 \texttt{ssij/sEe} 初始化与总导数。examples 不含独立 expected；Kira example 只写输入并取回已有结果，不启动 reduction。
 
 \section{SK 费曼规则到积分族}
 
@@ -245,7 +245,7 @@ massive full/cross 的两个端点态均取 $n_{e,r}=0,1$。time 导数先产生
 
 \subsection{通用 $2\times2$ 函数系统输入}
 
-当前 015 对每条 massive line 输入
+当前 016 对每条 massive line 输入
 \begin{equation}
  f''+P(x)f'+Q(x)f=0,
  \qquad \mathbf F=T(x)(f,f')^T,
@@ -452,9 +452,10 @@ case = <|
       "nu"->0,"bbType"->"exp","massType"->"massless"|>
   },
   "loopMomenta" -> {q},
-  "externalMomenta" -> {k},
-  "externalLegMomenta" -> {kE},
-  "vertexEnergies" -> <|v1->E1,v2->E2|>,
+  "loopExternalMomenta" -> {k},
+  "independentExternalMomenta" -> {kE},
+  "ibpMode" -> "full",
+  "vertexEnergies" -> <|v1->Sqrt[sp[kE,kE]],v2->E2|>,
   "ispData" -> {},
   "zeroPointRules" -> {
     a0[v1]->alpha1,a0[v2]->alpha2,
@@ -483,12 +484,27 @@ SetAttributes[sp, Orderless];
 \end{verbatim}
 实现 $\mathrm{sp}(p,r)=\mathrm{sp}(r,p)$。这只是标量积交换性，不是图或积分族对称性。
 
-用户可给圈动量和外动量任意符号名。内线动量和 ISP 中的 \texttt{sp} 参数必须是以下两组基变量的线性组合：
+用户可给圈动量和外动量任意符号名，例如 \texttt{sah,bob,alice}。016 不从符号字符串猜测角色，也不再从一个统一列表自动分类；输入必须显式声明
 \begin{verbatim}
 loopMomenta
-externalMomenta
+loopExternalMomenta
+independentExternalMomenta
 \end{verbatim}
-015 内部仍保留平方 Gram 原子，公开缺省为根号坐标：
+\texttt{loopExternal\allowbreak Momenta} 是圈积分外动量基，决定完整 Gram 坐标、$dqk$ 生成元和 ISP 闭合维数；\texttt{independentExternal\allowbreak Momenta} 是 topology 中实际无圈 line/phase 的独立模长列表，只定义 $|P_e|$，不定义彼此点积。旧字段 \texttt{externalMomenta}/\texttt{externalLegMomenta} 仅作为分别对应这两个字段的兼容别名；同时给新旧字段时以新字段为准。程序会从 line routing 独立计算实际需要的空间并与用户声明比较，而不会替用户选择基。
+
+结构圈数由内部无向多重图的第一 Betti 数
+\begin{equation}
+ L=E-V+C
+\end{equation}
+给出；平行边逐条计数，自环各贡献一圈，\texttt{extLegs} 不计入 $E$。逐边删除后连通分量增加者为 bridge，其余为 cycle line。\texttt{ibpMode->"full"} 还要求 \texttt{loopMomenta} 数量等于 $L$、routing 满秩并位于 incidence cycle space；\texttt{ibpMode->"timeOnly"} 不生成 momentum IBP，树图缺省即为该模式。
+
+为消除任意圈动量平移，程序把 line routing 写成 $Q=Aq+r$，选满秩参考行 $A_R$ 后使用
+\begin{equation}
+ q'=A_Rq+r_R,\qquad r'=r-AA_R^{-1}r_R.
+\end{equation}
+因此 \texttt{\{q+k1,q+k1+k2\}} 实际只要求方向 \texttt{k2}；加减号始终保留精确系数。这个计算只用于审计用户列表是否完备，不用于自动改写用户选定的动量基。
+
+016 内部保留用户给定 loop-external 基的平方 Gram 原子，公开缺省为根号坐标：
 \begin{verbatim}
 kk[i,j] = sp[ki,kj]
 ssij = Sqrt[sp[ki,kj]]
@@ -516,14 +532,11 @@ sp[l3,k321+l3]
 \end{verbatim}
 \texttt{name} 必须唯一，\texttt{expr} 使用已声明的动量基，\texttt{range} 给出 numerator 指标 seed 值域。独立 benchmark 与 package 使用同一 schema。
 
-\subsection{外腿打包能量}
+\subsection{实际无圈模长与 fixed line}
 
-两类外部动量输入为
-\begin{verbatim}
-externalMomenta
-externalLegMomenta
-\end{verbatim}
-第一类包含与圈积分相关、用于完整 Gram 基和 $D_{ij}$ 的独立外动量。第二类只是允许出现在无圈 line momentum 或顶点相位中的额外向量声明；它不自动输出完整 Gram 表。程序把 topology 中实际出现的模长平方在完整 loop Gram 与此前已选无圈平方坐标上按首次出现顺序做秩筛选，只为独立项建立模长变量：
+\texttt{independentExternal\allowbreak Momenta} 中每个表达式定义一个实际无圈模长。程序要求它们覆盖所有 active 无圈 line/被审计 phase 中不能由完整 loop Gram 表示的模长；不会从向量原子表自动拆分或补齐。
+
+程序把实际无圈模长平方在完整 loop Gram 与此前已选无圈平方坐标上按首次出现顺序做秩筛选，只为独立项建立模长变量：
 \begin{verbatim}
 sE1 = Sqrt[sp[PE1,PE1]], sE2 = Sqrt[sp[PE2,PE2]], ...
 \end{verbatim}
@@ -531,18 +544,22 @@ sE1 = Sqrt[sp[PE1,PE1]], sE2 = Sqrt[sp[PE2,PE2]], ...
 
 例如
 \begin{verbatim}
-"externalMomenta" -> {k1,k2}
-"externalLegMomenta" -> {kE1,kE2}
+"loopExternalMomenta" -> {k1,k2}
+"independentExternalMomenta" -> {kE1,kE2,kE1+kE2}
 "lineData" -> {...,"momentum"->kE1,...}
 "vertexEnergies" -> <|v1->Sqrt[sp[kE1+kE2,kE1+kE2]],...|>
-(* loop Gram: {ss11,ss12,ss22}; actual no-loop magnitudes: {sE1,sE2} *)
+(* loop Gram: {ss11,ss12,ss22}; no-loop magnitudes: {sE1,sE2,sE3} *)
 \end{verbatim}
-若显式给出旧平方坐标规则，仍以单位 Jacobian 工作，但它不再是 015 缺省：
+无圈模长只把整体反号 $P\leftrightarrow-P$ 视为同一对象；$|\texttt{alice+bob}|$ 与 $|\texttt{alice-bob}|$ 必须分别声明，不能合并。
+
+坐标名只由两个用户列表的稳定顺序决定，与符号名无关。类别总数为 1--9 时使用 \texttt{ss11/sE1}；10--99 时使用两位补零，例如 \texttt{ss0101,ss0110,sE01}；100 起按总数位数自然扩展。若显式给出旧平方坐标规则，仍以单位 Jacobian 工作，但它不再是 016 缺省：
 \begin{verbatim}
 "externalInvariantRules" -> {sp[k1,k1]->s11,...}
 \end{verbatim}
 
-特别地，若输入中实际分别出现 $|k_{E1}|$、$|k_{E1}+k_{E2}|$、$|k_{E2}|$，缺省就是三个独立变量 \texttt{sE1,sE2,sE3}；程序既不输出 \texttt{sp[kE1,kE2]}，也不用余弦定理消去中间变量。若随后出现 $|2k_{E1}|$，它记录为 $4\,\texttt{sE1}^2$ 的从属 binding；若出现 $|k-k_E|$ 且 $|k+k_E|$ 已入基，则它可绑定为 $\sqrt{2\,\texttt{ss11}^2+2\,\texttt{sE1}^2-\texttt{sE2}^2}$。这类 binding 的 line、phase 和显式系数仍按 Jacobian 求导，不使用 \texttt{PowerExpand}。
+特别地，若 topology 实际分别出现 $|k_{E1}|$、$|k_{E1}+k_{E2}|$、$|k_{E2}|$，用户就应在 \texttt{independentExternal\allowbreak Momenta} 中给出这三个表达式，缺省得到 \texttt{sE1,sE2,sE3}；程序既不输出 \texttt{sp[kE1,kE2]}，也不用余弦定理消去中间变量。若再声明 $2k_{E1}$，它是过完备项并触发 warning。
+
+在 loop 表示中，只有 cycle line 的 pack 含 \texttt{b/bS}；bridge/non-cycle line pack 只含 endpoint \texttt{n}。fixed line 的零点幂和导数产生的幂变化全部进入显式模长系数。\texttt{timeOnly} 下所有 active lines 都使用 fixed-coefficient schema，并转到直接 \texttt{J[vertexPacks]} pure-time 表示；即使输入图含结构圈，也不为 line 伪造 \texttt{b/bS}。
 
 初始化采用不阻塞脚本的两阶段接口：
 \begin{verbatim}
@@ -553,15 +570,32 @@ custom = {sp[k1,k1]->u^2, sp[k1,k2]->u v,
 audit = DSKinematics[case, custom];
 context = DSInit[case, KinematicRules->custom];
 \end{verbatim}
-\texttt{DSKinematics} 的返回值分组列出：基础坐标顺序与实际出现/独立无圈模长；从属模长 binding；左端矩阵与参数 Jacobian；秩、零空间方向和约束残差。对应的 Association key 是
+\texttt{DSKinematics} 的返回值分组列出：结构图/routing 审计、两个用户列表的 exact/over/under 状态、基础坐标顺序、动力学规则矩阵与参数 Jacobian、零空间和 capability。主要 Association key 包括
 \begin{center}
-\texttt{dependentMagnitudeBindings}.
+\texttt{momentumDeclaration\allowbreak Status},
+\texttt{kinematicCoordinate\allowbreak Status},
+\texttt{dependentMagnitudeBindings},
+\texttt{missingDirections},
+\texttt{missingMagnitudeSquares},
+\texttt{capabilities}.
 \end{center}
-欠完备规则拒绝初始化；过完备规则 warning 后允许生成内部 IBP，但冗余变量的 \texttt{ds} 与无唯一逆映射的 \texttt{rep2innerform} 被禁用。要重选可再次调用 \texttt{DSInit}；若写入同一初始化目录，显式使用 \texttt{OverwriteInitialization->True}。
+欠完备动量列表或动力学规则会以红色 error 显示缺失方向/零空间并令 \texttt{DSInit} 返回失败；所有后续模块读取同一 capability，不能继续生成 seed。过完备以红色 warning 提醒，允许初始化和 symbolic IBP seed，但关闭 \texttt{ds/DSDE} 与唯一 \texttt{rep2innerform}。对于过完备 loop 声明，用户原列表保留作审计，实际 $n_K$、Gram、\texttt{dqk} 与 ISP 闭合只使用 affine quotient 必要基 \texttt{effectiveLoopExternalMomenta}；共同 loop shift 不会虚增标量积空间。只有 exact 状态同时开放初始化、time/momentum IBP、求导和反变换。
+
+成功初始化后可直接查看或重定义 notation：
+\begin{verbatim}
+notation = DSParameterNotation[context];
+newContext = DSRedefineParameters[context, {
+  sp[k,k] -> loopScale^2,
+  sp[p1,p1] -> leg1^2,
+  sp[p2,p2] -> leg2^2,
+  sp[p1+p2,p1+p2] -> leg12^2
+}];
+\end{verbatim}
+新规则必须完备；返回的新 context 有新的审计和 \texttt{inputHash}，后续 seed、\texttt{ds} 与 \texttt{DSDE} 都读取它。规则右端可以是一般混合参数化，例如 $(u+v)^2$；程序先展开每条右端并提取原子参数 $u,v$，再建立完整 Jacobian。参数数多于基础坐标数时属于过完备并关闭求导。正式函数名是 \texttt{DSRedefineParameters}。
 
 \subsection{独立变量与微分方程求导}
 
-当前 015 提供 seed 层和表达式层的独立变量求导接口。变量分三类：
+当前 016 提供 seed 层和表达式层的独立变量求导接口。变量分三类：
 \begin{itemize}
   \item \textbf{圈线相关外动量模长}，缺省为 \texttt{ssij}，通过外动量矢量导数组合实现。
   \item \textbf{实际无圈动量模长独立基}，缺省为 \texttt{sE1,sE2,...}；从属模长先写成这些变量与 \texttt{ssij} 的 binding。若它对应一条传播子，导数按 binding Jacobian 同时作用于该线的分母和 massive/massless building block。
@@ -606,7 +640,7 @@ makeExternalInvariantDerivativeDecomposition[topo, var]
 applyExternalVectorDerivativeSeed[topo, int, gen]
 applyExternalInvariantVariableDerivativeSeed[topo, int, var]
 applyIndependentVariableDerivativeSeed[topo, int, var]
-ds[expr, ssij, topo]
+ds[expr, ssij, context]  (* context["topology"] 也可 *)
 ds[expr, ssij]
 \end{verbatim}
 \texttt{applyIndependentVariableDerivativeSeed} 会自动分派：loop Gram 变量先做上述 decomposition，再把每个 $D_{ij}$ 作用到传播子、building block、ISP 和相位；实际无圈模长及其从属 binding 使用 line-local 径向导数并微分相位；其它变量按独立顶点能量标量处理。一般用户坐标 $u$ 直接使用 $\sum_a(\partial x_a/\partial u)\partial_{x_a}$，不会因 $u$ 同时进入多个 Gram 原子或 binding 而提前返回。
@@ -622,7 +656,7 @@ ds[expr, ssij]
 \end{equation}
 程序先将 $J_r$ 替换为惰性 token 求显式系数导数，再补上每个积分的指标导数，合并后统一执行 EOM、symmetry 与 canonical。它接受单个 $J$ 和任意线性组合，拒绝 $J_iJ_j$ 等非线性输入。
 
-令 $x_{ij}=\operatorname{sp}(k_i,k_j)=\texttt{ssij}^2$。015 不重写平方 Gram 导数，而是使用 $\partial_{\texttt{ssij}}=2\,\texttt{ssij}\,\partial_{x_{ij}}$ 调用原子层。显式系数仍执行完整乘积与链式法则；程序不使用 \texttt{PowerExpand}。
+令 $x_{ij}=\operatorname{sp}(k_i,k_j)=\texttt{ssij}^2$。016 不重写平方 Gram 导数，而是使用 $\partial_{\texttt{ssij}}=2\,\texttt{ssij}\,\partial_{x_{ij}}$ 调用原子层。显式系数仍执行完整乘积与链式法则；程序不使用 \texttt{PowerExpand}。
 
 对无圈 massive 线 $e$，记 $B_e=b_e+b0_e$。径向导数包含 $-B_eJ[b_e\to b_e+1]$；若 $A_T$ 的某个 Laurent 项为 $c\,x^p$ 并把端点态 $\alpha$ 送到 $\beta$，则另有
 \begin{equation}
@@ -648,7 +682,7 @@ symmetry[expr_,topo_]
 
 \subsection{完整生成元}
 
-每个 active vertex 有一个 time generator。对 $L$ 个圈动量和 $K$ 个 \texttt{externalMomenta}，loop-momentum generators 为
+每个 active vertex 有一个 time generator。对 $L$ 个圈动量和 $K$ 个 \texttt{loopExternal\allowbreak Momenta}，loop-momentum generators 为
 \begin{equation}
  {\cal O}_{\ell,v}
  =\frac{\partial}{\partial q_\ell^\mu}v^\mu,
@@ -661,16 +695,17 @@ symmetry[expr_,topo_]
 
 \subsection{公开原子 API}
 
-015 保留以下原子接口。推荐显式传入 topology；若先调用 \texttt{setIBPTopologyContext[topo]}，也可使用短签名：
+016 保留以下原子接口。推荐显式传入 \texttt{DSInit} context 或 parsed topology；若先调用 \texttt{setIBPTopologyContext[topo]}，也可使用短签名：
 \begin{verbatim}
-dtau[i,expr,topo]       or dtau[i,expr]
-dqq[i,j,expr,topo]      or dqq[i,j,expr]
-dqk[i,j,expr,topo]      or dqk[i,j,expr]
-ds[expr,var,topo]        or ds[expr,var]
-rep2innerform[expr,topo]
-rep2outform[expr,topo]
-rep2Integrand[expr,topo]
+dtau[i,expr,context]       or dtau[i,expr]
+dqq[i,j,expr,context]      or dqq[i,j,expr]
+dqk[i,j,expr,context]      or dqk[i,j,expr]
+ds[expr,var,context]       or ds[expr,var]
+rep2innerform[expr,context]
+rep2outform[expr,context]
+rep2Integrand[expr,context]
 \end{verbatim}
+上式第三参数也可写成 \texttt{context["topology"]}。resolver 会先识别完整 context 并解包，不会把它误作原始 topology case 再次解析。
 前三个复合算子分别表示 $d/d\tau_i$、$d/dq_i\cdot q_j$、$d/dq_i\cdot k_j$，对 $J$ 的线性组合保持线性，并复用现有 EOM、theta boundary 与 canonical。
 
 例如先把离散态替换为字面 $0/1$，再调用
@@ -755,13 +790,13 @@ ready = makeIBPReadinessReport[
 \end{verbatim}
 \texttt{LinearSystemMode} 可取 \texttt{"symbolic"}、\texttt{"sampled"} 或 \texttt{"numeric"}；numeric 模式要求 \texttt{numericRules} 覆盖报告中列出的外不变量、顶点能量和线参数。
 
-\section{015 标准 package 与初始化}
+\section{016 标准 package 与初始化}
 
-一个 015 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。所有路径相对于 example 的 \texttt{main.wl}：
+一个 016 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。所有路径相对于 example 的 \texttt{main.wl}：
 \begin{verbatim}
 exampleDir = DirectoryName[$InputFileName];
 packageDir = FileNameJoin[{
-  exampleDir,"..","..","..","000_code","015_dSIBP"
+  exampleDir,"..","..","..","000_code","016_dSIBP"
 }];
 If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
 Needs["dSIBP`"];
@@ -784,9 +819,9 @@ init = DSInit[case,
 
 \texttt{DSSeeds} 的公开缺省为 \texttt{DiscreteMode->Automatic}。它读取初始化 topology 的 seed preset：缺省 \texttt{quickCheck} 解析为 \texttt{"sample"}，\texttt{fullDiscrete} 与 \texttt{bounded} 解析为 \texttt{"all"}。正式全离散验证应显式传 \texttt{"all"}，避免调用者把快速检查误解为完整覆盖。
 
-\section{015 运行消息与进度}
+\section{016 运行消息与进度}
 
-015 使用一个集中消息层，所有耗时模块只上报结构化事件，不在内部循环散落 \texttt{Print}：
+016 使用一个集中消息层，所有耗时模块只上报结构化事件，不在内部循环散落 \texttt{Print}：
 \begin{verbatim}
 DSMessagesOn[]
 DSMessagesOff[]
@@ -798,7 +833,7 @@ sector 初始化、偏导算符生成、seed、linearization、Kira 导出/导�
 
 Notebook 前端使用 \texttt{Monitor} 配合 \texttt{ProgressIndicator[n,\{0,m\}]}，或用单个 \texttt{PrintTemporary} 配合 \texttt{Dynamic}，在原位显示 \texttt{n/m}。没有 FrontEnd 时只打印开始、结束及大约每 $10\%$ 的稀疏里程碑，禁止每处理一项增加一行。总数不能预先可靠获得的阶段只报告阶段状态，不伪造 \texttt{n/m}。
 
-\section{015 Kira 结果取回到微分方程}
+\section{016 Kira 结果取回到微分方程}
 
 package 只生成 Kira 输入，不运行 reduction。完整闭环为：
 \begin{verbatim}
@@ -835,7 +870,7 @@ J[{{a1,n11,...,n1p1},{a2,n21,...,n2p2},...}]
 
 Loop 到 tree 的投影使用完整物理幂次。目标项相对参考 seed 的时间相位为 $(-1)^{\Delta\sum(a+a0)}$，每条线的显式能量系数为 $k_e^{-\Delta(b+b0)}$；缩并线改用 $bS+bS0$。当前 sector 的 $a0$ 进入 tree 的 $\nu_0$。所以 h-mode contact 的 $bS=b+1$、$bS0=b0+2\nu$ 必须共同给出 $(-k)^{-2\nu-1}$，不能只保留整数 $k^{-1}$。
 
-单顶点 $p$-fold family 的 $2^p$ 个 masters 按二进制顺序 \texttt{00...0,00...1,...,11...1} 保存。\texttt{repIterative[expr,end]} 使用 2401.00129 Eq.~(3.37)、(3.47)、(3.50) 直接生成的 general-index 单次规则，把每个 $a_e$ 约化到指定终点；\texttt{Automatic} 表示全零终点，长度不符或步数不可判定时拒绝。
+单顶点 $p$-fold family 的 $2^p$ 个 masters 按二进制顺序 \texttt{00...0,00...1,...,11...1} 保存。\texttt{repIterative[expr,end]} 使用 2401.00129 Eq.~(3.37)、(3.47)、(3.50) 直接生成的 general-index 单次规则，把每个 $a_e$ 约化到指定终点；\texttt{Automatic} 表示全零终点，长度不符或步数不可判定时拒绝。含 contact source 时，raw 与 sector-tagged 迭代都从 \texttt{DSTreeSeeds} 的 direct pure-time relation 生成同一首步，因而保留显式 \texttt{treeEnergy}；旧三槽 loop 投影只作交叉验证。
 
 \texttt{DSTreeDLogDE} 的 sector 对角块使用该文 Eq.~(3.54)--(3.55)，非对角块使用 Eq.~(3.66)--(3.68)。letters 按顶点顺序逐块排列：每个顶点先列 massive-leg energies，再按 binary master order 列 cut letters，最后稳定去重；\texttt{letterMatrices} 使用同一键顺序。$G^{+-}/G^{-+}$ 没有 theta，不使用 Wronskian/contact；$G^{++}/G^{--}$ 的 contact source 先由已验证的 loop \texttt{dtau}、compiled $W_T$、共同-theta和 coincident canonical 处理，再映射到 tree lower sector。
 
@@ -846,7 +881,7 @@ omegaBlocks, dlogQ
 \end{verbatim}
 \texttt{masters} 中每项的 \texttt{coefficient} 正是对应 sector normalization；矩阵、letters 与该 master 顺序完全一致。
 
-015 还提供不使用上述直接 dlog/递推矩阵的交叉路线：
+016 还提供不使用上述直接 dlog/递推矩阵的交叉路线：
 \begin{verbatim}
 ibp = DSTreeNaiveIBP[context, treeDLog["masters"]];
 de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
@@ -877,7 +912,7 @@ de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
   \item seed 直接导出 Kira：错误；先构造 \texttt{linearData}。
 \end{itemize}
 
-当前未实现：一般图 automorphism/参数对称性的自动发现、scaleless/parity 全自动前端、自动选择 propagator basis、streaming/chunked 高圈 seed，以及实际运行 reduction。015 已实现标准 context、动力学变量审计、交互消息、Kira 结果取回和 loop/tree DE/scaling；package 仍只验证并导入用户在外部生成的完整 reduction。
+当前未实现：一般图 automorphism/参数对称性的自动发现、scaleless/parity 全自动前端、自动选择 propagator basis、streaming/chunked 高圈 seed，以及实际运行 reduction。016 已实现标准 context、动力学变量审计、交互消息、Kira 结果取回和 loop/tree DE/scaling；package 仍只验证并导入用户在外部生成的完整 reduction。
 
 \appendix
 \section{公开函数汇总}
@@ -892,27 +927,33 @@ de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
 \texttt{DSKinematics} & 提议或审计动力学变量规则、秩、零空间与可逆性 & rules=Automatic（缺省提案） \\
 \texttt{DSInit} & 解析 family、注册 context、生成 topology/sector/convention metadata & KinematicRules=Automatic；写初始化文件=False；写导数算符=False；覆盖=False \\
 \texttt{DSInfo} & 返回当前初始化摘要与 readiness & 无 \\
+\texttt{DSKinematics} & 审计结构/routing、双动量列表与动力学规则完备性 & rules=Automatic \\
+\texttt{DSParameterNotation} & 返回缺省/当前根号 notation 与用户变量 & context=当前已注册 context \\
+\texttt{DSRedefineParameters} & 用完整新规则重新初始化参数坐标 & 进度=Automatic \\
+\texttt{DSMessagesOn/Off/Q} & 开关或查询非致命提醒；fatal error 始终保留 & 无 \\
+\texttt{DSPublicAPI} & 返回公开函数分组、清单与高层缺省 options & 无 \\
 \texttt{DSSeeds} & 生成全可达 sector canonical seeds & 离散态=Automatic（由 preset 决定）；生成 shrink sector=True；规模门禁=Automatic \\
 \texttt{DSLinear} & seed 转后端中立 \texttt{linearData} & 系数规则=Automatic；Kira ordering=Automatic \\
 \texttt{DSKiraExport} & 从 \texttt{linearData} 写 Kira 基础输入与映射 & 输出目录=None；active basis=None；job options=Automatic \\
 \texttt{DSKiraImport} & 读回完整 Kira reduction/master 输出 & 结果/master/log 文件=Automatic；进度=Automatic \\
 \texttt{DSDE} & 用 \texttt{ds} 与 reduction 构造同序 DE & 变量=初始化全部；最大迭代=100；输出目录=None \\
 \texttt{DSScaleCheck} & 检查 top/residual Euler scaling & 关系=Custom；变量/权重/次数=Automatic \\
-\texttt{DSTreeSeeds} & 把 loop time-IBP canonical 投影为 tree rules & sector=all；保留 source=True \\
+\texttt{DSTreeSeeds} & 生成 direct pure-time/tree sector rules；loop 投影只作交叉验证 & sector=all；保留 source=True \\
 \texttt{repIterative} & tree 积分迭代到指定 $a_e$ 终点 & 终点=全零；最大步数=Automatic \\
 \texttt{DSTreeNaiveIBP} & 联立投影后的 tree time-IBP 并解一步升幂对象 & masters=直接 dlog 同序列表；进度=Automatic \\
 \texttt{DSTreeNaiveDE} & 用 naive tree IBP 构造同序 normalized-master DE & 变量=顶点与 massive-leg energies；进度=Automatic \\
-\texttt{DSTreeDLogDE} & 生成 tree dlog connection、letters 和同序 masters & basis=binary；输出目录=None \\
+\texttt{DSTreeDLogDE} & 生成 tree dlog connection、letters 和同序 masters & 无 \\
 \texttt{dtau} & 指定顶点的 time-IBP & 显式 topology 或当前 context \\
 \texttt{dqq}/\texttt{dqk} & 指定 loop generator 的 momentum-IBP & 显式 topology 或当前 context \\
 \texttt{ds} & 对带动力学系数的 $J$ 线性组合求总导数 & 变量必须是初始化外部名字 \\
 \texttt{rep2innerform}\newline\texttt{rep2outform} & 用户/内部标量积表示转换，不改 $J$ 指标；无唯一逆映射时 inner 明确失败 & 显式 topology 或当前 context \\
 \texttt{rep2Integrand} & 把 loop 指标积分展开成惰性被积函数 & 不积分、不生成 IBP \\
 \texttt{symmetry} & 应用自动 tadpole 与用户 symmetry rules 的并集 & 单次应用，不自动重复 \\
+\texttt{repSymmetry0} & 返回输入中的原始用户 symmetry rules & 无 \\
 \bottomrule
 \end{tabularx}
 \endgroup
 
-表中的原子、tree 与 \texttt{DS*} 高层接口均由 015 当前主线提供。各函数的精确可用 options 以 \texttt{Options[函数]} 为准；未实现接口不得预定义成貌似成功的空壳，也不得静默回退到不完整结果。
+表中的原子、tree 与 \texttt{DS*} 高层接口均由 016 当前主线提供。各函数的精确可用 options 以 \texttt{Options[函数]} 为准；未实现接口不得预定义成貌似成功的空壳，也不得静默回退到不完整结果。
 
 \end{document}

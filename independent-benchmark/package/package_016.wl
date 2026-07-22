@@ -22,7 +22,7 @@ b0::usage = "b0[e] 是未缩并传播子分母幂次零点；物理分母幂次�
 bS0::usage = "bS0[e] 是缩并传播子分母幂次零点；物理分母幂次为 bS+bS0。";
 rho::usage = "rho[i] 是第 i 个 ISP 的内部坐标符号。";
 dim::usage = "dim 是圈动量积分的空间维数参数。";
-ke::usage = "ke[i] 是 014 兼容的独立外腿能量参数；015 推荐声明 externalLegMomenta，并让实际出现的无圈动量模长独立基依次绑定为 sE1,sE2,...。";
+ke::usage = "ke[i] 是与动量向量无关的独立顶点相位能量参数；实际无圈动量模长由 independentExternalMomenta 依次绑定为 sE1,sE2,...。";
 tau::usage = "tau[v] 是 rep2Integrand 输出中的顶点共形时间。";
 xi::usage = "xi[e] 是 rep2Integrand 输出中的第 e 条线的动量模。";
 Hh::usage = "Hh[block] 是 rep2Integrand 使用的惰性传播子 building-block 包装。";
@@ -31,25 +31,27 @@ MasslessBlock::usage = "MasslessBlock[...] 是同分支 massless line 的惰性 
 MasslessCrossBlock::usage = "MasslessCrossBlock[...] 是异分支 massless line 的惰性 integrand block。";
 Tuserweight::usage = "Tuserweight[id] 是 Kira user-defined system 结果中的积分编号 token。";
 
-dtau::usage = "dtau[vertex,expr] 生成指定顶点的时间 IBP；显式 topology 形式为 dtau[vertex,expr,topo]。";
-dqq::usage = "dqq[dLoop,vectorLoop,expr] 生成圈动量沿圈动量方向的 IBP。";
-dqk::usage = "dqk[dLoop,vectorExternal,expr] 生成圈动量沿外动量方向的 IBP。";
-ds::usage = "ds[expr,var] 对初始化后的外部变量 var 求总导数；015 缺省 var 为 loop Gram 根号 ssij 或实际无圈模长 sE1,sE2,...，并同时作用于积分指标和显式动力学系数。";
-rep2innerform::usage = "rep2innerform[expr] 把用户 sp/ssij/sEe 表示转换为当前 topology 的内部坐标；一般混合或过完备坐标没有唯一反向映射时返回 $Failed。";
-rep2outform::usage = "rep2outform[expr] 把内部标量积坐标按当前规则转换为用户 sp/ssij/sEe 表示。";
-rep2Integrand::usage = "rep2Integrand[expr] 把统一 J 表示展开为用于核对的形式 integrand。";
+dtau::usage = "dtau[vertex,expr] 生成指定顶点的时间 IBP；三参数形式接受 parsed topology 或 DSInit context。";
+dqq::usage = "dqq[dLoop,vectorLoop,expr] 生成圈动量沿圈动量方向的 IBP；四参数形式接受 parsed topology 或 DSInit context。";
+dqk::usage = "dqk[dLoop,vectorExternal,expr] 生成圈动量沿外动量方向的 IBP；四参数形式接受 parsed topology 或 DSInit context。";
+ds::usage = "ds[expr,var] 对 exact 初始化 context 的外部变量 var 求总导数；三参数形式接受 parsed topology 或 DSInit context。016 缺省 var 为 loop Gram 根号 ssij 或显式独立无圈模长 sE1,sE2,...，并同时作用于积分指标和显式动力学系数。";
+rep2innerform::usage = "rep2innerform[expr] 把用户 sp/ssij/sEe 表示转换为当前 topology 的内部坐标；双参数形式接受 parsed topology 或 DSInit context。一般混合或过完备坐标没有唯一反向映射时返回 $Failed。";
+rep2outform::usage = "rep2outform[expr] 把内部标量积坐标按当前规则转换为用户 sp/ssij/sEe 表示；双参数形式接受 parsed topology 或 DSInit context。";
+rep2Integrand::usage = "rep2Integrand[expr] 把统一 J 表示展开为用于核对的形式 integrand；双参数形式接受 parsed topology 或 DSInit context。";
 symmetry::usage = "symmetry[expr,topo] 一次应用 topology 的内建、用户和 tadpole 对称性规则。";
 repSymmetry0::usage = "repSymmetry0[topo] 返回 topology 输入的原始用户对称性规则。";
 repIterative0::usage = "repIterative0 保存最近一次 tree 单步迭代生成的原始替换规则。";
 repIterative::usage = "repIterative[expr,end] 把 tree 积分迭代约化到各顶点的目标时间幂次；sector-tagged treeLinearData 输入会保持 sector 身份并返回同结构约化结果，end 缺省为全零。";
-DSTreeSeeds::usage = "DSTreeSeeds 由 loop time-IBP 生成带 sector/contact 审计的 pure-time/tree 种子。";
+DSTreeSeeds::usage = "DSTreeSeeds 直接生成带 sector/contact 审计的 pure-time/tree 种子；loop time-IBP 投影只保留为交叉验证。";
 DSTreeNaiveIBP::usage = "DSTreeNaiveIBP[context,masters] 把 loop time-IBP 投影成 sector-tagged tree 线性系统，并在指定有序 master basis 下直接求解全部一步升幂对象；masters 缺省取 DSTreeDLogDE 的同序归一化 masters。";
 DSTreeNaiveDE::usage = "DSTreeNaiveDE[context,variables,masters] 通过 loop 顶点相位导数投影、h 的 treeEnergy 导数和 DSTreeNaiveIBP 约化构造 tree 微分方程；结果保持指定 master 顺序和 normalization。";
-DSTreeDLogDE::usage = "DSTreeDLogDE[data] 返回 tree vertex-family 的 dlog 微分方程、同序 master 列表和 letters；DSInit context 输入会由 loop time-IBP contact selectors 组装全部可达 sector 的 block-triangular connection、normalization 审计与同序 tagged masters。";
+DSTreeDLogDE::usage = "DSTreeDLogDE[data] 返回 tree vertex-family 的 dlog 微分方程、同序 master 列表和 letters；DSInit context 输入使用 direct pure-time contact selectors 组装全部可达 sector 的 block-triangular connection、normalization 审计与同序 tagged masters。";
 
 DSInit::usage = "DSInit[input,opts] 验证 topology/ISP、初始化完整 contact-reachable sector，并可写出版本化 init metadata。";
 DSInfo::usage = "DSInfo[] 返回当前初始化的简要信息；DSInfo[context,\"Full\"] 返回完整初始化 Association。";
 DSKinematics::usage = "DSKinematics[input,rules] 返回 topology 的缺省动力学变量提案、实际出现/独立无圈模长、从属 binding，以及给定规则的秩、零空间、完备性和可逆性审计；rules 缺省读取 input 或使用自动提案。";
+DSParameterNotation::usage = "DSParameterNotation[context] 返回圈外 Gram 根号、独立无圈模长及当前用户变量规则；无参数形式读取当前 context。";
+DSRedefineParameters::usage = "DSRedefineParameters[context,rules] 用新的完整动力学变量规则重新初始化并返回新 context；DSRedefineParameters[rules] 只在成功后更新当前 context。";
 DSSeeds::usage = "DSSeeds[context,opts] 生成所有 contact-reachable sector 的 canonical IBP seeds；不运行 reduction。";
 DSLinear::usage = "DSLinear[seedData,context,opts] 把 canonical seeds 转换为 backend-neutral linearData。";
 DSKiraExport::usage = "DSKiraExport[linearData,opts] 序列化 Kira 基础输入和同源 manifest；不会启动 Kira。";
@@ -59,6 +61,7 @@ DSScaleCheck::usage = "DSScaleCheck[deData,spec,opts] 检查约化后的 Euler/�
 DSMessagesOn::usage = "DSMessagesOn[] 开启 info、progress 和 warning 提醒。";
 DSMessagesOff::usage = "DSMessagesOff[] 关闭可选提醒；fatal error 始终保留。";
 DSMessagesQ::usage = "DSMessagesQ[] 返回可选提醒当前是否开启。";
+DSPublicAPI::usage = "DSPublicAPI[] 返回当前版本需要用户掌握的公开函数、逻辑分组及各高层函数缺省选项；供手册附录和 example 覆盖门禁共同读取。";
 
 WriteInitializationFiles::usage = "WriteInitializationFiles 是 DSInit 的选项；缺省 False。";
 InitializationDirectory::usage = "InitializationDirectory 指定 init metadata 目录；缺省 Automatic，解析到调用脚本同目录的 init/。";
@@ -95,7 +98,7 @@ KiraCompletionPatterns::usage = "KiraCompletionPatterns 指定完成日志必须
 MaxReductionIterations::usage = "MaxReductionIterations 限制 DSDE 对 reduction rules 的 FixedPoint 迭代次数；缺省 100。";
 ScalingRelation::usage = "ScalingRelation 指定 DSScaleCheck 使用的 \"Custom\" 或 \"PureMassiveBubble\" 标度关系。";
 ScalingVariables::usage = "ScalingVariables 指定 Euler 算符中的变量顺序。";
-ScalingWeights::usage = "ScalingWeights 指定 Euler 算符中各变量的系数；015 的 ssij 与实际无圈模长 sEe 都是动量一次量，缺省物理权重为 1。";
+ScalingWeights::usage = "ScalingWeights 指定 Euler 算符中各变量的系数；016 的 ssij 与独立无圈模长 sEi 都是动量一次量，缺省物理权重为 1。";
 ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数；PureMassiveBubble 可设 Automatic。";
 
 (* ::Chapter:: *)
@@ -104,10 +107,557 @@ ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数�
 Begin["`Private`"];
 
 $dSIBPPackageRoot = DirectoryName[DirectoryName[$InputFileName]];
-$dSIBPVersion = "015";
+$dSIBPVersion = "016";
 
 (* ::Chapter:: *)
 (*å»ç»åæä»¶ç§æå®ç°*)
+
+(* ::Package:: *)
+(* 本模块为 016 提供图论与动量声明审计。它不生成 IBP，只把 topology 的结构圈数、
+   bridge/cycle line、圈动量 routing 以及两类用户外动量列表归一为可供 DSInit 门禁读取的 metadata。 *)
+
+(* ::Chapter:: *)
+(*基础线性代数工具*)
+
+(* 只在精确代数意义下判零；本模块不使用数值容差决定 topology。 *)
+ds016ZeroQ[expr_] := TrueQ[Together[Expand[expr]] === 0];
+
+
+ds016MatrixRank[rows_List, width_Integer] := Which[
+   rows === {}, 0,
+   width === 0, 0,
+   True, MatrixRank[rows]
+   ];
+
+
+ds016NonzeroRows[rows_List] := Select[rows, ! And @@ (ds016ZeroQ /@ #) &];
+
+
+ds016RowBasis[rows_List, width_Integer] := If[
+   rows === {} || width === 0,
+   {},
+   ds016NonzeroRows[RowReduce[rows]]
+   ];
+
+
+(* 按输入顺序选择使行空间增秩的对象；返回位置，便于同时保留来源表达式。 *)
+ds016IndependentRowPositions[rows_List, initialRows_List : {}] := Module[
+   {selected = {}, current = initialRows, rank, nextRank},
+   rank = If[current === {}, 0, MatrixRank[current]];
+   Do[
+    nextRank = MatrixRank[Append[current, rows[[i]]]];
+    If[nextRank > rank,
+     AppendTo[selected, i];
+     AppendTo[current, rows[[i]]];
+     rank = nextRank
+     ],
+    {i, Length[rows]}
+    ];
+   selected
+   ];
+
+
+(* momentum 字段只允许由已识别向量原子及精确有理系数组成，避免把符号系数误猜成新向量。 *)
+ds016MomentumAtoms[expressions_List, excluded_List : {}] := DeleteDuplicates@Cases[
+    Unevaluated[expressions],
+    symbol_Symbol /; Context[symbol] =!= "System`" && ! MemberQ[excluded, symbol],
+    Infinity,
+    Heads -> False
+    ];
+
+
+ds016LinearVectorData[expr_, atoms_List] := Module[{expanded, coefficients, residual, rationalQ},
+   expanded = Expand[expr];
+   coefficients = Coefficient[expanded, #] & /@ atoms;
+   residual = Expand[expanded - coefficients . atoms];
+   rationalQ = And @@ (MatchQ[#, _Integer | _Rational] & /@ coefficients);
+   <|
+    "expression" -> expanded,
+    "coefficients" -> coefficients,
+    "residual" -> residual,
+    "linearQ" -> TrueQ[ds016ZeroQ[residual] && rationalQ]
+    |>
+   ];
+
+
+ds016RowsForExpressions[expressions_List, atoms_List] := Lookup[
+   ds016LinearVectorData[#, atoms] & /@ expressions,
+   "coefficients",
+   {}
+   ];
+
+
+ds016DirectionExpressions[rows_List, atoms_List] := Expand[# . atoms] & /@ rows;
+
+
+(* Lookup[{},key,default] 会把空表误解为规则集合并返回 Missing；线性审计中的空数据必须是零行集。 *)
+ds016DataColumn[data_List, key_String] := If[data === {}, {}, Lookup[data, key, {}]];
+
+
+(* ::Chapter:: *)
+(*多重图圈数与 bridge 分类*)
+
+(* 连通分量只使用不同端点间的边；自环不改变连通性，但在 E-V+C 中自然贡献一圈。 *)
+ds016ComponentCount[vertexIds_List, endpoints_List] := Module[{edges, graph},
+   edges = (UndirectedEdge @@ # &) /@ Select[endpoints, Length[#] === 2 && ! SameQ @@ # &];
+   graph = Graph[vertexIds, edges];
+   Length[ConnectedComponents[graph]]
+   ];
+
+
+ds016TopologyGraphAudit[vertexIds_List, lines_List] := Module[
+   {endpoints, activeLineIndices, activeEndpoints, malformed, unknown, componentCount, loopCount,
+    bridgeLines, cycleLines, incidence},
+   endpoints = Lookup[lines, "endpoints", Missing["endpoints"]];
+   activeLineIndices = Select[
+     Range[Length[lines]],
+     Lookup[lines[[#]], "state", "full"] =!= "shrunk" && Lookup[lines[[#]], "packType", Automatic] =!= "shrunk" &
+     ];
+   activeEndpoints = If[activeLineIndices === {}, {}, endpoints[[activeLineIndices]]];
+   malformed = Flatten@Position[endpoints, item_ /; ! ListQ[item] || Length[item] =!= 2, {1}, Heads -> False];
+   unknown = If[malformed === {}, Complement[DeleteDuplicates@Flatten[endpoints], vertexIds], {}];
+   If[malformed =!= {} || unknown =!= {},
+    Return[<|
+      "status" -> "invalid",
+      "issues" -> DeleteCases[{
+         If[malformed === {}, Nothing, <|"code" -> "malformedEndpoints", "lineIndices" -> malformed|>],
+         If[unknown === {}, Nothing, <|"code" -> "unknownEndpointVertices", "vertices" -> unknown|>]
+         }, Nothing]
+      |>]
+    ];
+   componentCount = ds016ComponentCount[vertexIds, activeEndpoints];
+   loopCount = Length[activeLineIndices] - Length[vertexIds] + componentCount;
+   bridgeLines = Select[
+     activeLineIndices,
+     ! SameQ @@ endpoints[[#]] &&
+       ds016ComponentCount[vertexIds, endpoints[[DeleteCases[activeLineIndices, #]]]] > componentCount &
+     ];
+   cycleLines = Complement[activeLineIndices, bridgeLines];
+   incidence = Table[
+     Which[
+      ! MemberQ[activeLineIndices, e], 0,
+      SameQ @@ endpoints[[e]], 0,
+      vertexIds[[v]] === endpoints[[e, 1]], 1,
+      vertexIds[[v]] === endpoints[[e, 2]], -1,
+      True, 0
+      ],
+     {v, Length[vertexIds]}, {e, Length[lines]}
+     ];
+   <|
+    "status" -> "valid",
+    "vertexCount" -> Length[vertexIds],
+    "inputLineCount" -> Length[lines],
+    "internalLineCount" -> Length[activeLineIndices],
+    "activeLineIndices" -> activeLineIndices,
+    "shrunkLineIndices" -> Complement[Range[Length[lines]], activeLineIndices],
+    "connectedComponentCount" -> componentCount,
+    "graphLoopCount" -> loopCount,
+    "bridgeLineIndices" -> bridgeLines,
+    "cycleLineIndices" -> cycleLines,
+    "selfLoopLineIndices" -> Select[activeLineIndices, SameQ @@ endpoints[[#]] &],
+    "incidenceMatrix" -> incidence,
+    "cycleSpaceDimension" -> Length[activeLineIndices] - MatrixRank[incidence],
+    "issues" -> {}
+    |>
+   ];
+
+
+ds016ResolveIBPMode[case_Association, graphLoopCount_Integer] := Module[{requested},
+   requested = Lookup[case, "ibpMode", Automatic];
+   Which[
+    requested === Automatic && graphLoopCount === 0, "timeOnly",
+    requested === Automatic, "full",
+    MemberQ[{"full", "timeOnly"}, requested], requested,
+    True, "invalid"
+    ]
+   ];
+
+
+(* ::Chapter:: *)
+(*圈动量 routing 与 affine shift 商空间*)
+
+ds016RawISPExpressions[case_Association] := DeleteCases[
+   Map[
+    Which[
+      AssociationQ[#], Lookup[#, "expr", Nothing],
+      ListQ[#] && Length[#] >= 2, #[[2]],
+      True, Nothing
+      ] &,
+    Lookup[case, "ispData", {}]
+    ],
+   Nothing
+   ];
+
+
+ds016ArgumentRoutingData[argument_, loopMomenta_List, referenceMatrix_, referenceResiduals_] := Module[
+   {coefficients, residual, transformedResidual, inverse},
+   coefficients = Coefficient[Expand[argument], #] & /@ loopMomenta;
+   residual = Expand[argument - coefficients . loopMomenta];
+   transformedResidual = residual;
+   If[loopMomenta =!= {} && MatrixQ[referenceMatrix] && Length[referenceMatrix] === Length[loopMomenta],
+    inverse = Inverse[referenceMatrix];
+    transformedResidual = Expand[residual - coefficients . inverse . referenceResiduals]
+    ];
+   <|
+    "argument" -> argument,
+    "loopCoefficients" -> coefficients,
+    "externalResidual" -> residual,
+    "shiftInvariantResidual" -> transformedResidual,
+    "containsLoopMomentumQ" -> AnyTrue[coefficients, ! ds016ZeroQ[#] &],
+    "linearInLoopMomentaQ" -> FreeQ[residual, Alternatives @@ loopMomenta]
+    |>
+   ];
+
+
+ds016ISPShiftInvariantDirections[case_Association, loopMomenta_List, referenceMatrix_, referenceResiduals_] := Module[
+   {pairs, pairData},
+   pairs = Cases[
+     ds016RawISPExpressions[case],
+     HoldPattern[sp[left_, right_]] :> {left, right},
+     {0, Infinity}
+     ];
+   DeleteDuplicates@Flatten[
+     Map[
+      Function[pair,
+       pairData = ds016ArgumentRoutingData[#, loopMomenta, referenceMatrix, referenceResiduals] & /@ pair;
+       If[AnyTrue[pairData, TrueQ[Lookup[#, "containsLoopMomentumQ", False]] &],
+        Select[Lookup[pairData, "shiftInvariantResidual", {}], ! ds016ZeroQ[#] &],
+        {}
+        ]
+       ],
+      pairs
+      ],
+     1
+     ]
+   ];
+
+
+ds016LoopRoutingAudit[case_Association, lines_List, graphAudit_Association] := Module[
+   {mode, loopMomenta, lineMomenta, matrix, activeLineIndices, activeMatrix, residuals, rank, incidenceResidual, bridgeResidual,
+    referencePositions = {}, referenceMatrix = {}, referenceResiduals = {}, shiftResiduals,
+    lineLinearQ, routingCoefficientQ, fullChecksQ, issues = {}, graphLoopCount},
+   graphLoopCount = Lookup[graphAudit, "graphLoopCount", 0];
+   mode = ds016ResolveIBPMode[case, graphLoopCount];
+   loopMomenta = Lookup[case, "loopMomenta", {}];
+   lineMomenta = Lookup[lines, "momentum", 0];
+   If[mode === "invalid", AppendTo[issues, <|"severity" -> "error", "code" -> "invalidIBPMode", "value" -> Lookup[case, "ibpMode", Automatic]|>]];
+   matrix = Table[Coefficient[Expand[lineMomenta[[e]]], loopMomenta[[l]]], {e, Length[lines]}, {l, Length[loopMomenta]}];
+   activeLineIndices = Lookup[graphAudit, "activeLineIndices", Range[Length[lines]]];
+   activeMatrix = If[activeLineIndices === {}, {}, matrix[[activeLineIndices]]];
+   residuals = Table[Expand[lineMomenta[[e]] - matrix[[e]] . loopMomenta], {e, Length[lines]}];
+   lineLinearQ = If[loopMomenta === {}, ConstantArray[True, Length[lines]], FreeQ[#, Alternatives @@ loopMomenta] & /@ residuals];
+   routingCoefficientQ = And @@ (MemberQ[{-1, 0, 1}, #] & /@ Flatten[activeMatrix]);
+   rank = ds016MatrixRank[activeMatrix, Length[loopMomenta]];
+   (* 每条传播子动量可整体反号，endpoints 顺序不固定其代数方向。
+      因而用 GF(2) cycle support 检查流守恒，再用有理秩检查独立圈数。 *)
+   incidenceResidual = If[
+     Length[loopMomenta] === 0 || ! routingCoefficientQ,
+     {},
+     Mod[Lookup[graphAudit, "incidenceMatrix", {}] . Mod[matrix, 2], 2]
+     ];
+   bridgeResidual = If[
+     Length[loopMomenta] === 0 || Lookup[graphAudit, "bridgeLineIndices", {}] === {},
+     {},
+     matrix[[Lookup[graphAudit, "bridgeLineIndices", {}]]]
+     ];
+   fullChecksQ = mode === "full";
+   If[fullChecksQ && Length[loopMomenta] =!= graphLoopCount,
+    AppendTo[issues, <|"severity" -> "error", "code" -> "loopMomentumCountMismatch", "expected" -> graphLoopCount, "actual" -> Length[loopMomenta]|>]
+    ];
+   If[fullChecksQ && rank =!= graphLoopCount,
+    AppendTo[issues, <|"severity" -> "error", "code" -> "loopRoutingRankMismatch", "expected" -> graphLoopCount, "actual" -> rank|>]
+    ];
+   If[fullChecksQ && ! routingCoefficientQ,
+    AppendTo[issues, <|"severity" -> "error", "code" -> "unsupportedLoopRoutingCoefficients", "allowed" -> {-1, 0, 1}, "matrix" -> matrix|>]
+    ];
+   If[fullChecksQ && incidenceResidual =!= {} && ! And @@ (ds016ZeroQ /@ Flatten[incidenceResidual]),
+    AppendTo[issues, <|"severity" -> "error", "code" -> "loopRoutingOutsideCycleSpace", "residual" -> incidenceResidual|>]
+    ];
+   If[fullChecksQ && bridgeResidual =!= {} && ! And @@ (ds016ZeroQ /@ Flatten[bridgeResidual]),
+    AppendTo[issues, <|"severity" -> "error", "code" -> "bridgeCarriesLoopMomentum", "lineIndices" -> Lookup[graphAudit, "bridgeLineIndices", {}], "coefficients" -> bridgeResidual|>]
+    ];
+   If[fullChecksQ && ! And @@ lineLinearQ[[activeLineIndices]],
+    AppendTo[issues, <|"severity" -> "error", "code" -> "nonlinearLoopMomentumRouting", "lineIndices" -> Select[activeLineIndices, ! TrueQ[lineLinearQ[[#]]] &]|>]
+    ];
+   If[fullChecksQ && rank === Length[loopMomenta] && Length[loopMomenta] > 0,
+    referencePositions = activeLineIndices[[Take[ds016IndependentRowPositions[activeMatrix], UpTo[Length[loopMomenta]]]]];
+    referenceMatrix = matrix[[referencePositions]];
+    referenceResiduals = residuals[[referencePositions]];
+    shiftResiduals = Expand /@ (residuals - matrix . Inverse[referenceMatrix] . referenceResiduals),
+    shiftResiduals = residuals
+    ];
+   <|
+    "status" -> If[AnyTrue[issues, Lookup[#, "severity", ""] === "error" &], "invalid", "valid"],
+    "ibpMode" -> mode,
+    "loopMomenta" -> loopMomenta,
+    "loopCoefficientMatrix" -> matrix,
+    "loopCoefficientRank" -> rank,
+    "lineExternalResiduals" -> residuals,
+    "referenceLineIndices" -> referencePositions,
+    "referenceLoopMatrix" -> referenceMatrix,
+    "referenceExternalResiduals" -> referenceResiduals,
+    "shiftInvariantLineResiduals" -> shiftResiduals,
+    "incidenceCycleResidual" -> incidenceResidual,
+    "issues" -> issues
+    |>
+   ];
+
+
+(* ::Chapter:: *)
+(*用户 loop 外动量列表完备性*)
+
+ds016SpanAudit[requiredExpressions_List, userExpressions_List, atoms_List] := Module[
+   {requiredData, userData, requiredRows, userRows, requiredBasis, userBasis,
+    missingPositions, extraPositions, missingRows, extraRows, dependencies,
+    invalidRequired, invalidUser, requiredRank, userRank, unionRank, status},
+   requiredData = ds016LinearVectorData[#, atoms] & /@ requiredExpressions;
+   userData = ds016LinearVectorData[#, atoms] & /@ userExpressions;
+   invalidRequired = Flatten@Position[ds016DataColumn[requiredData, "linearQ"], False];
+   invalidUser = Flatten@Position[ds016DataColumn[userData, "linearQ"], False];
+   requiredRows = ds016DataColumn[requiredData, "coefficients"];
+   userRows = ds016DataColumn[userData, "coefficients"];
+   requiredBasis = ds016RowBasis[requiredRows, Length[atoms]];
+   userBasis = ds016RowBasis[userRows, Length[atoms]];
+   requiredRank = Length[requiredBasis];
+   userRank = Length[userBasis];
+   unionRank = ds016MatrixRank[Join[requiredBasis, userBasis], Length[atoms]];
+   missingPositions = ds016IndependentRowPositions[requiredBasis, userBasis];
+   extraPositions = ds016IndependentRowPositions[userBasis, requiredBasis];
+   missingRows = If[missingPositions === {}, {}, requiredBasis[[missingPositions]]];
+   extraRows = If[extraPositions === {}, {}, userBasis[[extraPositions]]];
+   dependencies = If[userRows === {} || Length[userRows] <= userRank, {}, NullSpace[Transpose[userRows]]];
+   status = Which[
+     invalidRequired =!= {} || invalidUser =!= {}, "invalid",
+     missingRows =!= {}, "undercomplete",
+     extraRows =!= {} || Length[userExpressions] > userRank, "overcomplete",
+     True, "exact"
+     ];
+   <|
+    "status" -> status,
+    "atoms" -> atoms,
+    "requiredExpressions" -> requiredExpressions,
+    "userExpressions" -> userExpressions,
+    "requiredBasisDirections" -> ds016DirectionExpressions[requiredBasis, atoms],
+    "userBasisDirections" -> ds016DirectionExpressions[userBasis, atoms],
+    "missingDirections" -> ds016DirectionExpressions[missingRows, atoms],
+    "extraDirections" -> ds016DirectionExpressions[extraRows, atoms],
+    "userDependencyVectors" -> dependencies,
+    "requiredRank" -> requiredRank,
+    "userRank" -> userRank,
+    "unionRank" -> unionRank,
+    "invalidRequiredPositions" -> invalidRequired,
+    "invalidUserPositions" -> invalidUser
+    |>
+   ];
+
+
+ds016RequiredLoopExternalDirections[case_Association, graphAudit_Association, routingAudit_Association] := Module[
+   {cycleLines, lineDirections, ispDirections, mode},
+   mode = Lookup[routingAudit, "ibpMode", "invalid"];
+   If[mode =!= "full", Return[{}]];
+   cycleLines = Lookup[graphAudit, "cycleLineIndices", {}];
+   lineDirections = Lookup[routingAudit, "shiftInvariantLineResiduals", {}];
+   lineDirections = If[cycleLines === {}, {}, lineDirections[[cycleLines]]];
+   ispDirections = ds016ISPShiftInvariantDirections[
+     case,
+     Lookup[routingAudit, "loopMomenta", {}],
+     Lookup[routingAudit, "referenceLoopMatrix", {}],
+     Lookup[routingAudit, "referenceExternalResiduals", {}]
+     ];
+   DeleteDuplicates@Select[Join[lineDirections, ispDirections], ! ds016ZeroQ[#] &]
+   ];
+
+
+(* ::Chapter:: *)
+(*独立无圈动量模长完备性*)
+
+ds016CanonicalMomentumSign[expr_] := Module[{expanded = Expand[expr], opposite},
+   opposite = Expand[-expanded];
+   First@SortBy[{expanded, opposite}, ToString[InputForm[#]] &]
+   ];
+
+
+ds016MagnitudeMomentaInExpression[expr_] := DeleteDuplicates@Cases[
+    expr,
+    HoldPattern[Power[sp[left_, right_], Rational[1, 2]]] /; Expand[left - right] === 0 :> ds016CanonicalMomentumSign[left],
+    {0, Infinity}
+    ];
+
+
+ds016RequiredIndependentMomentumMagnitudes[case_Association, lines_List, graphAudit_Association, routingAudit_Association] := Module[
+   {candidateLines, lineCandidates, extLegCandidates, phaseCandidates, loopMomenta, mode, zeroLoopQ},
+   loopMomenta = Lookup[routingAudit, "loopMomenta", {}];
+   mode = Lookup[routingAudit, "ibpMode", "invalid"];
+   zeroLoopQ[expr_] := And @@ (ds016ZeroQ[Coefficient[Expand[expr], #]] & /@ loopMomenta);
+   (* full 模式只把 graph bridge 当作独立模长；timeOnly 中所有 active line 都退出
+      loop-IBP 表示，因此它们的模长必须由用户的独立外动量列表覆盖。 *)
+   candidateLines = If[
+     mode === "timeOnly",
+     Lookup[graphAudit, "activeLineIndices", {}],
+     Lookup[graphAudit, "bridgeLineIndices", {}]
+     ];
+   lineCandidates = If[candidateLines === {}, {}, Lookup[lines[[candidateLines]], "momentum", {}]];
+   extLegCandidates = Cases[Lookup[case, "extLegs", {}], entry_List /; Length[entry] >= 3 :> entry[[3]]];
+   phaseCandidates = Flatten[
+     ds016MagnitudeMomentaInExpression /@ Values@Replace[Lookup[case, "vertexEnergies", <||>], rules_List :> Association[rules]]
+     ];
+   DeleteDuplicates@Select[
+     ds016CanonicalMomentumSign /@ Join[lineCandidates, extLegCandidates, phaseCandidates],
+     ! ds016ZeroQ[#] && (mode === "timeOnly" || zeroLoopQ[#]) &
+     ]
+   ];
+
+
+ds016GramPairs[count_Integer] := Flatten[Table[{i, j}, {i, count}, {j, i, count}], 1];
+
+
+ds016BilinearGramRow[left_List, right_List] := Map[
+   Function[pair,
+    If[pair[[1]] === pair[[2]],
+     left[[pair[[1]]]] right[[pair[[1]]]],
+     left[[pair[[1]]]] right[[pair[[2]]]] + left[[pair[[2]]]] right[[pair[[1]]]]
+     ]
+    ],
+   ds016GramPairs[Length[left]]
+   ];
+
+
+ds016SquaredGramRow[row_List] := ds016BilinearGramRow[row, row];
+
+
+ds016LoopGramRows[loopRows_List] := Flatten[
+   Table[ds016BilinearGramRow[loopRows[[i]], loopRows[[j]]], {i, Length[loopRows]}, {j, i, Length[loopRows]}],
+   1
+   ];
+
+
+ds016QuadraticSpanAudit[requiredMomenta_List, userMomenta_List, loopMomenta_List, atoms_List] := Module[
+   {requiredData, userData, loopData, requiredRows, userRows, loopRows, baseRows,
+    missingPositions, extraPositions, missingRows, extraRows, userNewPositions,
+    invalidRequired, invalidUser, invalidLoop, requiredNewRank, userNewRank, status},
+   requiredData = ds016LinearVectorData[#, atoms] & /@ requiredMomenta;
+   userData = ds016LinearVectorData[#, atoms] & /@ userMomenta;
+   loopData = ds016LinearVectorData[#, atoms] & /@ loopMomenta;
+   invalidRequired = Flatten@Position[ds016DataColumn[requiredData, "linearQ"], False];
+   invalidUser = Flatten@Position[ds016DataColumn[userData, "linearQ"], False];
+   invalidLoop = Flatten@Position[ds016DataColumn[loopData, "linearQ"], False];
+   requiredRows = ds016SquaredGramRow /@ ds016DataColumn[requiredData, "coefficients"];
+   userRows = ds016SquaredGramRow /@ ds016DataColumn[userData, "coefficients"];
+   loopRows = ds016DataColumn[loopData, "coefficients"];
+   baseRows = ds016LoopGramRows[loopRows];
+   missingPositions = ds016IndependentRowPositions[requiredRows, Join[baseRows, userRows]];
+   extraPositions = ds016IndependentRowPositions[userRows, Join[baseRows, requiredRows]];
+   userNewPositions = ds016IndependentRowPositions[userRows, baseRows];
+   missingRows = If[missingPositions === {}, {}, requiredRows[[missingPositions]]];
+   extraRows = If[extraPositions === {}, {}, userRows[[extraPositions]]];
+   requiredNewRank = Length[ds016IndependentRowPositions[requiredRows, baseRows]];
+   userNewRank = Length[userNewPositions];
+   status = Which[
+     invalidRequired =!= {} || invalidUser =!= {} || invalidLoop =!= {}, "invalid",
+     missingRows =!= {}, "undercomplete",
+     extraRows =!= {} || Length[userMomenta] > userNewRank, "overcomplete",
+     True, "exact"
+     ];
+   <|
+    "status" -> status,
+    "atoms" -> atoms,
+    "loopGramRank" -> ds016MatrixRank[baseRows, Length[ds016GramPairs[Length[atoms]]]],
+    "requiredMomenta" -> requiredMomenta,
+    "userMomenta" -> userMomenta,
+    "missingMagnitudeSquares" -> If[missingPositions === {}, {}, sp[#, #] & /@ requiredMomenta[[missingPositions]]],
+    "extraMagnitudeSquares" -> If[extraPositions === {}, {}, sp[#, #] & /@ userMomenta[[extraPositions]]],
+    "requiredIndependentMagnitudeCount" -> requiredNewRank,
+    "userIndependentMagnitudeCount" -> userNewRank,
+    "invalidRequiredPositions" -> invalidRequired,
+    "invalidUserPositions" -> invalidUser,
+    "invalidLoopPositions" -> invalidLoop,
+    "missingQuadraticRows" -> missingRows,
+    "extraQuadraticRows" -> extraRows
+    |>
+   ];
+
+
+(* ::Chapter:: *)
+(*统一声明审计与 capability gate*)
+
+ds016MomentumDeclarationAudit[case_Association, lines_List, graphAudit_Association, routingAudit_Association] := Module[
+   {loopExternal, independentExternal, requiredLoop, requiredIndependent, atoms,
+    loopAudit, independentAudit, mode, status, capabilities, issues = {}},
+   loopExternal = Lookup[case, "loopExternalMomenta", Lookup[case, "externalMomenta", {}]];
+   independentExternal = Lookup[case, "independentExternalMomenta", Lookup[case, "externalLegMomenta", {}]];
+   requiredLoop = ds016RequiredLoopExternalDirections[case, graphAudit, routingAudit];
+   requiredIndependent = ds016RequiredIndependentMomentumMagnitudes[case, lines, graphAudit, routingAudit];
+   atoms = ds016MomentumAtoms[
+     Join[requiredLoop, loopExternal, requiredIndependent, independentExternal],
+     Lookup[routingAudit, "loopMomenta", {}]
+     ];
+   mode = Lookup[routingAudit, "ibpMode", "invalid"];
+   loopAudit = If[mode === "full",
+     ds016SpanAudit[requiredLoop, loopExternal, atoms],
+     <|"status" -> "notRequired", "requiredExpressions" -> {}, "userExpressions" -> loopExternal,
+       "missingDirections" -> {}, "extraDirections" -> {}, "requiredRank" -> 0, "userRank" -> 0|>
+     ];
+   independentAudit = ds016QuadraticSpanAudit[requiredIndependent, independentExternal, loopExternal, atoms];
+   status = Which[
+     Lookup[graphAudit, "status", "invalid"] =!= "valid" || Lookup[routingAudit, "status", "invalid"] =!= "valid", "invalid",
+     MemberQ[Lookup[{loopAudit, independentAudit}, "status"], "invalid"], "invalid",
+     MemberQ[Lookup[{loopAudit, independentAudit}, "status"], "undercomplete"], "undercomplete",
+     MemberQ[Lookup[{loopAudit, independentAudit}, "status"], "overcomplete"], "overcomplete",
+     True, "exact"
+     ];
+   If[Lookup[loopAudit, "status", ""] === "undercomplete",
+    AppendTo[issues, <|"severity" -> "error", "code" -> "undercompleteLoopExternalMomenta", "missingDirections" -> Lookup[loopAudit, "missingDirections", {}]|>]
+    ];
+   If[Lookup[independentAudit, "status", ""] === "undercomplete",
+    AppendTo[issues, <|"severity" -> "error", "code" -> "undercompleteIndependentExternalMomenta", "missingMagnitudeSquares" -> Lookup[independentAudit, "missingMagnitudeSquares", {}]|>]
+    ];
+   If[Lookup[loopAudit, "status", ""] === "overcomplete",
+    AppendTo[issues, <|"severity" -> "warning", "code" -> "overcompleteLoopExternalMomenta", "extraDirections" -> Lookup[loopAudit, "extraDirections", {}], "dependencies" -> Lookup[loopAudit, "userDependencyVectors", {}]|>]
+    ];
+   If[Lookup[independentAudit, "status", ""] === "overcomplete",
+    AppendTo[issues, <|"severity" -> "warning", "code" -> "overcompleteIndependentExternalMomenta", "extraMagnitudeSquares" -> Lookup[independentAudit, "extraMagnitudeSquares", {}]|>]
+    ];
+   capabilities = <|
+     "initializationUsableQ" -> MemberQ[{"exact", "overcomplete"}, status],
+     "timeIBPUsableQ" -> MemberQ[{"exact", "overcomplete"}, status],
+     "momentumIBPUsableQ" -> TrueQ[mode === "full" && MemberQ[{"exact", "overcomplete"}, status]],
+     "derivativeUsableQ" -> TrueQ[status === "exact"],
+     "inverseKinematicsUsableQ" -> TrueQ[status === "exact"]
+     |>;
+   <|
+    "status" -> status,
+    "ibpMode" -> mode,
+    "loopExternalMomenta" -> loopExternal,
+    "independentExternalMomenta" -> independentExternal,
+    "requiredLoopExternalDirections" -> requiredLoop,
+    "requiredIndependentMomentumMagnitudes" -> requiredIndependent,
+    "momentumAtoms" -> atoms,
+    "loopExternalAudit" -> loopAudit,
+    "independentExternalAudit" -> independentAudit,
+    "capabilities" -> capabilities,
+    "issues" -> Join[Lookup[routingAudit, "issues", {}], issues]
+    |>
+   ];
+
+
+ds016TopologyAndMomentumAudit[case_Association, lines_List, vertexIds_List] := Module[
+   {graphAudit, routingAudit, declarationAudit, activeVertexIds},
+   activeVertexIds = Lookup[case, "activeVertexIds", vertexIds];
+   graphAudit = ds016TopologyGraphAudit[activeVertexIds, lines];
+   If[Lookup[graphAudit, "status", "invalid"] =!= "valid",
+    Return[<|"status" -> "invalid", "graph" -> graphAudit, "routing" -> <||>, "declarations" -> <||>|>]
+    ];
+   routingAudit = ds016LoopRoutingAudit[case, lines, graphAudit];
+   declarationAudit = ds016MomentumDeclarationAudit[case, lines, graphAudit, routingAudit];
+   <|
+    "status" -> Lookup[declarationAudit, "status", "invalid"],
+    "graph" -> graphAudit,
+    "routing" -> routingAudit,
+    "declarations" -> declarationAudit,
+    "capabilities" -> Lookup[declarationAudit, "capabilities", <||>],
+    "issues" -> Join[Lookup[graphAudit, "issues", {}], Lookup[declarationAudit, "issues", {}]]
+    |>
+   ];
 
 (* ::Package:: *)
 (* 本文件是 dS IBP package 的通用生成器骨架。
@@ -189,7 +739,9 @@ requiredCaseInputKeys[] := {"vertexData", "lineData", "loopMomenta"};
 
 
 optionalCaseInputKeys[] := {
-   "name", "extLegs", "externalMomenta", "externalInvariantRules", "rawExternalInvariantRules",
+   "name", "extLegs", "ibpMode",
+   "loopExternalMomenta", "independentExternalMomenta",
+   "externalMomenta", "externalInvariantRules", "rawExternalInvariantRules",
    "externalLegMomenta", "externalLegInvariantRules", "rawExternalLegInvariantRules",
    "kinematicRules",
    "ispData", "vertexEnergies", "activeVertexIds",
@@ -311,7 +863,8 @@ sampleDiscreteRulePairs[rules_] := Cases[
 
 
 caseInputMalformedIssues[case_Association] := Module[
-   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, ispData, seedRanges, generatorSeedRanges, seedOptions, badVertexPositions,
+   {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, loopExternalMomenta,
+    independentExternalMomenta, ispData, seedRanges, generatorSeedRanges, seedOptions, badVertexPositions,
     badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData,
     sampleDiscreteRules, sampleRuleShapeIssues, generatorRangeShapeIssues, symmetryRules, badSymmetryRulePositions},
    If[KeyExistsQ[case, "vertexData"],
@@ -371,6 +924,21 @@ caseInputMalformedIssues[case_Association] := Module[
     If[! ListQ[externalMomenta],
      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedExternalMomenta", "reason" -> "externalMomenta must be a list"|>]
      ]
+    ];
+   If[KeyExistsQ[case, "loopExternalMomenta"],
+    loopExternalMomenta = case["loopExternalMomenta"];
+    If[! ListQ[loopExternalMomenta],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedLoopExternalMomenta", "reason" -> "loopExternalMomenta must be a list"|>]
+     ]
+    ];
+   If[KeyExistsQ[case, "independentExternalMomenta"],
+    independentExternalMomenta = case["independentExternalMomenta"];
+    If[! ListQ[independentExternalMomenta],
+     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedIndependentExternalMomenta", "reason" -> "independentExternalMomenta must be a list"|>]
+     ]
+    ];
+   If[KeyExistsQ[case, "ibpMode"] && ! MemberQ[{Automatic, "full", "timeOnly"}, case["ibpMode"]],
+    AppendTo[issues, <|"severity" -> "error", "code" -> "malformedIBPMode", "value" -> case["ibpMode"], "allowed" -> {"full", "timeOnly"}|>]
     ];
    If[KeyExistsQ[case, "seedRanges"],
     seedRanges = case["seedRanges"];
@@ -786,10 +1354,15 @@ parseTopology::badfunction = "massive line 的函数系统编译失败：`1`。"
 
 parseTopology[case_Association] := Module[
    {vertexData, vertexIds, vertexSignAssoc, rawLines, lines, badFunctionLines, loopMomenta,
-   externalMomenta, rawExternalInvariantRules, externalInvariantRules, externalLegMomenta,
+   externalMomenta, declaredLoopExternalMomenta, rawExternalInvariantRules, externalInvariantRules,
+    externalLegMomenta, declaredIndependentExternalMomenta, loopDeclarationAudit,
+    loopVectorAtoms, fixedExternalVectorAtoms, momentumDecompositionBasis,
     rawExternalLegInvariantRules, externalLegInvariantRules, kinematicRules, kinematicAudit,
     ispData, nV, nE, nL, nK, bMatrix, vertexLines,
-    eMomenta, loopCoeffMatrix, externalCoeffMatrix, externalPartList, seedConfig, topoContext},
+    eMomenta, momentumBasis, momentumData, loopCoeffMatrix, externalCoeffMatrix, externalPartList,
+    topologyMomentumAudit, inheritedTopologyMomentumAudit, graphAudit, routingAudit, declarationAudit, capabilities, ibpMode, graphVertexIds,
+    rawLineMomenta, normalizedLineMomenta, referenceLoopMatrix,
+    seedConfig, topoContext},
    If[caseInputPreflightErrorQ[case],
     If[caseInputMissingRequiredKeysQ[case],
      Message[parseTopology::missingkeys, caseInputRequirementReport[case]["missingRequiredKeys"]],
@@ -811,8 +1384,62 @@ parseTopology[case_Association] := Module[
     Return[$Failed]
     ];
    loopMomenta = case["loopMomenta"];
-   externalMomenta = Lookup[case, "externalMomenta", {}];
-   externalLegMomenta = Lookup[case, "externalLegMomenta", {}];
+    (* contact sector 对 shrunk edge 做图收缩：该边退出 active edge 集，同时一个顶点并入代表顶点。
+       图论审计必须使用 activeVertexIds，否则只减 E 不减 V，会把 sector 圈数误降一阶。 *)
+    graphVertexIds = Lookup[case, "activeVertexIds", vertexIds];
+    inheritedTopologyMomentumAudit = Lookup[case, "rootTopologyMomentumAudit", Missing["NotInherited"]];
+    topologyMomentumAudit = If[
+      AssociationQ[inheritedTopologyMomentumAudit],
+      inheritedTopologyMomentumAudit,
+      ds016TopologyAndMomentumAudit[case, lines, graphVertexIds]
+      ];
+   graphAudit = Lookup[topologyMomentumAudit, "graph", <||>];
+   routingAudit = Lookup[topologyMomentumAudit, "routing", <||>];
+    declarationAudit = Lookup[topologyMomentumAudit, "declarations", <||>];
+    capabilities = Lookup[topologyMomentumAudit, "capabilities", <||>];
+    ibpMode = Lookup[routingAudit, "ibpMode", ds016ResolveIBPMode[case, Lookup[graphAudit, "graphLoopCount", 0]]];
+   declaredLoopExternalMomenta = Lookup[declarationAudit, "loopExternalMomenta",
+     Lookup[case, "loopExternalMomenta", Lookup[case, "externalMomenta", {}]]];
+   declaredIndependentExternalMomenta = Lookup[declarationAudit, "independentExternalMomenta",
+     Lookup[case, "independentExternalMomenta", Lookup[case, "externalLegMomenta", {}]]];
+   loopDeclarationAudit = Lookup[declarationAudit, "loopExternalAudit", <||>];
+   (* 过完备声明仍可生成 symbolic IBP，但不能把可吸收到圈变量平移中的额外方向
+      虚增为 q.k 坐标。核心闭合使用 affine quotient 的必要基，原声明单独保留给审计。 *)
+   externalMomenta = If[
+     Lookup[loopDeclarationAudit, "status", "exact"] === "overcomplete",
+     Lookup[loopDeclarationAudit, "requiredBasisDirections",
+      Lookup[declarationAudit, "requiredLoopExternalDirections", declaredLoopExternalMomenta]],
+     declaredLoopExternalMomenta
+     ];
+   externalLegMomenta = declaredIndependentExternalMomenta;
+   rawLineMomenta = Lookup[lines, "momentum", 0];
+   referenceLoopMatrix = Lookup[routingAudit, "referenceLoopMatrix", {}];
+   normalizedLineMomenta = If[
+     Lookup[routingAudit, "ibpMode", "invalid"] === "full" &&
+      Lookup[routingAudit, "status", "invalid"] === "valid" && loopMomenta =!= {} &&
+      MatrixQ[referenceLoopMatrix] && Length[referenceLoopMatrix] === Length[loopMomenta],
+     Expand /@ (
+       Lookup[routingAudit, "loopCoefficientMatrix", {}] . Inverse[referenceLoopMatrix] . loopMomenta +
+        Lookup[routingAudit, "shiftInvariantLineResiduals", {}]
+       ),
+     rawLineMomenta
+     ];
+    (* timeOnly 是表示边界，不只是少生成一类算符。此模式下即使图有结构圈，
+       所有传播子的动量幂也进入显式系数，tree pack 不得保留 b/bS。 *)
+    lines = MapIndexed[
+      Join[#1, <|
+         "rawMomentum" -> rawLineMomenta[[First[#2]]],
+         "momentum" -> normalizedLineMomenta[[First[#2]]],
+         "loopLineQ" -> (ibpMode === "full" && MemberQ[Lookup[graphAudit, "cycleLineIndices", {}], First[#2]]),
+         "bridgeQ" -> MemberQ[Lookup[graphAudit, "bridgeLineIndices", {}], First[#2]],
+         "linePowerMode" -> If[
+           ibpMode === "full" && MemberQ[Lookup[graphAudit, "cycleLineIndices", {}], First[#2]],
+           "indexed",
+           "fixedCoefficient"
+           ]
+         |>] &,
+      lines
+      ];
    ispData = normalizeISP /@ Lookup[case, "ispData", {}];
    nV = Length[vertexIds];
    nE = Length[lines];
@@ -831,13 +1458,21 @@ parseTopology[case_Association] := Module[
      Select[Table[{e, bMatrix[[v, e]]}, {e, nE}], #[[2]] =!= 0 &],
      {v, nV}
      ];
-   loopCoeffMatrix = Table[
-     Coefficient[eMomenta[[e]], loopMomenta[[l]]],
-     {e, nE}, {l, nL}
+   (* independentExternalMomenta 定义模长坐标，不是复合 momentum-IBP 的外向量基。
+      这里只补入其原子向量，以便合法解析 bridge 上的 p1+p2 等固定动量。 *)
+   loopVectorAtoms = ds016MomentumAtoms[Join[loopMomenta, externalMomenta]];
+   fixedExternalVectorAtoms = Complement[
+     ds016MomentumAtoms[externalLegMomenta],
+     loopVectorAtoms
      ];
-   externalCoeffMatrix = Table[
-     Coefficient[eMomenta[[e]], externalMomenta[[j]]],
-     {e, nE}, {j, nK}
+   momentumDecompositionBasis = Join[loopMomenta, externalMomenta, fixedExternalVectorAtoms];
+   momentumBasis = momentumDecompositionBasis;
+   momentumData = linearMomentumExpressionData[#, momentumBasis] & /@ eMomenta;
+   loopCoeffMatrix = If[nL === 0, ConstantArray[{}, nE],
+     Take[Lookup[momentumData, "coefficients", {}], All, UpTo[nL]]
+     ];
+   externalCoeffMatrix = If[nK === 0, ConstantArray[{}, nE],
+     Take[Lookup[momentumData, "coefficients", {}], All, {nL + 1, nL + nK}]
      ];
    externalPartList = Table[
      eMomenta[[e]] - Sum[loopCoeffMatrix[[e, l]] loopMomenta[[l]], {l, nL}],
@@ -849,6 +1484,19 @@ parseTopology[case_Association] := Module[
      "nL" -> nL, "nK" -> nK|>;
    kinematicRules = Lookup[case, "kinematicRules", Automatic];
    kinematicAudit = resolveKinematicRulesForCase[case, topoContext];
+   (* 动量声明和坐标 Jacobian 是两层独立门禁；坐标过完备不得重新开启
+      declaration audit 已关闭的能力，也不得让一般满秩混合坐标失去 ds。 *)
+   capabilities = Join[capabilities, <|
+      "derivativeUsableQ" -> TrueQ[
+        Lookup[capabilities, "derivativeUsableQ", False] &&
+         Lookup[kinematicAudit, "completeQ", False] &&
+         ! Lookup[kinematicAudit, "overcompleteQ", False]
+        ],
+      "inverseKinematicsUsableQ" -> TrueQ[
+        Lookup[capabilities, "inverseKinematicsUsableQ", False] &&
+         Lookup[kinematicAudit, "inverseAvailableQ", False]
+        ]
+      |>];
    rawExternalInvariantRules = Lookup[
      kinematicAudit,
      "rawLoopRules",
@@ -888,6 +1536,20 @@ parseTopology[case_Association] := Module[
     "activeVertexIds" -> Lookup[case, "activeVertexIds", vertexIds],
     "fixedAVertexValues" -> Lookup[case, "fixedAVertexValues", <||>],
     "loopMomenta" -> loopMomenta,
+     "ibpMode" -> ibpMode,
+    "graphLoopCount" -> Lookup[graphAudit, "graphLoopCount", Missing["graphLoopCount"]],
+    "graphTopologyAudit" -> graphAudit,
+    "loopMomentumRoutingAudit" -> routingAudit,
+    "normalizedLineMomenta" -> normalizedLineMomenta,
+    "momentumDeclarationAudit" -> declarationAudit,
+    "capabilities" -> capabilities,
+    "cycleLineIndices" -> Lookup[graphAudit, "cycleLineIndices", {}],
+    "bridgeLineIndices" -> Lookup[graphAudit, "bridgeLineIndices", {}],
+     "loopExternalMomenta" -> declaredLoopExternalMomenta,
+      "effectiveLoopExternalMomenta" -> externalMomenta,
+      "independentExternalMomenta" -> declaredIndependentExternalMomenta,
+     "momentumDecompositionBasis" -> momentumDecompositionBasis,
+     "fixedExternalVectorAtoms" -> fixedExternalVectorAtoms,
     "externalMomenta" -> externalMomenta,
     "externalLegMomenta" -> externalLegMomenta,
     "rawExternalInvariantRules" -> rawExternalInvariantRules,
@@ -931,13 +1593,43 @@ parseTopology[case_Association] := Module[
    不再使用旧 bubble 原型中的 Tuples[{0,1}, 2 nE]。 *)
 
 
-makeLinePack[line_Association] := Module[{id = line["id"]},
+lineIndexedPowerQ[line_Association] := Lookup[line, "linePowerMode", "indexed"] === "indexed";
+
+
+linePackNPositions[line_Association, packType_String] := Module[{offset = If[lineIndexedPowerQ[line], 1, 0]},
+   Switch[packType,
+    "massiveFull" | "massiveCross", offset + {1, 2},
+    "masslessFull", {offset + 1},
+    _, {}
+    ]
+   ];
+
+
+linePackBPosition[line_Association] := If[lineIndexedPowerQ[line], 1, Missing["FixedLinePower"]];
+
+
+(* 只有 cycle line 的 pack 第一槽是整数动量幂。bridge 的第一槽可能是 n，
+   因而任何物理幂次、排序或投影代码都必须通过本访问器读取。 *)
+lineIntegerPowerIndex[topo_Association, J[_, linePacks_, _], e_Integer] := If[
+   lineIndexedPowerQ[topo["lines"][[e]]],
+   linePacks[[e, 1]],
+   0
+   ];
+
+
+linePackNPosition[topo_Association, e_Integer, endpointSlot_Integer] := Module[
+   {positions = linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, makeLinePack[topo["lines"][[e]]]]]},
+   If[1 <= endpointSlot <= Length[positions], positions[[endpointSlot]], Missing["NoEndpointState"]]
+   ];
+
+
+makeLinePack[line_Association] := Module[{id = line["id"], indexedQ = lineIndexedPowerQ[line]},
    Switch[line["packType"],
-    "massiveFull", {b[id], n[id, 1], n[id, 2]},
-    "massiveCross", {b[id], n[id, 1], n[id, 2]},
-    "masslessFull", {b[id], n[id]},
-    "masslessCross", {b[id]},
-    "shrunk", {bS[id]},
+    "massiveFull", If[indexedQ, {b[id], n[id, 1], n[id, 2]}, {n[id, 1], n[id, 2]}],
+    "massiveCross", If[indexedQ, {b[id], n[id, 1], n[id, 2]}, {n[id, 1], n[id, 2]}],
+    "masslessFull", If[indexedQ, {b[id], n[id]}, {n[id]}],
+    "masslessCross", If[indexedQ, {b[id]}, {}],
+    "shrunk", If[indexedQ, {bS[id]}, {}],
     _, Message[makeLinePack::badtype, line["packType"], id]; $Failed
     ]
    ];
@@ -1007,7 +1699,10 @@ makeSectorMetadata[topo_Association] := Module[
        "masslessN1OppositeEndpoint" -> Lookup[lines[[e]], "masslessN1OppositeEndpoint", Missing["NotApplicable"]],
        "endpointOriginalASlots" -> Lookup[originalSlotByVertex, originalEndpoints],
        "endpointCompactASlots" -> Lookup[compactSlotByVertex, endpoints, None],
-       "bSymbol" -> pack[[1]],
+       "linePowerMode" -> Lookup[lines[[e]], "linePowerMode", "indexed"],
+       "bPosition" -> linePackBPosition[lines[[e]]],
+       "bSymbol" -> If[lineIndexedPowerQ[lines[[e]]], First[pack], None],
+       "nPositions" -> linePackNPositions[lines[[e]], lines[[e]]["packType"]],
        "packTemplate" -> pack
        |>
       ],
@@ -1026,7 +1721,10 @@ makeSectorMetadata[topo_Association] := Module[
     "activeASlots" -> Range[Length[active]],
     "lineSlots" -> lineSlots,
     "lineIdToSlot" -> AssociationThread[Lookup[lines, "id"] -> Range[Length[lines]]],
-    "bSymbolToLineSlot" -> AssociationThread[lineSlots[[All, "bSymbol"]] -> Range[Length[lineSlots]]],
+     "bSymbolToLineSlot" -> Association@Cases[
+       MapIndexed[Lookup[#1, "bSymbol", None] -> First[#2] &, lineSlots],
+       Rule[symbol_, slot_] /; symbol =!= None :> Rule[symbol, slot]
+       ],
     "ispSlots" -> Table[
       <|"slot" -> j, "indexSymbol" -> ispN[j], "data" -> topo["ispData"][[j]]|>,
       {j, Length[topo["ispData"]]}
@@ -1059,13 +1757,14 @@ indexHasAnyLineSymbolQ[index_] := ! FreeQ[index, _b | _bS];
 
 
 linePackMatchesSlotQ[pack_List, slot_Association] := Module[
-   {template = Lookup[slot, "packTemplate", {}], bSymbol = Lookup[slot, "bSymbol", Missing["bSymbol"]]},
+   {template = Lookup[slot, "packTemplate", {}], bSymbol = Lookup[slot, "bSymbol", None],
+    bPosition = Lookup[slot, "bPosition", Missing["FixedLinePower"]]},
    TrueQ[Length[pack] === Length[template]] &&
-    TrueQ[
-     Head[bSymbol] === Missing ||
-      indexContainsLineSymbolQ[First[pack], bSymbol] ||
-      ! indexHasAnyLineSymbolQ[First[pack]]
-     ]
+     TrueQ[
+      bSymbol === None || Head[bPosition] === Missing ||
+       indexContainsLineSymbolQ[pack[[bPosition]], bSymbol] ||
+       ! indexHasAnyLineSymbolQ[pack[[bPosition]]]
+      ]
    ];
 
 
@@ -1174,10 +1873,10 @@ numericIndexValue[_] := 0;
 integralSortKey[J[aList_, linePacks_, ispList_], orderingSpec_: <||>, metadataList_: {}] := Module[
    {int = J[aList, linePacks, ispList], spec = normaliseKiraOrderingSpec[orderingSpec], bValues, aValues, ispValues, nValues,
     preferredRank, sectorKey, sectorRank, baseKey, priority},
-   bValues = numericIndexValue /@ linePacks[[All, 1]];
+   bValues = numericIndexValue /@ Cases[Flatten[linePacks], _b | _bS];
    aValues = numericIndexValue /@ aList;
    ispValues = numericIndexValue /@ ispList;
-   nValues = numericIndexValue /@ Flatten[Rest /@ Select[linePacks, Length[#] > 1 &]];
+   nValues = numericIndexValue /@ Cases[Flatten[linePacks], _n];
    preferredRank = preferredIntegralRank[int, spec];
    sectorKey = integralSectorKey[int, metadataList];
    sectorRank = sectorRankFromOrdering[sectorKey, spec];
@@ -1384,8 +2083,12 @@ setLinePackEntry[J[aList_, linePacks_, ispList_], e_Integer, packPos_Integer, va
 
 
 actualLinePackType[topo_Association, e_Integer, pack_List] := Module[
-   {declared = topo["lines"][[e]]["packType"]},
-   If[Length[pack] === 1 && declared =!= "masslessCross",
+   {line = topo["lines"][[e]], declared, fullLength, shrunkLength},
+   declared = line["packType"];
+   If[declared === "shrunk", Return["shrunk"]];
+   fullLength = Length[makeLinePack[line]];
+   shrunkLength = If[lineIndexedPowerQ[line], 1, 0];
+   If[Length[pack] === shrunkLength && fullLength =!= shrunkLength,
     "shrunk",
     declared
     ]
@@ -1402,11 +2105,13 @@ lineDerivativeTerms[line_Association, sourceState_Integer] := Select[
 
 
 applyCompiledEOMTerm[topo_Association, int_J, e_Integer, endpointSlot_Integer, term_Association] := Module[
-   {result, endpointVertex, xPower = term["xPower"]},
+   {result, endpointVertex, nPosition, xPower = term["xPower"]},
    endpointVertex = topo["lines"][[e, "endpoints", endpointSlot]];
-   result = setLinePackEntry[int, e, endpointSlot + 1, term["targetState"]];
-   result = shiftLineB[result, e, -xPower];
+   nPosition = linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, int[[2, e]]]][[endpointSlot]];
+   result = setLinePackEntry[int, e, nPosition, term["targetState"]];
    result = shiftVertexA[result, topo, endpointVertex, xPower];
+   (* bridge 的固定动量幂会由 shiftLinePower 提到显式系数，因此先完成只接受裸 J 的顶点移位。 *)
+   result = shiftLinePower[topo, result, e, -xPower];
    term["coefficient"] result
    ];
 
@@ -1418,7 +2123,7 @@ massiveEOMTarget[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
     packType = actualLinePackType[topo, e, pack];
     If[MemberQ[{"massiveFull", "massiveCross"}, packType],
      Do[
-      nValue = pack[[endpointSlot + 1]];
+      nValue = pack[[linePackNPositions[lines[[e]], packType][[endpointSlot]]]];
       If[IntegerQ[nValue] && nValue >= 2 && Head[target] === Missing,
        target = <|"lineIndex" -> e, "endpointSlot" -> endpointSlot, "nValue" -> nValue|>
        ],
@@ -1502,7 +2207,7 @@ masslessCoincidentAntisymmetricIntegralQ[
       targetEndpoints = Lookup[repMap, originalEndpoints];
       actualLinePackType[topo, e, linePacks[[e]]] === "masslessFull" &&
        SameQ @@ targetEndpoints &&
-       linePacks[[e, 2]] === 1
+       linePacks[[e, First[linePackNPositions[lines[[e]], "masslessFull"]]]] === 1
       ]
      ]
     ]
@@ -1525,8 +2230,9 @@ canonicalizeMassiveCoincidentIntegral[
     If[
      actualLinePackType[topo, e, linePacks[[e]]] === "massiveFull" &&
       SameQ @@ targetEndpoints &&
-      linePacks[[e, {2, 3}]] === {1, 0},
-     newPacks[[e, {2, 3}]] = linePacks[[e, {3, 2}]]
+      linePacks[[e, linePackNPositions[lines[[e]], "massiveFull"]]] === {1, 0},
+     newPacks[[e, linePackNPositions[lines[[e]], "massiveFull"]]] =
+       Reverse[linePacks[[e, linePackNPositions[lines[[e]], "massiveFull"]]]]
      ],
     {e, Length[lines]}
     ];
@@ -1557,19 +2263,25 @@ forbiddenNDataForIntegral[topo_Association, J[aList_, linePacks_, ispList_]] := 
     Switch[packType,
      "massiveFull",
      Do[
-      If[IntegerQ[pack[[endpointSlot + 1]]] && pack[[endpointSlot + 1]] >= 2,
-       AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "endpointSlot" -> endpointSlot, "nValue" -> pack[[endpointSlot + 1]]|>]
+      If[IntegerQ[pack[[linePackNPositions[lines[[e]], packType][[endpointSlot]]]]] &&
+        pack[[linePackNPositions[lines[[e]], packType][[endpointSlot]]]] >= 2,
+       AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "endpointSlot" -> endpointSlot,
+         "nValue" -> pack[[linePackNPositions[lines[[e]], packType][[endpointSlot]]]]|>]
        ],
      {endpointSlot, 2}
      ],
      "masslessFull",
-     If[Length[pack] >= 2 && IntegerQ[pack[[2]]] && ! MemberQ[{0, 1}, pack[[2]]],
-      AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "nValue" -> pack[[2]]|>]
+     If[IntegerQ[pack[[First[linePackNPositions[lines[[e]], packType]]]]] &&
+       ! MemberQ[{0, 1}, pack[[First[linePackNPositions[lines[[e]], packType]]]]],
+      AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType,
+        "nValue" -> pack[[First[linePackNPositions[lines[[e]], packType]]]]|>]
       ],
      "massiveCross",
      Do[
-      If[IntegerQ[pack[[endpointSlot + 1]]] && pack[[endpointSlot + 1]] >= 2,
-       AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "endpointSlot" -> endpointSlot, "nValue" -> pack[[endpointSlot + 1]]|>]
+      If[IntegerQ[pack[[linePackNPositions[lines[[e]], packType][[endpointSlot]]]]] &&
+        pack[[linePackNPositions[lines[[e]], packType][[endpointSlot]]]] >= 2,
+       AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "endpointSlot" -> endpointSlot,
+         "nValue" -> pack[[linePackNPositions[lines[[e]], packType][[endpointSlot]]]]|>]
        ],
       {endpointSlot, 2}
       ],
@@ -1687,19 +2399,20 @@ tadpoleOddISPIntegralQ[topo_Association, J[_, _, ispList_]] := Module[{loopData,
 
 tadpoleMassiveSwapNeededQ[topo_Association, lineIndex_Integer, J[_, linePacks_, _]] :=
   lineIndex <= Length[linePacks] &&
-   Lookup[topo["lines"][[lineIndex]], "packType", Missing["packType"]] === "massiveFull" &&
-   Length[linePacks[[lineIndex]]] >= 3 && linePacks[[lineIndex, {2, 3}]] === {1, 0};
+    Lookup[topo["lines"][[lineIndex]], "packType", Missing["packType"]] === "massiveFull" &&
+    linePacks[[lineIndex, linePackNPositions[topo["lines"][[lineIndex]], "massiveFull"]]] === {1, 0};
 
 
 tadpoleMasslessZeroQ[topo_Association, lineIndex_Integer, J[_, linePacks_, _]] :=
   lineIndex <= Length[linePacks] &&
-   Lookup[topo["lines"][[lineIndex]], "packType", Missing["packType"]] === "masslessFull" &&
-   Length[linePacks[[lineIndex]]] >= 2 && linePacks[[lineIndex, 2]] === 1;
+    Lookup[topo["lines"][[lineIndex]], "packType", Missing["packType"]] === "masslessFull" &&
+    linePacks[[lineIndex, First[linePackNPositions[topo["lines"][[lineIndex]], "masslessFull"]]]] === 1;
 
 
-tadpoleSwapLinePack[J[aList_, linePacks_, ispList_], lineIndex_Integer] := Module[
-   {newPacks = linePacks},
-   newPacks[[lineIndex, {2, 3}]] = newPacks[[lineIndex, {3, 2}]];
+tadpoleSwapLinePack[topo_Association, J[aList_, linePacks_, ispList_], lineIndex_Integer] := Module[
+   {newPacks = linePacks, nPositions},
+   nPositions = linePackNPositions[topo["lines"][[lineIndex]], "massiveFull"];
+   newPacks[[lineIndex, nPositions]] = Reverse[newPacks[[lineIndex, nPositions]]];
    J[aList, newPacks, ispList]
    ];
 
@@ -1715,7 +2428,7 @@ tadpoleSymmetryRules0[topo_Association] := Module[{data, rules = {}},
      With[{lineIndex = dataItem["lineIndex"]},
       AppendTo[rules,
        HoldPattern[(int_J /; tadpoleMassiveSwapNeededQ[topo, lineIndex, int])] :>
-        tadpoleSwapLinePack[int, lineIndex]
+        tadpoleSwapLinePack[topo, int, lineIndex]
        ]
       ],
      "masslessFull",
@@ -1742,8 +2455,9 @@ tadpoleSymmetryData[topo_Association] := Module[{data = tadpoleLoopReversalData[
    <|
     "status" -> "generated",
     "loopReversalData" -> data,
-    "massiveFullLineIndices" -> Lookup[Select[data, #["packType"] === "massiveFull" &], "lineIndex"],
-    "masslessFullLineIndices" -> Lookup[Select[data, #["packType"] === "masslessFull" &], "lineIndex"],
+    (* 空 tadpole 集合是合法结果；显式返回空列，避免 Lookup[{}] 产生 Missing。 *)
+    "massiveFullLineIndices" -> Lookup[Select[data, #["packType"] === "massiveFull" &], "lineIndex", {}],
+    "masslessFullLineIndices" -> Lookup[Select[data, #["packType"] === "masslessFull" &], "lineIndex", {}],
     "automaticRuleCount" -> Length[tadpoleSymmetryRules0[topo]],
     "automaticRules" -> tadpoleSymmetryRules0[topo],
     "userRuleCount" -> Length[repSymmetry0[topo]],
@@ -1916,12 +2630,14 @@ scalarProductSPInputToInternal[expr_, topo_Association] := Expand[
    ];
 
 
-externalInvariantSymbolName[i_Integer, j_Integer] := ToExpression["s" <> ToString[Min[i, j]] <> ToString[Max[i, j]]];
+externalInvariantSymbolName[i_Integer, j_Integer, count_Integer : 0] := ToExpression[
+   "s" <> coordinateIndexString[Min[i, j], count] <> coordinateIndexString[Max[i, j], count]
+   ];
 
 
 defaultExternalInvariantRulesForTopology[topo_Association] := Module[
    {exts = Lookup[topo, "externalMomenta", {}], nK = Lookup[topo, "nK", Length[Lookup[topo, "externalMomenta", {}]]]},
-   Flatten[Table[sp[exts[[i]], exts[[j]]] -> externalInvariantSymbolName[i, j], {i, nK}, {j, i, nK}]]
+   Flatten[Table[sp[exts[[i]], exts[[j]]] -> externalInvariantSymbolName[i, j, nK], {i, nK}, {j, i, nK}]]
    ];
 
 
@@ -2015,7 +2731,11 @@ loopDependentLineIndices[topo_Association] := Flatten@Position[
 
 
 expandZList[topo_Association] := Module[{indices = loopDependentLineIndices[topo]},
-   expandDotExpr[#, #, topo] & /@ Lookup[topo["lines"][[indices]], "momentum"]
+   If[
+    indices === {},
+    {},
+    expandDotExpr[#, #, topo] & /@ Lookup[topo["lines"][[indices]], "momentum", {}]
+    ]
    ];
 
 
@@ -2026,10 +2746,39 @@ coefficientMatrix[exprs_List, vars_List] := Table[
 
 
 linearMomentumExpressionData[expr_, basis_List] := Module[
-   {coeffs, residual},
-   coeffs = Coefficient[expr, #] & /@ basis;
-   residual = Expand[expr - Total[MapThread[#1 #2 &, {coeffs, basis}]]];
-   <|"expr" -> expr, "basis" -> basis, "coefficients" -> coeffs, "residual" -> residual, "linearQ" -> TrueQ[residual === 0]|>
+   {atoms, expandedBasis, exprCoefficients, basisMatrix, coefficientVariables,
+    equations, solutions, coefficients, residual, atomResiduals},
+   atoms = ds016MomentumAtoms[Join[{expr}, basis]];
+   expandedBasis = Expand /@ basis;
+   exprCoefficients = Coefficient[Expand[expr], #] & /@ atoms;
+   atomResiduals = Function[basisExpression,
+       Expand[basisExpression - Total[(Coefficient[basisExpression, #] & /@ atoms) atoms]]
+       ] /@ expandedBasis;
+   If[! And @@ (ds016ZeroQ /@ Join[
+        atomResiduals,
+        {Expand[expr - Total[exprCoefficients atoms]]}
+        ]),
+    Return[<|"expr" -> expr, "basis" -> basis, "coefficients" -> ConstantArray[0, Length[basis]],
+      "residual" -> expr, "linearQ" -> False|>]
+    ];
+   If[basis === {},
+    residual = Expand[expr];
+    Return[<|"expr" -> expr, "basis" -> basis, "coefficients" -> {},
+      "residual" -> residual, "linearQ" -> ds016ZeroQ[residual]|>]
+    ];
+   basisMatrix = Table[Coefficient[expandedBasis[[i]], atoms[[j]]], {i, Length[basis]}, {j, Length[atoms]}];
+   coefficientVariables = Array[Unique["momentumCoefficient$"] &, Length[basis]];
+   equations = Thread[coefficientVariables . basisMatrix == exprCoefficients];
+   solutions = Quiet[Solve[equations, coefficientVariables]];
+   If[solutions === {},
+    Return[<|"expr" -> expr, "basis" -> basis, "coefficients" -> ConstantArray[0, Length[basis]],
+      "residual" -> expr, "linearQ" -> False|>]
+   ];
+   coefficients = coefficientVariables /. First[solutions];
+   coefficients = coefficients /. Thread[coefficientVariables -> 0];
+   residual = Expand[expr - Total[coefficients basis]];
+   <|"expr" -> expr, "basis" -> basis, "coefficients" -> coefficients,
+    "residual" -> residual, "linearQ" -> ds016ZeroQ[residual]|>
    ];
 
 
@@ -2037,7 +2786,8 @@ linearMomentumExpressionQ[expr_, basis_List] := TrueQ[linearMomentumExpressionDa
 
 
 lineMomentumLinearityIssues[topo_Association] := Module[
-   {basis = Join[topo["loopMomenta"], topo["externalMomenta"], Lookup[topo, "externalLegMomenta", {}]]},
+   {basis = Lookup[topo, "momentumDecompositionBasis",
+      Join[topo["loopMomenta"], topo["externalMomenta"], Lookup[topo, "externalLegMomenta", {}]]]},
    DeleteCases[
     MapIndexed[
      With[{data = linearMomentumExpressionData[Lookup[#1, "momentum", 0], basis]},
@@ -2088,7 +2838,9 @@ scalarProductArgumentLinearityIssues[topo_Association] := Module[
 
 
 vertexEnergySPArgumentIssues[expr_, topo_Association] := Module[
-   {basis = Join[topo["loopMomenta"], topo["externalMomenta"], Lookup[topo, "externalLegMomenta", {}]], nL = topo["nL"], pairs},
+   {basis = Lookup[topo, "momentumDecompositionBasis",
+      Join[topo["loopMomenta"], topo["externalMomenta"], Lookup[topo, "externalLegMomenta", {}]]],
+    nL = topo["nL"], pairs},
    pairs = Cases[expr, HoldPattern[sp[p_, r_]] :> {p, r}, {0, Infinity}];
    DeleteCases[
     Flatten[
@@ -2381,6 +3133,55 @@ shiftLineB[J[aList_, linePacks_, ispList_], e_Integer, delta_] := Module[
    ];
 
 
+fixedLineMomentumMagnitude[topo_Association, e_Integer] := Module[
+   {momentum = Expand[topo["lines"][[e, "momentum"]]], rules, directSquare,
+    externalData, coefficients, externalMomenta, square},
+   rules = Join[
+     Lookup[topo, "externalLegInvariantRules", {}],
+     Lookup[topo, "externalInvariantRules", {}]
+     ];
+   directSquare = sp[momentum, momentum] /. rules;
+   If[directSquare =!= sp[momentum, momentum],
+     Return[If[MatchQ[directSquare, Power[_, 2]], directSquare[[1]], Sqrt[directSquare]]]
+    ];
+   externalMomenta = Lookup[topo, "externalMomenta", {}];
+   externalData = linearMomentumExpressionData[momentum, externalMomenta];
+   If[TrueQ[externalData["linearQ"]],
+    coefficients = externalData["coefficients"];
+    square = Sum[
+       coefficients[[i]] coefficients[[j]] sp[externalMomenta[[i]], externalMomenta[[j]]],
+       {i, Length[externalMomenta]}, {j, Length[externalMomenta]}
+       ] /. rules;
+     Return[If[MatchQ[square, Power[_, 2]], square[[1]], Sqrt[Expand[square]]]]
+    ];
+   Sqrt[sp[momentum, momentum]]
+   ];
+
+
+(* cycle line 的 xi[e] 是积分变量；bridge 的模长是外部固定量。显式 treeEnergy
+   可覆盖两者，供 pure-time/tree family 使用与用户的能量 notation 对齐。 *)
+lineMomentumMagnitude[topo_Association, e_Integer] := If[
+   lineIndexedPowerQ[topo["lines"][[e]]],
+   xi[topo["lines"][[e, "id"]]],
+   fixedLineMomentumMagnitude[topo, e]
+   ];
+
+
+lineTreeEnergy[topo_Association, e_Integer] := Lookup[
+   topo["lines"][[e]],
+   "treeEnergy",
+   lineMomentumMagnitude[topo, e]
+   ];
+
+
+(* cycle 线把幂移写入 b/bS；bridge 线没有连续幂指标，同一变化必须成为显式动量系数。 *)
+shiftLinePower[topo_Association, int_J, e_Integer, delta_] := If[
+   lineIndexedPowerQ[topo["lines"][[e]]],
+   shiftLineB[int, e, delta],
+   fixedLineMomentumMagnitude[topo, e]^(-delta) int
+   ];
+
+
 zeroPointRuleValue[topo_Association, symbol_, default_: 0] := Module[
    {hits},
    hits = Cases[Lookup[topo, "zeroPointRules", {}], (Rule | RuleDelayed)[lhs_, rhs_] /; lhs === symbol :> rhs];
@@ -2404,7 +3205,8 @@ vertexPowerIndex[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] :
 
 
 linePowerIndex[topo_Association, J[aList_, linePacks_, ispList_], e_Integer] := Module[
-   {base = linePacks[[e, 1]], packType = actualLinePackType[topo, e, linePacks[[e]]]},
+   {base, packType = actualLinePackType[topo, e, linePacks[[e]]]},
+   base = lineIntegerPowerIndex[topo, J[aList, linePacks, ispList], e];
    base + If[packType === "shrunk", lineBSZeroPoint[topo, e], lineBZeroPoint[topo, e]]
    ];
 
@@ -2435,7 +3237,7 @@ absorbLinearFactorTerm[term_, int_J, topo_Association] := Module[
          var = vars[[pos]];
          Which[
           MatchQ[var, z[_Integer]],
-          coeff shiftLineB[int, var[[1]], -2],
+          coeff shiftLinePower[topo, int, var[[1]], -2],
           MemberQ[ispVars, var],
           coeff shiftISPIndex[int, First@FirstPosition[ispVars, var], 1],
           True,
@@ -2477,11 +3279,12 @@ lineEndpointSlotsAtVertex[line_Association, vertexId_] := Flatten @ Position[
 
 applyCompiledTimeDerivativeTerm[
    topo_Association, int_J, e_Integer, endpointSlot_Integer, term_Association
-   ] := Module[{result, endpointVertex, xPower = term["xPower"]},
+   ] := Module[{result, endpointVertex, nPosition, xPower = term["xPower"]},
    endpointVertex = topo["lines"][[e, "endpoints", endpointSlot]];
-   result = setLinePackEntry[int, e, endpointSlot + 1, term["targetState"]];
-   result = shiftLineB[result, e, -(xPower + 1)];
+   nPosition = linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, int[[2, e]]]][[endpointSlot]];
+   result = setLinePackEntry[int, e, nPosition, term["targetState"]];
    result = shiftVertexA[result, topo, endpointVertex, xPower];
+   result = shiftLinePower[topo, result, e, -(xPower + 1)];
    -term["coefficient"] result
    ];
 
@@ -2489,7 +3292,7 @@ applyCompiledTimeDerivativeTerm[
 compiledTimeEndpointDerivativeTerms[
    topo_Association, int_J, e_Integer, endpointSlot_Integer
    ] := Module[{state, terms},
-   state = int[[2, e, endpointSlot + 1]];
+   state = int[[2, e, linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, int[[2, e]]]][[endpointSlot]]]];
    terms = Lookup[lineCompiledFunctionSystem[topo["lines"][[e]]], "derivativeTerms", {}];
    Total[
     KroneckerDelta[state, Lookup[#, "sourceState", Missing["NoSourceState"]]] *
@@ -2500,11 +3303,12 @@ compiledTimeEndpointDerivativeTerms[
 
 applyCompiledMomentumDerivativeTerm[
    topo_Association, int_J, e_Integer, endpointSlot_Integer, factor_, term_Association
-   ] := Module[{result, endpointVertex, xPower = term["xPower"]},
+   ] := Module[{result, endpointVertex, nPosition, xPower = term["xPower"]},
    endpointVertex = topo["lines"][[e, "endpoints", endpointSlot]];
-   result = setLinePackEntry[int, e, endpointSlot + 1, term["targetState"]];
-   result = shiftLineB[result, e, 1 - xPower];
+   nPosition = linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, int[[2, e]]]][[endpointSlot]];
+   result = setLinePackEntry[int, e, nPosition, term["targetState"]];
    result = shiftVertexA[result, topo, endpointVertex, xPower + 1];
+   result = shiftLinePower[topo, result, e, 1 - xPower];
    term["coefficient"] absorbLinearFactor[factor, result, topo]
    ];
 
@@ -2512,7 +3316,7 @@ applyCompiledMomentumDerivativeTerm[
 compiledMomentumEndpointDerivativeTerms[
    topo_Association, int_J, e_Integer, endpointSlot_Integer, factor_
    ] := Module[{state, terms},
-   state = int[[2, e, endpointSlot + 1]];
+   state = int[[2, e, linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, int[[2, e]]]][[endpointSlot]]]];
    terms = Lookup[lineCompiledFunctionSystem[topo["lines"][[e]]], "derivativeTerms", {}];
    Total[
     KroneckerDelta[state, Lookup[#, "sourceState", Missing["NoSourceState"]]] *
@@ -2521,9 +3325,10 @@ compiledMomentumEndpointDerivativeTerms[
    ];
 
 
-toggleMasslessLineState[J[aList_, linePacks_, ispList_], e_Integer] := Module[
-   {newLinePacks = linePacks},
-   newLinePacks[[e, 2]] = 1 - newLinePacks[[e, 2]];
+toggleMasslessLineState[topo_Association, J[aList_, linePacks_, ispList_], e_Integer] := Module[
+   {newLinePacks = linePacks, nPosition},
+   nPosition = First[linePackNPositions[topo["lines"][[e]], "masslessFull"]];
+   newLinePacks[[e, nPosition]] = 1 - newLinePacks[[e, nPosition]];
    J[aList, newLinePacks, ispList]
    ];
 
@@ -2555,7 +3360,7 @@ momentumBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Association, r
         ],
        "masslessFull",
        sigma = masslessFullSKSign[lines[[e]]];
-       shiftedInt = shiftLineB[toggleMasslessLineState[int, e], e, 1];
+        shiftedInt = shiftLinePower[topo, toggleMasslessLineState[topo, int, e], e, 1];
        loopCoeff (
          -I sigma absorbLinearFactor[
            vDotQ,
@@ -2569,7 +3374,7 @@ momentumBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Association, r
            ]
          ),
        "masslessCross",
-       shiftedInt = shiftLineB[int, e, 1];
+       shiftedInt = shiftLinePower[topo, int, e, 1];
        loopCoeff Total[
          Table[
           -I skEndpointPhaseSign[lines[[e]], endpointSlot] absorbLinearFactor[
@@ -2600,7 +3405,7 @@ momentumPropagatorDerivativeTerms[topo_Association, int_J, gen_Association, repS
      If[zeroQ[loopCoeff],
       0,
       vDotQ = Expand[expandDotExpr[vector, lineMomenta[[e]], topo] /. repSP2ZRules];
-      shiftedInt = shiftLineB[int, e, 2];
+      shiftedInt = shiftLinePower[topo, int, e, 2];
       -loopCoeff linePowerIndex[topo, int, e] absorbLinearFactor[vDotQ, shiftedInt, topo]
       ],
      {e, topo["nE"]}
@@ -2762,7 +3567,7 @@ skEndpointPhaseSign[line_Association, endpointSlot_Integer] := Module[
    masslessCross 没有 n 或 theta，只按各端点 SK 相位移动 b。 *)
 timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispList_], vertexId_] := Module[
    {pos, connectedLines, lines = topo["lines"], endpointSlots, endpointSign,
-    newLinePacks, sigma},
+    newLinePacks, shiftedIntegral, nPosition, sigma},
    pos = vertexPosition[topo, vertexId];
    If[Head[pos] === Missing, Return[0]];
    connectedLines = topo["vertexLines"][[pos]][[All, 1]];
@@ -2776,9 +3581,10 @@ timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispL
        Table[
         endpointSign = sigma If[endpointSlot === 1, 1, -1];
         newLinePacks = linePacks;
-        newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
-        newLinePacks[[e, 2]] = 1 - newLinePacks[[e, 2]];
-        I endpointSign J[aList, newLinePacks, ispList],
+        nPosition = First[linePackNPositions[lines[[e]], "masslessFull"]];
+        newLinePacks[[e, nPosition]] = 1 - newLinePacks[[e, nPosition]];
+        shiftedIntegral = shiftLinePower[topo, J[aList, newLinePacks, ispList], e, -1];
+        I endpointSign shiftedIntegral,
         {endpointSlot, endpointSlots}
         ]
        ],
@@ -2786,9 +3592,8 @@ timeMasslessEndpointDerivativeTerms[topo_Association, J[aList_, linePacks_, ispL
       Total[
        Table[
         endpointSign = skEndpointPhaseSign[lines[[e]], endpointSlot];
-        newLinePacks = linePacks;
-        newLinePacks[[e, 1]] = newLinePacks[[e, 1]] - 1;
-        I endpointSign J[aList, newLinePacks, ispList],
+        shiftedIntegral = shiftLinePower[topo, J[aList, linePacks, ispList], e, -1];
+        I endpointSign shiftedIntegral,
         {endpointSlot, endpointSlots}
         ]
        ],
@@ -2895,7 +3700,7 @@ lineShrinkBShift[line_Association] := If[
 
 shrinkLineIntegral[topo_Association, J[aList_, linePacks_, ispList_], e_Integer, bShift_: Automatic, aShift_: Automatic] := Module[
    {line = topo["lines"][[e]], uSlot, vSlot, oldActive, newRepMap, newActive, newAList, newLinePacks = linePacks,
-     mergedRep, oldSlotsForNewRep, slotValues, effectiveBShift, effectiveAShift},
+     mergedRep, oldSlotsForNewRep, slotValues, effectiveBShift, effectiveAShift, powerCoefficient},
    effectiveBShift = If[bShift === Automatic, lineShrinkBShift[line], bShift];
     effectiveAShift = If[
       aShift === Automatic,
@@ -2921,8 +3726,13 @@ shrinkLineIntegral[topo_Association, J[aList_, linePacks_, ispList_], e_Integer,
        ],
      {i, Length[newActive]}
      ];
-   newLinePacks[[e]] = {linePacks[[e, 1]] + effectiveBShift};
-   J[newAList, newLinePacks, ispList]
+   powerCoefficient = If[lineIndexedPowerQ[line], 1, fixedLineMomentumMagnitude[topo, e]^(-effectiveBShift)];
+   newLinePacks[[e]] = If[
+     lineIndexedPowerQ[line],
+     {lineIntegerPowerIndex[topo, J[aList, linePacks, ispList], e] + effectiveBShift},
+     {}
+     ];
+   powerCoefficient J[newAList, newLinePacks, ispList]
    ];
 
 
@@ -2932,7 +3742,7 @@ shrinkLinesIntegral[
    specs_List
    ] := Module[
    {selectedLines, oldActive, pairs, newRepMap, newActive, newAList,
-    newLinePacks = linePacks, oldSlotsForNewRep, selectedShiftForRep},
+    newLinePacks = linePacks, oldSlotsForNewRep, selectedShiftForRep, powerCoefficient = 1},
    selectedLines = Lookup[specs, "lineIndex"];
    oldActive = activeAVertexIds[topo];
    pairs = topo["lines"][[#, "endpoints"]] & /@ selectedLines;
@@ -2951,14 +3761,18 @@ shrinkLinesIntegral[
      {i, Length[newActive]}
      ];
    Scan[
-    Function[spec,
-     newLinePacks[[spec["lineIndex"]]] = {
-       linePacks[[spec["lineIndex"], 1]] + spec["bShift"]
-       }
-     ],
+     Function[spec,
+      If[lineIndexedPowerQ[topo["lines"][[spec["lineIndex"]]]],
+       newLinePacks[[spec["lineIndex"]]] = {
+         lineIntegerPowerIndex[topo, J[aList, linePacks, ispList], spec["lineIndex"]] + spec["bShift"]
+         },
+       powerCoefficient *= fixedLineMomentumMagnitude[topo, spec["lineIndex"]]^(-spec["bShift"]);
+       newLinePacks[[spec["lineIndex"]]] = {}
+       ]
+      ],
     specs
     ];
-   J[newAList, newLinePacks, ispList]
+   powerCoefficient J[newAList, newLinePacks, ispList]
    ];
 
 
@@ -2977,7 +3791,9 @@ thetaBoundaryAtomicTerms[
    packType = actualLinePackType[topo, e, pack];
    Switch[packType,
     "massiveFull",
-    coeff = KroneckerDelta[pack[[2]] + pack[[3]], 1] (-1)^(pack[[endpointSlot + 1]] + thetaBoundarySignOffset[topo, e]);
+    coeff = With[{nPositions = linePackNPositions[line, packType]},
+      KroneckerDelta[Total[pack[[nPositions]]], 1] (-1)^(pack[[nPositions[[endpointSlot]]]] + thetaBoundarySignOffset[topo, e])
+      ];
     shrinkTerms = lineCompiledShrinkTerms[line];
     (<|
         "lineIndex" -> e,
@@ -2988,7 +3804,7 @@ thetaBoundaryAtomicTerms[
     "masslessFull",
     {<|
       "lineIndex" -> e,
-      "coefficient" -> -2 endpointOrientation KroneckerDelta[pack[[2]], 1],
+      "coefficient" -> -2 endpointOrientation KroneckerDelta[pack[[First[linePackNPositions[line, packType]]]], 1],
       "bShift" -> 0,
       "aShift" -> 0
       |>},
@@ -3210,13 +4026,19 @@ seedRangeValues[topo_Association, key_] := rangeValuesFromSpec[Lookup[topo["seed
 indexVariableQ[x_] := ! TrueQ[IntegerQ[x] || NumericQ[x]];
 
 
-continuousIndexVariables[J[aList_, linePacks_, ispList_]] := Select[Join[aList, linePacks[[All, 1]], ispList], indexVariableQ];
+continuousIndexVariables[J[aList_, linePacks_, ispList_]] := Select[
+   Join[aList, Cases[Flatten[linePacks], _b | _bS], ispList],
+   indexVariableQ
+   ];
 
 
 continuousIndexValueLists[topo_Association, J[aList_, linePacks_, ispList_], useSampleOnly_] := Module[
    {aValues, bValues, ispValues, globalISPRangeQ, globalISPValues},
    aValues = ConstantArray[If[TrueQ[useSampleOnly], {0}, seedRangeValues[topo, "a"]], Count[aList, _?indexVariableQ]];
-   bValues = ConstantArray[If[TrueQ[useSampleOnly], {0}, seedRangeValues[topo, "b"]], Count[linePacks[[All, 1]], _?indexVariableQ]];
+   bValues = ConstantArray[
+     If[TrueQ[useSampleOnly], {0}, seedRangeValues[topo, "b"]],
+     Count[Cases[Flatten[linePacks], _b | _bS], _?indexVariableQ]
+     ];
    globalISPRangeQ = KeyExistsQ[topo["seedRanges"], "isp"];
    globalISPValues = seedRangeValues[topo, "isp"];
    ispValues = Table[
@@ -3477,7 +4299,7 @@ externalVectorPropagatorDerivativeTerms[topo_Association, int_J, gen_Association
      If[zeroQ[extCoeff] || externalLegCoordinateLineQ[lineMomenta[[e]], topo],
       0,
       vDotQ = Expand[expandDotExpr[vector, lineMomenta[[e]], topo] /. repSP2ZRules];
-      shiftedInt = shiftLineB[int, e, 2];
+      shiftedInt = shiftLinePower[topo, int, e, 2];
       -extCoeff linePowerIndex[topo, int, e] absorbLinearFactor[vDotQ, shiftedInt, topo]
       ],
      {e, topo["nE"]}
@@ -3513,7 +4335,7 @@ externalVectorBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Associat
         ],
        "masslessFull",
        sigma = masslessFullSKSign[lines[[e]]];
-       shiftedInt = shiftLineB[toggleMasslessLineState[int, e], e, 1];
+       shiftedInt = shiftLinePower[topo, toggleMasslessLineState[topo, int, e], e, 1];
        extCoeff (
          -I sigma absorbLinearFactor[
            vDotQ,
@@ -3527,7 +4349,7 @@ externalVectorBuildingBlockDerivativeTerms[topo_Association, int_J, gen_Associat
            ]
          ),
        "masslessCross",
-       shiftedInt = shiftLineB[int, e, 1];
+       shiftedInt = shiftLinePower[topo, int, e, 1];
        extCoeff Total[
          Table[
           -I skEndpointPhaseSign[lines[[e]], endpointSlot] absorbLinearFactor[
@@ -3998,6 +4820,9 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "extLegs" -> newExtLegs,
      "vertexEnergies" -> remapVertexEnergiesToRepresentatives[topo["vertexEnergies"], repMap],
      "loopMomenta" -> topo["loopMomenta"],
+     "ibpMode" -> Lookup[topo, "ibpMode", Automatic],
+     "loopExternalMomenta" -> Lookup[topo, "loopExternalMomenta", topo["externalMomenta"]],
+     "independentExternalMomenta" -> Lookup[topo, "independentExternalMomenta", Lookup[topo, "externalLegMomenta", {}]],
      "externalMomenta" -> topo["externalMomenta"],
       "externalLegMomenta" -> Lookup[topo, "externalLegMomenta", {}],
       "kinematicRules" -> Lookup[topo, "kinematicRules", Automatic],
@@ -4017,9 +4842,22 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "thetaBoundarySignOffset" -> topo["thetaBoundarySignOffset"],
      "kiraOrdering" -> topo["kiraOrdering"],
      "sectorVertexRepresentativeMap" -> repMap,
-     "activeVertexIds" -> activeVertices,
-     "fixedAVertexValues" -> fixedA,
-     "sectorShrunkLines" -> shrunkLines
+      "activeVertexIds" -> activeVertices,
+      "fixedAVertexValues" -> fixedA,
+      (* contact sector 继承 root loop space 与 line-power schema；sector 不重新定义圈积分变量。 *)
+      "rootTopologyMomentumAudit" -> <|
+        "status" -> Lookup[topo["momentumDeclarationAudit"], "status", "invalid"],
+        "graph" -> topo["graphTopologyAudit"],
+        "routing" -> topo["loopMomentumRoutingAudit"],
+        "declarations" -> topo["momentumDeclarationAudit"],
+        "capabilities" -> topo["capabilities"],
+        "issues" -> Join[
+          Lookup[topo["graphTopologyAudit"], "issues", {}],
+          Lookup[topo["loopMomentumRoutingAudit"], "issues", {}],
+          Lookup[topo["momentumDeclarationAudit"], "issues", {}]
+          ]
+        |>,
+      "sectorShrunkLines" -> shrunkLines
      |>;
    sectorTopo = Join[parseTopology[newCase], <|"sectorShrunkLines" -> shrunkLines|>];
    Join[sectorTopo, <|
@@ -4177,7 +5015,8 @@ topologyValidationReport[topo_Association] := Module[
     nonLinearLineMomentumData, nonLinearScalarProductArgumentData, vertexEnergyMomentumDependenceData,
     spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
     missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
-     missingLineParameters, numericRequirementReport, pendingFeatures, ruleData, kinematicAudit},
+     missingLineParameters, numericRequirementReport, pendingFeatures, ruleData, kinematicAudit,
+      topologyMomentumAudit, momentumIBPRequiredQ},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
    vertexIds = topo["vertexIds"];
    vertexSigns = topo["vertexData"][[All, 2]];
@@ -4186,6 +5025,15 @@ topologyValidationReport[topo_Association] := Module[
    extLegs = Lookup[topo, "extLegs", {}];
    vertexEnergies = Lookup[topo, "vertexEnergies", <||>];
    kinematicAudit = Lookup[topo, "kinematicCoordinateAudit", <||>];
+   topologyMomentumAudit = <|
+     "status" -> Lookup[Lookup[topo, "momentumDeclarationAudit", <||>], "status", "invalid"],
+     "issues" -> Lookup[Lookup[topo, "momentumDeclarationAudit", <||>], "issues", {}]
+     |>;
+   momentumIBPRequiredQ = Lookup[topo, "ibpMode", "full"] === "full";
+   Scan[
+    appendIssue[Lookup[#, "severity", "error"], Lookup[#, "code", "momentumDeclarationIssue"], KeyDrop[#, {"severity", "code"}]] &,
+    Lookup[topologyMomentumAudit, "issues", {}]
+    ];
    ispNames = Lookup[topo["ispData"], "name", {}];
    seedRangeData = KeyDrop[topo["seedRanges"], {"sampleOnly"}];
    If[Lookup[kinematicAudit, "status", "complete"] === "incomplete",
@@ -4382,8 +5230,10 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["error", "unknownLineStates", <|"lineIndices" -> Lookup[badStateLines, "lineIndex"], "states" -> Lookup[badStateLines, "state"], "allowedStates" -> {"full", "shrunk"}|>]
     ];
    lineMomentumVars = DeleteDuplicates[Flatten[Variables /@ Lookup[topo["lines"], "momentum"]]];
-   declaredMomentumVars = DeleteDuplicates@Join[
-     topo["loopMomenta"], topo["externalMomenta"], Lookup[topo, "externalLegMomenta", {}]
+   declaredMomentumVars = ds016MomentumAtoms@Lookup[
+     topo,
+     "momentumDecompositionBasis",
+     Join[topo["loopMomenta"], topo["externalMomenta"], Lookup[topo, "externalLegMomenta", {}]]
      ];
    undeclaredMomentumVars = Complement[lineMomentumVars, declaredMomentumVars];
    If[undeclaredMomentumVars =!= {},
@@ -4398,20 +5248,20 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["error", "nonLinearScalarProductArguments", <|"issues" -> nonLinearScalarProductArgumentData, "comment" -> "sp[p,r] arguments must be linear momentum combinations before scalar products are expanded"|>]
     ];
    spData = makeScalarProductData[topo];
-   If[spData["unsupportedISPExprs"] =!= {},
+   If[momentumIBPRequiredQ && spData["unsupportedISPExprs"] =!= {},
     appendIssue["error", "unsupportedISPExpressions", <|"expressions" -> spData["unsupportedISPExprs"], "allowedScalarProducts" -> spData["scalarProducts"]|>]
     ];
-   If[! TrueQ[spData["structuralCountQ"]],
+   If[momentumIBPRequiredQ && ! TrueQ[spData["structuralCountQ"]],
     appendIssue["error", "insufficientISPData", <|"needed" -> spData["structuralNeededISPCount"], "providedDirect" -> spData["directISPCount"], "provided" -> spData["ispCount"]|>]
     ];
-   If[spData["unsupportedISPExprs"] === {} && TrueQ[spData["structuralCountQ"]] && ! TrueQ[spData["coordinateCountQ"]],
+   If[momentumIBPRequiredQ && spData["unsupportedISPExprs"] === {} && TrueQ[spData["structuralCountQ"]] && ! TrueQ[spData["coordinateCountQ"]],
     appendIssue["error", "scalarProductCoordinateCountMismatch", <|
       "zCount" -> spData["zCount"],
       "nonISPScalarProductCount" -> spData["nonISPScalarProductCount"],
       "assumption" -> "topology input must provide a closed z/ISP coordinate system; no automatic redundant propagator subset is selected"
       |>]
     ];
-   If[spData["unsupportedISPExprs"] === {} && TrueQ[spData["structuralCountQ"]] && TrueQ[spData["coordinateCountQ"]],
+   If[momentumIBPRequiredQ && spData["unsupportedISPExprs"] === {} && TrueQ[spData["structuralCountQ"]] && TrueQ[spData["coordinateCountQ"]],
     ruleData = makeScalarProductRules[topo];
     If[Lookup[ruleData, "status", "notComputed"] =!= "computed",
      appendIssue["error", "scalarProductCoordinateSolveFailed", <|
@@ -5295,7 +6145,10 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
    listText = StringRiffle[ToString /@ targetData["targetIDs"], "\n"] <> "\n";
    jobsText = kiraJobsYAML[normalizedJobOptions];
    runScriptText = If[TrueQ[Lookup[normalizedJobOptions, "WriteRunScript", False]], kiraRunScript[normalizedJobOptions], Missing["RunScriptDisabled"]];
-   repKira2JText = ToString[InputForm[linearData["integralRules"] /. (j_J -> id_Integer) :> (Tuserweight[id] -> j)]] <> "\n";
+   (* backend 只消费整数 ID；反向映射保留 loop J 或带 sector 的 tree token 原对象。 *)
+   repKira2JText = ToString[InputForm[
+       linearData["integralRules"] /. Rule[integral_, id_Integer] :> Rule[Tuserweight[id], integral]
+       ]] <> "\n";
    repJ2KiraText = ToString[InputForm[linearData["integralRules"]]] <> "\n";
    metadataText = ToString[InputForm[
        Join[
@@ -5992,7 +6845,14 @@ clearIBPTopologyContext[] := ($dSIBPTopologyContext = Missing["NotSet"]);
 
 
 resolvePublicTopologyContext[spec_: Automatic] := Module[{topo},
-   topo = If[spec === Automatic, $dSIBPTopologyContext, normalizeTopologySpec[spec]];
+   (* 原子接口既接受 parsed topology，也接受 DSInit 返回的完整 context；后者必须先解包，
+      否则会被误当作原始 case 再次 parse，并产生缺少 lineData 等字段的伪错误。 *)
+   topo = Which[
+     spec === Automatic, $dSIBPTopologyContext,
+     parsedTopologyQ[spec], spec,
+     AssociationQ[spec] && TrueQ[dsContextQ[spec]], spec["topology"],
+     True, normalizeTopologySpec[spec]
+     ];
    If[! parsedTopologyQ[topo],
     If[spec === Automatic,
      Message[dSIBPPublicAPI::notopo],
@@ -6004,10 +6864,10 @@ resolvePublicTopologyContext[spec_: Automatic] := Module[{topo},
    ];
 
 
-publicExpectedPackLength[packType_String] := Switch[packType,
-   "massiveFull" | "massiveCross", 3,
-   "masslessFull", 2,
-   "masslessCross" | "shrunk", 1,
+publicExpectedPackLength[line_Association, packType_String] := Switch[packType,
+   "massiveFull" | "massiveCross", If[lineIndexedPowerQ[line], 3, 2],
+   "masslessFull", If[lineIndexedPowerQ[line], 2, 1],
+   "masslessCross" | "shrunk", If[lineIndexedPowerQ[line], 1, 0],
    _, Missing["UnknownPackType", packType]
    ];
 
@@ -6023,7 +6883,7 @@ publicIntegralShapeIssues[topo_Association, J[aList_, linePacks_, ispList_]] := 
      If[! ListQ[linePacks[[e]]],
       AppendTo[issues, <|"slot" -> "linePack", "lineIndex" -> e, "reason" -> "notList"|>],
       packType = actualLinePackType[topo, e, linePacks[[e]]];
-      expected = publicExpectedPackLength[packType];
+      expected = publicExpectedPackLength[topo["lines"][[e]], packType];
       If[Head[expected] === Missing || Length[linePacks[[e]]] =!= expected,
        AppendTo[issues, <|"slot" -> "linePack", "lineIndex" -> e, "packType" -> packType, "expected" -> expected, "actual" -> Length[linePacks[[e]]]|>]
        ]
@@ -6047,9 +6907,11 @@ publicResolvedDiscreteStateIssues[topo_Association, J[aList_, linePacks_, ispLis
      packType = actualLinePackType[topo, e, pack];
      Switch[packType,
       "massiveFull" | "massiveCross",
-      Do[If[! MemberQ[{0, 1}, pack[[p]]], AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "packPosition" -> p, "value" -> pack[[p]]|>]], {p, 2, 3}],
+      Do[If[! MemberQ[{0, 1}, pack[[p]]], AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "packPosition" -> p, "value" -> pack[[p]]|>]],
+       {p, linePackNPositions[topo["lines"][[e]], packType]}],
       "masslessFull",
-      If[! MemberQ[{0, 1}, pack[[2]]], AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "packPosition" -> 2, "value" -> pack[[2]]|>]],
+      With[{p = First[linePackNPositions[topo["lines"][[e]], packType]]},
+       If[! MemberQ[{0, 1}, pack[[p]]], AppendTo[issues, <|"lineIndex" -> e, "packType" -> packType, "packPosition" -> p, "value" -> pack[[p]]|>]]],
       _, Null
       ]
      ],
@@ -6089,6 +6951,12 @@ publicExternalIndex[topo_Association, item_] := Which[
 
 
 publicApplyIBPGenerator[expr_, topo_Association, gen_Association] := Module[{result},
+   If[gen["type"] === "time" && ! dsTopologyCapabilityQ[topo, "timeIBPUsableQ"],
+    dsErrorPrint["当前 topology 未通过 time-IBP capability gate。"]; Return[$Failed]
+    ];
+   If[gen["type"] === "momentum" && ! dsTopologyCapabilityQ[topo, "momentumIBPUsableQ"],
+    dsErrorPrint["当前 topology 未通过 momentum-IBP capability gate。"]; Return[$Failed]
+    ];
    If[! validatePublicExpression[expr, topo, True], Return[$Failed]];
    result = Expand[expr /. int_J :> If[
         gen["type"] === "time",
@@ -6165,6 +7033,15 @@ rep2innerform[expr_, topoSpec_Association] := Module[{topo, audit},
    topo = resolvePublicTopologyContext[topoSpec];
    If[topo === $Failed, Return[$Failed]];
    audit = Lookup[topo, "kinematicCoordinateAudit", <||>];
+   (* 反向映射同时受动量声明层和坐标 Jacobian 层约束；局部坐标可逆不能覆盖
+      过完备 loop/无圈动量声明已经关闭的 topology capability。 *)
+   If[! dsTopologyCapabilityQ[topo, "inverseKinematicsUsableQ"],
+    Message[dSIBPPublicAPI::noinverse, <|
+      "capabilities" -> Lookup[topo, "capabilities", <||>],
+      "coordinateAudit" -> KeyTake[audit, {"status", "constraintResiduals", "parameterDependencies"}]
+      |>];
+    Return[$Failed]
+    ];
    If[AssociationQ[audit] && ! TrueQ[Lookup[audit, "inverseAvailableQ", True]],
     Message[dSIBPPublicAPI::noinverse, KeyTake[audit, {"status", "constraintResiduals", "parameterDependencies"}]];
     Return[$Failed]
@@ -6245,6 +7122,9 @@ ds[expr_, userVariable_, topoSpec_Association] := Module[
     coefficientDerivative, integralDerivativeTerms, result},
    topo = resolvePublicTopologyContext[topoSpec];
    If[topo === $Failed, Return[$Failed]];
+   If[! dsTopologyCapabilityQ[topo, "derivativeUsableQ"],
+    dsErrorPrint["当前参数声明不支持唯一 ds 微分算符。"]; Return[$Failed]
+    ];
    If[
     TrueQ[Lookup[Lookup[topo, "kinematicCoordinateAudit", <||>], "overcompleteQ", False]] &&
      MemberQ[Lookup[Lookup[topo, "kinematicCoordinateAudit", <||>], "selectedUserVariables", {}], userVariable],
@@ -6301,25 +7181,31 @@ integrandVertexFactor[topo_Association, int_J] := Times @@ Table[
    ];
 
 
-integrandBuildingBlock[line_Association, pack_List] := Module[
-   {lineId = line["id"], endpoints = line["endpoints"], packType = line["packType"]},
+integrandBuildingBlock[line_Association, pack_List, momentumMagnitude_] := Module[
+   {lineId = line["id"], endpoints = line["endpoints"], packType = line["packType"], nPositions},
+   nPositions = linePackNPositions[line, packType];
    Switch[packType,
     "massiveFull" | "massiveCross",
-    Hh[MassiveBlock[Lookup[line, "bbType", "h"], Lookup[line, "nu", nu], Lookup[line, "skType", "++"], lineId, endpoints, xi[lineId], pack[[2]], pack[[3]]]],
+    Hh[MassiveBlock[Lookup[line, "bbType", "h"], Lookup[line, "nu", nu], Lookup[line, "skType", "++"], lineId, endpoints, momentumMagnitude, pack[[nPositions[[1]]]], pack[[nPositions[[2]]]]]],
     "masslessFull",
-    Hh[MasslessBlock[Lookup[line, "skType", "++"], lineId, endpoints, xi[lineId], pack[[2]]]],
+    Hh[MasslessBlock[Lookup[line, "skType", "++"], lineId, endpoints, momentumMagnitude, pack[[First[nPositions]]]]],
     "masslessCross",
-    Hh[MasslessCrossBlock[Lookup[line, "skType", "+-"], lineId, endpoints, xi[lineId]]],
+    Hh[MasslessCrossBlock[Lookup[line, "skType", "+-"], lineId, endpoints, momentumMagnitude]],
     _, 1
     ]
    ];
 
 
 integrandLineFactor[topo_Association, int_J, e_Integer] := Module[
-   {line = topo["lines"][[e]], pack = int[[2, e]], packType, denominator},
+   {line = topo["lines"][[e]], pack = int[[2, e]], packType, momentumMagnitude, denominator},
    packType = actualLinePackType[topo, e, pack];
-   denominator = xi[line["id"]]^(-linePowerIndex[topo, int, e]);
-   If[packType === "shrunk", denominator, denominator integrandBuildingBlock[Join[line, <|"packType" -> packType|>], pack]]
+   momentumMagnitude = lineMomentumMagnitude[topo, e];
+   denominator = momentumMagnitude^(-linePowerIndex[topo, int, e]);
+   If[
+    packType === "shrunk",
+    denominator,
+    denominator integrandBuildingBlock[Join[line, <|"packType" -> packType|>], pack, momentumMagnitude]
+    ]
    ];
 
 
@@ -6887,9 +7773,9 @@ treeLoopIntegralFromTree[int_J, data_Association] := Module[
         packs[[vertexIndex, 1 + First[legIndex]]],
         {slot, 2}
         ];
-      Prepend[states, Lookup[baseline, line["id"], 0]],
+      If[lineIndexedPowerQ[line], Prepend[states, Lookup[baseline, line["id"], 0]], states],
       "shrunk",
-      {Lookup[baseline, line["id"], 0]},
+      If[lineIndexedPowerQ[line], {Lookup[baseline, line["id"], 0]}, {}],
       _,
       Message[treeLoopIntegralFromTree::unsupported, <|"line" -> line["id"], "packType" -> line["packType"]|>];
       Return[$Failed]
@@ -7078,7 +7964,8 @@ loopToTreeProjection::mixedcontact = "mixed-sign line 不得产生 theta/contact
 
 loopIntegralShrunkLines[int : J[_, linePacks_List, _], topo_Association] := Select[
    Range[Min[Length[linePacks], topo["nE"]]],
-   Length[linePacks[[#]]] === 1 && ! MemberQ[{"masslessCross", "massiveCross"}, topo["lines"][[#, "packType"]]] &
+   actualLinePackType[topo, #, linePacks[[#]]] === "shrunk" &&
+     ! MemberQ[{"masslessCross", "massiveCross"}, topo["lines"][[#, "packType"]]] &
    ];
 
 
@@ -7095,7 +7982,7 @@ loopTreeProjectionCoefficient[int : J[aList_List, _, _], targetTopo_Association]
    {active = activeAVertexIds[targetTopo], timePower, energyPower},
    timePower = Total[aList] + Total[vertexZeroPoint[targetTopo, #] & /@ active];
    energyPower = Times @@ Table[
-      Lookup[targetTopo["lines"][[e]], "treeEnergy", xi[targetTopo["lines"][[e, "id"]]]]^(-linePowerIndex[targetTopo, int, e]),
+      lineTreeEnergy[targetTopo, e]^(-linePowerIndex[targetTopo, int, e]),
       {e, targetTopo["nE"]}
       ];
    (-1)^timePower energyPower
@@ -7111,7 +7998,7 @@ loopTreeRelativeProjectionCoefficient[
    (-1)^Expand[targetTimePower - referenceTimePower] Times @@ Table[
       targetLinePower = linePowerIndex[targetTopo, int, e];
       referenceLinePower = linePowerIndex[referenceTopo, referenceInt, e];
-      energy = Lookup[targetTopo["lines"][[e]], "treeEnergy", xi[targetTopo["lines"][[e, "id"]]]];
+      energy = lineTreeEnergy[targetTopo, e];
       energy^(-Expand[targetLinePower - referenceLinePower]),
       {e, targetTopo["nE"]}
       ]
@@ -7139,7 +8026,7 @@ projectLoopIntegralToTree[int : J[aList_List, linePacks_List, ispList_List], top
        originalEndpoints = Lookup[line, "originalEndpoints", line["endpoints"]];
        Do[
         If[Lookup[repMap, originalEndpoints[[slot]], originalEndpoints[[slot]]] === active[[v]],
-         AppendTo[legStates, linePacks[[e, slot + 1]]]
+          AppendTo[legStates, linePacks[[e, linePackNPositions[line, line["packType"]][[slot]]]]]
          ],
         {slot, 2}
         ]
@@ -7327,7 +8214,7 @@ makeTreeFamilyDataFromTopology[topoSpec_Association] := Module[
            {<|
              "id" -> {topo["lines"][[e, "id"]], slot},
              "nu" -> topo["lines"][[e, "nu"]],
-             "energy" -> Lookup[topo["lines"][[e]], "treeEnergy", xi[topo["lines"][[e, "id"]]]]
+             "energy" -> lineTreeEnergy[topo, e]
              |>},
            {}
            ],
@@ -7544,7 +8431,7 @@ DSTreeDLogDE[data_Association, seedData_] := Join[
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*015 上下文、消息与进度*)
+(*016 上下文、消息、进度与公开 API 清单*)
 
 If[! ValueQ[$dSIBPMessagesEnabled], $dSIBPMessagesEnabled = True];
 If[! ValueQ[$dSIBPCurrentContext], $dSIBPCurrentContext = Missing["NotInitialized"]];
@@ -7606,18 +8493,77 @@ dsResolveContext[Automatic] := If[dsContextQ[$dSIBPCurrentContext], $dSIBPCurren
 dsResolveContext[context_Association] := If[dsContextQ[context], context, Missing["InvalidContext"]];
 dsResolveContext[_] := Missing["InvalidContext"];
 
+dsContextCapabilities[context_Association] := Lookup[
+   context,
+   "capabilities",
+   Lookup[Lookup[context, "topology", <||>], "capabilities", <||>]
+   ];
+
+dsTopologyCapabilityQ[topo_Association, capability_String] := TrueQ[
+   Lookup[Lookup[topo, "capabilities", <||>], capability, False]
+   ];
+
+dsContextCapabilityQ[context_Association, capability_String] := TrueQ[
+   Lookup[dsContextCapabilities[context], capability, False]
+   ];
+
 dsContextSummary[context_Association] := <|
    "packageVersion" -> Lookup[context, "packageVersion", Missing["packageVersion"]],
    "inputHash" -> Lookup[context, "inputHash", Missing["inputHash"]],
    "caseName" -> Lookup[context, "caseName", Missing["caseName"]],
    "sectorKeys" -> Lookup[Lookup[context, "sectors", {}], "sectorKey", {}],
+   "capabilities" -> dsContextCapabilities[context],
    "loopTreeProjectionConvention" -> Lookup[context, "loopTreeProjectionConvention", <||>]
    |>;
+
+
+(* 公开函数清单是手册汇总表和成品 example 覆盖检查的共同来源。
+   函数按用户工作流分组；符号 Head 与 option 名不混入函数覆盖计数。 *)
+dsPublicAPISections[] := <|
+   "initialization" -> {
+     "DSInit", "DSInfo", "DSKinematics", "DSParameterNotation", "DSRedefineParameters"
+     },
+   "messages" -> {"DSMessagesOn", "DSMessagesOff", "DSMessagesQ"},
+   "atomicOperations" -> {
+     "dtau", "dqq", "dqk", "ds", "rep2innerform", "rep2outform", "rep2Integrand",
+     "symmetry", "repSymmetry0"
+     },
+   "loopWorkflow" -> {"DSSeeds", "DSLinear", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
+   "pureTimeWorkflow" -> {
+     "DSTreeSeeds", "repIterative", "DSTreeNaiveIBP", "DSTreeNaiveDE", "DSTreeDLogDE"
+     },
+   "introspection" -> {"DSPublicAPI"}
+   |>;
+
+
+dsPublicAPIOptions[] := <|
+   "DSInit" -> Options[DSInit],
+   "DSSeeds" -> Options[DSSeeds],
+   "DSLinear" -> Options[DSLinear],
+   "DSKiraExport" -> Options[DSKiraExport],
+   "DSKiraImport" -> Options[DSKiraImport],
+   "DSDE" -> Options[DSDE],
+   "DSScaleCheck" -> Options[DSScaleCheck],
+   "DSTreeNaiveIBP" -> Options[DSTreeNaiveIBP],
+   "DSTreeNaiveDE" -> Options[DSTreeNaiveDE],
+   "DSTreeDLogDE" -> Options[DSTreeDLogDE],
+   "repIterative" -> Options[repIterative]
+   |>;
+
+
+DSPublicAPI[] := Module[{sections = dsPublicAPISections[]},
+   <|
+    "version" -> $dSIBPVersion,
+    "sections" -> sections,
+    "functions" -> DeleteDuplicates@Flatten[Values[sections]],
+    "options" -> dsPublicAPIOptions[]
+    |>
+   ];
 
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*015 初始化与 metadata 序列化*)
+(*016 初始化与 metadata 序列化*)
 
 Options[DSInit] = {
    WriteInitializationFiles -> False,
@@ -7796,7 +8742,11 @@ DSInit[input_Association, OptionsPattern[]] := Module[
      Lookup[#, "severity", ""] === "warning" && dsRelevantInitializationWarningQ[#, topologyData] &
      ];
    Scan[dsWarningPrint[Lookup[#, "code", #], progress] &, warnings];
-   derivatives = If[TrueQ[OptionValue[GenerateDerivativeMetadata]], dsDerivativeMetadata[topologyData, progress], Missing["NotGenerated"]];
+   derivatives = If[
+     TrueQ[OptionValue[GenerateDerivativeMetadata]] && dsTopologyCapabilityQ[topologyData, "derivativeUsableQ"],
+     dsDerivativeMetadata[topologyData, progress],
+     Missing["NotGenerated"]
+     ];
    context = <|
      "status" -> "initialized",
      "packageVersion" -> $dSIBPVersion,
@@ -7805,6 +8755,7 @@ DSInit[input_Association, OptionsPattern[]] := Module[
       "input" -> effectiveInput,
      "topology" -> topologyData,
      "topologyData" -> topologyData,
+     "capabilities" -> Lookup[topologyData, "capabilities", <||>],
      "sectors" -> Lookup[topologyData, "sectorMetadataList", {}],
      "conventions" -> dsConventionMetadata[topologyData],
      "derivatives" -> derivatives,
@@ -7868,7 +8819,7 @@ DSInfo[context_Association, "Full"] := Module[{resolved = dsResolveContext[conte
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*014 loop seed 与 linearData 高层入口*)
+(*016 loop seed 与 linearData 高层入口*)
 
 Options[DSSeeds] = Join[Options[makeCanonicalSeedBatch], {ProgressReporting -> Automatic}];
 Options[DSLinear] = {
@@ -7880,21 +8831,39 @@ Options[DSLinear] = {
 
 DSSeeds::noinit = "DSSeeds 需要有效的 DSInit context。";
 DSSeeds::failed = "canonical seed 生成未通过门禁：`1`。";
+DSSeeds::capability = "当前 context 不具备 seed 生成所需能力：`1`。";
 DSLinear::noinit = "DSLinear 需要有效的 DSInit context。";
 DSLinear::badseed = "DSLinear 需要 DSSeeds 返回的 canonical seed Association。";
 DSLinear::badmode = "LinearSystemMode 只允许 \"symbolic\" 或 \"numeric\"，收到 `1`。";
 DSLinear::failed = "linearData 生成未通过门禁：`1`。";
+DSLinear::capability = "当前 context 不具备 linearData 生成所需能力：`1`。";
+DSLinear::context = "seedData 与 context 不是同一次初始化的产物。";
 
 DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedData, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
     Message[DSSeeds::noinit]; dsErrorPrint["请先成功调用 DSInit。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
+   If[! dsContextCapabilityQ[resolved, "timeIBPUsableQ"] ||
+     (Lookup[resolved["topology"], "ibpMode", "full"] === "full" &&
+       ! dsContextCapabilityQ[resolved, "momentumIBPUsableQ"]),
+    Message[DSSeeds::capability, dsContextCapabilities[resolved]];
+    dsErrorPrint["动量声明审计未授权当前 seed 模式。"]; Return[<|
+      "status" -> "failed", "reason" -> "capabilityGate",
+      "capabilities" -> dsContextCapabilities[resolved]
+      |>]
+    ];
    seedData = dsStageRun[
      "生成 canonical IBP seeds",
-     makeCanonicalSeedBatch[
-      resolved["topology"],
-      Sequence @@ FilterRules[{opts}, Options[makeCanonicalSeedBatch]]
+     If[Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly",
+      makePureTimeSeedBatch[
+       resolved,
+       Sequence @@ FilterRules[{opts}, Options[makePureTimeSeedBatch]]
+       ],
+      makeCanonicalSeedBatch[
+       resolved["topology"],
+       Sequence @@ FilterRules[{opts}, Options[makeCanonicalSeedBatch]]
+       ]
       ],
      progress
      ];
@@ -7917,25 +8886,56 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
    If[Head[resolved] === Missing,
     Message[DSLinear::noinit]; dsErrorPrint["请传入与 seed 同源的 DSInit context。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
-   If[! KeyExistsQ[seedData, "completeCanonicalQ"],
-    Message[DSLinear::badseed]; dsErrorPrint["输入不是 canonical seed batch。"]; Return[<|"status" -> "failed", "reason" -> "notCanonicalSeedBatch"|>]
-    ];
+    If[! KeyExistsQ[seedData, "completeCanonicalQ"],
+     Message[DSLinear::badseed]; dsErrorPrint["输入不是 canonical seed batch。"]; Return[<|"status" -> "failed", "reason" -> "notCanonicalSeedBatch"|>]
+     ];
+    If[Lookup[Lookup[seedData, "dSIBPContextSummary", <||>], "inputHash", Missing["seedHash"]] =!=
+      Lookup[resolved, "inputHash", Missing["contextHash"]],
+     Message[DSLinear::context]; dsErrorPrint["seed 与 context 的 inputHash 不一致。"]; Return[<|
+       "status" -> "failed", "reason" -> "contextMismatch"
+       |>]
+     ];
+    If[Lookup[seedData, "dSIBPStatus", "failed"] =!= "generated" ||
+      ! dsContextCapabilityQ[resolved, "timeIBPUsableQ"] ||
+      (Lookup[resolved["topology"], "ibpMode", "full"] === "full" &&
+        ! dsContextCapabilityQ[resolved, "momentumIBPUsableQ"]),
+     Message[DSLinear::capability, dsContextCapabilities[resolved]];
+     dsErrorPrint["seed 或 context 未通过 linearData 能力门禁。"]; Return[<|
+       "status" -> "failed", "reason" -> "capabilityGate",
+       "capabilities" -> dsContextCapabilities[resolved]
+       |>]
+     ];
    If[! MemberQ[{"symbolic", "numeric"}, mode],
     Message[DSLinear::badmode, mode]; dsErrorPrint["linearData 模式无效。"]; Return[<|"status" -> "failed", "reason" -> "invalidLinearSystemMode", "mode" -> mode|>]
     ];
    linearData = dsStageRun[
      "转换 backend-neutral linearData",
-     If[mode === "numeric",
-      makeSampledLinearSystemData[
-       seedData,
-       resolved["topology"],
-       KiraOrdering -> OptionValue[KiraOrdering],
-       CoefficientRules -> OptionValue[CoefficientRules]
+     If[Lookup[seedData, "representation", None] === "J[vertexPacks]",
+      With[{treeLinear = makePureTimeLinearSystemData[seedData, resolved]},
+       If[mode === "numeric" && Lookup[treeLinear, "status", "missing"] === "generated",
+        applyCoefficientRulesToLinearSystem[
+         treeLinear,
+         CoefficientRules -> If[
+           OptionValue[CoefficientRules] === Automatic,
+           userNumericRules[resolved["topology"]],
+           OptionValue[CoefficientRules]
+           ]
+         ],
+        treeLinear
+        ]
        ],
-      makeLinearSystemData[
-       seedData,
-       resolved["topology"],
-       KiraOrdering -> OptionValue[KiraOrdering]
+      If[mode === "numeric",
+       makeSampledLinearSystemData[
+        seedData,
+        resolved["topology"],
+        KiraOrdering -> OptionValue[KiraOrdering],
+        CoefficientRules -> OptionValue[CoefficientRules]
+        ],
+       makeLinearSystemData[
+        seedData,
+        resolved["topology"],
+        KiraOrdering -> OptionValue[KiraOrdering]
+        ]
        ]
       ],
      progress
@@ -7946,9 +8946,11 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
     Return[Join[linearData, <|"dSIBPStatus" -> "failed", "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
     ];
    Join[linearData, <|
-     "dSIBPStatus" -> "generated",
-     "dSIBPContextSummary" -> dsContextSummary[resolved],
-     "numericRulesAppliedBeforeSeeds" -> TrueQ[Lookup[seedData, "numericRulesAppliedBeforeSeeds", False]],
+      "dSIBPStatus" -> "generated",
+      "dSIBPContextSummary" -> dsContextSummary[resolved],
+      "contextCapabilities" -> dsContextCapabilities[resolved],
+      "contextInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
+      "numericRulesAppliedBeforeSeeds" -> TrueQ[Lookup[seedData, "numericRulesAppliedBeforeSeeds", False]],
      "seedNumericRules" -> Lookup[seedData, "seedNumericRules", {}]
      |>]
    ];
@@ -7956,7 +8958,7 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*014 tree sector-tagged 数据边界*)
+(*016 tree sector-tagged 数据边界*)
 
 (* 裸 J[vertexPacks] 继续作为公开公式表示；进入跨 sector linearData 时必须由后续 token 同时携带 sectorKey。
    loop-to-tree 投影系数始终复用冻结核心的完整物理幂次公式，不能从 tree pack 反推零点。 *)
@@ -7995,8 +8997,8 @@ dsLoopTermTreeTag[term_, topo_Association, referenceInt_J] := Module[
    referenceAZeroPoint = vertexZeroPoint[referenceTopology, #] & /@ referenceVertices;
    targetAPhysical = MapThread[Plus, {targetAInteger, targetAZeroPoint}];
    referenceAPhysical = MapThread[Plus, {referenceAInteger, referenceAZeroPoint}];
-   targetBInteger = First /@ loopIntegral[[2]];
-   referenceBInteger = First /@ referenceInt[[2]];
+   targetBInteger = Table[lineIntegerPowerIndex[targetTopology, loopIntegral, e], {e, targetTopology["nE"]}];
+   referenceBInteger = Table[lineIntegerPowerIndex[referenceTopology, referenceInt, e], {e, referenceTopology["nE"]}];
    targetBZeroPoint = Table[
      If[actualLinePackType[targetTopology, e, loopIntegral[[2, e]]] === "shrunk",
       lineBSZeroPoint[targetTopology, e],
@@ -8017,7 +9019,7 @@ dsLoopTermTreeTag[term_, topo_Association, referenceInt_J] := Module[
    deltaLinePowers = MapThread[Expand[#1 - #2] &, {targetBPhysical, referenceBPhysical}];
    explicitEnergyPowers = -deltaLinePowers;
    lineEnergies = Table[
-     Lookup[targetTopology["lines"][[e]], "treeEnergy", xi[targetTopology["lines"][[e, "id"]]]],
+     lineTreeEnergy[targetTopology, e],
      {e, targetTopology["nE"]}
      ];
    auditedProjectionCoefficient = (-1)^deltaTimePower Times @@ MapThread[Power, {lineEnergies, explicitEnergyPowers}];
@@ -8063,15 +9065,27 @@ dsLoopTermTreeTag[term_, topo_Association, referenceInt_J] := Module[
 
 dsCombineTreeTaggedTerms[terms_List] := Map[
    Function[group,
-    Join[
-     First[group],
-     <|
-      "coefficient" -> Total[Lookup[group, "coefficient"]],
-      "sourceLoopIntegrals" -> Lookup[group, "sourceLoopIntegral"],
-      "projectionCoefficients" -> Lookup[group, "projectionCoefficient"],
-      "physicalPowerAudits" -> Lookup[group, "physicalPowerAudit"],
-      "contributions" -> (KeyTake[#, {"coefficient", "sourceLoopIntegral", "projectionCoefficient", "physicalPowerAudit"}] & /@ group)
-      |>
+    Module[{optionalKeys, optionalData},
+     optionalKeys = Select[
+       {"sourceLoopIntegral", "projectionCoefficient", "physicalPowerAudit"},
+       Function[key, AnyTrue[group, Function[item, KeyExistsQ[item, key]]]]
+       ];
+     optionalData = Association@Map[
+        Switch[#,
+          "sourceLoopIntegral", "sourceLoopIntegrals",
+          "projectionCoefficient", "projectionCoefficients",
+          "physicalPowerAudit", "physicalPowerAudits"
+          ] -> Lookup[group, #] &,
+        optionalKeys
+        ];
+     Join[
+      First[group],
+      <|
+       "coefficient" -> Total[Lookup[group, "coefficient"]],
+       "contributions" -> (KeyTake[#, Prepend[optionalKeys, "coefficient"]] & /@ group)
+       |>,
+      optionalData
+      ]
      ]
     ],
    GatherBy[terms, {Lookup[#, "sectorKey"], Lookup[#, "integral"]} &]
@@ -8225,17 +9239,18 @@ dsTreeSeedRecordFromSector[vertex_, int : J[_, _, _], family_Association] := Mod
    ];
 
 
-dsTreeTaggedSourceAwareStep[token : dsTreeToken[sectorKey_String, int_J], vertexIndex_Integer, endpoint_Integer, family_Association] := Module[
-   {packs = First[int], current, seedA, states, vertexId, localIntegrals, loopIntegrals, records, ruleData, rules, result},
+dsTreeTaggedSourceAwareStep[
+   token : dsTreeToken[sectorKey_String, int_J], vertexIndex_Integer, endpoint_Integer,
+   family_Association, familyContext_Association
+   ] := Module[
+   {packs = First[int], current, seedA, states, vertexId, localIntegrals, records, ruleData, rules, result},
    current = packs[[vertexIndex, 1]];
    If[current === endpoint, Return[token]];
    seedA = If[current < endpoint, current + 1, current];
    states = treeBinaryStates[family["vertices"][[vertexIndex, "p"]]];
    vertexId = family["vertexOrder"][[vertexIndex]];
    localIntegrals = J[ReplacePart[packs, vertexIndex -> Prepend[#, seedA]]] & /@ states;
-   loopIntegrals = treeLoopIntegralFromTree[#, family] & /@ localIntegrals;
-   If[! FreeQ[loopIntegrals, $Failed], Return[$Failed]];
-   records = dsTreeSeedRecordFromSector[vertexId, #, family] & /@ loopIntegrals;
+   records = dsDirectTreeSeedRecord[vertexId, #, family, familyContext] & /@ localIntegrals;
    If[! FreeQ[records, $Failed], Return[$Failed]];
    ruleData = dsMakeTreeTaggedTimeReductionRules[records, family];
    rules = Lookup[ruleData, If[current < endpoint, "minus", "plus"], {}];
@@ -8249,9 +9264,12 @@ dsTreeTaggedSourceAwareStep[token : dsTreeToken[sectorKey_String, int_J], vertex
    ];
 
 
-dsTreeTaggedSingleStep[token : dsTreeToken[sectorKey_String, int_J], vertexIndex_Integer, endpoint_Integer, family_Association] := Module[{bareResult},
+dsTreeTaggedSingleStep[
+   token : dsTreeToken[sectorKey_String, int_J], vertexIndex_Integer, endpoint_Integer,
+   family_Association, familyContext_Association
+   ] := Module[{bareResult},
    If[TrueQ[Lookup[family, "requiresSourceRules", False]] && AssociationQ[Lookup[family, "topology", Missing["NoLoopTopology"]]],
-    Return[dsTreeTaggedSourceAwareStep[token, vertexIndex, endpoint, family]]
+    Return[dsTreeTaggedSourceAwareStep[token, vertexIndex, endpoint, family, familyContext]]
     ];
    bareResult = treeSingleStepIntegral[int, vertexIndex, endpoint, family];
    If[bareResult === $Failed, $Failed, bareResult /. item_J :> dsTreeToken[sectorKey, item]]
@@ -8306,7 +9324,7 @@ dsRepIterativeTreeLinearData[data_Association, end_: Automatic, context_Associat
      Return[<|"status" -> "maxSteps", "reason" -> "iterationLimit", "steps" -> steps|>]
      ];
     vertexIndex = SelectFirst[Range[Length[endpoints]], First[int][[#, 1]] =!= endpoints[[#]] &];
-    result = Expand[result /. token -> dsTreeTaggedSingleStep[token, vertexIndex, endpoints[[vertexIndex]], family]];
+    result = Expand[result /. token -> dsTreeTaggedSingleStep[token, vertexIndex, endpoints[[vertexIndex]], family, familyContext]];
     If[! FreeQ[result, $Failed], Return[<|"status" -> "error", "reason" -> "taggedStepFailed", "steps" -> steps|>]];
     steps++;
     ];
@@ -8365,7 +9383,7 @@ dsTreeMasterFamilyRecords[masters_List, familyContext_Association] := Map[
    ];
 
 
-dsTreeNaiveSeedRecords[masterFamilyRecords_List, progress_] := Flatten@dsProgressMap[
+dsTreeNaiveSeedRecords[masterFamilyRecords_List, familyContext_Association, progress_] := Flatten@dsProgressMap[
     "正在生成 naive tree time-IBP",
     masterFamilyRecords,
     Function[item,
@@ -8376,9 +9394,7 @@ dsTreeNaiveSeedRecords[masterFamilyRecords_List, progress_] := Flatten@dsProgres
              First[master["integral"]],
              First[position] -> ReplacePart[First[master["integral"]][[First[position]]], 1 -> 1]
              ]]},
-         With[{loopIntegral = treeLoopIntegralFromTree[seedIntegral, family]},
-          If[loopIntegral === $Failed, $Failed, dsTreeSeedRecordFromSector[vertexId, loopIntegral, family]]
-          ]
+         dsDirectTreeSeedRecord[vertexId, seedIntegral, family, familyContext]
          ]
         ],
        family["vertexOrder"]
@@ -8427,7 +9443,7 @@ DSTreeNaiveIBP[context_Association, masters_: Automatic, OptionsPattern[]] /; ds
     Message[DSTreeNaiveIBP::badmasters];
     Return[<|"status" -> "failed", "reason" -> "masterSectorMismatch", "masters" -> resolvedMasters|>]
     ];
-   seedRecords = dsTreeNaiveSeedRecords[masterFamilyRecords, OptionValue[ProgressReporting]];
+   seedRecords = dsTreeNaiveSeedRecords[masterFamilyRecords, familyContext, OptionValue[ProgressReporting]];
    If[MemberQ[seedRecords, $Failed] || AnyTrue[seedRecords, Lookup[#, "status", "error"] =!= "generated" &],
     Return[<|"status" -> "failed", "reason" -> "seedGenerationFailed", "seedRecords" -> seedRecords|>]
     ];
@@ -8475,9 +9491,531 @@ DSTreeNaiveIBP[context_Association, masters_: Automatic, OptionsPattern[]] /; ds
 DSTreeNaiveIBP[_, ___] := (Message[DSTreeNaiveIBP::badmasters]; <|"status" -> "failed", "reason" -> "invalidContextOrMasters"|>);
 
 (* ::Package:: *)
+(* 本模块实现 016 的 direct pure-time IBP。输入只使用 J[vertexPacks]；regular 项直接由
+   vertex-family 的 M1/M0 构造，contact 项直接消费 compiled WT/shrinkTerms 与共同 theta。
+   loop 三槽表示仅由独立交叉验证调用，不是本模块的生产路径。 *)
 
 (* ::Chapter:: *)
-(*014 Kira 导出边界*)
+(*Pure-time 表示能力与状态访问*)
+
+(* 同分支 massless 内线的 regular 导数在 n=0/1 间翻转；当前用户约定的 tree pack
+   只保存 massive h 状态，因此这类线必须显式拒绝，不能当作无状态相位。 *)
+dsPureTimeUnsupportedLines[family_Association] := Select[
+   Range[Lookup[family["topology"], "nE", 0]],
+   With[{line = family["topology", "lines"][[#]]},
+     Lookup[line, "state", "full"] =!= "shrunk" && Lookup[line, "packType", ""] === "masslessFull"
+     ] &
+   ];
+
+
+dsPureTimeFamilyUsableQ[family_Association] := dsPureTimeUnsupportedLines[family] === {};
+
+
+dsTreeVertexIndex[family_Association, vertexId_] := Module[{position},
+   position = FirstPosition[family["vertexOrder"], vertexId, Missing["NoVertex"]];
+   If[Head[position] === Missing, position, First[position]]
+   ];
+
+
+dsTreeLegState[int_J, family_Association, lineId_, endpointSlot_Integer] := Module[
+   {matches, vertexIndex, legIndex},
+   matches = Reap[
+       Do[
+        legIndex = FirstPosition[
+          Lookup[family["vertices"][[vertexIndex, "massiveLegs"]], "id", {}],
+          {lineId, endpointSlot},
+          Missing["NoLeg"]
+          ];
+        If[Head[legIndex] =!= Missing, Sow[{vertexIndex, First[legIndex]}]],
+        {vertexIndex, Length[family["vertices"]]}
+        ]
+       ][[2]];
+   matches = If[matches === {}, {}, First[matches]];
+   If[Length[matches] =!= 1,
+    Missing["TreeLegState", lineId, endpointSlot, Length[matches]],
+    {vertexIndex, legIndex} = First[matches];
+    int[[1, vertexIndex, 1 + legIndex]]
+    ]
+   ];
+
+
+(* ::Chapter:: *)
+(*Regular M1/M0 time seed*)
+
+dsTreeStateVectorIntegrals[int_J, family_Association, vertexIndex_Integer, aValue_] := Module[
+   {packs = First[int], states},
+   states = treeBinaryStates[family["vertices"][[vertexIndex, "p"]]];
+   J[ReplacePart[packs, vertexIndex -> Prepend[#, aValue]]] & /@ states
+   ];
+
+
+dsDirectTreeRegularSeed[vertexId_, int_J, family_Association] := Module[
+   {vertexIndex, vertex, pack, currentA, stateRow, currentIntegrals, lowerIntegrals, equationVector},
+   If[! treeIntegralQ[int, family], Return[$Failed]];
+   vertexIndex = dsTreeVertexIndex[family, vertexId];
+   If[Head[vertexIndex] === Missing, Return[$Failed]];
+   vertex = family["vertices"][[vertexIndex]];
+   pack = First[int][[vertexIndex]];
+   currentA = First[pack];
+   stateRow = treeStateIndex[Rest[pack]];
+   currentIntegrals = dsTreeStateVectorIntegrals[int, family, vertexIndex, currentA];
+   lowerIntegrals = dsTreeStateVectorIntegrals[int, family, vertexIndex, currentA - 1];
+   equationVector = Expand[
+     treeM1[vertex, vertex["nu0"] + currentA] . lowerIntegrals +
+      treeM0[vertex] . currentIntegrals
+     ];
+   Expand[equationVector[[stateRow]]]
+   ];
+
+
+(* ::Chapter:: *)
+(*Direct 共同-theta contact*)
+
+dsDirectTreeAtomicContactChoices[
+   vertexId_, int_J, family_Association, lineIndex_Integer
+   ] := Module[
+   {topo = family["topology"], line, endpointSlots, endpointSlot, n1, n2, coefficient, shrinkTerms},
+   line = topo["lines"][[lineIndex]];
+   endpointSlots = lineEndpointSlotsAtVertex[line, vertexId];
+   If[Length[endpointSlots] =!= 1 || Lookup[line, "packType", ""] =!= "massiveFull", Return[{}]];
+   endpointSlot = First[endpointSlots];
+   n1 = dsTreeLegState[int, family, line["id"], 1];
+   n2 = dsTreeLegState[int, family, line["id"], 2];
+   If[MemberQ[{n1, n2}, _Missing], Return[{}]];
+   coefficient = KroneckerDelta[n1 + n2, 1] (-1)^(
+       If[endpointSlot === 1, n1, n2] + thetaBoundarySignOffset[topo, lineIndex]
+       );
+   shrinkTerms = lineCompiledShrinkTerms[line];
+   Map[
+    <|
+      "lineIndex" -> lineIndex,
+      "coefficient" -> coefficient (Lookup[#, "coefficient", 0] /. topo["shrinkPrefactorRules"]),
+      "bShift" -> Lookup[#, "bShift", 1],
+      "aShift" -> Lookup[#, "bShift", 1]
+      |> &,
+    shrinkTerms
+    ]
+   ];
+
+
+dsTreeContactTargetIntegral[
+   int_J,
+   sourceFamily_Association,
+   targetFamily_Association,
+   choices_List
+   ] := Module[
+   {sourcePacks = First[int], sourceTopo = sourceFamily["topology"], targetTopo = targetFamily["topology"],
+    sourceVertices, targetVertices, targetRepMap, selectedLines, targetPacks, sourceClass, aValue, legStates},
+   sourceVertices = sourceFamily["vertexOrder"];
+   targetVertices = targetFamily["vertexOrder"];
+   targetRepMap = Lookup[
+     targetTopo,
+     "sectorVertexRepresentativeMap",
+     AssociationThread[targetTopo["vertexIds"] -> targetTopo["vertexIds"]]
+     ];
+   selectedLines = Lookup[choices, "lineIndex"];
+   targetPacks = Table[
+     sourceClass = Select[sourceVertices, Lookup[targetRepMap, #, #] === targetVertices[[targetIndex]] &];
+     aValue = Total[
+        First[sourcePacks[[dsTreeVertexIndex[sourceFamily, #]]]] & /@ sourceClass
+        ] - Total[
+        Map[
+         Function[choice,
+          If[
+           And @@ (Lookup[targetRepMap, #, #] === targetVertices[[targetIndex]] & /@
+              sourceTopo["lines"][[choice["lineIndex"], "endpoints"]]),
+           choice["aShift"],
+           0
+           ]
+          ],
+         choices
+         ]
+        ];
+     legStates = Map[
+       Function[leg,
+        dsTreeLegState[int, sourceFamily, leg["id"][[1]], leg["id"][[2]]]
+        ],
+       targetFamily["vertices"][[targetIndex, "massiveLegs"]]
+       ];
+     If[MemberQ[legStates, _Missing], Return[$Failed]];
+     Prepend[legStates, aValue],
+     {targetIndex, Length[targetVertices]}
+     ];
+   J[targetPacks]
+   ];
+
+
+dsTreeLineZeroPoint[topo_Association, e_Integer] := If[
+   MemberQ[Lookup[topo, "sectorShrunkLines", {}], e] || Lookup[topo["lines"][[e]], "state", "full"] === "shrunk",
+   lineBSZeroPoint[topo, e],
+   lineBZeroPoint[topo, e]
+   ];
+
+
+dsDirectTreeContactCoefficient[
+   int_J,
+   targetInt_J,
+   sourceFamily_Association,
+   targetFamily_Association,
+   choices_List,
+   thetaBundleCoefficient_
+   ] := Module[
+   {sourceTopo = sourceFamily["topology"], targetTopo = targetFamily["topology"], sourceA, targetA,
+    deltaTimePower, shiftByLine, deltaLinePowers, lineEnergies, atomicCoefficient},
+   sourceA = Total[First /@ First[int]] + Total[Lookup[sourceFamily["vertices"], "nu0"]];
+   targetA = Total[First /@ First[targetInt]] + Total[Lookup[targetFamily["vertices"], "nu0"]];
+   deltaTimePower = Expand[targetA - sourceA];
+   shiftByLine = Association@Map[Lookup[#, "lineIndex"] -> Lookup[#, "bShift", 0] &, choices];
+   deltaLinePowers = Table[
+     Expand[
+      Lookup[shiftByLine, e, 0] + dsTreeLineZeroPoint[targetTopo, e] - dsTreeLineZeroPoint[sourceTopo, e]
+      ],
+     {e, sourceTopo["nE"]}
+     ];
+   lineEnergies = Table[lineTreeEnergy[targetTopo, e], {e, targetTopo["nE"]}];
+   atomicCoefficient = Times @@ Lookup[choices, "coefficient"];
+   Expand[
+    thetaBundleCoefficient atomicCoefficient (-1)^deltaTimePower
+      Times @@ MapThread[Power, {lineEnergies, -deltaLinePowers}]
+    ]
+   ];
+
+
+dsDirectTreeContactTerms[
+   vertexId_, int_J, sourceFamily_Association, familyContext_Association
+   ] := Module[
+   {topo = sourceFamily["topology"], connectedLines, eligibleLines, bundles, sourceShrunk,
+    oddSubsets, atomicChoices, totalShrunk, targetSector, targetFamily, targetInt, coefficient, terms = {}},
+   connectedLines = DeleteDuplicates@Flatten[Cases[
+       Lookup[topo, "vertexLines", {}][[dsTreeVertexIndex[sourceFamily, vertexId]]],
+       {e_Integer, _} :> e
+       ]];
+   eligibleLines = Select[
+     connectedLines,
+     Lookup[topo["lines"][[#]], "packType", ""] === "massiveFull" &&
+       Lookup[topo["lines"][[#]], "state", "full"] =!= "shrunk" &&
+       Length[lineEndpointSlotsAtVertex[topo["lines"][[#]], vertexId]] === 1 &
+     ];
+   bundles = GatherBy[eligibleLines, thetaBundleKey[topo, #] &];
+   sourceShrunk = Lookup[topo, "sectorShrunkLines", {}];
+   Do[
+    oddSubsets = Select[Rest[Subsets[bundle]], OddQ[Length[#]] &];
+    Do[
+     atomicChoices = dsDirectTreeAtomicContactChoices[vertexId, int, sourceFamily, #] & /@ selected;
+     If[AnyTrue[atomicChoices, # === {} &], Continue[]];
+     Do[
+      totalShrunk = Sort@Union[sourceShrunk, Lookup[choice, "lineIndex"]];
+      targetSector = sectorKeyFromShrunkLines[totalShrunk];
+      targetFamily = dsTreeFamilyBySector[targetSector, familyContext];
+      If[Head[targetFamily] === Missing, Return[$Failed]];
+      targetInt = dsTreeContactTargetIntegral[int, sourceFamily, targetFamily, choice];
+      If[targetInt === $Failed, Return[$Failed]];
+      coefficient = dsDirectTreeContactCoefficient[
+        int, targetInt, sourceFamily, targetFamily, choice, 2^(1 - Length[selected])
+        ];
+      If[! TrueQ[coefficient === 0],
+       AppendTo[terms, <|
+         "sectorKey" -> targetSector,
+         "integral" -> targetInt,
+         "coefficient" -> coefficient,
+         "selectedLines" -> Lookup[choice, "lineIndex"],
+         "route" -> "directCompiledTheta"
+         |>]
+       ],
+      {choice, Tuples[atomicChoices]}
+      ],
+     {selected, oddSubsets}
+     ],
+    {bundle, bundles}
+    ];
+   terms
+   ];
+
+
+(* ::Chapter:: *)
+(*公开 direct seed record*)
+
+dsTreeExpressionTerms[expr_, sectorKey_String] := Module[{terms, records},
+   terms = If[Head[Expand[expr]] === Plus, List @@ Expand[expr], {Expand[expr]}];
+   records = Map[
+     Function[term,
+      With[{integrals = DeleteDuplicates[Cases[term, int_J :> int, {0, Infinity}]]},
+       If[Length[integrals] =!= 1,
+        $Failed,
+        <|"sectorKey" -> sectorKey, "integral" -> First[integrals],
+          "coefficient" -> Expand[term /. First[integrals] -> 1], "route" -> "directM1M0"|>
+        ]
+       ]
+      ],
+     terms
+     ];
+   If[MemberQ[records, $Failed], $Failed, records]
+   ];
+
+
+dsDirectTreeSeedRecord[
+   vertexId_, int_J, sourceFamily_Association, familyContext_Association
+   ] := Module[{regular, regularTerms, contactTerms, combined},
+   If[! dsPureTimeFamilyUsableQ[sourceFamily],
+    Return[<|"status" -> "failed", "reason" -> "masslessFullNeedsTreeState",
+      "lineIndices" -> dsPureTimeUnsupportedLines[sourceFamily]|>]
+    ];
+   regular = dsDirectTreeRegularSeed[vertexId, int, sourceFamily];
+   If[regular === $Failed, Return[<|"status" -> "failed", "reason" -> "regularSeedFailed"|>]];
+   regularTerms = dsTreeExpressionTerms[regular, sourceFamily["sector"]];
+   contactTerms = dsDirectTreeContactTerms[vertexId, int, sourceFamily, familyContext];
+   If[MemberQ[{regularTerms, contactTerms}, $Failed],
+    Return[<|"status" -> "failed", "reason" -> "contactSeedFailed"|>]
+    ];
+   combined = dsCombineTreeTaggedTerms[Join[regularTerms, contactTerms]];
+   <|
+    "status" -> "generated",
+    "generator" -> dtau[vertexId],
+    "treeSeed" -> Total[Lookup[#, "coefficient"] Lookup[#, "integral"] & /@ combined],
+    "treeIntegral" -> int,
+    "sectorKey" -> sourceFamily["sector"],
+    "generationRoute" -> "directPureTime",
+    "loopSeed" -> Missing["NotUsed"],
+    "treeLinearData" -> <|
+      "status" -> "generated",
+      "terms" -> combined,
+      "termCount" -> Length[combined],
+      "sectorKeys" -> DeleteDuplicates[Lookup[combined, "sectorKey"]],
+      "expression" -> Total[Lookup[#, "coefficient"] Lookup[#, "integral"] & /@ combined],
+      "referenceTreeIntegral" -> int,
+      "coefficientConvention" -> "direct tree physical powers from M1/M0 and compiled WT"
+      |>
+   |>
+   ];
+
+
+(* ::Chapter:: *)
+(*Pure-time canonical seed batch*)
+
+Options[makePureTimeSeedBatch] = Options[makeTimeIBPSeedBatch];
+
+makePureTimeSeedBatch::toomany =
+   "拓扑 `1` 的 pure-time tree seed 方程数为 `2`，超过上限 `3`；未展开方程。";
+makePureTimeSeedBatch::toomanystates =
+   "sector `1` 的 massive h 离散态数为 `2`，超过上限 `3`；未展开方程。";
+
+
+(* 每条 generator 继续复用统一 a-range/generator override 解析；tree 表示只消费顶点 a，
+   不把 loop 表示中的 b/ISP 变量带入 pure-time 积分。 *)
+dsPureTimeGeneratorSeedData[family_Association, vertexId_, opts : OptionsPattern[makePureTimeSeedBatch]] := Module[
+   {topo = family["topology"], generatorLabel, continuousData, aVariables, aValueLists},
+   generatorLabel = {"time", vertexId};
+   continuousData = makeGeneratorContinuousSeedRules[
+     topo,
+     generatorLabel,
+     UseSampleOnly -> OptionValue[UseSampleOnly],
+     MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
+     ];
+   If[Lookup[continuousData, "status", "missing"] =!= "generated", Return[continuousData]];
+   aVariables = a /@ family["vertexOrder"];
+   aValueLists = (aVariables /. #) & /@ Lookup[continuousData, "rules", {}];
+   If[! And @@ (VectorQ[#, IntegerQ] & /@ aValueLists),
+    Return[Join[KeyDrop[continuousData, "rules"], <|
+      "status" -> "invalidTreeASeedRules",
+      "generator" -> generatorLabel,
+      "aVariables" -> aVariables,
+      "aValueLists" -> aValueLists
+      |>]]
+    ];
+   Join[KeyDrop[continuousData, "rules"], <|
+     "status" -> "generated",
+     "generator" -> generatorLabel,
+     "aVariables" -> aVariables,
+     "aValueLists" -> aValueLists
+     |>]
+   ];
+
+
+(* DSSeeds 的 timeOnly 生产路径：sector tag 保存在 record/linear terms 中，裸积分始终是 J[vertexPacks]。 *)
+makePureTimeSeedBatch[context_Association, opts : OptionsPattern[]] /; dsContextQ[context] := Module[
+   {familyContext, families, rootTopo = context["topology"], generatorData, stateCounts,
+    maxDiscreteCount, equationCount, maxEquationCount, records, numericRules, applyNumericRules,
+    sectorMetadataList, badFamilies},
+   familyContext = dsTreeFamilyContext[context];
+   If[familyContext === $Failed,
+    Return[<|"status" -> "failed", "reason" -> "treeFamilyInitializationFailed", "equations" -> {}|>]
+    ];
+   families = familyContext["families"];
+   badFamilies = Select[families, ! dsPureTimeFamilyUsableQ[#] &];
+   If[badFamilies =!= {},
+    Return[<|
+      "status" -> "unsupportedTreeState",
+      "reason" -> "masslessFullNeedsTreeState",
+      "sectorLineIndices" -> Association@Table[
+        family["sector"] -> dsPureTimeUnsupportedLines[family],
+        {family, badFamilies}
+        ],
+      "equations" -> {}
+      |>]
+    ];
+   stateCounts = Association@Table[
+      family["sector"] -> 2^Total[Lookup[family["vertices"], "p", 0]],
+      {family, families}
+      ];
+   maxDiscreteCount = resolveSeedOption[
+     rootTopo, "MaxDiscreteRuleCount", OptionValue[MaxDiscreteRuleCount], 64
+     ];
+   If[AnyTrue[Values[stateCounts], # > maxDiscreteCount &],
+    With[{sector = SelectFirst[Keys[stateCounts], stateCounts[#] > maxDiscreteCount &]},
+     Message[makePureTimeSeedBatch::toomanystates, sector, stateCounts[sector], maxDiscreteCount];
+     Return[<|"status" -> "tooManyDiscreteStates", "sectorStateCounts" -> stateCounts,
+       "maxDiscreteStateCount" -> maxDiscreteCount, "equations" -> {}|>]
+     ]
+    ];
+   generatorData = Flatten@Table[
+      dsPureTimeGeneratorSeedData[family, vertexId, opts],
+      {family, families}, {vertexId, family["vertexOrder"]}
+      ];
+   If[AnyTrue[generatorData, Lookup[#, "status", "missing"] =!= "generated" &],
+    Return[<|"status" -> "invalidGeneratorSeedRanges", "generatorSeedData" -> generatorData,
+      "equations" -> {}|>]
+    ];
+   equationCount = Total[
+     Lookup[#, "ruleCount", 0] stateCounts[Lookup[#, "sectorKey", "top"]] & /@ generatorData
+     ];
+   maxEquationCount = resolveSeedOption[rootTopo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
+   If[equationCount > maxEquationCount,
+    Message[makePureTimeSeedBatch::toomany, rootTopo["name"], equationCount, maxEquationCount];
+    Return[<|"status" -> "tooManyEquations", "equationCount" -> equationCount,
+      "maxEquationCount" -> maxEquationCount, "generatorSeedData" -> generatorData,
+      "equations" -> {}|>]
+    ];
+   records = Flatten@Table[
+      With[{family = families[[familyIndex]]},
+       Flatten@Table[
+         dsDirectTreeSeedRecord[vertexId, #, family, familyContext] & /@
+          treeMasterList[family, aValues],
+         {vertexId, family["vertexOrder"]},
+         {aValues, Lookup[
+            SelectFirst[generatorData,
+             Lookup[#, "sectorKey", None] === family["sector"] &&
+               Lookup[#, "generator", None] === {"time", vertexId} &],
+            "aValueLists", {}
+            ]}
+         ]
+       ],
+      {familyIndex, Length[families]}
+      ];
+   If[MemberQ[records, $Failed] || AnyTrue[records, Lookup[#, "status", "failed"] =!= "generated" &],
+    Return[<|"status" -> "failed", "reason" -> "directPureTimeSeedGenerationFailed",
+      "seedRecords" -> records, "equations" -> {}|>]
+    ];
+   applyNumericRules = TrueQ[OptionValue[ApplyNumericRules]];
+   numericRules = If[applyNumericRules, userNumericRules[rootTopo], {}];
+   If[applyNumericRules, records = records /. numericRules];
+   sectorMetadataList = makeSectorMetadata /@ Lookup[families, "topology"];
+   <|
+    "status" -> "generated",
+    "caseName" -> rootTopo["name"],
+    "ibpMode" -> "timeOnly",
+    "representation" -> "J[vertexPacks]",
+    "generationRoute" -> "directPureTime",
+    "completeCanonicalQ" -> True,
+    "completeTimeGenerationQ" -> True,
+    "completeMomentumGenerationQ" -> False,
+    "eomCanonicalQ" -> True,
+    "sectorCount" -> Length[families],
+    "sectorMetadataList" -> sectorMetadataList,
+    "sectorStateCounts" -> stateCounts,
+    "generatorSeedData" -> generatorData,
+    "equationCount" -> Length[records],
+    "equations" -> records,
+    "seedRecords" -> records,
+    "numericRulesAppliedBeforeSeeds" -> applyNumericRules,
+    "seedNumericRules" -> numericRules,
+    "pendingFeatures" -> {}
+   |>
+   ];
+
+
+(* ::Chapter:: *)
+(*Pure-time backend-neutral linearData*)
+
+dsPureTimeTaggedIntegral[term_Association] := dsTreeToken[
+   Lookup[term, "sectorKey", "top"],
+   Lookup[term, "integral", Missing["TreeIntegral"]]
+   ];
+
+
+dsPureTimeLinearEquation[record_Association, integralIndex_Association] := Module[
+   {terms, rules},
+   terms = Lookup[Lookup[record, "treeLinearData", <||>], "terms", {}];
+   rules = Merge[
+     Rule[
+        integralIndex[dsPureTimeTaggedIntegral[#]],
+        Lookup[#, "coefficient", 0]
+        ] & /@ terms,
+     Total
+     ];
+   <|
+    "source" -> "directPureTime",
+    "generator" -> Lookup[record, "generator", Missing["generator"]],
+    "sectorKey" -> Lookup[record, "sectorKey", "top"],
+    "referenceTreeIntegral" -> Lookup[record, "treeIntegral", Missing["TreeIntegral"]],
+    "coefficientRules" -> Normal[rules],
+    "constantTerm" -> 0,
+    "nonlinearTerms" -> {},
+    "linearQ" -> True
+    |>
+   ];
+
+
+makePureTimeLinearSystemData[batch_Association, context_Association] /; dsContextQ[context] := Module[
+   {records, terms, tokens, integralIndex, linearEquations, publicIntegrals, coefficientDiagnostics},
+   If[Lookup[batch, "status", "missing"] =!= "generated" ||
+     Lookup[batch, "representation", None] =!= "J[vertexPacks]",
+    Return[<|"status" -> "notGenerated", "reason" -> "notPureTimeSeedBatch"|>]
+    ];
+   records = Lookup[batch, "seedRecords", {}];
+   terms = Flatten[Lookup[Lookup[records, "treeLinearData", <||>], "terms", {}], 1];
+   If[AnyTrue[terms, ! StringQ[Lookup[#, "sectorKey", None]] || ! MatchQ[Lookup[#, "integral", None], J[_List]] &],
+    Return[<|"status" -> "notReady", "reason" -> "invalidSectorTaggedTreeTerms"|>]
+    ];
+   tokens = DeleteDuplicates[dsPureTimeTaggedIntegral /@ terms];
+   integralIndex = makeIntegralIndex[tokens];
+   linearEquations = dsPureTimeLinearEquation[#, integralIndex] & /@ records;
+   publicIntegrals = Map[
+     <|"id" -> integralIndex[#], "sectorKey" -> #[[1]], "integral" -> #[[2]]|> &,
+     tokens
+     ];
+   coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
+   <|
+    "status" -> "generated",
+    "caseName" -> Lookup[batch, "caseName", context["topology", "name"]],
+    "ibpMode" -> "timeOnly",
+    "representation" -> "sectorTaggedJ[vertexPacks]",
+    "topology" -> context["topology"],
+    "integralCount" -> Length[tokens],
+    "equationCount" -> Length[linearEquations],
+    "integralList" -> tokens,
+    "publicIntegralList" -> publicIntegrals,
+    "integralRules" -> Normal[integralIndex],
+    "sectorMetadataList" -> Lookup[batch, "sectorMetadataList", {}],
+    "topologyValidationReport" -> topologyValidationReport[context["topology"]],
+    "seedCoverageReport" -> <|
+      "passQ" -> True,
+      "mode" -> "timeOnly",
+      "completeTimeGenerationQ" -> True,
+      "completeMomentumGenerationQ" -> False
+      |>,
+    "linearEquations" -> linearEquations,
+    "linearQ" -> And @@ Lookup[linearEquations, "linearQ", False],
+    "nonlinearEquationCount" -> Count[Lookup[linearEquations, "linearQ", False], False],
+    "numericCoefficientSystemQ" -> coefficientDiagnostics["numericCoefficientSystemQ"],
+    "coefficientVariables" -> coefficientDiagnostics["coefficientVariables"],
+    "sourceSeedBatch" -> KeyDrop[batch, {"equations", "seedRecords"}]
+    |>
+   ];
+
+(* ::Package:: *)
+
+(* ::Chapter:: *)
+(*016 Kira 导出边界*)
 
 Options[DSKiraExport] = Join[Options[makeKiraExportData], {
    KiraActiveBasis -> None,
@@ -8487,6 +10025,7 @@ Options[DSKiraExport] = Join[Options[makeKiraExportData], {
 DSKiraExport::badlinear = "DSKiraExport 需要 DSLinear 返回的 backend-neutral linearData。";
 DSKiraExport::failed = "Kira 输入未生成：`1`。";
 DSKiraExport::badbasis = "KiraActiveBasis 未通过验证：`1`。";
+DSKiraExport::capability = "linearData 未携带通过 DSLinear 的同源能力门禁。";
 
 
 (* ::Section::Closed:: *)
@@ -8528,6 +10067,10 @@ dsKiraAttachActiveBasis[linearData_Association, setting_Association] := Module[
     oldCount, oldRules, idShift, shiftedRules, shiftedEquations, integralIndex,
     basisEquations, badEquations, rawDerivatives, derivativeIntegrals, missingDerivativeIntegrals,
     relationIDs, activeIDs, auxiliaryIDs, derivativeTargetIDs, targetIDs, activeData},
+   If[Lookup[linearData, "representation", None] === "sectorTaggedJ[vertexPacks]",
+    Return[<|"status" -> "invalidActiveBasis", "reason" -> "treeActiveBasisNotSupported",
+      "comment" -> "tree Kira IDs already include sector identity; active-basis derivatives require a separate tagged closure."|>]
+    ];
    expressions = Lookup[setting, "expressions", Missing["expressions"]];
    If[! ListQ[expressions] || expressions === {},
     Return[<|"status" -> "invalidActiveBasis", "reason" -> "expressionsMustBeNonemptyList", "activeBasisInput" -> setting|>]
@@ -8690,9 +10233,15 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
    {orderedLinearData, preparedLinearData, activeSetting = OptionValue[KiraActiveBasis], effectiveTargets,
     makeOptions, exportData, manifest, outputDirectory = OptionValue[OutputDirectory], manifestPath,
     progress = OptionValue[ProgressReporting], integralOrder = OptionValue[KiraIntegralOrder]},
-   If[! KeyExistsQ[linearData, "linearEquations"],
-    Message[DSKiraExport::badlinear]; dsErrorPrint["输入缺少 linearEquations。"]; Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
-    ];
+    If[! KeyExistsQ[linearData, "linearEquations"],
+     Message[DSKiraExport::badlinear]; dsErrorPrint["输入缺少 linearEquations。"]; Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
+     ];
+    If[Lookup[linearData, "dSIBPStatus", "failed"] =!= "generated" ||
+      ! TrueQ[Lookup[Lookup[linearData, "contextCapabilities", <||>], "timeIBPUsableQ", False]],
+     Message[DSKiraExport::capability]; dsErrorPrint["请传入 DSLinear 返回且同源门禁通过的 linearData。"]; Return[<|
+       "status" -> "failed", "reason" -> "capabilityGate"
+       |>]
+     ];
    If[Lookup[validateKiraIntegralOrderSpec[integralOrder], "status", "invalid"] =!= "ok",
     Message[DSKiraExport::badlinear]; Return[<|"status" -> "failed", "reason" -> "invalidKiraIntegralOrder"|>]
     ];
@@ -8733,7 +10282,7 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*014 Kira 结果取回*)
+(*016 Kira 结果取回*)
 
 Options[DSKiraImport] = {
    KiraReductionFile -> Automatic,
@@ -8780,8 +10329,16 @@ dsKiraMasterIDs[text_String] := DeleteDuplicates @ ToExpression @ StringCases[
 
 dsRuleListQ[rules_] := ListQ[rules] && And @@ (MatchQ[Unevaluated[#], _Rule | _RuleDelayed] & /@ rules);
 
-dsJToIDPairs[rules_List] := Cases[rules, HoldPattern[integral_J -> id_Integer] :> {integral, id}];
-dsIDToJPairs[rules_List] := Cases[rules, HoldPattern[Tuserweight[id_Integer] -> integral_J] :> {id, integral}];
+dsKiraIntegralTokenQ[expr_] := MatchQ[expr, _J | dsTreeToken[_String, J[_List]]];
+
+dsJToIDPairs[rules_List] := Select[
+   Cases[rules, HoldPattern[Rule[integral_, id_Integer]] :> {integral, id}],
+   dsKiraIntegralTokenQ[First[#]] &
+   ];
+dsIDToJPairs[rules_List] := Select[
+   Cases[rules, HoldPattern[Rule[Tuserweight[id_Integer], integral_]] :> {id, integral}],
+   dsKiraIntegralTokenQ[Last[#]] &
+   ];
 
 (* 双向文本相等还不够：同步重复的积分或 ID 也会相等，但并不是可逆编号。 *)
 dsKiraInverseMapQ[jToKira_List, kiraToJ_List] := Module[{forward, backward},
@@ -9021,7 +10578,7 @@ DSKiraImport[root_, context_: Automatic, OptionsPattern[]] := (Message[DSKiraImp
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*015 微分方程构造*)
+(*016 微分方程构造*)
 
 (* DSDE 只消费经 KiraImport 验证的 reduction data；不会从不完整日志猜测 master 或规则。 *)
 
@@ -9151,6 +10708,13 @@ DSDE[reductionData_Association, variables_: Automatic, OptionsPattern[]] := Modu
     ];
    context = Lookup[reductionData, "context", Missing["context"]];
    If[! dsContextQ[context], Message[DSDE::badreduction]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]];
+   If[! dsContextCapabilityQ[context, "derivativeUsableQ"],
+    Message[DSDE::badreduction];
+    dsErrorPrint["当前参数声明不支持唯一微分算符。"]; Return[<|
+      "status" -> "failed", "reason" -> "derivativeCapabilityGate",
+      "capabilities" -> dsContextCapabilities[context]
+      |>]
+    ];
    masters = reductionData["masters"];
    masterTokens = Lookup[reductionData, "masterTokens", masters];
    If[! ListQ[masters] || ! ListQ[masterTokens] || Length[masters] =!= Length[masterTokens] || masters === {},
@@ -9215,8 +10779,9 @@ DSDE[reductionData_, variables_: Automatic, OptionsPattern[]] := (Message[DSDE::
 (* ::Chapter:: *)
 (*Naive tree IBP 微分方程*)
 
-(* 顶点相位导数继续由 loop 原子层生成后投影；treeEnergy 是树图的外部能量，不能误当成
-   loop 适配器中的积分动量，必须由 h 的动量导数关系直接生成 tree 指标移位。
+(* tree 原生导数直接作用于 Exp[I k0_v tau_v] 与 h building block。
+   tree J 使用论文 recurrence 的 tau^a convention，故顶点相位贡献为
+   +I D[k0_v,x] J[...,a_v+1,...]；loop 投影中的 (-1)^Delta a 不属于 tree 原生导数。
    sector master 的 normalization N 最后另按乘积法则求导。 *)
 
 Options[DSTreeNaiveDE] = {ProgressReporting -> Automatic};
@@ -9258,7 +10823,8 @@ dsTreeLineEnergyDerivative[int_J, variable_, family_Association] := Module[
    ];
 
 
-dsTreePhaseDerivative[loopIntegral_J, variable_, family_Association, rootTopology_Association] := Module[
+(* 旧 loop 投影只保留为正式 check 的单向 oracle，不再被 016 生产 DE 调用。 *)
+dsTreePhaseDerivativeProjectionOracle[loopIntegral_J, variable_, family_Association, rootTopology_Association] := Module[
    {internalVariable, loopDerivative, projectedData, expression},
    internalVariable = scalarProductInputToInternal[variable, family["topology"]];
    loopDerivative = directVertexEnergyVariableDerivativeSeed[family["topology"], loopIntegral, internalVariable];
@@ -9278,6 +10844,28 @@ dsTreePhaseDerivative[loopIntegral_J, variable_, family_Association, rootTopolog
    ];
 
 
+dsTreePhaseDerivativeDirect[int_J, variable_, family_Association, rootTopology_Association] := Module[
+   {packs = First[int], terms, publicEnergy, derivative, shiftedPacks, shiftedIntegral},
+   terms = Table[
+     publicEnergy = scalarProductInternalToUser[family["vertices"][[vertexIndex, "signedEnergy"]], rootTopology];
+     derivative = D[publicEnergy, variable];
+     If[TrueQ[derivative === 0],
+      0,
+      shiftedPacks = ReplacePart[packs, {vertexIndex, 1} -> packs[[vertexIndex, 1]] + 1];
+      shiftedIntegral = J[shiftedPacks];
+      I derivative dsTreeToken[family["sector"], shiftedIntegral]
+      ],
+     {vertexIndex, Length[family["vertices"]]}
+     ];
+   <|
+    "status" -> "generated",
+    "generationRoute" -> "directTreePhase",
+    "terms" -> dsTreeZeroTokenTerms[Expand[Total[terms]]],
+    "internalExpression" -> Expand[Total[terms]]
+    |>
+   ];
+
+
 dsTreeNaiveAllowedVariables[context_Association, familyContext_Association] := DeleteDuplicates@Join[
    dsDEResolveVariables[Automatic, context],
    Variables[Cases[
@@ -9289,14 +10877,12 @@ dsTreeNaiveAllowedVariables[context_Association, familyContext_Association] := D
 
 
 dsTreeNaiveMasterDerivative[master_Association, variable_, familyContext_Association, context_Association] := Module[
-   {family, rootTopology, loopIntegral, phaseData, lineDerivative, bareToken, bareDerivative,
+   {family, rootTopology, phaseData, lineDerivative, bareToken, bareDerivative,
     normalizedDerivative, publicTerms},
    family = dsTreeFamilyBySector[master["sectorKey"], familyContext];
    If[Head[family] === Missing, Return[<|"status" -> "failed", "reason" -> "unknownSector"|>]];
    rootTopology = context["topology"];
-   loopIntegral = treeLoopIntegralFromTree[master["integral"], family];
-   If[loopIntegral === $Failed, Return[<|"status" -> "failed", "reason" -> "treeLoopBackProjectionFailed"|>]];
-   phaseData = dsTreePhaseDerivative[loopIntegral, variable, family, rootTopology];
+   phaseData = dsTreePhaseDerivativeDirect[master["integral"], variable, family, rootTopology];
    If[Lookup[phaseData, "status", "failed"] =!= "generated", Return[phaseData]];
    lineDerivative = dsTreeLineEnergyDerivative[master["integral"], variable, family];
    If[lineDerivative === $Failed, Return[<|"status" -> "failed", "reason" -> "lineEnergyDerivativeFailed"|>]];
@@ -9310,9 +10896,8 @@ dsTreeNaiveMasterDerivative[master_Association, variable_, familyContext_Associa
     "status" -> If[publicTerms === $Failed, "failed", "generated"],
     "master" -> master,
     "variable" -> variable,
-    "loopRepresentative" -> loopIntegral,
-    "loopPhaseDerivative" -> phaseData["loopDerivative"],
-    "projectedPhaseDerivative" -> phaseData["projectedData"],
+    "phaseDerivativeRoute" -> phaseData["generationRoute"],
+    "directPhaseDerivativeTerms" -> phaseData["terms"],
     "lineEnergyDerivativeTerms" -> dsTreeZeroTokenTerms[lineDerivative],
     "masterNormalizationDerivative" -> D[master["coefficient"], variable],
     "rawTerms" -> publicTerms,
@@ -9404,7 +10989,7 @@ dsTreeNaiveDEFromIBP[ibpData_Association, variables_, OptionsPattern[DSTreeNaive
     "naiveIBP" -> KeyDrop[ibpData, {"seedRecords", "context"}],
     "context" -> context,
     "equationConvention" -> "D[normalized tagged masters,var] == matrices[var].normalized tagged masters + sources[var]",
-    "derivativeRoute" -> "loop phase derivative projection + direct h treeEnergy derivative -> naive projected dtau reduction",
+    "derivativeRoute" -> "direct tree phase derivative + direct h treeEnergy derivative -> direct tree dtau reduction",
     "formulaDLogUsedQ" -> False
     |>
    ];
@@ -9427,7 +11012,7 @@ DSTreeNaiveDE[_, ___] := (Message[DSTreeNaiveDE::badibp]; <|"status" -> "failed"
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*015 标度关系检查*)
+(*016 标度关系检查*)
 
 (* 标度门禁使用符号 Euler 关系；数值点只能作为诊断，不作为通过依据。 *)
 
@@ -9556,22 +11141,62 @@ DSScaleCheck[deData_, spec_: <||>, OptionsPattern[]] := (Message[DSScaleCheck::b
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*014 tree vertex-family 接口所有权*)
+(*016 tree vertex-family 接口所有权*)
 
 (* 013 的 vertex-family 公式在冻结核心中；本模块只增加 DSInit context 适配，不复制递推公式。 *)
 
-dsTreeFamilyContext[context_Association] /; dsContextQ[context] := Module[{familyContext, rootTopology = context["topology"], families},
+(* 从 root topology 统一建立 sector family，并给每个 family 保存同一个 root 引用。
+   direct seed、tagged 迭代和 raw 迭代共用这一个构造，避免回退到旧 loop 投影。 *)
+dsTreeFamilyContextFromRootTopology[rootTopology_Association] := Module[{familyContext, families},
    familyContext = makeTreeSectorFamilies[rootTopology];
    If[familyContext === $Failed, Return[$Failed]];
    families = Join[#, <|"rootTopology" -> rootTopology|>] & /@ familyContext["families"];
    Join[familyContext, <|"families" -> families, "topFamily" -> First[families]|>]
    ];
 
+
+dsTreeFamilyContext[context_Association] /; dsContextQ[context] :=
+   dsTreeFamilyContextFromRootTopology[context["topology"]];
+
+
+(* raw J[vertexPacks] 的 source-aware 首步复用 sector-tagged direct seed，再仅在公开 raw
+   返回边界去掉 sector token。这样显式 treeEnergy 与共同-theta contact 都保持同源。 *)
+treeSourceAwareStepFromTopology[
+   int_J, vertexIndex_Integer, endpoint_Integer, data_Association
+   ] /; AssociationQ[Lookup[data, "rootTopology", Missing["NoRootTopology"]]] := Module[
+   {familyContext, token, taggedResult},
+   familyContext = dsTreeFamilyContextFromRootTopology[data["rootTopology"]];
+   If[familyContext === $Failed, Return[$Failed]];
+   token = dsTreeToken[data["sector"], int];
+   taggedResult = dsTreeTaggedSourceAwareStep[token, vertexIndex, endpoint, data, familyContext];
+   If[taggedResult === $Failed, Return[$Failed]];
+   taggedResult /. dsTreeToken[_, item_J] :> item
+   ];
+
+
 DSTreeSeeds[vertex_, int : J[_, _, _], context_Association] /; dsContextQ[context] :=
    dsEnrichTreeSeedRecord[DSTreeSeeds[vertex, int, context["topology"]], context["topology"], int];
 
 DSTreeSeeds[int : J[_, _, _], context_Association] /; dsContextQ[context] :=
    DSTreeSeeds[#, int, context] & /@ Lookup[Select[makeIBPGenerators[context["topology"]], #["type"] === "time" &], "vertex"];
+
+
+(* 016 的单槽入口直接生成 pure-time 关系；三槽 overload 只保留为 loop 投影交叉验证。 *)
+DSTreeSeeds[vertex_, int : J[_List], context_Association] /; dsContextQ[context] := Module[
+   {familyContext = dsTreeFamilyContext[context], family},
+   If[familyContext === $Failed, Return[$Failed]];
+   family = familyContext["topFamily"];
+   If[! treeIntegralQ[int, family], Return[<|"status" -> "failed", "reason" -> "treeIntegralShapeMismatch"|>]];
+   dsDirectTreeSeedRecord[vertex, int, family, familyContext]
+   ];
+
+
+DSTreeSeeds[int : J[_List], context_Association] /; dsContextQ[context] := Module[
+   {familyContext = dsTreeFamilyContext[context], family},
+   If[familyContext === $Failed, Return[$Failed]];
+   family = familyContext["topFamily"];
+   DSTreeSeeds[#, int, context] & /@ family["vertexOrder"]
+   ];
 
 repIterative[data_Association, end_: Automatic, context_Association, opts : OptionsPattern[]] /;
    dsTreeLinearDataQ[data] && dsContextQ[context] :=
@@ -9637,8 +11262,10 @@ dsTreeMasterSectorOffsets[blocks_List] := Module[{counts, starts, ends},
 
 (* 对 parent sector 的 a=0 master 逐顶点调用 time-IBP；同 sector 项属于 M1/M0，只有 lower-sector 项进入 R。 *)
 dsTreeContactRows[family_Association, masters_List, context_Association] := Module[
-   {sourceSector = family["sector"], rowsByVertex, vertexIndex, seedMaster, loopIntegral, record, linearData, terms,
+   {sourceSector = family["sector"], familyContext, rowsByVertex, vertexIndex, seedMaster, record, linearData, terms,
     sourceData, reducedSource},
+   familyContext = dsTreeFamilyContext[context];
+   If[familyContext === $Failed, Return[<|"status" -> "error", "reason" -> "treeFamilyInitializationFailed"|>]];
    rowsByVertex = Association@Table[
       vertexIndex = First@FirstPosition[family["vertexOrder"], vertexId];
       vertexId -> Table[
@@ -9647,15 +11274,10 @@ dsTreeContactRows[family_Association, masters_List, context_Association] := Modu
            First[masters[[row]]],
            vertexIndex -> ReplacePart[First[masters[[row]]][[vertexIndex]], 1 -> 1]
            ]];
-        loopIntegral = treeLoopIntegralFromTree[seedMaster, family];
-        If[loopIntegral === $Failed,
-         Return[<|"status" -> "error", "reason" -> "treeLoopBackProjectionFailed",
-           "sectorKey" -> sourceSector, "vertex" -> vertexId, "row" -> row|>]
-         ];
-        record = dsTreeSeedRecordFromSector[vertexId, loopIntegral, family];
-        If[record === $Failed,
+        record = dsDirectTreeSeedRecord[vertexId, seedMaster, family, familyContext];
+        If[! AssociationQ[record] || Lookup[record, "status", "error"] =!= "generated",
          Return[<|"status" -> "error", "reason" -> "contactSeedGenerationFailed",
-           "sectorKey" -> sourceSector, "vertex" -> vertexId, "row" -> row|>]
+           "sectorKey" -> sourceSector, "vertex" -> vertexId, "row" -> row, "record" -> record|>]
          ];
         linearData = Lookup[record, "treeLinearData", <||>];
         If[! dsTreeLinearDataQ[linearData],
@@ -9923,7 +11545,7 @@ dsTreeMultiSectorDLog[context_Association, seedData_: Automatic] := Module[
    <|
     "status" -> "generated",
     "connectionStructure" -> "sectorDAGBlockTriangular",
-    "offDiagonalSourceStatus" -> "assembledFromLoopTimeIBP",
+    "offDiagonalSourceStatus" -> "assembledFromDirectCompiledTheta",
     "sectorOrder" -> sectorOrder,
     "sectorBlocks" -> blocks,
     "masterSectorOffsets" -> offsets,
@@ -9942,7 +11564,7 @@ dsTreeMultiSectorDLog[context_Association, seedData_: Automatic] := Module[
     "omegaBlocks" -> assembled["omegaBlocks"],
     "sourceEquations" -> sourceEquations,
     "inputSourceData" -> seedData,
-    "sourceConvention" -> "Eq. (3.66)-(3.68): -I T^-1 Omega0 T times loop-dtau contact selector"
+    "sourceConvention" -> "Eq. (3.66)-(3.68): -I T^-1 Omega0 T times direct compiled-WT contact selector"
     |>
    ];
 
@@ -9955,7 +11577,7 @@ DSTreeDLogDE[context_Association, seedData_] /; dsContextQ[context] :=
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*015 根号动力学坐标适配层*)
+(*016 根号动力学坐标与显式双列表适配层*)
 
 (* 本模块把 loop external-momentum 的内部原子 kk[i,j]=sp[k_i,k_j] 暴露为
    ssij=Sqrt[sp[k_i,k_j]]，并把实际出现的无圈动量模长依次暴露为 sE1,sE2,...。
@@ -9965,18 +11587,26 @@ DSTreeDLogDE[context_Association, seedData_] /; dsContextQ[context] :=
 (* ::Section::Closed:: *)
 (*缺省命名与圈外外腿规则*)
 
-externalRootSymbolName[i_Integer, j_Integer] :=
-  ToExpression["ss" <> ToString[Min[i, j]] <> ToString[Max[i, j]]];
+coordinateIndexString[index_Integer, count_Integer] := IntegerString[
+   index, 10, If[count >= 10, Max[2, IntegerLength[count]], 1]
+   ];
 
 
-externalLegRootSymbolName[i_Integer] := ToExpression["sE" <> ToString[i]];
+externalRootSymbolName[i_Integer, j_Integer, count_Integer : 0] := ToExpression[
+   "ss" <> coordinateIndexString[Min[i, j], count] <> coordinateIndexString[Max[i, j], count]
+   ];
+
+
+externalLegRootSymbolName[i_Integer, count_Integer : 0] := ToExpression[
+   "sE" <> coordinateIndexString[i, count]
+   ];
 
 
 defaultExternalInvariantRulesForTopology[topo_Association] := Module[
    {exts = Lookup[topo, "externalMomenta", {}], nK},
    nK = Length[exts];
    Flatten@Table[
-     sp[exts[[i]], exts[[j]]] -> externalRootSymbolName[i, j]^2,
+     sp[exts[[i]], exts[[j]]] -> externalRootSymbolName[i, j, nK]^2,
      {i, nK}, {j, i, nK}
      ]
    ];
@@ -10059,51 +11689,43 @@ momentumSquaredGramVector[momentum_, basis_List] := Module[{coefficients, pairs}
 (* 实际出现集合先在完整声明向量 Gram 空间中展开；完整 loop Gram 已经在基中，
    其余模长平方仅在增加秩时获得新的 sEe。未入基项保留线性 binding。 *)
 externalLegMagnitudeBasisAnalysis[topo_Association] := Module[
-   {external = Lookup[topo, "externalMomenta", {}],
-    declaredLegs = Lookup[topo, "externalLegMomenta", {}], basis, pairs,
-    loopPairPositions, loopRows, candidates, candidateRows, selectedPositions = {},
-    selectedRows = {}, currentRows, oldRank, newRank, row, basisRows,
-    defaultSquaredCoordinates, occurrenceData},
-   basis = Join[external, declaredLegs];
-   pairs = externalLegGramPairs[basis];
-   loopPairPositions = Flatten@Position[
-      pairs,
-      {i_, j_} /; i <= Length[external] && j <= Length[external],
-      {1},
-      Heads -> False
-      ];
-   loopRows = UnitVector[Length[pairs], #] & /@ loopPairPositions;
-   candidates = externalLegMagnitudeCandidateMomenta[topo];
-   candidateRows = momentumSquaredGramVector[#, basis] & /@ candidates;
-   currentRows = loopRows;
-   oldRank = If[currentRows === {}, 0, MatrixRank[currentRows]];
-   Do[
-    row = candidateRows[[position]];
-    newRank = MatrixRank[Append[currentRows, row]];
-    If[newRank > oldRank,
-     AppendTo[selectedPositions, position];
-     AppendTo[selectedRows, row];
-     AppendTo[currentRows, row];
-     oldRank = newRank
-     ],
-    {position, Length[candidates]}
-    ];
-   basisRows = Join[loopRows, selectedRows];
+   {external = Lookup[topo, "externalMomenta", {}], declaredLegs = Lookup[topo, "externalLegMomenta", {}],
+    atoms, externalRows, declaredRows, loopRows, basisRows, defaultSquaredCoordinates,
+    candidates, candidateRows, coefficientVariables, spanCoefficients, occurrenceData},
+   candidates = DeleteDuplicates@Join[declaredLegs, externalLegMagnitudeCandidateMomenta[topo]];
+   atoms = ds016MomentumAtoms[Join[external, declaredLegs, candidates]];
+   externalRows = ds016RowsForExpressions[external, atoms];
+   declaredRows = ds016SquaredGramRow /@ ds016RowsForExpressions[declaredLegs, atoms];
+   loopRows = ds016LoopGramRows[externalRows];
+   basisRows = Join[loopRows, declaredRows];
+   candidateRows = ds016SquaredGramRow /@ ds016RowsForExpressions[candidates, atoms];
    defaultSquaredCoordinates = Join[
      Last /@ defaultExternalInvariantRulesForTopology[topo],
-     Table[externalLegRootSymbolName[i]^2, {i, Length[selectedPositions]}]
+     Table[externalLegRootSymbolName[i, Length[declaredLegs]]^2, {i, Length[declaredLegs]}]
+     ];
+   spanCoefficients[row_List] := Module[{solutions, coefficients},
+     If[basisRows === {}, Return[{}]];
+     coefficientVariables = Array[Unique["magnitudeCoordinate$"] &, Length[basisRows]];
+     solutions = Quiet[Solve[Thread[coefficientVariables . basisRows == row], coefficientVariables]];
+     If[solutions === {}, Return[ConstantArray[Indeterminate, Length[basisRows]]]];
+     coefficients = coefficientVariables /. First[solutions];
+     coefficients /. Thread[coefficientVariables -> 0]
      ];
    occurrenceData = MapIndexed[
      Function[{momentum, indexSpec},
-      Module[{position = First[indexSpec], selectedPosition, coefficients, externalLegIndex},
-       coefficients = If[
-         basisRows === {},
-         {},
-         Quiet[Check[LinearSolve[Transpose[basisRows], candidateRows[[position]]], $Failed]]
+      Module[{position = First[indexSpec], declaredPosition, coefficients, externalLegIndex, independentQ},
+       declaredPosition = FirstPosition[
+         declaredLegs,
+         item_ /; Expand[item - momentum] === 0 || Expand[item + momentum] === 0,
+         Missing["Dependent"]
          ];
-       If[! ListQ[coefficients], coefficients = ConstantArray[Indeterminate, Length[basisRows]]];
-       selectedPosition = FirstPosition[selectedPositions, position, Missing["Dependent"]];
-       externalLegIndex = If[Head[selectedPosition] === Missing, Missing["Dependent"], First[selectedPosition]];
+       independentQ = Head[declaredPosition] =!= Missing;
+       externalLegIndex = If[independentQ, First[declaredPosition], Missing["Dependent"]];
+       coefficients = If[
+         independentQ,
+         UnitVector[Length[basisRows], Length[loopRows] + externalLegIndex],
+         spanCoefficients[candidateRows[[position]]]
+         ];
        <|
         "occurrenceIndex" -> position,
         "momentum" -> momentum,
@@ -10111,9 +11733,9 @@ externalLegMagnitudeBasisAnalysis[topo_Association] := Module[
         "magnitudeExpression" -> Sqrt[sp[momentum, momentum]],
         "gramVector" -> candidateRows[[position]],
         "baseCoefficients" -> coefficients,
-        "independentQ" -> (Head[selectedPosition] =!= Missing),
+        "independentQ" -> independentQ,
         "externalLegIndex" -> externalLegIndex,
-        "userVariable" -> If[Head[selectedPosition] === Missing, Missing["Dependent"], externalLegRootSymbolName[externalLegIndex]],
+        "userVariable" -> If[independentQ, externalLegRootSymbolName[externalLegIndex, Length[declaredLegs]], Missing["Dependent"]],
         "defaultSquaredExpression" -> Expand[coefficients . defaultSquaredCoordinates]
         |>
        ]
@@ -10121,17 +11743,17 @@ externalLegMagnitudeBasisAnalysis[topo_Association] := Module[
      candidates
      ];
    <|
-    "declaredMomentumBasis" -> basis,
-    "gramPairs" -> pairs,
+    "declaredMomentumBasis" -> Join[external, declaredLegs],
+    "gramPairs" -> ds016GramPairs[Length[atoms]],
     "loopGramRows" -> loopRows,
     "candidateMomenta" -> candidates,
     "candidateRows" -> candidateRows,
-    "selectedOccurrencePositions" -> selectedPositions,
+    "selectedOccurrencePositions" -> Range[Length[declaredLegs]],
     "basisRows" -> basisRows,
     "defaultSquaredCoordinates" -> defaultSquaredCoordinates,
     "occurrenceData" -> occurrenceData,
-    "independentExternalLegData" -> Select[occurrenceData, TrueQ[Lookup[#, "independentQ", False]] &],
-    "dependentExternalLegData" -> Select[occurrenceData, ! TrueQ[Lookup[#, "independentQ", False]] &]
+    "independentExternalLegData" -> Take[occurrenceData, UpTo[Length[declaredLegs]]],
+    "dependentExternalLegData" -> Drop[occurrenceData, Min[Length[occurrenceData], Length[declaredLegs]]]
     |>
    ];
 
@@ -10255,7 +11877,7 @@ simpleKinematicInverseQ[rhs_] := MatchQ[
 kinematicRootExpression[rhs_] := Replace[
    rhs,
    {
-    HoldPattern[Power[s_Symbol, 2]] :> s,
+    HoldPattern[Power[s_, 2]] :> s,
     other_ :> Sqrt[other]
     },
    {0}
@@ -10292,7 +11914,11 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
     constraintResiduals = DeleteCases[Together /@ Expand[matrix . baseRHS - rhs], 0]
     ];
    If[baseCount === 0, resolvedRules = {}];
-   userVariables = DeleteDuplicates[Flatten[Variables /@ (Last /@ normalizedRules)]];
+   (* Variables[(u+v)^2] 会把未展开的 u+v 当成单一代数原子；先合并展开，
+      再一次提取参数，才能建立一般混合坐标的完整 Jacobian。 *)
+   userVariables = DeleteDuplicates@Flatten[
+      Variables[Expand[#]] & /@ (Last /@ normalizedRules)
+      ];
    If[ruleCompleteQ && baseCount > 0,
     parameterJacobian = Table[D[baseRHS[[i]], userVariables[[j]]], {i, baseCount}, {j, Length[userVariables]}];
     parameterRank = If[userVariables === {}, 0, MatrixRank[parameterJacobian]]
@@ -10431,12 +12057,12 @@ normalizeExternalLegInvariantRulesForTopology[_, topo_Association] :=
 
 rootCoordinateSymbol[expr_] := Replace[
    Unevaluated[expr],
-   HoldPattern[Power[s_Symbol, 2]] :> s,
+   HoldPattern[Power[s_, 2]] :> s,
    {0}
    ];
 
 
-rootCoordinateExpressionQ[expr_] := MatchQ[Unevaluated[expr], HoldPattern[Power[_Symbol, 2]]];
+rootCoordinateExpressionQ[expr_] := MatchQ[Unevaluated[expr], HoldPattern[Power[_, 2]]];
 
 
 externalLegMagnitudeBindingData[topo_Association] := Module[
@@ -10573,8 +12199,8 @@ externalInvariantNamingReport[topo_Association] := <|
    "externalInvariantRules" -> Lookup[topo, "externalInvariantRules", defaultExternalInvariantRulesForTopology[topo]],
    "internalExternalInvariantRules" -> externalInvariantInternalToUserRules[topo],
    "coordinateData" -> externalInvariantCoordinateData[topo],
-   "defaultNamingConvention" -> "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows externalMomenta order",
-   "message" -> "externalMomenta 是进入内线偏移的独立向量；内部仍用 kk[i,j]=sp[k_i,k_j]，015 公开缺省坐标为 ssij。"
+   "defaultNamingConvention" -> "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order",
+   "message" -> "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"
    |>;
 
 
@@ -10728,11 +12354,13 @@ makeExternalInvariantDerivativeDecomposition[topo_Association, variable_, Option
 
 applyCompiledScalarMomentumDerivativeTerm[
    topo_Association, int_J, e_Integer, endpointSlot_Integer, term_Association
-   ] := Module[{result, endpointVertex, xPower = term["xPower"]},
+   ] := Module[{result, endpointVertex, nPosition, xPower = term["xPower"]},
    endpointVertex = topo["lines"][[e, "endpoints", endpointSlot]];
-   result = setLinePackEntry[int, e, endpointSlot + 1, term["targetState"]];
-   result = shiftLineB[result, e, -xPower];
+   nPosition = linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, int[[2, e]]]][[endpointSlot]];
+   result = setLinePackEntry[int, e, nPosition, term["targetState"]];
+   (* fixed line 的幂移会产生显式系数，因此必须先对裸 J 完成顶点移位。 *)
    result = shiftVertexA[result, topo, endpointVertex, xPower + 1];
+   result = shiftLinePower[topo, result, e, -xPower];
    term["coefficient"] result
    ];
 
@@ -10740,7 +12368,7 @@ applyCompiledScalarMomentumDerivativeTerm[
 compiledScalarMomentumEndpointDerivativeTerms[
    topo_Association, int_J, e_Integer, endpointSlot_Integer
    ] := Module[{state, terms},
-   state = int[[2, e, endpointSlot + 1]];
+   state = int[[2, e, linePackNPositions[topo["lines"][[e]], actualLinePackType[topo, e, int[[2, e]]]][[endpointSlot]]]];
    terms = Lookup[lineCompiledFunctionSystem[topo["lines"][[e]]], "derivativeTerms", {}];
    Total[
     KroneckerDelta[state, Lookup[#, "sourceState", Missing["NoSourceState"]]] *
@@ -10757,8 +12385,8 @@ scalarMomentumBuildingBlockDerivativeTerms[topo_Association, int_J, e_Integer] :
     Total[compiledScalarMomentumEndpointDerivativeTerms[topo, int, e, #] & /@ {1, 2}],
     "masslessFull",
     sigma = masslessFullSKSign[line];
-    -I sigma shiftVertexA[toggleMasslessLineState[int, e], topo, line["endpoints"][[1]], 1] +
-     I sigma shiftVertexA[toggleMasslessLineState[int, e], topo, line["endpoints"][[2]], 1],
+    -I sigma shiftVertexA[toggleMasslessLineState[topo, int, e], topo, line["endpoints"][[1]], 1] +
+     I sigma shiftVertexA[toggleMasslessLineState[topo, int, e], topo, line["endpoints"][[2]], 1],
     "masslessCross",
     Total@Table[
       -I skEndpointPhaseSign[line, endpointSlot] shiftVertexA[
@@ -10782,7 +12410,7 @@ externalLegMagnitudeOccurrenceLineDerivativeSeed[topo_Association, int_J, coordi
       Heads -> False
       ];
    Total@Table[
-     -linePowerIndex[topo, int, e] shiftLineB[int, e, 1] +
+     -linePowerIndex[topo, int, e] shiftLinePower[topo, int, e, 1] +
       scalarMomentumBuildingBlockDerivativeTerms[topo, int, e],
      {e, matchingLines}
      ]
@@ -11026,7 +12654,7 @@ vertexEnergyNamingReport[topo_Association] := Module[
     "userVertexEnergies" -> user,
     "dependencyData" -> dependencies,
     "externalLegInvariantNamingReport" -> externalLegInvariantNamingReport[topo],
-     "message" -> "vertexEnergies 可使用 loop-external Gram 根号或实际出现的无圈动量模长；015 不自动生成外腿向量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"
+     "message" -> "vertexEnergies 可使用 loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"
      |>
     ];
 
@@ -11035,14 +12663,36 @@ vertexEnergyNamingReport[topo_Association] := Module[
 (*公开动力学变量提案与重选审计*)
 
 DSKinematics[input_Association, rules_: Automatic] := Module[
-   {effectiveInput, topo, audit, status},
+   {effectiveInput, topo, audit, coordinateStatus, declarationAudit, declarationStatus, status, result},
    effectiveInput = If[rules === Automatic, input, Join[input, <|"kinematicRules" -> rules|>]];
    topo = parseTopology[effectiveInput];
    If[topo === $Failed,
     Return[<|"status" -> "failed", "reason" -> "invalidTopologyInput"|>]
     ];
-   audit = Lookup[topo, "kinematicCoordinateAudit", <||>];
-   status = Lookup[audit, "status", "unknown"];
+    audit = Lookup[topo, "kinematicCoordinateAudit", <||>];
+    coordinateStatus = Lookup[audit, "status", "unknown"];
+    declarationAudit = Lookup[topo, "momentumDeclarationAudit", <||>];
+    declarationStatus = Lookup[declarationAudit, "status", "invalid"];
+    status = Which[
+      MemberQ[{"invalid", "failed"}, declarationStatus] || MemberQ[{"invalid", "failed"}, coordinateStatus], "invalid",
+      declarationStatus === "undercomplete", "undercomplete",
+      declarationStatus === "overcomplete" || coordinateStatus === "overcomplete", "overcomplete",
+      coordinateStatus === "incomplete", "incomplete",
+      declarationStatus === "exact" && coordinateStatus === "complete", "complete",
+      True, coordinateStatus
+      ];
+    result = Join[audit, <|
+       "status" -> status,
+       "kinematicCoordinateStatus" -> coordinateStatus,
+       "momentumDeclarationStatus" -> declarationStatus,
+       "loopExternalAudit" -> Lookup[declarationAudit, "loopExternalAudit", <||>],
+       "independentExternalAudit" -> Lookup[declarationAudit, "independentExternalAudit", <||>],
+       "missingDirections" -> Lookup[Lookup[declarationAudit, "loopExternalAudit", <||>], "missingDirections", {}],
+       "extraDirections" -> Lookup[Lookup[declarationAudit, "loopExternalAudit", <||>], "extraDirections", {}],
+       "missingMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "missingMagnitudeSquares", {}],
+       "extraMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "extraMagnitudeSquares", {}],
+       "capabilities" -> Lookup[topo, "capabilities", <||>]
+       |>];
    dsInfoPrint[
      "动力学变量提案：" <> ToString[Lookup[audit, "defaultRules", {}], InputForm] <>
       "；当前选择：" <> ToString[Lookup[audit, "selectedRules", {}], InputForm] <>
@@ -11050,8 +12700,13 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
       "；审计状态 " <> ToString[status],
      Automatic
      ];
-   Switch[status,
-    "incomplete",
+    Switch[status,
+     "undercomplete",
+     dsErrorPrint[
+       "动量声明欠完备；DSInit 将拒绝继续。缺失方向/模长平方为 " <>
+        ToString[Join[Lookup[result, "missingDirections", {}], Lookup[result, "missingMagnitudeSquares", {}]], InputForm]
+       ],
+     "incomplete",
     dsWarningPrint[
       "动力学变量不完备；缺失/受约束方向为 " <>
        ToString[DeleteDuplicates@Join[
@@ -11068,8 +12723,8 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
       ],
     _, Null
     ];
-   audit
-   ];
+    result
+    ];
 
 
 DSKinematics[input_, rules_: Automatic] := <|
@@ -11078,6 +12733,91 @@ DSKinematics[input_, rules_: Automatic] := <|
    "input" -> HoldForm[input],
    "rules" -> HoldForm[rules]
    |>;
+
+(* ::Package:: *)
+(* 本模块提供 016 的用户参数 notation 与重定义入口。所有新规则都重新经过 DSKinematics/DSInit，
+   因而 seed、ds、DSDE 与序列化 metadata 不会持有彼此不一致的坐标状态。 *)
+
+(* ::Chapter:: *)
+(*参数 notation*)
+
+dsParameterNotation[topo_Association] := Module[{audit = Lookup[topo, "kinematicCoordinateAudit", <||>]},
+   <|
+     "loopExternalMomenta" -> Lookup[topo, "loopExternalMomenta", {}],
+     "effectiveLoopExternalMomenta" -> Lookup[topo, "effectiveLoopExternalMomenta", Lookup[topo, "externalMomenta", {}]],
+     "independentExternalMomenta" -> Lookup[topo, "independentExternalMomenta", {}],
+    "defaultRules" -> Lookup[audit, "defaultRules", {}],
+    "selectedRules" -> Lookup[audit, "selectedRules", {}],
+    "selectedUserVariables" -> Lookup[audit, "selectedUserVariables", {}],
+    "dependentMagnitudeBindings" -> Lookup[audit, "dependentMagnitudeBindings", {}],
+    "coordinateStatus" -> Lookup[audit, "status", "unknown"],
+    "capabilities" -> Lookup[topo, "capabilities", <||>]
+    |>
+   ];
+
+
+DSParameterNotation[context_Association] := Module[{resolved = dsResolveContext[context]},
+   If[Head[resolved] === Missing,
+    dsErrorPrint["DSParameterNotation 需要有效的 DSInit context。"]; Return[$Failed]
+    ];
+   dsParameterNotation[resolved["topology"]]
+   ];
+
+
+DSParameterNotation[] := Module[{context = dsResolveContext[Automatic]},
+   If[Head[context] === Missing,
+    dsErrorPrint["请先成功调用 DSInit。"]; Return[$Failed]
+    ];
+   DSParameterNotation[context]
+   ];
+
+
+(* ::Chapter:: *)
+(*参数重定义*)
+
+Options[DSRedefineParameters] = {ProgressReporting -> Automatic};
+
+
+DSRedefineParameters[context_Association, rules_, OptionsPattern[]] := Module[
+   {resolved = dsResolveContext[context], input, result, generateDerivativeMetadataQ},
+   If[Head[resolved] === Missing,
+    dsErrorPrint["DSRedefineParameters 需要有效的 DSInit context。"]; Return[$Failed]
+    ];
+   If[! ListQ[rules] && ! AssociationQ[rules],
+    dsErrorPrint["参数重定义规则必须是 Rule 列表或 Association。"]; Return[$Failed]
+    ];
+   input = KeyDrop[resolved["input"], {"kinematicRules"}];
+   generateDerivativeMetadataQ = AssociationQ[Lookup[resolved, "derivatives", Missing["NotGenerated"]]];
+   result = DSInit[
+     input,
+     KinematicRules -> If[AssociationQ[rules], Normal[rules], rules],
+     RegisterAsCurrent -> False,
+     WriteInitializationFiles -> False,
+     GenerateDerivativeMetadata -> generateDerivativeMetadataQ,
+     ProgressReporting -> OptionValue[ProgressReporting]
+     ];
+   If[Lookup[result, "status", "failed"] =!= "initialized",
+    dsErrorPrint["参数重定义未通过完备性或 topology 门禁。"]; Return[result]
+    ];
+   Join[result, <|"parameterRedefinition" -> <|
+      "sourceInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
+      "rules" -> If[AssociationQ[rules], Normal[rules], rules]
+      |>|>]
+   ];
+
+
+DSRedefineParameters[rules_, OptionsPattern[]] := Module[{current, result},
+   current = dsResolveContext[Automatic];
+   If[Head[current] === Missing,
+    dsErrorPrint["请先成功调用 DSInit。"]; Return[$Failed]
+    ];
+   result = DSRedefineParameters[current, rules, ProgressReporting -> OptionValue[ProgressReporting]];
+   If[AssociationQ[result] && Lookup[result, "status", "failed"] === "initialized",
+    $dSIBPCurrentContext = result;
+    setIBPTopologyContext[result["topology"]]
+    ];
+   result
+   ];
 
 End[];
 EndPackage[];

@@ -2,11 +2,12 @@
 (* Massive function-system 示例：输入裸 Hankel P,Q,T,W，并通过公开工作流编译和生成 seed。 *)
 
 (* ::Chapter:: *)
-(*加载冻结 package*)
+(*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = DirectoryName[exampleDir];
-Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "000_code", "016_dSIBP"}]];
+If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
+Needs["dSIBP`"];
 
 
 (* ::Chapter:: *)
@@ -31,8 +32,11 @@ case = <|
      <|"id" -> e1, "endpoints" -> {v1, v2}, "momentum" -> q,
        "nu" -> nuM, "massType" -> "massive", "functionSystem" -> hankelSystem|>
      },
-   "loopMomenta" -> {q},
-   "externalMomenta" -> {},
+   (* 单边连接两顶点的结构圈数为零；q 在本例只是该线的固定模长。 *)
+   "loopMomenta" -> {},
+   "loopExternalMomenta" -> {},
+   "independentExternalMomenta" -> {q},
+   "ibpMode" -> "timeOnly",
    "vertexEnergies" -> <|v1 -> E1, v2 -> E2|>,
    "zeroPointRules" -> {
      a0[v1] -> alpha1, a0[v2] -> alpha2, b0[e1] -> beta1
@@ -68,6 +72,7 @@ summary = <|
 
 Print[summary];
 If[! And[
+    $dSIBPVersion === "016",
     summary["initStatus"] === "initialized",
     summary["seedStatus"] === "generated",
     TrueQ[summary["functionSystemInputPreserved"]]

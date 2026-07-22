@@ -1,12 +1,13 @@
 (* ::Package:: *)
-(* Mixed massive/massless 示例：只用 014 公开入口完成初始化、canonical seed 和 linearData。 *)
+(* Mixed massive/massless 示例：只用 016 公开入口完成初始化、canonical seed 和 linearData。 *)
 
 (* ::Chapter:: *)
-(*加载冻结 package*)
+(*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = DirectoryName[exampleDir];
-Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "000_code", "016_dSIBP"}]];
+If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
+Needs["dSIBP`"];
 
 
 (* ::Chapter:: *)
@@ -22,8 +23,9 @@ case = <|
        "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
      },
    "loopMomenta" -> {q},
-   "externalMomenta" -> {k},
-   "externalInvariantRules" -> {sp[k, k] -> s11},
+   "loopExternalMomenta" -> {k},
+   "independentExternalMomenta" -> {},
+   "ibpMode" -> "full",
    "vertexEnergies" -> <|v1 -> E1, v2 -> E2|>,
    "ispData" -> {},
    "zeroPointRules" -> {
@@ -31,6 +33,8 @@ case = <|
      b0[e1] -> beta1, b0[e2] -> beta2
      },
    "symmetryRules" -> {},
+   (* 成品例固定一个离散分支；全离散态覆盖属于正式 bench，不在用户入门例重复。 *)
+   "sampleDiscreteRules" -> {{n[e1, 1] -> 0, n[e1, 2] -> 0, n[e2] -> 0}},
    "seedPreset" -> "quickCheck"
    |>;
 
@@ -40,7 +44,7 @@ case = <|
 
 (* 缺省不写初始化文件、不生成导数 metadata；本例枚举全部离散态但保持最小连续范围。 *)
 initOptions = {WriteInitializationFiles -> False, GenerateDerivativeMetadata -> False};
-seedOptions = {DiscreteMode -> "all", GenerateShrinkSectors -> True, MaxEquationCount -> 10000};
+seedOptions = {DiscreteMode -> "sample", GenerateShrinkSectors -> True, MaxEquationCount -> 1000};
 linearOptions = {LinearSystemMode -> "symbolic"};
 
 
@@ -61,6 +65,7 @@ summary = <|
 
 Print[summary];
 If[! And[
+    $dSIBPVersion === "016",
     summary["initStatus"] === "initialized",
     summary["seedStatus"] === "generated",
     summary["linearStatus"] === "generated"

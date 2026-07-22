@@ -1,93 +1,111 @@
 (* ::Package:: *)
-(* 014 tree：两顶点同号 massive line 的 pure-time seed、迭代约化与直接 dlog DE。 *)
+(* 016 原生 pure-time 示例：两顶点同号 massive line 的 direct seed、迭代约化、
+   naive IBP/DE 与公式型 dlog DE。全流程不构造 loop representative。 *)
 
 (* ::Chapter:: *)
-(*标准 package 加载*)
+(*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = DirectoryName[DirectoryName[exampleDir]];
-Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "..", "000_code", "016_dSIBP"}]];
+If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
+Needs["dSIBP`"];
+
 
 (* ::Chapter:: *)
 (*详细物理输入*)
 
-(* 两个 + 顶点由一条 massive h full line 相连；因此该线有共同 theta/contact source。 *)
-(* ell12 只用于复用 loop dtau 原子公式，pure-time 路线不调用 dqq/dqk。 *)
-(* treeEnergy=k12 决定 loop-to-tree 显式系数；alpha1/alpha2/beta12 均保持 general。 *)
+(* 图论圈数为零，因此缺省就是 timeOnly。这里仍显式写出模式，作为用户输入模板。
+   p12 是 lineData 中实际出现的独立无圈动量；程序只为其模长建立 sE1。
+   treeEnergy=k12 是 time-IBP/dlog 公式使用的物理线能量。 *)
 treeCaseInput = <|
-   "name" -> "014TreeTwoVertexPlusPlus",
+   "name" -> "016TreeTwoVertexPlusPlus",
    "vertexData" -> {{v1, "+"}, {v2, "+"}},
    "lineData" -> {
-     <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> ell12,
+     <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p12,
        "treeEnergy" -> k12, "nu" -> nu12, "bbType" -> "h", "massType" -> "massive"|>
      },
-   "loopMomenta" -> {ell12},
-   "externalMomenta" -> {},
-   "vertexEnergies" -> <|v1 -> K1, v2 -> K2|>,
+   "loopMomenta" -> {},
+   "loopExternalMomenta" -> {},
+   "independentExternalMomenta" -> {p12},
+   "ibpMode" -> "timeOnly",
+   "vertexEnergies" -> <|v1 -> E1, v2 -> E2|>,
+   "ispData" -> {},
    "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
    "shrinkPrefactorRules" -> {Exp[Pi Im[nu12]] -> eta12},
    "symmetryRules" -> {},
    "seedPreset" -> "quickCheck"
    |>;
 
-(* ::Chapter:: *)
-(*缺省选项与本例覆盖*)
 
-(* 缺省：不写 init 文件、不生成微分算符 metadata、不覆盖已有不同输入。 *)
+(* ::Chapter:: *)
+(*缺省选项*)
+
+(* 缺省为 WriteInitializationFiles->False、GenerateDerivativeMetadata->False、
+   OverwriteInitialization->False、RegisterAsCurrent->True、ProgressReporting->Automatic。 *)
 treeInitOptions = {
    WriteInitializationFiles -> True,
    InitializationDirectory -> FileNameJoin[{exampleDir, "init"}],
    GenerateDerivativeMetadata -> False,
-   OverwriteInitialization -> False
+   OverwriteInitialization -> True,
+   ProgressReporting -> True
    };
 
-(* 缺省：repIterative 终点为全零、MaxIterations->Automatic；本例显式写出全零终点。 *)
+(* 缺省：repIterative 的终点为每个顶点 a=0；这里显式给出相同终点。 *)
 treeReductionEndpoint = {0, 0};
 
-(* ::Chapter:: *)
-(*初始化与全部 pure-time seeds*)
 
+(* ::Chapter:: *)
+(*原生 pure-time seeds 与 linearData*)
+
+DSMessagesOn[];
 treeContext = DSInit[treeCaseInput, Sequence @@ treeInitOptions];
-loopIntegrals = Flatten@Table[
-    J[{a1, a2}, {{b12, n1, n2}}, {}],
-    {n1, 0, 1}, {n2, 0, 1}
-    ];
-treeSeedData = Flatten@Table[
-    DSTreeSeeds[vertex, integral, treeContext],
-    {vertex, {v1, v2}}, {integral, loopIntegrals}
-    ];
+treeSeedBatch = DSSeeds[treeContext, ProgressReporting -> True];
+treeLinearData = DSLinear[treeSeedBatch, treeContext, ProgressReporting -> True];
 
-(* h contact 的 bS/bS0 与 merged a/a0 必须共同产生 k12^(-1-2 nu12)。 *)
-zeroPointProjectionCheck = ! FreeQ[Lookup[treeSeedData, "treeSeed"], k12^(-1 - 2 nu12)];
+selectedIntegral = J[{{1, 1}, {0, 0}}];
+selectedSeed = DSTreeSeeds[v1, selectedIntegral, treeContext];
+
 
 (* ::Chapter:: *)
-(*迭代约化、naive IBP/DE 与 dlog/master 同序输出*)
+(*迭代约化、naive IBP/DE 与公式型 dlog DE*)
 
-treeTarget = J[{{-2, 1}, {1, 0}}];
+treeTarget = J[{{-1, 1}, {0, 0}}];
 treeReduction = repIterative[treeTarget, treeReductionEndpoint, treeContext];
-treeDLog = DSTreeDLogDE[treeContext, treeSeedData];
+treeDLog = DSTreeDLogDE[treeContext];
 
-(* 缺省：naive IBP/DE 使用 dlog 接口的同序 tagged masters，并跟随全局进度设置。 *)
-treeDEVariables = {K1, K2, k12};
-treeNaiveIBP = DSTreeNaiveIBP[treeContext, treeDLog["masters"]];
-treeNaiveDE = DSTreeNaiveDE[treeNaiveIBP, treeDEVariables];
+treeDEVariables = {E1, E2, k12};
+treeNaiveIBP = DSTreeNaiveIBP[treeContext, treeDLog["masters"], ProgressReporting -> True];
+treeNaiveDE = DSTreeNaiveDE[treeNaiveIBP, treeDEVariables, ProgressReporting -> True];
 treeDEResiduals = Association@Table[
     variable -> (Together /@ Flatten[treeNaiveDE["matrices", variable] - D[treeDLog["omega"], variable]]),
     {variable, treeDEVariables}
     ];
-treeDERoutesAgree = And @@ (And @@ (TrueQ[# === 0] & /@ #) & /@ Values[treeDEResiduals]);
+treeDERoutesAgree = And @@ Flatten[Map[TrueQ[# === 0] &, Values[treeDEResiduals], {2}]];
 
-<|
- "status" -> If[zeroPointProjectionCheck && FreeQ[treeReduction, $Failed] &&
-    treeDLog["status"] === "generated" && treeNaiveIBP["status"] === "solved" &&
-    treeNaiveDE["status"] === "generated" && treeDERoutesAgree, "passed", "failed"],
- "zeroPointProjectionCheck" -> zeroPointProjectionCheck,
- "reduction" -> treeReduction,
- "masters" -> treeDLog["masters"],
- "letters" -> treeDLog["letters"],
- "omega" -> treeDLog["omega"],
- "naiveIBP" -> KeyTake[treeNaiveIBP, {"status", "equationCount", "unknownCount", "formulaRecurrenceUsedQ"}],
- "naiveMatrices" -> treeNaiveDE["matrices"],
- "deRouteResiduals" -> treeDEResiduals,
- "sourceEquations" -> treeDLog["sourceEquations"]
- |>
+summary = <|
+   "version" -> $dSIBPVersion,
+   "initStatus" -> Lookup[treeContext, "status", "missing"],
+   "seedRepresentation" -> Lookup[treeSeedBatch, "representation", Missing["representation"]],
+   "linearRepresentation" -> Lookup[treeLinearData, "representation", Missing["representation"]],
+   "selectedSeedRoute" -> Lookup[selectedSeed, "generationRoute", Missing["route"]],
+   "iterativeReductionFreeOfFailure" -> FreeQ[treeReduction, $Failed],
+   "dlogStatus" -> Lookup[treeDLog, "status", "missing"],
+   "naiveIBPStatus" -> Lookup[treeNaiveIBP, "status", "missing"],
+   "naiveDEStatus" -> Lookup[treeNaiveDE, "status", "missing"],
+   "deRoutesAgree" -> treeDERoutesAgree,
+   "masters" -> Lookup[treeDLog, "masters", {}]
+   |>;
+
+Print[InputForm[summary]];
+If[! And[
+    summary["version"] === "016",
+    summary["initStatus"] === "initialized",
+    summary["seedRepresentation"] === "J[vertexPacks]",
+    summary["linearRepresentation"] === "sectorTaggedJ[vertexPacks]",
+    summary["selectedSeedRoute"] === "directPureTime",
+    summary["iterativeReductionFreeOfFailure"],
+    summary["dlogStatus"] === "generated",
+    summary["naiveIBPStatus"] === "solved",
+    summary["naiveDEStatus"] === "generated",
+    summary["deRoutesAgree"]
+    ], Exit[1]];

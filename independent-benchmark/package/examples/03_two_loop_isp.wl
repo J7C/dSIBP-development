@@ -2,11 +2,12 @@
 (* Two-loop ISP 示例：任意动量名、两个 ISP、完整生成元集合与 backend-neutral linearData。 *)
 
 (* ::Chapter:: *)
-(*加载冻结 package*)
+(*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = DirectoryName[exampleDir];
-Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "000_code", "016_dSIBP"}]];
+If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
+Needs["dSIBP`"];
 
 
 (* ::Chapter:: *)
@@ -24,8 +25,9 @@ case = <|
        "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>
      },
    "loopMomenta" -> {l3, k321},
-   "externalMomenta" -> {wdnmd},
-   "externalInvariantRules" -> {sp[wdnmd, wdnmd] -> s11},
+   "loopExternalMomenta" -> {wdnmd},
+   "independentExternalMomenta" -> {},
+   "ibpMode" -> "full",
    "vertexEnergies" -> <|v1 -> E1, v2 -> E2|>,
    "ispData" -> {
      <|"name" -> rhoK321L3, "expr" -> sp[k321, l3], "range" -> {0, 1}|>,
@@ -65,11 +67,14 @@ summary = <|
        Lookup[Lookup[seedData, "timeSummary", <||>], "generators", {}]
        }],
    "seedStatus" -> Lookup[seedData, "dSIBPStatus", "missing"],
-   "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"]
+   "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"],
+   "linearReason" -> Lookup[linearData, "reason", None],
+   "pendingFeatures" -> Lookup[linearData, "pendingFeatures", Lookup[seedData, "pendingFeatures", {}]]
    |>;
 
 Print[summary];
 If[! And[
+    $dSIBPVersion === "016",
     summary["initStatus"] === "initialized",
     summary["ispCount"] === 2,
     summary["seedStatus"] === "generated",

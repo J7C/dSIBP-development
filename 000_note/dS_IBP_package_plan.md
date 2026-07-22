@@ -10,14 +10,19 @@
 - EOM 不是后处理选项，而是 seed 生成的一部分；任何 Hankel 二阶导数一旦产生 `n=2`，必须立刻用 EOM 递推消去。
 - time-IBP 与 momentum-IBP 同属必需 seed 来源；缺少 time-IBP 时，不允许声称已经得到完整 IBP 系统。
 - Kira 导出只消费 `makeLinearSystemData` 产生的 linear-system 数据，不直接消费 seed batch。`makeCanonicalSeedBatch` 会在 `MaxShrinkSectorCount` 保护内自动派生并联立 shrink sectors；若仍有 `n=2`、超过保护阈值的 shrink sector 或其它 pending feature，则不能进入 linear/Kira 阶段。当前 `makeKiraExportData` 已能写 user-defined system 文件，但调用前应先完成数值规则/撒点选择。
-- 当前 015 以冻结的 014 模块化 package 为只读基线，已提供标准 `dSIBP`` context、高层工作流、Kira export/import、loop/tree DE 与 scaling；common-theta contact、可达 sector 和完整 coincidence canonical 仍是全部入口共用的正确性门禁。
+- 当前 016 以冻结的 015 模块化 package 为只读基线，要求用户显式声明两类外动量，提供多重图/routing 门禁、cycle/bridge pack、根号坐标、高层工作流、Kira export/import、loop/tree DE 与 scaling；common-theta contact、可达 sector 和完整 coincidence canonical 仍是全部入口共用的正确性门禁。
 
 ### P0 动力学坐标边界
 
-015 区分两类外部动量对象：
+016 的用户输入显式区分两类外部动量对象：
 
-- `externalMomenta={k1,...}` 是实际进入内线偏移、圈标量积空间和 loop IBP 生成元的独立外动量。内部原子坐标保持 `kk[i,j]=sp[ki,kj]`，公开缺省坐标改为 `ssij=Sqrt[sp[ki,kj]]`，即 `kk[i,j]=ssij^2`。
-- `externalLegMomenta={kE1,...}` 声明可出现在无圈动量线和外腿相位中的向量。程序不向用户生成它们的完整 Gram 表；它把实际出现的模长平方在“完整 loop Gram + 已选无圈模长平方”上按首次出现顺序做增量秩筛选，只为独立项绑定 `sE1,sE2,...`，其余项保存 dependent binding。它们不得进入 loop IBP 生成元或 ISP 闭合性检查；若某个绑定表达式对应一条无圈动量线，则 `ds` 仍要按该表达式的 Jacobian 对该线做标量径向导数。
+- `loopExternalMomenta={k1,...}` 是用户确认的 loop 外动量独立基，决定完整 Gram、ISP 闭合与 `dqk` 生成元。程序只审计，不替用户命名或猜选。
+- `independentExternalMomenta={P1,...}` 是实际无圈动量模长列表，只生成 `sp[Pe,Pe]->sEe^2`；不生成 `sp[Pe,Pf]`。整体反号视为同一模长，`alice+bob` 与 `alice-bob` 不合并。
+- topology 必要方向与两个列表分别比较。exact 通过；overcomplete 允许 seed 但关闭唯一 `ds/DSDE`；undercomplete 返回 missing/null-space 证据并拒绝 `DSInit`。旧字段只作兼容别名。
+
+坐标短名只依赖推断后的稳定顺序。类别总数不超过 9 时保持 `ss11/sE1`；超过 9 时按总数位宽补零，例如 `ss0101/sE01`；超过 99 时自然扩展为三位。用户符号名从不参与编号。
+
+动力学规则或动量列表欠完备时阻断初始化；`DSKinematics` 返回 `undercomplete`、`missingDirections/missingMagnitudeSquares` 与零空间表达式。过完备返回 warning 并允许 symbolic seed，但 `derivativeUsableQ=False`、`inverseKinematicsUsableQ=False`。
 
 根号坐标层是平方不变量原子层的 adapter，而不是第二套微分实现。对
 
@@ -55,12 +60,12 @@ xij = sp[ki,kj] = ssij^2
 J[{a_1, ..., a_V}, {pack_1, ..., pack_E}, {n_isp_1, ..., n_isp_R}]
 ```
 
-每条内线 `e` 的 `pack_e` 有两种状态：
-- **massive 完整线**（Hankel/h building block 存在）：`{b_e, n_{e,1}, n_{e,2}}`
-- **massless 完整线**（双 theta 合并路线）：`{b_e, n_e}`
-- **缩并线**（theta 导数导致 h 消失）：`{bS_e}`（单元素，`bS` = "b-shrunk"）
+每条内线 `e` 的 pack 同时取决于状态和 line-power schema：
+- `full` 的 cycle line 保留 `b/bS`：massive `{b,n1,n2}`、masslessFull `{b,n}`、masslessCross `{b}`、shrunk `{bS}`。
+- bridge/non-cycle line 不保留连续幂：massive `{n1,n2}`、masslessFull `{n}`、masslessCross/shrunk `{}`；`b0/bS0` 与导数产生的幂进入显式模长系数。
+- `timeOnly` 下所有 line 都使用 fixed-coefficient schema，即使原图存在结构 cycle。
 
-massless 完整线的 `{b_e,n_e}` 只在双 theta 合并路线中作为正式指标包使用；本 package 不采用逐次约化单个 theta 分支作为主线。缩并线的 `bS_e` 表示该传播子的 h 函数已被 delta 函数消除，剩余的幂次结构绑定到 `k*tau`。`bS_e = 0` 对应更深一层的 sub-sector（类似平直时空中传播子幂次 >= 0 的 sub-sector 链）。
+massless 完整线的单 `n_e` 只在双 theta 合并路线中使用。`shiftLinePower` 是唯一幂次原子：cycle line 移动 `b/bS`，fixed line 乘显式能量幂。contact sector 继承 root loop space 与 cycle/bridge schema；shrink 不重新运行一套降圈判定。
 
 ### 2.2 masslessFull 的有序端点与单 `n`
 
@@ -376,7 +381,7 @@ $$v^\mu \frac{\partial F}{\partial q_l^\mu} = \sum_e c_{e,l} \frac{v \cdot Q_e}{
 
 #### 4.3.3 完备 IBP 生成元集合（FIRE7 框架）
 
-对 $L$ 圈积分，设 `externalMomenta` 中有 $K$ 个独立外动量向量。这里的外动量向量只指实际进入内线动量偏移 $Q_e=\sum_l c_{e,l}q_l+P_e$、并会在 $Q_e^2$ 或 $q_l\cdot Q_e$ 中和圈动量发生标量积的三动量方向。只出现在 dS 顶点时间相位中的无质量外腿能量模或能量组合不计入 `externalMomenta`；独立能量参数内部建议记为 `ke[i]`，例如 `|k_1+k_5|` 可记为 `ke[3]`。完备的 IBP 生成元为：
+对 $L$ 圈积分，设 `loopExternalMomenta` 中有 $K$ 个独立外动量向量。这里的外动量向量只指实际进入内线动量偏移 $Q_e=\sum_l c_{e,l}q_l+P_e$、并会在 $Q_e^2$ 或 $q_l\cdot Q_e$ 中和圈动量发生标量积的三动量方向。只出现在无圈 line/phase 中的独立模长由 `independentExternalMomenta` 声明，不计入 $K$；与任何动量向量无关的独立能量参数可记为 `ke[i]`。完备的 IBP 生成元为：
 
 $$\boxed{\mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_K^\mu\}}$$
 
@@ -390,7 +395,7 @@ $$\boxed{\mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \qua
 
 **交叉 IBP 的必要性**：$L \geq 2$ 时，仅对角 IBP 不足以将所有积分约化到 master integrals。交叉 IBP $\partial_{q_l} \cdot q_m$ 提供不同圈动量之间的关系，是完备约化系统所必需的。
 
-**验证**：独立 loop-scalar-products 数目 $N_{\text{sp}} = L(L+1)/2 + L K$（$K$ 为 `externalMomenta` 的独立外动量基个数）与需要闭合的 $z/ISP$ 坐标维度匹配。这里不把顶点能量符号（如独立 `ke[i]`）算入标量积空间。
+**验证**：独立 loop-scalar-products 数目 $N_{\text{sp}} = L(L+1)/2 + L K$（$K$ 为 `loopExternalMomenta` 的独立外动量基个数）与需要闭合的 $z/ISP$ 坐标维度匹配。这里不把 `independentExternalMomenta` 的模长或独立 `ke[i]` 算入 loop 标量积空间。
 
 #### 4.3.4 ISP（不可约标量积）处理
 
@@ -407,10 +412,12 @@ ISP 指标 $n_{\text{isp}_j} \geq 0$（仅出现在分子，不出现在分母�
 ```mathematica
 (* 用户可任意命名 loop/external momenta；标量积统一写 sp[p,r]。 *)
 loopMomenta = {l3, k321};
-externalMomenta = {wdnmd};
+loopExternalMomenta = {wdnmd};
+independentExternalMomenta = {kE1};
 
-(* 只出现在顶点相位的能量模之和不属于 externalMomenta。 *)
-vertexEnergies = <|1 -> ke[1], 2 -> Sqrt[s11]|>;
+(* 无圈动量只声明实际使用的模长；不主动生成它们的交叉点积。 *)
+vertexEnergies = <|1 -> ke[1], 2 -> Sqrt[sp[wdnmd, wdnmd]],
+  3 -> Sqrt[sp[kE1, kE1]]|>;
 
 (* ISP 定义：{名称, sp 标量积表达式, 指标范围} *)
 ispData = {
@@ -419,7 +426,7 @@ ispData = {
 };
 ```
 
-`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。loop/ISP 中的 `p,r` 必须是 `loopMomenta/externalMomenta` 的线性组合。loop 外动量的完整 Gram 基缺省输出为 `ssij^2`；显式旧规则仍可使用 `sij`。无圈动量线允许使用已声明的 `externalLegMomenta` 线性组合，但公开变量只取实际出现模长平方的独立基，不展开或输出外腿向量之间的点积。`kE1`、`kE2`、`kE1+kE2` 同时出现时仍是三个独立模长；`kE`、`2 kE` 同时出现时后者成为 `4 sE1^2` 的从属 binding。`vertexEnergies` 可引用独立变量或从属根号表达式；与任何已声明动量无关的标量仍写成 `ke[i]`。
+`sp` 表示 scalar product，并设置为 `Orderless`，所以 `sp[p,r]` 与 `sp[r,p]` 自动相同。loop/ISP 中的 `p,r` 必须是 `loopMomenta/loopExternalMomenta` 的线性组合；程序验证该列表恰好覆盖 shift-invariant routing/ISP 需求，不自动选基。loop 外动量的完整 Gram 基缺省输出为 `ssij^2`；显式旧规则仍可使用 `sij`。无圈 line/phase 的实际模长由用户在 `independentExternalMomenta` 中逐项声明，公开变量只取各表达式的模长，不展开或输出它们之间的点积。`kE1`、`kE2`、`kE1+kE2` 同时出现时仍是三个独立模长；额外声明 `2 kE1` 会构成过完备 warning。`vertexEnergies` 可引用这些模长或独立标量；与任何已声明动量无关的标量仍写成 `ke[i]`。
 
 **完备性验证**：`verifyISP[topology, ispData]` 检查：
 1. 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
@@ -438,7 +445,7 @@ ispData = {
 ```
 1. 读取拓扑 + ISP 配置
 2. 验证 ISP 完备性
-3. 构造 IBP 生成元集合 {O_{l,v}}（L(L+K) 个，K 为 `externalMomenta` 中独立外动量向量个数）
+3. 构造 IBP 生成元集合 {O_{l,v}}（L(L+K) 个，K 为 `loopExternalMomenta` 中独立外动量向量个数）
 4. 对每个 sector（由缩并线集合标记）：
    a. 构造该 sector 的指标盒子 {a_v, b_e, n_{e,a}, n_isp}
    b. 枚举种子（撒点范围控制）
@@ -509,13 +516,13 @@ applyIndependentVariableDerivativeSeed[topo, int, var]
 independentVariableDerivativeVariables[topo]
 makeIndependentVariableDerivativeGenerators[topo]
 makeIndependentVariableDerivativeSeedBatch[topo, int]
-ds[expr, sij, topo]
+ds[expr, sij, contextOrTopo]
 ds[expr, sij]
 ```
 
 `applyIndependentVariableDerivativeSeed` 自动判断 `var` 属于用户选定动力学坐标、内部平方 Gram 原子、实际无圈模长还是独立顶点能量。用户混合坐标统一按完整 Jacobian 对所有基础原子求和，不能因变量名同时命中某个简单根号坐标而提前返回。loop Gram 原子分支会把每个 $D_{ij}$ 作用到传播子、massive/massless building block、ISP/numerator 和相应顶点能量；无圈模长分支执行绑定线径向导数及显式相位导数。
 
-`DSKinematics[input]` 给出完整 loop Gram 原子、实际无圈模长独立基的缺省规则、从属模长 binding 和可复制的 `selectionTemplate`；`DSKinematics[input,rules]` 审计候选，`DSInit[...,KinematicRules->rules]` 才重选并重新初始化。审计同时检查规则左端对基础原子的覆盖秩和基础原子对用户参数的 Jacobian 秩，并按 `baseCoordinateOrder` 返回零空间方向表达式。欠秩时拒绝初始化；超完备时返回冗余关系/约束，允许 symbolic IBP 初始化但禁用冗余坐标 `ds` 与无唯一逆映射的 `rep2innerform`。一般满秩混合坐标即使没有简单逆映射，`ds` 仍按 Jacobian 工作；从属 line/phase/显式系数统一对 binding 表达式继续使用同一链式法则。
+`DSKinematics[input]` 给出完整 loop Gram 原子、实际无圈模长独立基的缺省规则、从属模长 binding 和可复制的 `selectionTemplate`；`DSKinematics[input,rules]` 审计候选，`DSInit[...,KinematicRules->rules]` 才重选并重新初始化。审计同时检查规则左端对基础原子的覆盖秩和基础原子对用户参数的 Jacobian 秩，并按 `baseCoordinateOrder` 返回零空间方向表达式。欠秩时拒绝初始化；超完备时返回冗余关系/约束，允许 symbolic IBP 初始化但禁用冗余坐标 `ds` 与无唯一逆映射的 `rep2innerform`。过完备 loop 声明的原列表只用于审计和展示，核心 `nK`/Gram/`dqk`/ISP 使用 affine quotient 的 `effectiveLoopExternalMomenta` 必要基。一般满秩混合坐标先逐条展开规则右端再提取原子参数；即使没有简单逆映射，`ds` 仍按完整 Jacobian 工作。从属 line/phase/显式系数统一对 binding 表达式继续使用同一链式法则。
 
 批量入口枚举 `externalInvariantVariables` 与独立顶点能量参数的并集，并返回每个变量的 decomposition、canonical derivative、失败状态和 forbidden-`n` 数据；它不替用户发明新的物理变量。
 
@@ -544,25 +551,25 @@ $$z_e \equiv \xi_e^2 = Q_e \cdot Q_e$$
 
 #### 4.4.2 标量积变量约定
 
-独立标量积分三类，其中 $K=\#\texttt{externalMomenta}$ 只统计进入内线动量偏移的外部三动量向量：
+独立标量积分三类，其中 $K=\#\texttt{loopExternalMomenta}$ 只统计进入 loop scalar-product 空间的外部三动量向量：
 
 | 类型 | 记号 | 数量 |
 |------|------|------|
 | 圈-圈标量积 | $q_l \cdot q_m$（$l \leq m$） | $L(L+1)/2$ |
 | 圈-外动量标量积 | $q_l \cdot k_j$ | $LK$ |
-| 外动量-外动量标量积 | $k_i \cdot k_j \to s_{ij}$ 或用户自定义名 | 常数，不计入独立变量 |
+| 外动量-外动量标量积 | $k_i \cdot k_j \to ss_{ij}^{2}$ 或用户自定义坐标表达式 | 常数，不计入 loop 标量积变量 |
 
 独立 loop-scalar-products 总数 $N_{\text{sp}} = L(L+1)/2 + LK$。顶点相位中的 $|k|$ 或 $|k_a|+|k_b|$ 是能量参数，不是这个标量积向量的分量。
 
-外动量-外动量标量积记为符号常数，不保持矢量点积形式。当前输出端用 `externalInvariantRules` 给出的变量名；若未指定，则默认按 `externalMomenta` 中的位置记为 $s_{ij}$。对 $d=3$ bubble 例子（$L=1$，$E=2$，1 独立外动量 $k \equiv k_1$）：
-$$N_{\text{sp}} = 1 + 1 = 2, \quad \text{独立标量积：} q_1^2,\; q_1 \cdot k, \quad \text{外部不变量：} k^2 \equiv s_{11}\ \text{(或用户自定义名)}$$
+外动量-外动量标量积记为符号常数，不保持矢量点积形式。016 缺省按 `loopExternalMomenta` 的位置生成 `sp[k_i,k_j]->ssij^2`；用户通过 `KinematicRules` 重定义。对 $d=3$ bubble 例子（$L=1$，$E=2$，1 独立外动量 $k \equiv k_1$）：
+$$N_{\text{sp}} = 1 + 1 = 2, \quad \text{独立标量积：} q_1^2,\; q_1 \cdot k, \quad \text{外部不变量：} k^2 \equiv ss_{11}^2\ \text{(或用户自定义名)}$$
 
 #### 4.4.3 $z$ 与标量积的线性变换
 
 每条内线的 $z_e$ 展开为标量积的线性组合加外部不变量：
 $$z_e = Q_e^2 = \left(\sum_l c_{e,l}\, q_l + P_e\right)^2 = \sum_l c_{e,l}^2\, q_l^2 + 2\sum_{l<m} c_{e,l}\, c_{e,m}\, q_l \cdot q_m + 2\sum_l c_{e,l}\, q_l \cdot P_e + P_e^2$$
 
-其中 $P_e^2$ 和 $q_l \cdot P_e$（$P_e$ 为外动量线性组合）均可进一步展开为 $\{q_l \cdot q_m,\; q_l \cdot k_j\}$ 加外动量不变量名（默认 $s_{ij}$ 或用户自定义名）的线性组合。
+其中 $P_e^2$ 和 $q_l \cdot P_e$（$P_e$ 为外动量线性组合）均可进一步展开为 $\{q_l \cdot q_m,\; q_l \cdot k_j\}$ 加外动量不变量（缺省 $ss_{ij}^{2}$ 或用户自定义坐标表达式）的线性组合。
 
 定义独立标量积向量 $\mathbf{s} = (s_1, \ldots, s_{N_{\text{sp}}})^T$（包含所有 $q_l \cdot q_m$ 和 $q_l \cdot k_j$），则：
 $$\boxed{z_e = \sum_i M_{ei}\, s_i + c_e \quad \Longleftrightarrow \quad \mathbf{z} = M \cdot \mathbf{s} + \mathbf{c}}$$
@@ -671,17 +678,18 @@ lineData = {
 (* 外腿 *)
 extLegs = {{B, 1, p1}, {B, 2, p2}, ...};
 
-(* 圈动量与独立外动量基 *)
+(* 圈动量、loop 外动量基与实际无圈模长 *)
 loopMomenta = {q1, q2, ...};
-externalMomenta = {k1, k2, ...};
-vertexEnergies = <|v1 -> ke[1], v2 -> Sqrt[s11], ...|>;  (* 独立顶点能量用 ke[i]；可复用外部不变量表达式 *)
+loopExternalMomenta = {k1, k2, ...};
+independentExternalMomenta = {p1, p2, p1 + p2, ...};
+vertexEnergies = <|v1 -> ke[1], v2 -> Sqrt[sp[k1, k1]], ...|>;
 
 (* ISP: {名称, sp 标量积表达式, 指标范围} — 多圈时必需 *)
 ispData = {
   {isp1, sp[q1, q2], {0, 2}},     (* q1·q2，分子幂次 0,1,2 *)
   {isp2, sp[q1, k1], {0, 1}}      (* q1·k1，分子幂次 0,1 *)
 };
-(* 单圈时可省略 ispData（无 ISP），但仍需显式给 externalMomenta = {k} 等外动量基 *)
+(* 单圈时可省略 ispData（无 ISP），但仍需显式给 loopExternalMomenta = {k} 等外动量基。 *)
 
 (* 指标范围 *)
 indexRanges = {aMin, aMax, bMin, bMax, bSMin, bSMax};
@@ -721,9 +729,9 @@ symmetryRules = {
 
 ## 7. 当前主线与工作流
 
-当前权威实现是模块化 `000_code/014_dSIBP/`，标准加载入口为 `Needs["dSIBP`"]`；`000_code/014_dS_ibp_general.wl` 是单文件兼容入口。013 是已通过独立验收的只读稳定基线，012 是其核心基线；010--011 仅保留历史用途。
+当前权威实现是模块化 `000_code/016_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。冻结单文件兼容入口是 `independent-benchmark/package/package_016.wl`；010--015 的单文件和模块目录均为只读历史/基线。
 
-独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留已通过全面独立验收的正式 `package_014.wl/pdf` 和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于学习调用和自行对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
+独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_016.wl/pdf` 和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
 
 主线按照以下顺序工作：
 
@@ -760,7 +768,7 @@ symmetryRules = {
 
 serializer 不重新推导 IBP，也不重新应用 EOM。它只负责把 `linearData` 转为某个后端的语法、编号和文件布局，并做该后端特有的输入校验。当前已有 Kira serializer，可写 `userSystem/ibp.kira`、`list`、`jobs.yaml`、积分映射和 metadata。未来若接 Rational Tracer，需要新增相应 serializer，但 seed 与 linear-system 主线无需重写。
 
-package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机可执行文件路径。014 可通过 `DSKiraImport` 导入并验证用户在 package 外生成的完整 reduction/master 结果，再交给 `DSDE` 和 `DSScaleCheck`；缺文件或来源映射不一致时拒绝继续。
+package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机可执行文件路径。016 可通过 `DSKiraImport` 导入并验证用户在 package 外生成的完整 reduction/master 结果，再交给 `DSDE` 和 `DSScaleCheck`；缺文件、context capability、输入哈希或来源映射不一致时拒绝继续。
 
 ## 8. 当前未实现与下一步
 本节只保留长期能力缺口，不表示当前执行顺序。当前正在做什么、哪些检查尚未通过以及下一位接手者的第一步，以根目录 `研究计划与研究进度.md` 为准。
@@ -794,12 +802,11 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 | 项目 | 当前约定 |
 |------|----------|
-| 主线脚本 | 模块化 `000_code/014_dSIBP/`；单文件兼容入口 `000_code/014_dS_ibp_general.wl` |
+| 主线脚本 | 模块化 `000_code/016_dSIBP/`；冻结单文件 `independent-benchmark/package/package_016.wl` |
 | 积分 Head | `J[aList, linePacks, ispList]` |
-| massive full/cross pack | `{b_e,n_{e,1},n_{e,2}}` |
-| massless full pack | `{b_e,n_e}`，双 theta 合并 |
-| massless cross pack | `{b_e}` |
-| theta-boundary shrunk pack | `{bS_e}`；massive `bS=b+1`，massless `bS=b` |
+| cycle line pack | full 为 `{b_e,n...}`，shrunk 保留 `{bS_e,...}`；schema 继承 root topology |
+| bridge/fixed line pack | 只含 endpoint `n...`；物理幂及其 shift 进入显式模长系数 |
+| `timeOnly` pack | 所有 active lines 均为 fixed coefficient，使用 `J[vertexPacks]` |
 | Hankel 离散态 | seed 层枚举 `n=0,1`，`n>=2` 立即 EOM |
 | Sub-sector | 同一 Head `J`，compact `aList` + sector metadata |
 | 数值规则 | 解析 seed 后，在 sampled/linear/backend 层应用 |
@@ -808,13 +815,15 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 ## 11. 原子化公开接口
 
-014 在 `dSIBP`` context 中公开以下公式级接口，并由 `DSInit` 建立 family context。`J` 不携带 topology，因此底层调用可显式传入 `topo`，也可使用当前已注册 context 的短签名。
+016 在 `dSIBP`` context 中公开以下公式级接口，并由 `DSInit` 建立 family context。`J` 不携带 topology，因此底层调用可显式传入 `topo`，也可使用当前已注册 context 的短签名。
 
 ### 11.1 指定生成元作用
 
-- `dtau[i, expr, topo]` / `dtau[i, expr]`：对 active vertex `tau[i]` 生成时间全微分关系。
-- `dqq[i, j, expr, topo]` / `dqq[i, j, expr]`：生成 `d/dq_i . q_j` 的复合圈动量 IBP。
-- `dqk[i, j, expr, topo]` / `dqk[i, j, expr]`：生成 `d/dq_i . k_j` 的复合圈动量 IBP。
+- `dtau[i, expr, contextOrTopo]` / `dtau[i, expr]`：对 active vertex `tau[i]` 生成时间全微分关系。
+- `dqq[i, j, expr, contextOrTopo]` / `dqq[i, j, expr]`：生成 `d/dq_i . q_j` 的复合圈动量 IBP。
+- `dqk[i, j, expr, contextOrTopo]` / `dqk[i, j, expr]`：生成 `d/dq_i . k_j` 的复合圈动量 IBP。
+
+所有原子接口的显式第三参数统一接受 `DSInit` 返回的完整 context 或其 parsed topology；resolver 必须先识别并解包 context，不能把它当作原始 topology case 再次解析。
 
 `expr` 可以是一个 `J` 或若干 `J` 的线性组合，函数对表达式保持线性。自动 seed 生成不另写一套公式，而是枚举 sector、连续 seed、离散 `n` 规则与上述生成元后调用这些原子函数。
 
@@ -837,7 +846,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 - 任意用户圈/外动量符号与内部编号坐标的对应；
 - `sp[p,r]` 与内部 `qq/qk/kk` 坐标；
-- 外部不变量的默认 `sij` 或用户自定义名字；
+- 外部不变量的缺省 `ssij^2` 或用户自定义坐标表达式；
 - 用户 ISP 名与内部 `rho[j]`；
 - 必要的 coefficient-only 参数命名。
 
@@ -905,12 +914,12 @@ Needs["dSIBP`"]
 
 所有公开符号必须有 `::usage`，所有 option 必须能由 `Options[函数]` 查看。用户手册正文按工作流讲解，附录另给公开函数、用途、参数形式和 option 的总表。
 
-## 13. 014 初始化与 example 规范
+## 13. 016 初始化与 example 规范
 
 每个例子使用独立目录：
 
 ```text
-000_code/examples/014/<case>/
+independent-benchmark/package/examples/<case>/
   main.wl
   init/
     manifest.wl
@@ -1010,7 +1019,7 @@ A-(nu0) = -Inverse[M1].M0,
 A+(nu0-1) = -Inverse[Tp].Inverse[M0tilde].Tp.M1.
 ```
 
-`repIterative[expr_, end_:Automatic]` 读取这些 general-index 单次规则并迭代到每个顶点指定终点。`Automatic` 表示所有 `a_e,end=0`；显式终点列表长度必须等于顶点数，每个起点到终点的距离必须是可判定整数，否则拒绝。各 sector 的 `repIterative0` 保存为可直接 `/.` 使用的单次 general-index 规则，函数形式负责门禁、顺序和终止。
+`repIterative[expr_, end_:Automatic]` 读取这些 general-index 单次规则并迭代到每个顶点指定终点。`Automatic` 表示所有 `a_e,end=0`；显式终点列表长度必须等于顶点数，每个起点到终点的距离必须是可判定整数，否则拒绝。各 sector 的 `repIterative0` 保存为可直接 `/.` 使用的单次 general-index 规则，函数形式负责门禁、顺序和终止。含 contact source 的 raw/sector-tagged 两种调用都从 016 direct pure-time seed 生成同一单步规则，保持显式 `treeEnergy`、共同 theta 和 lower-sector tag 同源；旧三槽 loop 投影仅用于交叉检查。
 
 dlog DE 的 sector 对角块直接采用 2401.00129 Eq. (3.54)--(3.55)，输出连接、letters、同序 master list 和 convention。letters 的序列化顺序固定为：按 `vertexOrder` 逐顶点拼接该顶点 `massiveLegs` 顺序的能量 letters，再拼接 binary master order 的 cut letters，最后做稳定去重；`letterMatrices` 必须使用完全相同的 key 顺序。对多个顶点，先按顶点 tensor order 构造 top-family basis，再按 contact 缩并形成的 sector DAG 追加 lower-sector basis。
 
