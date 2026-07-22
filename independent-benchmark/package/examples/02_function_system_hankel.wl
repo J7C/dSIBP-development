@@ -1,8 +1,16 @@
-(* Massive function-system example: bare Hankel P,Q,T,W input. *)
+(* ::Package:: *)
+(* Massive function-system 示例：输入裸 Hankel P,Q,T,W，并通过公开工作流编译和生成 seed。 *)
+
+(* ::Chapter:: *)
+(*加载冻结 package*)
 
 exampleDir = DirectoryName[$InputFileName];
 packageDir = DirectoryName[exampleDir];
-Get[FileNameJoin[{packageDir, "package_012.wl"}]];
+Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+
+
+(* ::Chapter:: *)
+(*函数系统与 topology 输入*)
 
 prefactor = (4 I/Pi) Exp[Pi Im[nuM]];
 hankelSystem = <|
@@ -16,15 +24,12 @@ hankelSystem = <|
    "shrinkZeroPointShift" -> 0
    |>;
 
-compiled = compileFunctionSystem[hankelSystem];
-
 case = <|
    "name" -> "bareHankelExample",
    "vertexData" -> {{v1, "+"}, {v2, "+"}},
    "lineData" -> {
      <|"id" -> e1, "endpoints" -> {v1, v2}, "momentum" -> q,
-       "nu" -> nuM, "massType" -> "massive",
-       "functionSystem" -> hankelSystem|>
+       "nu" -> nuM, "massType" -> "massive", "functionSystem" -> hankelSystem|>
      },
    "loopMomenta" -> {q},
    "externalMomenta" -> {},
@@ -32,21 +37,38 @@ case = <|
    "zeroPointRules" -> {
      a0[v1] -> alpha1, a0[v2] -> alpha2, b0[e1] -> beta1
      },
+   "symmetryRules" -> {},
    "seedPreset" -> "quickCheck"
    |>;
 
-topo = parseTopology[case];
-If[topo === $Failed, Exit[1]];
 
-int = makeBaseIntegral[topo] /. {
-   a[v1] -> 0, a[v2] -> 0, b[e1] -> 0,
-   n[e1, 1] -> 1, n[e1, 2] -> 0
-   };
+(* ::Chapter:: *)
+(*公开工作流*)
 
-Print[<|
-  "compileStatus" -> compiled["status"],
-  "AT" -> compiled["AT"],
-  "WT" -> compiled["WT"],
-  "derivativeTerms" -> compiled["derivativeTerms"],
-  "timeRelation" -> dtau[v1, int, topo]
-|>];
+(* 缺省不写初始化文件；本例枚举全部离散态但保持最小连续范围。 *)
+context = DSInit[
+   case,
+   WriteInitializationFiles -> False,
+   GenerateDerivativeMetadata -> False
+   ];
+seedData = DSSeeds[
+   context,
+   DiscreteMode -> "all",
+   GenerateShrinkSectors -> True,
+   MaxEquationCount -> 5000
+   ];
+
+fullInfo = DSInfo[context, "Full"];
+summary = <|
+   "initStatus" -> Lookup[context, "status", "missing"],
+   "seedStatus" -> Lookup[seedData, "dSIBPStatus", "missing"],
+   "sectorCount" -> Length[Lookup[context, "sectors", {}]],
+   "functionSystemInputPreserved" -> ! FreeQ[fullInfo, hankelSystem]
+   |>;
+
+Print[summary];
+If[! And[
+    summary["initStatus"] === "initialized",
+    summary["seedStatus"] === "generated",
+    TrueQ[summary["functionSystemInputPreserved"]]
+    ], Exit[1]];

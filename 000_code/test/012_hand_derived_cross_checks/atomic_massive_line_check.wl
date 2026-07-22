@@ -7,8 +7,8 @@
 exampleDir = DirectoryName[$InputFileName];
 codeDir = DirectoryName[DirectoryName[exampleDir]];
 handDerivedDir = FileNameJoin[{codeDir, "test", "012_hand-derived", "atomic_massive_line"}];
-versionUnderTest = Last[Select[$ScriptCommandLine, MemberQ[{"007", "008", "009", "010", "011", "012"}, #] &], Environment["DSIBP_VERSION"]];
-If[!MemberQ[{"007", "008", "009", "010", "011", "012"}, versionUnderTest], versionUnderTest = "012"];
+versionUnderTest = Last[Select[$ScriptCommandLine, MemberQ[{"010", "011", "012"}, #] &], Environment["DSIBP_VERSION"]];
+If[!MemberQ[{"010", "011", "012"}, versionUnderTest], versionUnderTest = "012"];
 Get[FileNameJoin[{codeDir, versionUnderTest <> "_dS_ibp_general.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "family.wl"}]];
 Get[FileNameJoin[{handDerivedDir, "expected.wl"}]];

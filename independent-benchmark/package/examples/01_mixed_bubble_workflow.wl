@@ -1,8 +1,16 @@
-(* Mixed massive/massless example: topology, public relations and canonical batch. *)
+(* ::Package:: *)
+(* Mixed massive/massless 示例：只用 014 公开入口完成初始化、canonical seed 和 linearData。 *)
+
+(* ::Chapter:: *)
+(*加载冻结 package*)
 
 exampleDir = DirectoryName[$InputFileName];
 packageDir = DirectoryName[exampleDir];
-Get[FileNameJoin[{packageDir, "package_012.wl"}]];
+Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+
+
+(* ::Chapter:: *)
+(*详细物理输入*)
 
 case = <|
    "name" -> "mixedBubbleExample",
@@ -26,36 +34,34 @@ case = <|
    "seedPreset" -> "quickCheck"
    |>;
 
-topo = parseTopology[case];
-If[topo === $Failed, Exit[1]];
 
-base = makeBaseIntegral[topo];
-seedRules = {
-   a[v1] -> 0, a[v2] -> 0,
-   b[e1] -> 0, b[e2] -> 0,
-   n[e1, 1] -> 0, n[e1, 2] -> 1, n[e2] -> 0
-   };
-int = base /. seedRules;
+(* ::Chapter:: *)
+(*缺省选项*)
 
-timeRelation = dtau[v1, int, topo];
-qqRelation = dqq[q, q, int, topo];
-qkRelation = dqk[q, k, int, topo];
+(* 缺省不写初始化文件、不生成导数 metadata；本例枚举全部离散态但保持最小连续范围。 *)
+initOptions = {WriteInitializationFiles -> False, GenerateDerivativeMetadata -> False};
+seedOptions = {DiscreteMode -> "all", GenerateShrinkSectors -> True, MaxEquationCount -> 10000};
+linearOptions = {LinearSystemMode -> "symbolic"};
 
-batch = makeCanonicalSeedBatch[
-   topo,
-   DiscreteMode -> "all",
-   GenerateShrinkSectors -> True,
-   MaxEquationCount -> 500
-   ];
-linearData = makeLinearSystemData[batch, topo];
 
-Print[<|
-  "topologyStatus" -> topologyValidationReport[topo]["status"],
-  "baseIntegral" -> base,
-  "timeRelation" -> timeRelation,
-  "qqRelation" -> qqRelation,
-  "qkRelation" -> qkRelation,
-  "batchStatus" -> batch["status"],
-  "equationCount" -> Lookup[batch, "equationCount", Missing[]],
-  "linearStatus" -> Lookup[linearData, "status", Missing[]]
-|>];
+(* ::Chapter:: *)
+(*公开工作流*)
+
+context = DSInit[case, Sequence @@ initOptions];
+seedData = DSSeeds[context, Sequence @@ seedOptions];
+linearData = DSLinear[seedData, context, Sequence @@ linearOptions];
+
+summary = <|
+   "initStatus" -> Lookup[context, "status", "missing"],
+   "sectorCount" -> Length[Lookup[context, "sectors", {}]],
+   "seedStatus" -> Lookup[seedData, "dSIBPStatus", "missing"],
+   "equationCount" -> Lookup[seedData, "equationCount", Missing["NotAvailable"]],
+   "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"]
+   |>;
+
+Print[summary];
+If[! And[
+    summary["initStatus"] === "initialized",
+    summary["seedStatus"] === "generated",
+    summary["linearStatus"] === "generated"
+    ], Exit[1]];

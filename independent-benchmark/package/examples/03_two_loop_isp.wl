@@ -1,8 +1,16 @@
-(* Two-loop example: arbitrary momentum names, two ISPs and all generators. *)
+(* ::Package:: *)
+(* Two-loop ISP 示例：任意动量名、两个 ISP、完整生成元集合与 backend-neutral linearData。 *)
+
+(* ::Chapter:: *)
+(*加载冻结 package*)
 
 exampleDir = DirectoryName[$InputFileName];
 packageDir = DirectoryName[exampleDir];
-Get[FileNameJoin[{packageDir, "package_012.wl"}]];
+Get[FileNameJoin[{packageDir, "package_014.wl"}]];
+
+
+(* ::Chapter:: *)
+(*详细物理输入*)
 
 case = <|
    "name" -> "twoLoopISPExample",
@@ -12,8 +20,7 @@ case = <|
        "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>,
      <|"id" -> e2, "endpoints" -> {v1, v2}, "momentum" -> k321,
        "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>,
-     <|"id" -> e3, "endpoints" -> {v1, v2},
-       "momentum" -> l3 - k321 - wdnmd,
+     <|"id" -> e3, "endpoints" -> {v1, v2}, "momentum" -> l3 - k321 - wdnmd,
        "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>
      },
    "loopMomenta" -> {l3, k321},
@@ -29,30 +36,42 @@ case = <|
      b0[e1] -> beta1, b0[e2] -> beta2, b0[e3] -> beta3
      },
    "symmetryRules" -> {},
-   "seedPreset" -> "quickCheck"
+   "seedPreset" -> "quickCheck",
+   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0, 1}, "sampleOnly" -> True|>
    |>;
 
-topo = parseTopology[case];
-If[topo === $Failed, Exit[1]];
 
-base = makeBaseIntegral[topo];
-int = base /. {
-   a[v1] -> 0, a[v2] -> 0,
-   b[e1] -> 0, b[e2] -> 0, b[e3] -> 0,
-   n[e1] -> 0, n[e2] -> 1, n[e3] -> 0,
-   ispN[1] -> 1, ispN[2] -> 0
-   };
-generators = makeIBPGenerators[topo];
-generatorLabels = (
-    If[#1["type"] === "time", timeGeneratorLabel[#1], momentumGeneratorLabel[#1]] &
-    /@ generators
-    );
-relation = dqq[l3, k321, int, topo];
+(* ::Chapter:: *)
+(*公开工作流*)
 
-Print[<|
-  "topologyStatus" -> topologyValidationReport[topo]["status"],
-  "generatorCount" -> Length[generators],
-  "generatorLabels" -> generatorLabels,
-  "baseIntegral" -> base,
-  "crossLoopRelation" -> relation
-|>];
+context = DSInit[
+   case,
+   WriteInitializationFiles -> False,
+   GenerateDerivativeMetadata -> False
+   ];
+seedData = DSSeeds[
+   context,
+   DiscreteMode -> "all",
+   GenerateShrinkSectors -> True,
+   MaxEquationCount -> 10000
+   ];
+linearData = DSLinear[seedData, context, LinearSystemMode -> "symbolic"];
+
+summary = <|
+   "initStatus" -> Lookup[context, "status", "missing"],
+   "ispCount" -> Length[Lookup[Lookup[context, "topology", <||>], "ispData", {}]],
+   "generatorCount" -> Total[Length /@ {
+       Lookup[Lookup[seedData, "momentumSummary", <||>], "generators", {}],
+       Lookup[Lookup[seedData, "timeSummary", <||>], "generators", {}]
+       }],
+   "seedStatus" -> Lookup[seedData, "dSIBPStatus", "missing"],
+   "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"]
+   |>;
+
+Print[summary];
+If[! And[
+    summary["initStatus"] === "initialized",
+    summary["ispCount"] === 2,
+    summary["seedStatus"] === "generated",
+    summary["linearStatus"] === "generated"
+    ], Exit[1]];

@@ -20,8 +20,8 @@
 
 ## 程序与目录
 
-- 当前主线版本由 `研究计划与研究进度.md` 指定；当前为 `000_code/012_dS_ibp_general.wl`。
-- `000_code/007_dS_ibp_general.wl` 至 `011_dS_ibp_general.wl` 是只读历史版本，不在新任务中回写。
+- 当前主线版本由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/015_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
+- `000_code/015_dS_ibp_general.wl` 是 015 的单文件兼容入口；`000_code/010_dS_ibp_general.wl` 至 `014_dS_ibp_general.wl` 及其模块目录是只读基线/历史版本，不在新任务中回写。
 - `000_code/check/` 保存当前主线正式验证脚本。
 - `000_code/test/` 保存临时测试脚本，运行产物只放 `000_code/test/results_test/`。
 - `independent-benchmark/package/` 只保留当前版本化程序 `package_<version>.wl`、同版本正式用户手册 `package_<version>.pdf` 和少量应用 examples；更新版本时覆盖当前交付并删除旧版本或无版本名副本。
@@ -62,6 +62,9 @@
 - h/H 模式、质量参数、缩并 prefactor、zero-point 和 H EOM 必须使用当前 tech note 与 preset；不得从历史版本重新引入旧递推。
 - 多圈动量 IBP 生成元必须覆盖当前 plan/tech note 规定的完备集合；ISP 由用户定义并在生成关系前验证闭合性。
 - topology、sector metadata、canonical seed、`linearData` 和 serializer 之间的状态必须一致；backend 只消费 backend-neutral `linearData`。
+- `externalMomenta` 只表示进入内线偏移、圈标量积空间和 loop IBP 生成元的独立外动量；015 缺省公开坐标为 `ssij=Sqrt[sp[ki,kj]]`，内部原子坐标仍为 `kk[i,j]=sp[ki,kj]`。
+- `externalLegMomenta` 只声明可出现在无圈动量线/相位中的向量；015 仅对 topology 中实际出现的不同无圈动量组合按首次出现顺序生成 `sE1,sE2,...` 模长原子，不自动生成外腿向量的交叉点积，且这些向量不得进入 loop IBP 生成元或 ISP 闭合性检查。与已声明动量无关的顶点相位能量仍可使用独立标量参数。
+- 根号坐标求导必须通过链式法则复用平方不变量原子导数：`d/dssij=2 ssij d/d(sp[ki,kj])`；不得复制或重写一套 loop 外动量导数实现。显式用户规则 `sp[ki,kj]->sij` 保持单位 Jacobian 的兼容语义。
 
 ## Mathematica 实现约定
 

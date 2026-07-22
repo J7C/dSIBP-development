@@ -1,19 +1,17 @@
-# Codex 独立手推与 package 检查
+# 014 全面 benchmark 与 015 根号坐标增量工作区
 
-本目录是 Codex 依据 `independent-benchmark/independent-benchmark.md` 建立的独立工作区，不属于正式 benchmark 输入目录，也不覆盖项目已采用的 hand-derived expected。
+本目录保存 `independent-benchmark/independent-benchmark.md` 对应的可复用手推、冻结 expected、check 和轻量结果；正式报告统一归档到根目录 `000-report/`。`kinematic-coordinates/` 是 015 根号坐标的独立增量路线，冻结公式后才允许由 `check/check_kinematic_coordinates_against_package.wl` 单向调用 `package_015.wl`。
 
-## 边界
+当前优先级：
 
-- 第一阶段只从任务书给出的传播子定义、指标 convention 和标准 Hankel 恒等式推导 expected。
-- 第二阶段读取 `independent-benchmark/package/package_012.wl` 生成 actual；actual 暴露的 oracle 错误必须先从任务书定义独立复核再修正。当前 v7 是补全 `sij/Dij` convention 后的 post-audit 快照，不宣称为 pristine blind freeze。
-- `atomic_massive_line/` 保存可人工复核的 family、推导和 expected。
-- `check/` 保存只读 expected/package 的对照脚本；运行产物放在被 Git 忽略的 `check/results/`。
-- 本目录不会成为主线 package 的输入，也不会写入 `independent-benchmark/package/`。
+1. `mixed_sunrise`、`two_loop_isp_toy`、`vertex_energy_signs` 的非零 ISP seed；
+2. 013/014 新增 pure-time/tree 与三平行 massive h contact；
+3. 两个指定 H family 的 bare-H、H-to-h 与 direct-h 全 seed 等价性；
+4. general-`ds` 的 upper-triangular `Dij`、相位链式法则与乘积法则；
+5. 014 物理 expected 冻结后通过 `package_014.wl` 单向比较；015 坐标 expected 单独冻结后通过 `package_015.wl` 单向比较。
 
-## 当前范围
+Tree 增量还要求在完全相同的 sector-tagged normalized master 顺序下，分别运行 `DSTreeNaiveIBP -> DSTreeNaiveDE` 和 `DSTreeDLogDE`。naive 路线只能消费投影后的 `dtau` 方程及 h 的原始能量导数，不能调用 `repIterative` 或公式 dlog 矩阵参与约化；最终逐变量矩阵再与冻结公式和直接 dlog 两边比较。
 
-- `atomic_massive_line` 按固定 `--/-+` 保存 direct-h、bare-H、H-to-h 三路共 78 条 expected。
-- 其余九个 family 由 `oracle/independent_oracle.wl` 按 `ORACLE_DERIVATION.md` 的原始公式展开。
-- 十个 family 共生成 2435 条 seed relations、101 条 general-index derivatives 并全部通过 package 对照；reference-only 另有 80 条 derivative、6 条 symmetry 和 4 条 parity。
-- `vertex_energy_signs` 已显式加入 `rho1=sp[ell,k]`，覆盖 ISP 点 `{0,1}`，通过 90/90 relations 与 24/24 derivatives。
-- 任务书现已把对称 `sij` 坐标与有序 `Dij` 算符分开定义，并固定 upper-triangular `{Dij|i<=j}` raw basis；独立 expected/check 已依此重生并与 package 对齐。
+新版任务书到独立 expected 和重建 check 的映射见 `VALIDATION_MATRIX.md`。
+
+旧报告附件只用于确认覆盖缺口，不作为本目录 expected 的公式来源。本轮不是 pristine blind test：开始补充推导前已经审阅旧报告及其 check 结构，但没有从 package actual 或旧 expected 抄写以下 ISP 导数公式。

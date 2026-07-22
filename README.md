@@ -6,7 +6,7 @@
 
 - 当前任务、真实完成状态和交接顺序：`研究计划与研究进度.md`
 - 用户手册：`000_note/01_dS_ibp_package/dS_ibp_package.tex`，PDF 同目录
-- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；冻结手推结果后使用 `independent-benchmark/package/package_012.wl`、`package_012.pdf` 和三个典型应用 examples
+- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；当前交付目录只保留 `package_015.wl/pdf`，014 源码基线在 `000_code/014_dSIBP/` 冻结不动
 - 长期总体架构：`000_note/dS_IBP_package_plan.md`
 - 设计约定：`000_note/dS_IBP_package_design_note.md`
 - 技术公式：`000_note/dS_IBP_package_tech_note.tex`
@@ -16,9 +16,16 @@
 
 ## 当前主线
 
-- `000_code/012_dS_ibp_general.wl`：当前开发主线。
-- `000_code/011_dS_ibp_general.wl`：上一开发版，保留 v011 报告对应行为。
-- `000_code/010_dS_ibp_general.wl`、`000_code/009_dS_ibp_general.wl`、`000_code/008_dS_ibp_general.wl`、`000_code/007_dS_ibp_general.wl`：工作树内保留的历史版本。001--006 及其专用检查不再保留。
+- `000_code/015_dSIBP/`：当前模块化主线，标准入口为 `Needs["dSIBP`"]`。
+- `000_code/015_dS_ibp_general.wl`：015 的单文件兼容入口。
+- `000_code/014_dSIBP/`、`000_code/014_dS_ibp_general.wl`：冻结的 014 基线，不回写。
+- `000_code/013_dS_ibp_general.wl`：已通过独立验收的稳定版本，新增 pure time-IBP/tree 模块。
+- `000_code/012_dS_ibp_general.wl`：013 的只读核心基线。
+- `000_code/011_dS_ibp_general.wl`、`000_code/010_dS_ibp_general.wl`：只读历史版本。001--009 及其专用检查不再保留。
+
+015 在完整继承 014 的基础上，把动量模长改为缺省公开动力学坐标：进入 loop-dependent line momentum 的独立外动量使用完整 `ssij=Sqrt[sp[ki,kj]]` Gram 基；其它实际出现的无圈动量模长平方按首次出现顺序做增量秩筛选，只为独立项绑定 `sE1,sE2,...`，从属项保存为当前坐标的 binding，不自动输出外腿向量交叉点积。内部 loop 部分仍以 `kk[i,j]=sp[ki,kj]` 为原子坐标；`ssij` 导数通过 Jacobian 调用原有平方不变量导数。014 源码文件保持冻结。
+
+014 已完成标准 loader/context、初始化 metadata、消息层、高层 seed/linear/Kira export-import/DE 接口、sector-tagged tree 迭代、naive tree time-IBP/DE，以及由 loop time-IBP `R^(1)` contact selector 自动组装的多 sector block-triangular tree dlog connection。`DSTreeNaiveIBP` 直接联立投影后的 `dtau`，`DSTreeNaiveDE` 以同序 normalized masters 构造逐变量矩阵；两顶点 `++`/`+-` 专项与直接 dlog 路线严格相等。pure massive bubble 的等能量、固定 even parity 子系统已完成 fresh Kira 2.3 reduction：33581 条方程、6555 条独立关系、19 个 active masters、1814 个选定目标全部约化；`DSKiraImport -> DSDE[{s11,P0}] -> DSScaleCheck[{2,1}]` 通过 22/22。最新独立 tree check 为 57/57；其中 general seed recurrence 10/10、终点约化 8/8、seed-derived DE 8/8。此前 ISP、H 和 general-`ds` 计数保持不变。
 
 012 已实现：
 
@@ -34,6 +41,8 @@
 - 公开原子 API：`dtau/dqq/dqk`、`rep2innerform/rep2outform/rep2Integrand`；支持显式 topology 或已注册 context。
 - massive line 的 `P,Q,T,W[,WT]` 初始化编译层；`AT` 编译为 `derivativeTerms`，`WT=Det[T] W` 编译为 `shrinkTerms`，time/momentum IBP 与 theta shrink 只读取编译结果。
 - h/H 纯数据 presets。缺省 massive 模式是 h：`T=IdentityMatrix[2]`、`W=WT=W_h`；裸 H preset 的 `AT` 含 `nu^2/x^2` 二次 pole。
+
+013 在上述核心上新增：loop `dtau` 到 tree 的完整物理幂次投影、`J[vertexPacks]`、general-index `repIterative0/repIterative`、有序 master list、dlog connection/letters 以及 same-sign contact source；`a0` 保留为 tree `nu0`，被删除的 `b0/bS0` 进入显式能量系数。内部独立报告为 `000-report/2026-07-21-2353-013-内部.md`。
 
 共同-theta boundary 是当前最高优先级正确性门禁，不是可选优化。完整链路必须同时覆盖 `WT -> shrinkTerms`、simultaneous integer/zero-point shift、coincident canonical、contact-reachable sector、linearData 和 serializer；专项清单见 `000_note/2026-07-21_common_theta_correctness_todo.md`，两种等价分布方案的证明见技术笔记附录。
 
@@ -51,9 +60,12 @@ setIBPTopologyContext[topo];
 dtau[v, expr]  (* short form *)
 ```
 
-当前仍未完成：
+014 验收记录：
 
-- 正式 Mathematica `BeginPackage` context。
+- 正式单文件程序 SHA-256：`B02ED7C1D7E32189EFDAC86D31FC42D26C005031254FEF04145864F5D0B1B1E6`；21 页正式手册 SHA-256：`AB8881D2F6EC0414AB312C75B7ABC39FF9661FFE086CCD2B4E1A0F74FF3CC36E`。
+- 最新增量独立报告归档于 `000-report/2026-07-22-1259-014-内部.md`；历史报告保留修正前发现，不改写为修正后结果。
+
+pure massive bubble reference 的顶点交换 symmetry 只在等能量约束下成立。package 使用 `P0=+I k0`，reference basis 使用 `P1=P2=-P0=-I k0`；一般独立 `P1/P2` family 不得复用该 symmetry。Kira 可以在 manifest 中保存 `Sqrt[s11]` 等代数系数生成元的可逆后端原子，但 `DSDE` 的公开矩阵和 source 会统一恢复为初始化声明的外部变量，不保留内部 `kk[i,j]`。
 
 ## 核心表示
 
@@ -82,18 +94,19 @@ J[aList, linePacks, ispList]
 - `vertexData`：顶点 id 与 `+/-` 分支
 - `lineData`：内线 id、有序端点、动量、质量类型和 building-block 参数
 - `loopMomenta`：独立圈动量
-- `externalMomenta`：会进入内线动量并与圈动量做标量积的独立外动量
+- `externalMomenta`：会进入内线动量并与圈动量做标量积的独立外动量；015 缺省公开坐标为 `ssij=Sqrt[sp[ki,kj]]`
+- `externalLegMomenta`：允许出现在无圈动量线和外腿相位中的向量声明；实际出现模长中只有增加平方坐标秩的组合才按顺序绑定 `sE1,sE2,...`，其余保存 dependent binding；这些向量不进入 loop IBP 生成元或 ISP 闭合性检查
 - `ispData`：补齐 loop scalar-product 空间的 ISP
 - `vertexEnergies`：只进入顶点时间相位的外腿打包能量
 - `externalInvariantRules`、`zeroPointRules`、`numericRules`、`symmetryRules` 和 seed 范围
 
-用户端标量积统一写 `sp[p,q]`。`sp` 具有 `Orderless` 属性，只表示标量积交换性，不表示图或积分族对称性。外动量-外动量标量积输出为默认 `sij` 或用户指定变量。
+用户端标量积统一写 `sp[p,q]`。`sp` 具有 `Orderless` 属性，只表示标量积交换性，不表示图或积分族对称性。015 对 loop 外向量生成完整 `sp[ki,kj]->ssij^2`；对其它无圈动量只为实际出现模长平方的独立基生成 `sp[Pe,Pe]->sEe^2`。例如同时出现 `kE1`、`kE2`、`kE1+kE2` 时得到三个独立模长，不生成 `sp[kE1,kE2]`；`2 kE1` 若随后出现，则记录为 `4 sE1^2` 而不新增变量。显式给出 `externalInvariantRules -> {sp[ki,kj]->sij}` 时，旧平方不变量坐标仍以单位 Jacobian 工作。
 
-只进入顶点相位且不与圈动量纠缠的外腿能量使用独立参数 `ke[i]`。若某个顶点能量应与外不变量共用同一变量，应显式写成例如 `Sqrt[s11]`。
+`vertexEnergies` 是进入顶点时间相位的标量。它可以引用上述根号坐标；与任何已声明动量都无关的独立能量仍可使用 `ke[i]`。015 之前的 `ke[i]` 只是标量参数，不表示动量向量，也不自动定义点积、IBP 生成元或 ISP。
 
 ## 微分方程变量求导
 
-012 提供 seed 层接口：
+015 提供 seed 层与表达式层接口：
 
 ```mathematica
 makeExternalInvariantDerivativeDecomposition[topo, var]
@@ -103,20 +116,20 @@ applyIndependentVariableDerivativeSeed[topo, int, var]
 independentVariableDerivativeVariables[topo]
 makeIndependentVariableDerivativeGenerators[topo]
 makeIndependentVariableDerivativeSeedBatch[topo, int]
-ds[expr, sij, topo]
-ds[expr, sij]
+ds[expr, ssij, topo]
+ds[expr, ssij]
 ```
 
 `applyIndependentVariableDerivativeSeed` 自动分派：
 
-- 若 `var` 是 `ke[i]` 等独立顶点能量参数，只对顶点指数相位做标量求导。
+- 若 `var` 是 `sEe`，程序对绑定的无圈线做径向导数，并同时处理显式系数与顶点相位；若它只出现在相位中，就没有线贡献。该路线不生成 loop IBP 方向，也不读取 time-theta 的 `WT/shrinkTerms`。
 - 若 `var` 是外不变量，先在外不变量约束坐标上把 `∂/∂var` 解成 `k_i . ∂/∂k_j` 的线性组合，再作用到传播子、building block、ISP 和相关顶点能量表达式。
 
 `makeIndependentVariableDerivativeSeedBatch` 自动枚举全部外不变量坐标和未被其表达的独立顶点能量参数，并逐变量返回 derivative、decomposition、状态、forbidden-`n` 与 canonical 检查。
 
-公开入口 `ds[expr,sij]` 使用 family 初始化时约定的外部变量名，例如 `s11`、`s12` 或 `ke[i]`。`expr` 可为单个 `J` 或带动力学量系数的 `J` 线性组合；程序同时计算显式系数导数和每个积分的指标导数，再统一执行 EOM、symmetry 与 canonical。内部 `kk[i,j]` 不是该接口的合法变量名，非线性 `J_i J_j` 输入会被拒绝。
+公开入口 `ds[expr,var]` 使用 family 初始化时约定的外部变量名；015 缺省为 `ss11`、`ss12`、`sE1` 等，显式旧规则仍可使用 `s11`。两阶段接口是 `proposal=DSKinematics[input]`、`audit=DSKinematics[input,rules]`、`DSInit[...,KinematicRules->rules]`，不会用 `Input[]` 阻塞 batch；返回值同时列出缺省/当前规则和 `dependentMagnitudeBindings`。欠完备规则按左端矩阵或参数 Jacobian 的零空间拒绝；过完备规则允许生成内部 IBP，但禁用冗余变量 `ds` 和无唯一逆映射的 `rep2innerform`。满秩混合坐标及从属 line/phase 的 `ds` 都按完整 Jacobian 工作。`expr` 可为单个 `J` 或带动力学量系数的 `J` 线性组合；程序同时计算显式系数导数和每个积分的指标导数，再统一 canonical。
 
-外动量矢量导数对 `Sqrt[s11]` 等非线性函数显式使用链式法则 `D F=Sum[(∂F/∂x_a) D x_a]`，不能把 `x_a` 直接替换成 `D x_a`。
+根号坐标不重写导数核心。若 `xij=sp[ki,kj]=ssij^2`，则 `partial_ssij=2 ssij partial_xij`；程序先调用原有平方不变量原子分解，再乘 Jacobian。一般显式系数仍按 `D F=Sum[(∂F/∂x_a) D x_a]` 使用完整乘积与链式法则，不使用 `PowerExpand`。
 
 massive building block 的动力学量导数与 qIBP、tIBP 自动读取同一份最终 `AT -> derivativeTerms`，因此 h、裸 H 和一般 `P,Q,T,W` 不会出现两套导数 convention。`WT/shrinkTerms` 只用于 time-IBP 的 theta/Wronskian shrink，普通动力学量导数不使用它。
 
@@ -154,6 +167,7 @@ wolframscript -file '000_code\test\012_theta_bundle_audit_test.wl'
 wolframscript -file '000_code\examples\hand_derived_cross_checks\mixed_bubble_check.wl'
 wolframscript -file '000_code\test\012_hand_derived_cross_checks\all_family_total_derivative_check.wl'
 wolframscript -file '000_code\test\012_hand_derived_cross_checks\reference_bubble_derivative_check.wl'
+wolframscript -file '000_code\examples\014\pure_massive_bubble_closed_loop\post_kira_check.wl'
 ```
 
 所有 WolframScript 检查应显式输出结果；不要用 `Quiet` 掩盖消息。

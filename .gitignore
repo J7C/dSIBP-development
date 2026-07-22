@@ -35,9 +35,14 @@ codex-independent-benchmark/todolist_temp.md
 # Kira / reduction outputs generated during checks or reference runs
 **/kira_export*/
 **/userSystem/
+**/firefly_saves/
+**/tmp/
 **/results/
 **/result/
 **/temp/
+
+# Local document-rendering and review scratch
+/tmp/
 
 # Retain package scripts from 007 onward; ignore retired 001--006 versions.
 000_code/001_*.wl

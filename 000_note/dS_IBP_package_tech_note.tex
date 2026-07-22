@@ -34,7 +34,7 @@
   \item 同一代表顶点对的 full lines 按共同 theta 生成 odd-subset contact；sector 只枚举这些事件可达的状态。
 \end{itemize}
 
-当前 012 已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/canonical 门禁；time seed 已包含顶点幂次、外部相位、massive 端点导数、massless 有向 $0\leftrightarrow1$ regular 项、massive/massless theta-boundary shrink 以及目标 sector 的 coincident 抵消，并提供公开原子 IBP/表示转换接口。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，不替代任何前端关系。
+当前 014 以 012 的 loop 物理核心为只读基线，已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/canonical 门禁；time seed 已包含顶点幂次、外部相位、massive 端点导数、massless 有向 $0\leftrightarrow1$ regular 项、massive/massless theta-boundary shrink 以及目标 sector 的 coincident 抵消，并通过标准 \texttt{dSIBP`} context 提供原子与高层接口。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，importer 只验证并读取外部完整 reduction；二者都不替代任何前端关系或运行 reduction。
 
 % ============================================================
 \section{h 函数及其性质}
@@ -767,7 +767,7 @@ IBP 恒等式来自全微分在维正规化下积分为零：
 
 \subsection{完备 IBP 生成元集合}
 
-参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，设 \texttt{externalMomenta} 中有 $K$ 个独立外动量向量。这里的外动量向量只指实际进入内线动量偏移 $Q_e=\sum_l c_{e,l}q_l+P_e$、并会在 $Q_e^2$ 或 $q_l\cdot Q_e$ 中和圈动量发生标量积的三动量方向。一个顶点连着的所有外腿在时间相位里只通过打包后的 e 指数能量进入；该能量若和 \texttt{externalMomenta} 空间中的外部不变量是同一变量，应复用对应变量名，若不是则作为独立参数，内部建议记为 \texttt{ke[i]}。例如 $|k_1+k_5|$ 作为独立能量时可记为 \texttt{ke[3]}，不等同于 \texttt{ke[1]+ke[5]}。这些顶点能量不计入 \texttt{externalMomenta} 或 loop-scalar-product 空间。完备的 IBP 生成元为：
+参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，设 \texttt{externalMomenta} 中有 $K$ 个独立外动量向量。它们实际进入含圈动量的 $Q_e=\sum_l c_{e,l}q_l+P_e$，平方 Gram 原子为 $x_{ij}=\operatorname{sp}(k_i,k_j)$，015 的缺省公开变量为 $\sqrt{x_{ij}}$。\texttt{externalLegMomenta} 则只声明可出现在无圈 line momentum 或顶点相位中的向量。程序把实际出现的 $\operatorname{sp}(P_{E,a},P_{E,a})$ 在声明向量的形式 Gram 线性空间展开，先放入完整 loop Gram 行，再按首次出现顺序只保留增加秩的无圈模长平方；未入基项保存为所选平方坐标的 dependent binding。该形式 Gram 空间只用于秩与 binding，不向用户输出新的外腿交叉点积。例如 $k_{E,1}$、$k_{E,2}$ 与 $k_{E,1}+k_{E,2}$ 同时出现时仍给出三个独立 $r_a$，而 $2k_{E,1}$ 绑定为 $4r_1^2$。这些向量不计入 $K$、loop IBP 生成元或 ISP 空间。完备的 IBP 生成元为：
 
 \begin{equation}
   \mathcal{O}_{l,v} = \frac{\partial}{\partial q_l^\mu} \cdot v^\mu, \quad l \in \{1,\ldots,L\}, \quad v^\mu \in \{q_1^\mu, \ldots, q_L^\mu, k_1^\mu, \ldots, k_K^\mu\}
@@ -799,7 +799,9 @@ ISP 指标 $n_{\text{isp}_j} \geq 0$（仅出现在分子，不出现在分母�
 \begin{verbatim}
 loopMomenta = {l3, k321};
 externalMomenta = {wdnmd};
-vertexEnergies = <|1 -> ke[1], 2 -> Sqrt[s11]|>;
+externalLegMomenta = {kE1};
+vertexEnergies = <|1 -> ke[1], 2 -> Sqrt[sp[wdnmd,wdnmd]],
+  3 -> Sqrt[sp[kE1,kE1]]|>;
 
 ispData = {
   {rhoA, sp[l3, wdnmd + l3], {0, 1}},
@@ -807,7 +809,7 @@ ispData = {
 };
 \end{verbatim}
 
-\texttt{sp[p,r]} 是当前主线的用户口 scalar-product convention，并具有 \texttt{Orderless} 属性；其中 \texttt{p,r} 必须先是 \texttt{loopMomenta/externalMomenta} 的线性组合，不能写成 \texttt{q1\textasciicircum 2} 这类非线性表达式。内部编号变量 \texttt{qq/qk/kk} 只用于程序线性代数，不要求用户输入。外动量--外动量不变量在输出端使用变量名；用户可用 \texttt{externalInvariantRules} 自定义，未指定时默认按 \texttt{externalMomenta} 顺序命名为 \texttt{sij}。\texttt{vertexEnergies} 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 \texttt{externalMomenta} 张成空间中的外部不变量是同一变量，应在 \texttt{vertexEnergies} 中显式写成外部不变量表达式，例如 \verb|Sqrt[s11]| 或 \verb|Sqrt[sigW]|；若不是，则作为独立 \texttt{ke[i]} 参数。$|ke_1+ke_2|$、$|ke_1|$、$|ke_2|$ 是三个独立参数时必须分别命名，例如 $|ke_1+ke_2|$ 另记为 \texttt{ke[3]}，不能自动等同于 \texttt{ke[1]+ke[2]}。这些 \texttt{ke[i]} 不进入 \texttt{externalMomenta} 或 ISP 完备性坐标；外腿能量参数之间不生成点积关系。该约定用于避免未复用关系造成约化结果冗余，并让微分方程阶段对同一变量统一求导；若用户希望独立求导，则应显式输入独立 \texttt{ke[i]} 参数，package 不主动替用户拆分或合并。\texttt{vertexEnergies} 中不能直接写 \texttt{loopMomenta/externalMomenta} 的向量符号，也不能写圈相关 \verb|sp[q,k]|；属于外动量空间时写外部不变量变量名表达式，否则写独立 \texttt{ke[i]}。
+\texttt{sp[p,r]} 是用户口 scalar-product convention，并具有 \texttt{Orderless} 属性。含圈 line momentum 与 ISP 中的参数必须由 \texttt{loopMomenta/externalMomenta} 线性张成；无圈 line momentum 还可使用 \texttt{externalLegMomenta}。内部 \texttt{qq/qk/kk} 只服务 loop 线性代数。015 对 loop Gram 使用短名 \texttt{ssij}，对实际出现的无圈模长独立基按首次出现顺序使用 \texttt{sE1,sE2,...}。若候选可由 loop Gram 与此前无圈平方坐标线性表示，就只保存 binding，不再创建 \texttt{sEe}。与全部动量声明无关的相位标量仍可写成 \texttt{ke[i]}。
 
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}
@@ -816,7 +818,7 @@ ispData = {
   \item \texttt{zExprs} 与 ISP 坐标总数等于独立 loop-scalar-products 数量，即 $\# z_e+\#\text{ISP}=N_{\text{sp}}$
   \item line momentum 与 \texttt{sp[p,r]} 参数必须是声明动量基的线性组合；非线性输入会触发 \texttt{nonLinearLineMomenta} 或 \texttt{nonLinearScalarProductArguments}
   \item 数量闭合后必须能实际反解出 \texttt{repSP2Z}；重复或退化传播子动量会触发 \texttt{scalarProductCoordinateSolveFailed}
-  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；外部不变量推荐写输出变量名，例如默认 \verb|s11 -> value| 或用户自定义 \verb|sigW -> value|，\verb|sp[k_i,k_j] -> value| 仅作为输入兼容形式；独立顶点能量写 \verb|ke[3] -> value|；若顶点能量写成 \verb|Sqrt[s11]| 这类外部不变量表达式，则只需给对应外部不变量数值；若用户希望它与外部不变量独立，则应改用独立 \verb|ke[i] -> value|
+  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；015 缺省给根号坐标赋值，例如 \verb|ss11 -> value| 或 \verb|sE1 -> value|，程序在内部映射为平方值。显式旧规则或自定义名保持其声明语义；独立顶点能量写 \verb|ke[3] -> value|。
 \end{enumerate}
 
 这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动从传播子中选择独立子集；若输入中存在重复/退化传播子、ISP 不足或特殊数值外动量导致不可反解，应由用户修正 family 输入。
@@ -862,7 +864,7 @@ canonical seed 先由 \texttt{makeLinearSystemData} 转成后端中立的 \textt
 
 serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编号和文件布局，并执行后端特有的输入检查；它不重新生成 IBP seed，不重新应用 EOM，也不改变 sector convention。当前 Kira serializer 生成 \texttt{userSystem/ibp.kira}、\texttt{list}、\texttt{jobs.yaml}、积分映射和 metadata。未来若接 Rational Tracer，应新增独立 serializer，但 canonical seed 和 linear-system 主线无需重写。
 
-本 package 默认不安装、配置或运行 Kira/Rational Tracer，不保存本机 Kira/Fermat 路径，也不导入 reduction 或 master-integral 结果。
+本 package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机 Kira/Fermat 路径。014 的 importer 可读取并验证用户在 package 外生成的完整 reduction 与 master-integral 结果；缺失完成标记、映射或来源 manifest 时必须拒绝继续。
 
 % ============================================================
 \section{标量积变量与 $z=\xi^2$ 线性变换}
@@ -1022,7 +1024,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \section{独立变量微分方程求导}
 % ============================================================
 
-微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。012 将独立变量分为两类：一类是只进入顶点相位的外腿能量参数，另一类是由外动量 Gram 坐标给出的外不变量。后一类沿用标准 Feynman 积分微分方程中的做法：先用外动量矢量导数表示不变量求导，再把矢量导数作用到被积函数并约化为指标移位。这里的 $i,j$ 都只遍历 \texttt{externalMomenta} 中声明的独立外动量向量。
+微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。015 将独立变量分为三类：由 \texttt{externalMomenta} 完整 Gram 坐标得到的模长、topology 中实际出现的无圈动量模长，以及与任何动量向量都无关的独立标量能量。第一类沿用标准外动量矢量导数；第二类对绑定的 line momentum 作标量径向导数并同时微分相位；第三类只按显式系数与顶点相位依赖求导。构造 $D_{ij}$ 时，$i,j$ 只遍历 \texttt{externalMomenta}。
 
 \subsection{顶点能量参数}
 
@@ -1051,13 +1053,13 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \end{equation}
 式中负号来自时间幂 convention：$J$ 中保存的是 $(-\tau_v)^{a_v+a0_v}$，而相位求导产生的是 $\eta_v\tau_v=-\eta_v(-\tau_v)$。
 
-\subsection{外不变量的矢量导数分解}
+\subsection{平方 Gram 原子与根号坐标的矢量导数分解}
 
-令外不变量坐标为
+先令内部平方 Gram 原子为
 \begin{equation}
   x_a\in\{k_i\cdot k_j\}_{1\le i\le j\le K},
 \end{equation}
-或其用户命名版本。定义外动量矢量导数算符
+并定义外动量矢量导数算符
 \begin{equation}
   D_{ij}=k_i\cdot{\partial\over\partial k_j}.
 \end{equation}
@@ -1071,7 +1073,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \label{externalVectorGramAction}
 \end{equation}
 
-因此对指定坐标 $x_a$ 求导时，先在约束坐标 $\{x_b\}$ 上解线性方程
+因此先在约束坐标 $\{x_b\}$ 上解平方原子导数
 \begin{equation}
   {\partial\over\partial x_a}
   =
@@ -1080,13 +1082,22 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
   \label{externalInvariantDecomposition}
 \end{equation}
-完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。012 的默认实现选择上三角 external-vector basis 给出一组 canonical 解。实际返回接口是
+完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。原子实现选择上三角 external-vector basis 给出一组 canonical 解。015 不重写该分解；对直接模长
+\begin{equation}
+  r_a=\sqrt{x_a}=\sqrt{\operatorname{sp}(k_i,k_j)}
+\end{equation}
+只在外层应用
+\begin{equation}
+  {\partial\over\partial r_a}=2r_a{\partial\over\partial x_a}.
+  \label{rootInvariantChainRule}
+\end{equation}
+显式旧平方坐标保持单位 Jacobian。实际返回接口是
 \begin{center}
   \texttt{makeExternalInvariantDerivativeDecomposition},
 \end{center}
 它返回矩阵、所选系数、残差、\verb|nullity| 与 \verb|nonUniqueQ|。若某一物理问题要求不同切向代表元，应替换 operator basis，而不是把任意选择隐藏在求导核心中。
 
-每个 $D_{ij}$ 作用到被积函数时，传播子、massive/massless building block 与 ISP 的求导都按同一链式法则处理。若某个顶点能量在 \verb|vertexEnergies| 中写成外不变量函数，例如 \verb|Sqrt[s11]|，则 $D_{ij}$ 也会按式~\eqref{externalVectorGramAction} 作用到这部分相位能量。
+每个 $D_{ij}$ 作用到被积函数时，传播子、massive/massless building block 与 ISP 的求导都按同一链式法则处理。若某个顶点能量写成 $\sqrt{\operatorname{sp}(k_i,k_j)}$，则同一原子分解与式~\eqref{rootInvariantChainRule} 也作用到相位能量。若写成 $\sqrt{\operatorname{sp}(k_{E,i},k_{E,j})}$，它不产生 $D_{ij}$ 方向，只按显式标量依赖求导。
 
 对一般非线性函数 $F(x_1,\ldots,x_N)$，程序必须显式使用
 \begin{equation}
@@ -1094,9 +1105,75 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   =\sum_a {\partial F\over\partial x_a}D_{ij}x_a.
   \label{externalVectorFunctionChainRule}
 \end{equation}
-因此 $F=\sqrt{s_{11}}$ 给出普通的 $1/(2\sqrt{s_{11}})$ 链式因子。把每个坐标直接替换成 $D_{ij}x_a$ 只对线性 $F$ 成立，不能用于顶点能量或其它非线性动力学量系数。
+因此 $F=\sqrt{\operatorname{sp}(k_1,k_1)}$ 给出普通链式因子。把每个坐标直接替换成 $D_{ij}x_a$ 只对线性 $F$ 成立，不能用于顶点能量或其它非线性动力学量系数；实现也不得用 \texttt{PowerExpand} 假定根号分支。
 
 对 massive building block，loop-momentum IBP、time-IBP 与这里的 external-vector/外不变量导数共享同一个 line-local \texttt{compiledFunction\allowbreak System}：普通导数只读取最终 $A_T$ 编译的 \texttt{derivative\allowbreak Terms}。最终 $W_T=\det(T)W$ 及其 \texttt{shrink\allowbreak Terms} 只在 time-IBP 的 theta coincidence/Wronskian shrink 中使用；动力学量导数不微分 theta ordering，因此不调用 $W_T$。
+
+\subsection{实际无圈动量线的径向导数}
+
+设不含圈动量的 line momentum 为 $P_{E,e}$，并把其模长绑定为
+\begin{equation}
+  r_e=|P_{E,e}|=\sqrt{\operatorname{sp}(P_{E,e},P_{E,e})}.
+\end{equation}
+它仍是一条对 $\tau$ 积分的传播子，只是不产生新的 loop IBP generator。记该线物理分母幂为 $B_e=b_e+b0_e$。若端点 $s$ 的已编译基底满足
+\begin{equation}
+  {\partial f_{\alpha_s}(x)\over\partial x}
+  =\sum_{\beta,p}c^{(e,s)}_{\alpha_s\beta p}\,x^p f_\beta(x),
+  \qquad x=-r_e\tau_{v_s},
+\end{equation}
+则 $\partial_{r_e}$ 在指标表示中的 line-local 作用为
+\begin{align}
+ {\partial J\over\partial r_e}\bigg|_{e}
+ ={}&-B_e\,J[b_e\to b_e+1]\nonumber\\
+ &+\sum_{s=1}^{2}\sum_{\beta,p}
+ c^{(e,s)}_{\alpha_s\beta p}\,
+ J\!\left[
+ a_{v_s}\to a_{v_s}+p+1,
+ b_e\to b_e-p,
+ n_{e,s}:\alpha_s\to\beta
+ \right].
+ \label{externalLegRadialDerivative}
+\end{align}
+这正是 \texttt{AT} 编译出的每一条 \texttt{derivativeTerms} 对 $a/b/n$ 的同时移位；其它端点态与其它线指标保持不变。对 h 基底的 $n=0$，$\partial_xh_0=h_1$，式~\eqref{externalLegRadialDerivative} 退化为两端各一个 $a_{v_s}\to a_{v_s}+1,n_{e,s}:0\to1$，再加分母项 $-B_eJ[b_e+1]$。
+
+massless full/cross 线使用各自已固定的端点 phase 符号：full 线同时翻转该线离散态，cross 线保持其单一状态；两者都加同一个分母幂导数。径向求导不微分 theta ordering，不读取 \texttt{WT/shrinkTerms}，所以不会把 time-IBP 的共同-theta contact 规则误用于微分方程。
+
+若 $r_e$ 还进入顶点能量，则另加式~\eqref{vertexEnergyDerivative} 的相位项。对用户变量 $u$，实际组合为
+\begin{equation}
+ {\partial J\over\partial u}
+ =\sum_{a\in\mathrm{loop\ Gram}}
+ {\partial x_a\over\partial u}{\partial J\over\partial x_a}
+ +\sum_{e\in\mathrm{no\!\mbox{-}\!loop\ magnitudes}}
+ {\partial r_e\over\partial u}{\partial J\over\partial r_e}
+ +{\partial J\over\partial u}\bigg|_{\mathrm{explicit\ scalar\ phase}}.
+ \label{generalKinematicCoordinateChainRule}
+\end{equation}
+第一项的平方 Gram 原子导数已经包含由 $x_a$ 引起的顶点相位变化；最后一项只微分内部表达式中仍显式依赖 $u$ 的无圈模长或独立标量，不能重复加入 loop phase。
+
+\subsection{变量重选、秩与零空间门禁}
+
+把完整基础平方坐标按固定顺序写成
+\begin{equation}
+ \bm y=(\{x_{ij}\}_{i\le j},\{r_e^2\})^T,
+\end{equation}
+其中第二组是 topology 实际出现的无圈模长平方在第一组及此前已选无圈行之上的增量独立基；不把外腿向量点积作为公开坐标。每个未入基候选仍保存为 $\bm y$ 的线性组合，并在 line、phase 和显式系数中以该组合的平方根出现。用户规则统一写成
+\begin{equation}
+ A\bm y=\bm f(\bm u).
+ \label{kinematicRuleMatrix}
+\end{equation}
+左端必须满足 $\operatorname{rank}A=N_y$。若不满秩，$\operatorname{NullSpace}(A)$ 给出未覆盖的基础动力学方向；$\operatorname{NullSpace}(A^T)$ 给出规则行依赖，其与 $\bm f$ 的收缩给出一致性残差。选取独立行解出 $\bm y(\bm u)$ 后，再构造
+\begin{equation}
+ B_{a\alpha}={\partial y_a(\bm u)\over\partial u_\alpha}.
+\end{equation}
+还必须有 $\operatorname{rank}B=N_y$。$\operatorname{NullSpace}(B^T)$ 按同一 \texttt{baseCoordinateOrder} 给出被用户参数化施加的局部约束方向；$\operatorname{NullSpace}(B)$ 给出冗余用户参数方向。
+
+公开的两阶段调用为
+\begin{center}
+ \texttt{DSKinematics[input]},\qquad
+ \texttt{DSKinematics[input,rules]},\\
+ \texttt{DSInit[input,KinematicRules->rules]}.
+\end{center}
+第一条返回缺省规则、从属模长 binding、可复制修改的 \texttt{selectionTemplate} 和上述秩/零空间；第二条只审计候选规则，第三条才初始化。该接口不会用 \texttt{Input[]} 阻塞 notebook、命令行或 batch。欠完备规则被拒绝。过完备规则允许继续生成内部 IBP seed，但冗余坐标的 \texttt{ds} 被禁用，且 \texttt{rep2innerform} 不声称存在唯一反向映射。一般满秩混合坐标与从属 binding 都由式~\eqref{generalKinematicCoordinateChainRule} 求导；若其逆映射不是单值的简单符号/平方规则，\texttt{rep2innerform} 同样明确返回失败。
 
 \subsection{带动力学量系数的表达式总导数}
 
@@ -1104,7 +1181,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \begin{equation}
   \mathcal I(s)=\sum_r c_r(s)J_r(s)+c_0(s),
 \end{equation}
-而不是单个指标积分。公开接口 \verb|ds[expr,sij]| 使用 family 初始化时的外部变量名，并严格实现
+而不是单个指标积分。公开接口 \verb|ds[expr,var]| 使用 family 初始化时的外部变量名；015 缺省为根号坐标的 API 短名，并严格实现
 \begin{equation}
   {\partial\mathcal I\over\partial s}
   =\sum_r c'_r(s)J_r(s)
@@ -1112,7 +1189,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   +c'_0(s).
   \label{expressionTotalDerivative}
 \end{equation}
-实现时先把各个 $J_r$ 替换为惰性 token，让 Mathematica 的 \texttt{D} 只作用于显式系数；随后逐项调用单积分导数核心，合并后再统一执行 EOM、symmetry 与 canonical。接口拒绝内部 \texttt{kk[i,j]} 名称及 $J_iJ_j$ 等非线性输入，输出恢复到 \texttt{sij} 或用户自定义的外部表示。
+实现时先把各个 $J_r$ 替换为惰性 token，让 Mathematica 的 \texttt{D} 只作用于显式系数；随后逐项调用单积分导数核心，合并后再统一执行 EOM、symmetry 与 canonical。接口拒绝内部 \texttt{kk[i,j]} 名称及 $J_iJ_j$ 等非线性输入，输出恢复到根号坐标或用户显式声明的兼容表示。
 
 独立验证分为两层。第一层对十个物理函数族的全部 sign/mode、contact-reachable sector 和初始化独立变量，从 $D_{ij}=k_i\cdot\partial_{k_j}$ 重新手推传播子幂、building block、ISP 与相位导数；连续 $a/b/\mathrm{ISP}$ 指标保持 general，并对带参量系数的双积分组合比较，共通过 $468/468$。第二层把旧 reference bubble 的 $G/R1/R2$、$Vpm=0$、zero-point、symmetry、parity 与 $s_{11}=k_s^2$ 显式映射到统一 $J$；在 reference 实际保留的 top/R1 basis 上，\texttt{dk0/dks} 与 \texttt{ds} 的单积分和总导数比较通过 $80/80$。其中 R2 按 reference 顺序先由 package \texttt{symmetry} canonical 到 R1，不作为另一套 sector metadata 下的独立 DE basis。
 
@@ -1196,6 +1273,204 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \item 圈动量符号：$q_l$（$l$ 为圈编号）。
   \item 外部能量符号：$P_v$（$v$ 为顶点编号）或 $k_v$。
 \end{itemize}
+
+% ============================================================
+\section{Loop reduction 取回、微分方程与标度检验}
+% ============================================================
+
+014 继续保持 ``package 不运行 reduction'' 的边界，但允许读回用户已经运行完成的 Kira 全套输出。导出端的 \texttt{linearData}、积分编号映射和 convention manifest 必须与读回结果同源；否则 reduction rule 即使语法可读，也不能用于微分方程。
+
+设完全同序的主积分列向量为 $\bm I=(I_1,\ldots,I_N)^T$。对外部独立变量 $x$，公开总导数 \texttt{ds[expr,x]} 同时作用于显式系数和积分：
+\begin{equation}
+ \frac{d}{dx}\sum_i c_i(x)I_i(x)
+ =\sum_i c_i'(x)I_i(x)+\sum_i c_i(x)\frac{dI_i(x)}{dx}.
+\end{equation}
+把右端用导入的 reduction rules 约回同一顺序，得到
+\begin{equation}
+ \frac{d\bm I}{dx}=\Omega_x\bm I+\bm s_x.
+\end{equation}
+如果仍有不在 $\bm I$ 中的积分，或者 $\bm s_x$ 不符合声明的非齐次结构，则该变量的 DE 状态必须是 \texttt{notClosed}。
+
+pure massive bubble 的 top sector 使用文献 2604.14549 Eq.~(51) 的 Euler 标度关系
+\begin{equation}
+ \left(k_s\partial_{k_s}+P_1\partial_{P_1}+P_2\partial_{P_2}\right)
+ I[\{n\},\{a_1,a_2\},\{b_1,b_2\}]
+ =\left(d-b_1-b_2-a_1-a_2-2\right)I[\cdots].
+ \label{eq:loop-top-scaling}
+\end{equation}
+residual/tadpole sector 使用该文 Eq.~(64)
+\begin{equation}
+ \left(k_s\partial_{k_s}+P_0\partial_{P_0}\right)
+ R_1[\{n_3,n_4\},\{a\},\{b_1,b_2\}]
+ =\left(d-b_1-b_2-a-1\right)R_1[\cdots].
+ \label{eq:loop-residual-scaling}
+\end{equation}
+014 的 scaling check 把这些 Euler operator 逐个作用于 master vector，再经相同 reduction rules 约回；检查的是符号残差矩阵为零。数值点只能定位失败，不能取代式~\eqref{eq:loop-top-scaling}、\eqref{eq:loop-residual-scaling} 的全符号检验。
+
+闭环 example 固定选 pure massive bubble reference 的 $--$ branch，并使用与 reference code 相同的 parity-closed subsystem：top sector 中 $n_1+n_2+b_1$ 与 $n_3+n_4+b_2$ 均为偶数；$R_1$ 中 $b_1$ 与 $n_3+n_4+b_2$ 均为偶数。交换对称性、$R_2\to R_1$ 与 parity 必须在前端统一 canonical 中应用，不能在 Kira importer 或 DE 层临时补入。
+
+% ============================================================
+\section{Tree vertex family 的指标表示}
+% ============================================================
+
+Tree 与 loop 共用积分 Head，但用 arity 区分：
+\begin{align}
+ J[\bm a,\bm p,\bm r]&\qquad\text{loop 三槽表示},\\
+ J[\{\bm v_1,\ldots,\bm v_E\}]&\qquad\text{tree 单槽表示},
+\end{align}
+其中
+\begin{equation}
+ \bm v_e=\{a_e,n_{e1},\ldots,n_{e p_e}\}.
+ \label{eq:tree-vertex-pack}
+\end{equation}
+$a_e$ 是顶点时间幂次的整数偏移；$p_e$ 是该顶点所连、有标记的 massive $h$ 外腿数；$n_{ei}\in\{0,1\}$ 是对应 $h$ 的导数态。massless 外腿进入顶点能量 $k_{0;e}$，但不占 $n_{ei}$ 槽。初始化必须验证每个 pack 的长度为 $1+p_e$。
+
+对单个 $p$-fold vertex family，主积分按 2401.00129 Eq.~(3.33) 排序：
+\begin{equation}
+ j=1+\sum_{i=1}^{p}n_i2^{p-i}.
+ \label{eq:tree-master-order}
+\end{equation}
+因此最后一个二进制指标变化最快，master list 为 $\{00\cdots0,00\cdots1,\ldots,11\cdots1\}$，共有 $2^p$ 个。任何 dlog 矩阵必须与按式~\eqref{eq:tree-master-order} 生成的 master list 一同保存。
+
+\subsection{Loop 到 tree 的零点与显式系数}
+
+Tree family 不保留 loop 的 $b$ 槽，因此投影必须把完整物理幂次写入显式系数。设目标项属于 sector $s$，原 time seed 的参考积分属于 sector $r$，定义
+\begin{align}
+ A_s&=\sum_v\left(a_v^{(s)}+a0_v^{(s)}\right),\\
+ B_{e,s}&=\begin{cases}
+ b_e^{(s)}+b0_e^{(s)},&e\text{ 为 full line},\\
+ bS_e^{(s)}+bS0_e^{(s)},&e\text{ 为 shrunk line}.
+ \end{cases}
+\end{align}
+相对参考积分归一化后的投影系数为
+\begin{equation}
+ \mathcal P_{s\leftarrow r}
+ =(-1)^{A_s-A_r}\prod_e k_e^{-\left(B_{e,s}-B_{e,r}\right)}.
+ \label{eq:loop-tree-projection-prefactor}
+\end{equation}
+目标 sector 的 $a0_v^{(s)}$ 同时作为式~\eqref{eq:tree-m10} 的 $\nu_{0;v}$。式~\eqref{eq:loop-tree-projection-prefactor} 必须直接由幂次差构造；对一般符号 $b$ 不使用 \texttt{PowerExpand}。
+
+对 h-mode massive contact，$bS=b+1$、$bS0=b0+2\nu$，同时 $a_{\rm merged}=a_u+a_v-1$、$a0_{\rm merged}=a0_u+a0_v-2\nu$。因此整数和 zero-point 共同产生完整的 $(-k)^{-2\nu-1}$；只写 $k^{-1}$ 会遗漏物理系数。H-mode 采用相同整数 shift 但 zero-point shift 为零，无质量 contact 的两类 shift 均为零。
+
+014 的 sector-tagged \texttt{treeLinearData} 必须为每个未合并 loop 单项分别序列化目标与参考的整数幂、zero-point、完整物理幂及其差值，并保存由这些差值直接重建的式~\eqref{eq:loop-tree-projection-prefactor}。若若干来源投影到相同的 \texttt{\{sectorKey,J[...]\}}，最终系数可以求和，但逐来源 \texttt{contributions} 和 \texttt{physicalPowerAudits} 不得覆盖。对同一 contact 事件同时缩并多条线时，式~\eqref{eq:loop-tree-projection-prefactor} 的乘积逐线保留；例如三条 h 线的显式能量指数分别为 $-1-2\nu_i$，而 merged vertex 的 $\nu_0$ 同时减去 $\sum_i2\nu_i$。
+
+% ============================================================
+\section{Tree 的通用迭代关系}
+% ============================================================
+
+定义 $\bm f(a_0)$ 为式~\eqref{eq:tree-master-order} 排序的 $2^p$ 维向量。令 $\Lambda_r^{(i)}$ 表示只在第 $i$ 个二进制因子上作用 Pauli 矩阵 $\sigma_r$。2401.00129 Eq.~(3.37) 给出
+\begin{align}
+ M_1(\nu_0)
+ &=\sum_{i=1}^{p}\left(\nu_i+\frac12\right)\Lambda_3^{(i)}
+ +\left(\nu_0-\frac p2-\sum_{i=1}^{p}\nu_i\right)I_{2^p},\\
+ M_0
+ &=-i\sum_{i=1}^{p}k_i\Lambda_2^{(i)}+ik_0 I_{2^p},
+ \label{eq:tree-m10}
+\end{align}
+并满足
+\begin{equation}
+ M_1(\nu_0)\bm f(-1)+M_0\bm f(0)=0.
+\end{equation}
+所以降低一步的矩阵是
+\begin{equation}
+ A_-(\nu_0)=-M_1(\nu_0)^{-1}M_0.
+ \label{eq:tree-aminus}
+\end{equation}
+
+为避免一般 $2^p\times2^p$ 矩阵求逆，采用该文 Eq.~(3.43)--(3.50) 的常数变换
+\begin{equation}
+ T=\frac1{\sqrt2}\begin{pmatrix}1&-i\\-i&1\end{pmatrix},
+ \qquad T_p=T^{\otimes p}.
+\end{equation}
+在变换后基底，
+\begin{align}
+ \widetilde M_0
+ &=-i\sum_{i=1}^{p}k_i\Lambda_3^{(i)}+ik_0I_{2^p},\\
+ \widetilde M_1&=T_pM_1T_p^{-1},
+\end{align}
+其中 $M_1$ 和 $\widetilde M_0$ 都是对角矩阵。升高一步为
+\begin{equation}
+ A_+(\nu_0-1)
+ =-T_p^{-1}\widetilde M_0^{-1}\widetilde M_1T_p
+ =-T_p^{-1}\widetilde M_0^{-1}T_pM_1(\nu_0).
+ \label{eq:tree-aplus}
+\end{equation}
+实现应直接构造两个对角逆；当 $M_1$ 或 $\widetilde M_0$ 的对角元为零时返回 singular-locus 信息，不调用大矩阵符号 \texttt{Inverse}。
+
+原始可替换单步规则命名为 \texttt{repIterative0}。函数
+\begin{verbatim}
+repIterative[expr_, end_:Automatic]
+\end{verbatim}
+把每个顶点的 $a_e$ 迭代到指定终点；\texttt{Automatic} 表示全零终点。显式终点的长度必须等于顶点数，且每段步数必须是可判定整数。多 sector 情形按 contact-reachable sector DAG 从低到高处理，避免把含 source 的非齐次关系当作齐次 replacement repeated。
+
+% ============================================================
+\section{Tree 的 dlog DE 与 SK branch}
+% ============================================================
+
+定义 2401.00129 Eq.~(3.54) 的两个矩阵值对数
+\begin{align}
+ (\widetilde\Omega_0)_{\bm b\bm a}
+ &=\delta_{\bm b\bm a}\left[-i\log\left(k_0+\sum_i(2a_i-1)k_i\right)\right],\\
+ (\Omega_{\mathrm{ex}})_{\bm b\bm a}
+ &=\delta_{\bm b\bm a}\left[-\sum_i a_i(2\nu_i+1)\log k_i\right].
+\end{align}
+则 master vector 的通用 dlog connection 是该文 Eq.~(3.55)
+\begin{equation}
+ d\bm f=(d\Omega)\bm f,
+ \qquad
+ \Omega=\Omega_{\mathrm{ex}}
+ -iT_p^{-1}\widetilde\Omega_0T_pM_1(\nu_0+1).
+ \label{eq:tree-dlog}
+\end{equation}
+013 输出式~\eqref{eq:tree-dlog} 时必须同时给出 letters、矩阵和式~\eqref{eq:tree-master-order} 的 master list。序列化时按顶点顺序逐块输出：每块先列该顶点 massive legs 顺序的能量 letters，再按二进制 master 顺序列 cut letters，最后稳定去重；letter matrices 的键顺序必须与此完全一致，不能依赖展开后表达式的遍历顺序。
+
+\subsection{Naive time-IBP 路线的微分方程}
+
+014 另保留一条不使用式~\eqref{eq:tree-dlog} 或 $A_\pm$ 构造约化规则的路线。对每个 sector 的 $a_v=0$ binary master，把一个活动顶点改成 $a_v=1$，反投影为 loop 代表元并调用已经验证的 \texttt{dtau}。完成共同 theta、simultaneous contact、zero point 和 coincident canonical 后再投影为 sector-tagged tree 方程。所有方程一次联立，固定 $a_v=0$ masters，只解一步升幂对象。这正是 \texttt{DSTreeNaiveIBP} 的定义。
+
+顶点相位能量导数仍可由 loop 代表元的相位项投影。传播子的 \texttt{treeEnergy} 则不能使用完整 loop 动量导数，因为后者作用于积分变量。由式~\eqref{dkh0}--\eqref{dkh1}，以 tree 的 $\tau^a$ convention 写成
+\begin{align}
+ \partial_k J[a,n=0]&=-J[a+1,n=1],\label{eq:tree-naive-dk0}\\
+ \partial_k J[a,n=1]&=J[a+1,n=0]-\frac{2\nu+1}{k}J[a,n=1].\label{eq:tree-naive-dk1}
+\end{align}
+每个 endpoint leg 分别应用式~\eqref{eq:tree-naive-dk0}--\eqref{eq:tree-naive-dk1}，并乘 $\partial k/\partial x$。若同序全局 master 为 $F_s=N_sJ_s$，则
+\begin{equation}
+ \partial_xF_s=(\partial_xN_s)J_s+N_s\partial_xJ_s,
+\end{equation}
+所以 Wronskian/zero-point normalization 的显式系数导数不可遗漏。\texttt{DSTreeNaiveDE} 最后只使用上述 raw derivative 与 naive 线性规则，输出的逐变量矩阵应与 $\partial_x\Omega$ 在完全相同的 ordered normalized basis 下逐项相等。
+
+每个顶点的 $+/-$ branch 决定其相位能量 $k_{0;e}$ 的符号。h 的 EOM、二进制 basis 和式~\eqref{eq:tree-m10} 的矩阵结构不因 branch 改变。内部线的 SK 类型由两个端点的 branch 唯一决定：同号端点只能给 $G^{++}$ 或 $G^{--}$，异号端点只能给 $G^{+-}$ 或 $G^{-+}$，不存在同一传播子在一次计算中同时具有两种类型的情形。
+
+$G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化，tree 映射不得读取 $W_T$。$G^{++}/G^{--}$ 的 theta 导数产生 contact remaining term；其 branch 符号必须从当前 loop time-IBP 的 compiled $W_T$ 和 theta offset 读取。对同一顶点对的多条 full lines，先在 loop 表示中应用共同-theta odd-subset contact、simultaneous shift、zero point 和 coincident canonical，再映射到 tree。这样多顶点 DE 按 lower sector 形成 block-triangular source，正是 2401.00129 Eq.~(3.66)--(3.68) 的结构，而不需要在 tree 模块重写传播子的 theta 公式。
+
+设 sector $s$ 的 binary master vector 为 $\bm f_s^{(0)}$。非对角块需要约化求导产生的 $\bm f_s^{(1)}$，所以 contact selector 必须从 $R^{(1)}$ 取得：对 $\bm f_s^{(0)}$ 的每个 binary state，只把当前求导顶点的整数时间指标改成 $a=1$ 后调用 loop time-IBP。$a=0$ seed 给出的是 $R^{(0)}$；其 lower-sector 指标一般为 $a=-1$，先把它迭代到零会引入合并顶点能量，不能替代 Eq.~(3.68) 的 selector。
+
+为使显式 Wronskian 与 zero-point 能量幂不残留在所谓常数矩阵中，对每个 sector 选择共同 normalization $\mathcal N_s$，并定义全局 master $\bm F_s=\mathcal N_s\bm f_s^{(0)}$。取 $\mathcal N_{\rm top}=1$；若第一条由 $s$ 到 $t$ 的非零 tagged source coefficient 是 $c_*$，则取 $\mathcal N_t=\mathcal N_s c_*$. 所有其它入边的 $\mathcal N_s c/\mathcal N_t$ 必须与顶点能量和 massive-line 能量无关。于是
+\begin{align}
+ \Omega_{ss}^{\rm global}&=\Omega_s+\log(\mathcal N_s)\,\mathbb I_s,\\
+ \Omega_{st}^{\rm global}&=-i\sum_{v\in s}
+ \operatorname{Embed}_v\!\left(T_v^{-1}\widetilde\Omega_{0;v}T_v\right)
+ C_{st}^{(v)},\qquad t\prec s,
+ \label{eq:tree-sector-offdiagonal}
+\end{align}
+其中 $C_{st}^{(v)}$ 由当前 loop \texttt{dtau} 的 tagged $R^{(1)}$ source 抽取并除去 $\mathcal N_t/\mathcal N_s$。该写法逐项实现 Eq.~(3.68)，且共同-theta多传播子 source 会自然给直接跨多层 sector 的块。$\log(\mathcal N_s)$ 作为整体 letter 保存；不把一般复幂拆开，也不使用 \texttt{PowerExpand}。
+
+\texttt{DSTreeDLogDE[context]} 返回同序的 \texttt{masters}、\texttt{omega}、\texttt{letters/letterMatrices}，并附带 \texttt{sectorNormalizations}、\texttt{normalizationAudits}、\texttt{contactMaps}、\texttt{omegaBlocks} 和严格重构检查 \texttt{dlogResidual/dlogQ}。矩阵按 contact DAG 排序；从 lower sector 回到 parent 的块及同层 sibling 块必须严格为零。
+
+% ============================================================
+\section{013 pure time-IBP 交叉验证定义}
+% ============================================================
+
+013 的新增 benchmark 不重复已有 momentum-IBP、独立变量总导数或共同-theta专项。它固定使用两个只含 time generator 的 family：
+\begin{enumerate}
+  \item 两顶点同号 $\{+,+\}$，由一条 massive full line 相连。该线是 $G^{++}$，必须出现由 compiled $W_T$ 决定的 contact source。
+  \item 三顶点 chain $\{+,+,-\}$，两条 massive full lines 分别连接 $(1,2)$ 与 $(2,3)$。第一条为 $G^{++}$，第二条为 $G^{+-}$；只有第一条允许产生 contact source。
+\end{enumerate}
+每个顶点可连 massless 外腿，但其总能量 $K_e$ 必须作为与内部 massive 线能量 $k_{12},k_{23}$ 独立的符号输入。这样 time-IBP 的顶点相位项与内部 building-block 导数项不会因误用同一个变量而发生伪抵消。
+
+对每个 case，验证顺序固定为：先由式~\eqref{eq:tree-m10} 和 loop time-IBP/contact 公式手推 general seed；再调用 package 的 \texttt{dtau}；随后把 seed 投影为 tree 单步关系，与式~\eqref{eq:tree-aminus}、\eqref{eq:tree-aplus} 生成的 \texttt{repIterative0} 比较。最后选择避开 $M_1$、$\widetilde M_0$ 奇异面的有理参数点，把 lower-sector masters 和 top masters 赋予固定有理数，分别用 seed 解与 \texttt{repIterative} 约化到同一终点。两路结果之差必须严格为零。
+
+即使 case 用 loop topology 描述，013 benchmark 也只调用 \texttt{dtau}，不生成或消费 \texttt{dqq}/\texttt{dqk}。这把检验范围限制在本版本新增的 pure time-IBP/tree 功能。
 
 \appendix
 

@@ -1,0 +1,520 @@
+(* ::Package:: *)
+
+(* ::Chapter:: *)
+(*014 tree sector-tagged 数据边界*)
+
+(* 裸 J[vertexPacks] 继续作为公开公式表示；进入跨 sector linearData 时必须由后续 token 同时携带 sectorKey。
+   loop-to-tree 投影系数始终复用冻结核心的完整物理幂次公式，不能从 tree pack 反推零点。 *)
+
+treeTaggedIntegral[sectorKey_, integral_J, coefficient_: 1] := <|
+   "sectorKey" -> sectorKey,
+   "integral" -> integral,
+   "coefficient" -> coefficient
+   |>;
+
+dsExpandedTerms[expr_] := If[Head[Expand[expr]] === Plus, List @@ Expand[expr], {Expand[expr]}];
+
+dsLoopTermTreeTag[term_, topo_Association, referenceInt_J] := Module[
+   {loopIntegrals, loopIntegral, loopCoefficient, targetTopology, referenceTopology, projected, treeIntegrals,
+    treeIntegral, projectionCoefficient, targetVertices, referenceVertices, targetAInteger, referenceAInteger,
+    targetAZeroPoint, referenceAZeroPoint, targetAPhysical, referenceAPhysical, targetBInteger,
+    referenceBInteger, targetBZeroPoint, referenceBZeroPoint, targetBPhysical, referenceBPhysical,
+    deltaTimePower, deltaLinePowers, explicitEnergyPowers, lineEnergies, auditedProjectionCoefficient},
+   loopIntegrals = DeleteDuplicates[Cases[term, J[_, _, _], {0, Infinity}]];
+   If[Length[loopIntegrals] =!= 1, Return[$Failed]];
+   loopIntegral = First[loopIntegrals];
+   loopCoefficient = term /. loopIntegral -> 1;
+   targetTopology = loopTreeTargetTopology[loopIntegral, topo];
+   referenceTopology = loopTreeTargetTopology[referenceInt, topo];
+   projected = projectLoopIntegralToTree[loopIntegral, topo, referenceInt];
+   If[MemberQ[{targetTopology, referenceTopology, projected}, $Failed], Return[$Failed]];
+   treeIntegrals = DeleteDuplicates[Cases[projected, J[_List], {0, Infinity}]];
+   If[Length[treeIntegrals] =!= 1, Return[$Failed]];
+   treeIntegral = First[treeIntegrals];
+   projectionCoefficient = projected /. treeIntegral -> 1;
+   targetVertices = activeAVertexIds[targetTopology];
+   referenceVertices = activeAVertexIds[referenceTopology];
+   targetAInteger = First[loopIntegral];
+   referenceAInteger = First[referenceInt];
+   targetAZeroPoint = vertexZeroPoint[targetTopology, #] & /@ targetVertices;
+   referenceAZeroPoint = vertexZeroPoint[referenceTopology, #] & /@ referenceVertices;
+   targetAPhysical = MapThread[Plus, {targetAInteger, targetAZeroPoint}];
+   referenceAPhysical = MapThread[Plus, {referenceAInteger, referenceAZeroPoint}];
+   targetBInteger = First /@ loopIntegral[[2]];
+   referenceBInteger = First /@ referenceInt[[2]];
+   targetBZeroPoint = Table[
+     If[actualLinePackType[targetTopology, e, loopIntegral[[2, e]]] === "shrunk",
+      lineBSZeroPoint[targetTopology, e],
+      lineBZeroPoint[targetTopology, e]
+      ],
+     {e, targetTopology["nE"]}
+     ];
+   referenceBZeroPoint = Table[
+     If[actualLinePackType[referenceTopology, e, referenceInt[[2, e]]] === "shrunk",
+      lineBSZeroPoint[referenceTopology, e],
+      lineBZeroPoint[referenceTopology, e]
+      ],
+     {e, referenceTopology["nE"]}
+     ];
+   targetBPhysical = MapThread[Plus, {targetBInteger, targetBZeroPoint}];
+   referenceBPhysical = MapThread[Plus, {referenceBInteger, referenceBZeroPoint}];
+   deltaTimePower = Expand[Total[targetAPhysical] - Total[referenceAPhysical]];
+   deltaLinePowers = MapThread[Expand[#1 - #2] &, {targetBPhysical, referenceBPhysical}];
+   explicitEnergyPowers = -deltaLinePowers;
+   lineEnergies = Table[
+     Lookup[targetTopology["lines"][[e]], "treeEnergy", xi[targetTopology["lines"][[e, "id"]]]],
+     {e, targetTopology["nE"]}
+     ];
+   auditedProjectionCoefficient = (-1)^deltaTimePower Times @@ MapThread[Power, {lineEnergies, explicitEnergyPowers}];
+   <|
+    "sectorKey" -> sectorKeyFromShrunkLines[Lookup[targetTopology, "sectorShrunkLines", {}]],
+    "integral" -> treeIntegral,
+    "coefficient" -> Expand[loopCoefficient projectionCoefficient],
+    "sourceLoopIntegral" -> loopIntegral,
+    "projectionCoefficient" -> projectionCoefficient,
+    "physicalPowerAudit" -> <|
+      "target" -> <|
+        "sectorKey" -> sectorKeyFromShrunkLines[Lookup[targetTopology, "sectorShrunkLines", {}]],
+        "aInteger" -> targetAInteger,
+        "aZeroPoint" -> targetAZeroPoint,
+        "aPhysical" -> targetAPhysical,
+        "bInteger" -> targetBInteger,
+        "bZeroPoint" -> targetBZeroPoint,
+        "bPhysical" -> targetBPhysical,
+        "treeNu0" -> targetAZeroPoint
+        |>,
+      "reference" -> <|
+        "sectorKey" -> sectorKeyFromShrunkLines[Lookup[referenceTopology, "sectorShrunkLines", {}]],
+        "aInteger" -> referenceAInteger,
+        "aZeroPoint" -> referenceAZeroPoint,
+        "aPhysical" -> referenceAPhysical,
+        "bInteger" -> referenceBInteger,
+        "bZeroPoint" -> referenceBZeroPoint,
+        "bPhysical" -> referenceBPhysical
+        |>,
+      "deltaTimePower" -> deltaTimePower,
+      "deltaLineIntegerPowers" -> MapThread[Expand[#1 - #2] &, {targetBInteger, referenceBInteger}],
+      "deltaLineZeroPointPowers" -> MapThread[Expand[#1 - #2] &, {targetBZeroPoint, referenceBZeroPoint}],
+      "deltaLinePhysicalPowers" -> deltaLinePowers,
+      "explicitEnergyPowers" -> explicitEnergyPowers,
+      "lineEnergies" -> lineEnergies,
+      "auditedProjectionCoefficient" -> auditedProjectionCoefficient,
+      "projectionCoefficientMatchesAudit" -> TrueQ[projectionCoefficient === auditedProjectionCoefficient],
+      "zeroPointRules" -> targetTopology["zeroPointRules"],
+      "unsafePowerExpand" -> False
+      |>
+    |>
+   ];
+
+dsCombineTreeTaggedTerms[terms_List] := Map[
+   Function[group,
+    Join[
+     First[group],
+     <|
+      "coefficient" -> Total[Lookup[group, "coefficient"]],
+      "sourceLoopIntegrals" -> Lookup[group, "sourceLoopIntegral"],
+      "projectionCoefficients" -> Lookup[group, "projectionCoefficient"],
+      "physicalPowerAudits" -> Lookup[group, "physicalPowerAudit"],
+      "contributions" -> (KeyTake[#, {"coefficient", "sourceLoopIntegral", "projectionCoefficient", "physicalPowerAudit"}] & /@ group)
+      |>
+     ]
+    ],
+   GatherBy[terms, {Lookup[#, "sectorKey"], Lookup[#, "integral"]} &]
+   ];
+
+dsTreeLinearData[record_Association, topo_Association, referenceInt_J] := Module[{taggedTerms, combined},
+   taggedTerms = dsLoopTermTreeTag[#, topo, referenceInt] & /@ dsExpandedTerms[record["loopSeed"]];
+   If[MemberQ[taggedTerms, $Failed], Return[<|"status" -> "failed", "reason" -> "treeTagProjectionFailed"|>]];
+   combined = dsCombineTreeTaggedTerms[taggedTerms];
+   <|
+    "status" -> "generated",
+    "terms" -> combined,
+    "termCount" -> Length[combined],
+    "sectorKeys" -> DeleteDuplicates[Lookup[combined, "sectorKey"]],
+    "expression" -> Total[(Lookup[#, "coefficient"] Lookup[#, "integral"]) & /@ combined],
+    "referenceLoopIntegral" -> referenceInt,
+    "coefficientConvention" -> "complete physical powers: a+a0 and b+b0 or bS+bS0"
+    |>
+   ];
+
+dsEnrichTreeSeedRecord[record_Association, topo_Association, referenceInt_J] := Join[
+   record,
+   <|"treeLinearData" -> dsTreeLinearData[record, topo, referenceInt]|>
+   ];
+
+
+(* ::Chapter:: *)
+(*Sector-tagged tree 迭代*)
+
+(* dsTreeToken 只在 Private context 中承载 sector 身份；对外结果仍序列化为 Association 与统一 Head J。 *)
+
+dsTreeLinearDataQ[data_] := AssociationQ[data] &&
+   Lookup[data, "status", Missing["status"]] === "generated" &&
+   ListQ[Lookup[data, "terms", Missing["terms"]]] &&
+   And @@ (AssociationQ[#] && StringQ[Lookup[#, "sectorKey", None]] && MatchQ[Lookup[#, "integral", None], _J] & /@ data["terms"]);
+
+
+dsTreeFamilyBySector[sectorKey_String, context_Association] := Module[{matches},
+   matches = Select[Lookup[context, "families", {}], Lookup[#, "sector", None] === sectorKey &];
+   If[Length[matches] === 1, First[matches], Missing["TreeSectorFamily", sectorKey, Length[matches]]]
+   ];
+
+
+dsTreeTokenExpression[data_Association] /; dsTreeLinearDataQ[data] := Total[
+   Lookup[#, "coefficient"] dsTreeToken[Lookup[#, "sectorKey"], Lookup[#, "integral"]] & /@ data["terms"]
+   ];
+
+
+dsTreeTokenTerms[expr_] := Module[{rawTerms, tagged},
+   rawTerms = dsExpandedTerms[expr];
+   tagged = Map[
+     Function[term,
+      With[{tokens = DeleteDuplicates[Cases[term, token : dsTreeToken[_String, _J] :> token, {0, Infinity}]]},
+       If[Length[tokens] =!= 1,
+        $Failed,
+        treeTaggedIntegral[tokens[[1, 1]], tokens[[1, 2]], Expand[term /. tokens[[1]] -> 1]]
+        ]
+       ]
+     ],
+     rawTerms
+     ];
+   If[MemberQ[tagged, $Failed], Return[$Failed]];
+   Map[
+    Function[group, Join[First[group], <|"coefficient" -> Total[Lookup[group, "coefficient"]]|>]],
+    GatherBy[tagged, {Lookup[#, "sectorKey"], Lookup[#, "integral"]} &]
+    ]
+   ];
+
+
+dsTreeRecordTokenEquation[record_Association] := Module[{linearData = Lookup[record, "treeLinearData", Missing["treeLinearData"]]},
+   If[dsTreeLinearDataQ[linearData], dsTreeTokenExpression[linearData], $Failed]
+   ];
+
+
+dsMakeTreeTaggedTimeReductionRules[records_List, data_Association] := Module[
+   {good, grouped, minusRules = {}, plusRules = {}, sourceQ = False, sectorKey, vertexId, vertexIndex,
+    vertex, states, ordered, currentInts, minusInts, currentTokens, minusTokens, equations,
+    m1, m0, invM1, invM0t, tp, tpInv, regular, source, lowerRhs, upperRhs},
+   good = Select[Flatten[records], AssociationQ[#] && Lookup[#, "status", "error"] === "generated" &&
+       dsTreeLinearDataQ[Lookup[#, "treeLinearData", <||>]] &];
+   grouped = GroupBy[good, treeSeedRuleGroupKey[#, data] &];
+   sectorKey = data["sector"];
+   KeyValueMap[
+    Function[{key, group},
+     If[Head[key] === Missing, Return[]];
+     vertexId = key[[1]];
+     vertexIndex = First@FirstPosition[data["vertexOrder"], vertexId];
+     vertex = data["vertices"][[vertexIndex]];
+     states = treeBinaryStates[vertex["p"]];
+     ordered = SortBy[group, Function[record,
+        treeStateIndex[Rest[First[First[Cases[record["treeIntegral"], _J, {0, Infinity}]]][[vertexIndex]]]]
+        ]];
+     If[Length[ordered] =!= Length[states],
+      Message[makeTreeTimeReductionRules::incomplete, <|"key" -> key, "expected" -> Length[states], "actual" -> Length[ordered]|>];
+      Return[]
+      ];
+     currentInts = First[Cases[#"treeIntegral", _J, {0, Infinity}]] & /@ ordered;
+     minusInts = MapThread[
+       Function[{int, state}, J[ReplacePart[First[int], vertexIndex -> Prepend[state, First[int][[vertexIndex, 1]] - 1]]]],
+       {currentInts, states}
+       ];
+     currentTokens = dsTreeToken[sectorKey, #] & /@ currentInts;
+     minusTokens = dsTreeToken[sectorKey, #] & /@ minusInts;
+     equations = dsTreeRecordTokenEquation /@ ordered;
+     If[MemberQ[equations, $Failed], Return[]];
+     m1 = treeM1[vertex, vertex["nu0"] + First[currentInts[[1]]][[vertexIndex, 1]]];
+     m0 = treeM0[vertex];
+     invM1 = treeDiagonalInverse[m1];
+     invM0t = treeDiagonalInverse[treeM0Tilde[vertex]];
+     If[MemberQ[{invM1, invM0t}, $Failed], Return[]];
+     tp = treeTp[vertex];
+     tpInv = treeTpInverse[vertex];
+     regular = m1.minusTokens + m0.currentTokens;
+     source = Expand[equations - regular];
+     If[! TrueQ[source === ConstantArray[0, Length[source]]], sourceQ = True];
+     lowerRhs = Expand[treeAminusMatrix[vertex, First[currentInts[[1]]][[vertexIndex, 1]]] . currentTokens - invM1.source];
+     upperRhs = Expand[treeAplusMatrix[vertex, First[currentInts[[1]]][[vertexIndex, 1]] - 1] . minusTokens - tpInv.invM0t.tp.source];
+     minusRules = Join[minusRules, Thread[minusTokens -> lowerRhs]];
+     plusRules = Join[plusRules, Thread[currentTokens -> upperRhs]];
+     ],
+    grouped
+    ];
+   <|
+    "status" -> If[Length[grouped] === 0, "empty", "generated"],
+    "minus" -> DeleteDuplicates[minusRules],
+    "plus" -> DeleteDuplicates[plusRules],
+    "sourceQ" -> sourceQ,
+    "groupCount" -> Length[grouped]
+    |>
+   ];
+
+
+dsTreeSeedRecordFromSector[vertex_, int : J[_, _, _], family_Association] := Module[
+   {sectorTopology = family["topology"], rootTopology, loopSeed, treeSeed, treeIntegral, record},
+   rootTopology = Lookup[family, "rootTopology", sectorTopology];
+   loopSeed = dtau[vertex, int, sectorTopology];
+   If[loopSeed === $Failed, Return[$Failed]];
+   treeSeed = projectLoopTimeEquationToTree[loopSeed, rootTopology, int];
+   treeIntegral = projectLoopIntegralToTree[int, rootTopology, int];
+   If[MemberQ[{treeSeed, treeIntegral}, $Failed], Return[$Failed]];
+   record = <|
+     "status" -> "generated",
+     "generator" -> dtau[vertex],
+     "loopSeed" -> loopSeed,
+     "treeSeed" -> treeSeed,
+     "treeIntegral" -> treeIntegral,
+     "referenceA" -> First[int],
+     "sectorKey" -> family["sector"]
+     |>;
+   dsEnrichTreeSeedRecord[record, rootTopology, int]
+   ];
+
+
+dsTreeTaggedSourceAwareStep[token : dsTreeToken[sectorKey_String, int_J], vertexIndex_Integer, endpoint_Integer, family_Association] := Module[
+   {packs = First[int], current, seedA, states, vertexId, localIntegrals, loopIntegrals, records, ruleData, rules, result},
+   current = packs[[vertexIndex, 1]];
+   If[current === endpoint, Return[token]];
+   seedA = If[current < endpoint, current + 1, current];
+   states = treeBinaryStates[family["vertices"][[vertexIndex, "p"]]];
+   vertexId = family["vertexOrder"][[vertexIndex]];
+   localIntegrals = J[ReplacePart[packs, vertexIndex -> Prepend[#, seedA]]] & /@ states;
+   loopIntegrals = treeLoopIntegralFromTree[#, family] & /@ localIntegrals;
+   If[! FreeQ[loopIntegrals, $Failed], Return[$Failed]];
+   records = dsTreeSeedRecordFromSector[vertexId, #, family] & /@ loopIntegrals;
+   If[! FreeQ[records, $Failed], Return[$Failed]];
+   ruleData = dsMakeTreeTaggedTimeReductionRules[records, family];
+   rules = Lookup[ruleData, If[current < endpoint, "minus", "plus"], {}];
+   result = Replace[token, rules];
+   If[result === token,
+    Message[makeTreeFamilyData::badinput, {<|"code" -> "missingSectorTaggedSourceStep", "sector" -> sectorKey,
+       "integral" -> int, "vertex" -> vertexId|>}];
+    $Failed,
+    result
+    ]
+   ];
+
+
+dsTreeTaggedSingleStep[token : dsTreeToken[sectorKey_String, int_J], vertexIndex_Integer, endpoint_Integer, family_Association] := Module[{bareResult},
+   If[TrueQ[Lookup[family, "requiresSourceRules", False]] && AssociationQ[Lookup[family, "topology", Missing["NoLoopTopology"]]],
+    Return[dsTreeTaggedSourceAwareStep[token, vertexIndex, endpoint, family]]
+    ];
+   bareResult = treeSingleStepIntegral[int, vertexIndex, endpoint, family];
+   If[bareResult === $Failed, $Failed, bareResult /. item_J :> dsTreeToken[sectorKey, item]]
+   ];
+
+
+Options[dsRepIterativeTreeLinearData] = Options[repIterativeData];
+
+
+dsRepIterativeTreeLinearData[data_Association, end_: Automatic, context_Association, OptionsPattern[]] := Module[
+   {familyContext, result, maxSteps, steps = 0, tokens, token, sectorKey, int, family, endpoints, vertexIndex, reducedTerms},
+   If[! dsTreeLinearDataQ[data], Return[<|"status" -> "error", "reason" -> "invalidTreeLinearData"|>]];
+   familyContext = dsTreeFamilyContext[context];
+   result = Expand[dsTreeTokenExpression[data]];
+   maxSteps = OptionValue[MaxIterations];
+   If[maxSteps === Automatic,
+    maxSteps = 10 (1 + Total[Abs[Cases[result, dsTreeToken[_, item_J] :> First[item][[All, 1]], Infinity] // Flatten]] + Length[familyContext["families"]])
+    ];
+   If[! IntegerQ[maxSteps] || maxSteps < 0,
+    Message[repIterativeData::maxsteps, maxSteps];
+    Return[<|"status" -> "error", "reason" -> "invalidMaxIterations", "steps" -> steps|>]
+    ];
+   While[True,
+    tokens = DeleteDuplicates[Cases[result, token : dsTreeToken[_String, _J] :> token, {0, Infinity}]];
+    token = SelectFirst[
+      tokens,
+      Function[item,
+       family = dsTreeFamilyBySector[item[[1]], familyContext];
+       If[Head[family] === Missing, True,
+        endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, familyContext], family];
+        endpoints === $Failed || Or @@ MapThread[Unequal, {First[item[[2]]][[All, 1]], endpoints}]
+        ]
+       ],
+      Missing["AllAtEndpoints"]
+      ];
+    If[Head[token] === Missing, Break[]];
+    sectorKey = token[[1]];
+    int = token[[2]];
+    family = dsTreeFamilyBySector[sectorKey, familyContext];
+    If[Head[family] === Missing,
+     Message[repIterativeData::nosector, <|"sectorKey" -> sectorKey, "integral" -> int|>];
+     Return[<|"status" -> "error", "reason" -> "unknownSector", "steps" -> steps|>]
+     ];
+    If[! treeIntegralQ[int, family] || ! And @@ (IntegerQ /@ First[int][[All, 1]]),
+     Message[repIterativeData::badindex, <|"sectorKey" -> sectorKey, "integral" -> int|>];
+     Return[<|"status" -> "error", "reason" -> "invalidTaggedIntegral", "steps" -> steps|>]
+     ];
+    endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, familyContext], family];
+    If[endpoints === $Failed, Return[<|"status" -> "error", "reason" -> "invalidEndpoint", "steps" -> steps|>]];
+    If[steps >= maxSteps,
+     Message[repIterativeData::maxsteps, maxSteps];
+     Return[<|"status" -> "maxSteps", "reason" -> "iterationLimit", "steps" -> steps|>]
+     ];
+    vertexIndex = SelectFirst[Range[Length[endpoints]], First[int][[#, 1]] =!= endpoints[[#]] &];
+    result = Expand[result /. token -> dsTreeTaggedSingleStep[token, vertexIndex, endpoints[[vertexIndex]], family]];
+    If[! FreeQ[result, $Failed], Return[<|"status" -> "error", "reason" -> "taggedStepFailed", "steps" -> steps|>]];
+    steps++;
+    ];
+   reducedTerms = dsTreeTokenTerms[result];
+   If[reducedTerms === $Failed, Return[<|"status" -> "error", "reason" -> "taggedTermExtractionFailed", "steps" -> steps|>]];
+   <|
+    "status" -> "reduced",
+    "terms" -> reducedTerms,
+    "termCount" -> Length[reducedTerms],
+    "sectorKeys" -> DeleteDuplicates[Lookup[reducedTerms, "sectorKey"]],
+    "expression" -> Total[Lookup[#, "coefficient"] Lookup[#, "integral"] & /@ reducedTerms],
+    "steps" -> steps,
+    "endpoints" -> end,
+    "inputTreeLinearData" -> data,
+    "coefficientConvention" -> Lookup[data, "coefficientConvention", Missing["coefficientConvention"]]
+    |>
+   ];
+
+
+(* ::Chapter:: *)
+(*Naive tree time-IBP 线性系统*)
+
+(* 这一路只把投影后的 dtau 当作线性方程求解，不调用 A-/A+ 递推或 dlog 公式。
+   master record 必须携带 sectorKey 与 normalization，避免同 shape lower sector 混淆。 *)
+
+Options[DSTreeNaiveIBP] = {ProgressReporting -> Automatic};
+
+DSTreeNaiveIBP::badmasters = "tree naive IBP 需要非空、无重复且可唯一匹配 sector 的 tagged master 列表。";
+DSTreeNaiveIBP::nonsquare = "tree naive IBP 方程数 `1` 与待约化对象数 `2` 不相等。";
+DSTreeNaiveIBP::solvefailed = "tree naive IBP 线性系统求解失败。";
+
+
+dsTreeTaggedMasterQ[record_] := AssociationQ[record] &&
+   StringQ[Lookup[record, "sectorKey", None]] &&
+   MatchQ[Lookup[record, "integral", None], _J] &&
+   ! TrueQ[Lookup[record, "coefficient", 0] === 0];
+
+
+dsTreeResolveNaiveMasters[Automatic, context_Association] := Module[{dlog = DSTreeDLogDE[context]},
+   If[Lookup[dlog, "status", "error"] === "generated", Lookup[dlog, "masters", $Failed], $Failed]
+   ];
+dsTreeResolveNaiveMasters[masters_List, _Association] := masters;
+dsTreeResolveNaiveMasters[_, _Association] := $Failed;
+
+
+dsTreeMasterFamilyRecords[masters_List, familyContext_Association] := Map[
+   Function[master,
+    With[{family = dsTreeFamilyBySector[master["sectorKey"], familyContext]},
+     If[Head[family] === Missing || ! treeIntegralQ[master["integral"], family],
+      $Failed,
+      <|"master" -> master, "family" -> family|>
+      ]
+     ]
+    ],
+   masters
+   ];
+
+
+dsTreeNaiveSeedRecords[masterFamilyRecords_List, progress_] := Flatten@dsProgressMap[
+    "正在生成 naive tree time-IBP",
+    masterFamilyRecords,
+    Function[item,
+     With[{master = item["master"], family = item["family"]},
+      MapIndexed[
+       Function[{vertexId, position},
+        With[{seedIntegral = J[ReplacePart[
+             First[master["integral"]],
+             First[position] -> ReplacePart[First[master["integral"]][[First[position]]], 1 -> 1]
+             ]]},
+         With[{loopIntegral = treeLoopIntegralFromTree[seedIntegral, family]},
+          If[loopIntegral === $Failed, $Failed, dsTreeSeedRecordFromSector[vertexId, loopIntegral, family]]
+          ]
+         ]
+        ],
+       family["vertexOrder"]
+       ]
+      ]
+     ],
+    progress
+    ];
+
+
+dsTreePublicReductionRecord[rule_Rule] := Module[{lhs, rhsTerms},
+   lhs = First[rule];
+   rhsTerms = dsTreeTokenTerms[Last[rule]];
+   If[! MatchQ[lhs, dsTreeToken[_String, _J]] || rhsTerms === $Failed,
+    $Failed,
+    <|
+     "lhs" -> treeTaggedIntegral[lhs[[1]], lhs[[2]]],
+     "rhsTerms" -> rhsTerms,
+     "rhsExpression" -> Total[Lookup[#, "coefficient"] Lookup[#, "integral"] & /@ rhsTerms]
+     |>
+    ]
+   ];
+
+
+dsTreeInternalReductionRules[data_Association] := Map[
+   Function[record,
+    dsTreeToken[record["lhs", "sectorKey"], record["lhs", "integral"]] ->
+     Total[Lookup[#, "coefficient"] dsTreeToken[Lookup[#, "sectorKey"], Lookup[#, "integral"]] & /@ record["rhsTerms"]]
+    ],
+   Lookup[data, "reductions", {}]
+   ];
+
+
+DSTreeNaiveIBP[context_Association, masters_: Automatic, OptionsPattern[]] /; dsContextQ[context] := Module[
+   {resolvedMasters, familyContext, masterFamilyRecords, seedRecords, equations, masterTokens, allTokens,
+    unknownTokens, matrix, constantVector, solution, tokenRules, publicRules, solveResiduals, status},
+   resolvedMasters = dsTreeResolveNaiveMasters[masters, context];
+   familyContext = dsTreeFamilyContext[context];
+   If[! ListQ[resolvedMasters] || resolvedMasters === {} || ! And @@ (dsTreeTaggedMasterQ /@ resolvedMasters) ||
+     DuplicateFreeQ[{Lookup[#, "sectorKey"], Lookup[#, "integral"]} & /@ resolvedMasters] =!= True || familyContext === $Failed,
+    Message[DSTreeNaiveIBP::badmasters];
+    Return[<|"status" -> "failed", "reason" -> "invalidMasters"|>]
+    ];
+   masterFamilyRecords = dsTreeMasterFamilyRecords[resolvedMasters, familyContext];
+   If[MemberQ[masterFamilyRecords, $Failed],
+    Message[DSTreeNaiveIBP::badmasters];
+    Return[<|"status" -> "failed", "reason" -> "masterSectorMismatch", "masters" -> resolvedMasters|>]
+    ];
+   seedRecords = dsTreeNaiveSeedRecords[masterFamilyRecords, OptionValue[ProgressReporting]];
+   If[MemberQ[seedRecords, $Failed] || AnyTrue[seedRecords, Lookup[#, "status", "error"] =!= "generated" &],
+    Return[<|"status" -> "failed", "reason" -> "seedGenerationFailed", "seedRecords" -> seedRecords|>]
+    ];
+   equations = DeleteDuplicates[dsTreeRecordTokenEquation /@ seedRecords];
+   If[MemberQ[equations, $Failed], Return[<|"status" -> "failed", "reason" -> "taggedEquationFailed"|>]];
+   masterTokens = dsTreeToken[Lookup[#, "sectorKey"], Lookup[#, "integral"]] & /@ resolvedMasters;
+   allTokens = DeleteDuplicates[Cases[equations, token : dsTreeToken[_String, _J] :> token, Infinity]];
+   unknownTokens = Select[allTokens, ! MemberQ[masterTokens, #] &];
+   If[Length[equations] =!= Length[unknownTokens],
+    Message[DSTreeNaiveIBP::nonsquare, Length[equations], Length[unknownTokens]];
+    Return[<|"status" -> "failed", "reason" -> "nonSquareSystem", "equationCount" -> Length[equations],
+      "unknownCount" -> Length[unknownTokens], "masters" -> resolvedMasters, "seedRecords" -> seedRecords|>]
+    ];
+   matrix = Table[Coefficient[equations[[row]], unknownTokens[[column]]],
+     {row, Length[equations]}, {column, Length[unknownTokens]}];
+   constantVector = Expand[equations /. Thread[unknownTokens -> 0]];
+   solution = Quiet[Check[LinearSolve[matrix, -constantVector], $Failed]];
+   If[solution === $Failed,
+    Message[DSTreeNaiveIBP::solvefailed];
+    Return[<|"status" -> "failed", "reason" -> "linearSolveFailed", "equationCount" -> Length[equations],
+      "unknownCount" -> Length[unknownTokens], "masters" -> resolvedMasters, "seedRecords" -> seedRecords|>]
+    ];
+   tokenRules = Thread[unknownTokens -> solution];
+   solveResiduals = Together /@ Expand[equations /. tokenRules];
+   publicRules = dsTreePublicReductionRecord /@ tokenRules;
+   status = If[FreeQ[publicRules, $Failed] && And @@ (TrueQ[# === 0] & /@ solveResiduals), "solved", "failed"];
+   <|
+    "status" -> status,
+    "reason" -> If[status === "solved", None, "nonzeroSolveResidual"],
+    "masters" -> resolvedMasters,
+    "masterCount" -> Length[resolvedMasters],
+    "masterSource" -> If[masters === Automatic, "DSTreeDLogDE", "explicit"],
+    "equationCount" -> Length[equations],
+    "unknownCount" -> Length[unknownTokens],
+    "seedRecords" -> seedRecords,
+    "reductions" -> publicRules,
+    "solveResiduals" -> solveResiduals,
+    "context" -> context,
+    "equationConvention" -> "projected loop dtau == 0; non-master tagged tree integrals solved in the supplied master basis",
+    "formulaRecurrenceUsedQ" -> False
+    |>
+   ];
+
+
+DSTreeNaiveIBP[_, ___] := (Message[DSTreeNaiveIBP::badmasters]; <|"status" -> "failed", "reason" -> "invalidContextOrMasters"|>);

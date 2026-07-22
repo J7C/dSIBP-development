@@ -4,13 +4,13 @@
 
 ## 1. 任务目标
 
-从本文给出的费曼规则、指标 convention 和函数族定义出发，独立推导小型 dS IBP seed，用来反查当前 012 程序快照。独立推导阶段禁止读取 `package/`、主线代码、`000_code/check/`、旧 expected 或已有运行结果。冻结结果后，使用 `package/package_012.wl` 和 `package/package_012.pdf` 完成程序调用与对照；如何组织 actual/expected 比较由独立推导者自行决定。
+从本文给出的费曼规则、指标 convention 和函数族定义出发，独立推导小型 dS IBP seed。第 2--15 节反查冻结的 014 快照；第 16 节只验证 015 的根号动力学坐标增量。独立推导阶段禁止读取 `package/`、主线代码、`000_code/check/`、旧 expected 或已有运行结果。冻结结果后，分别使用同版本 `package/package_014.wl/pdf` 或 `package/package_015.wl/pdf` 完成程序调用与对照。
 
-只做 seed-level 小型符号推导：
+除第 15.3 节明确要求的单个真实 Kira 闭环外，只做 seed-level 小型符号推导：
 
 - 不生成大范围解析 IBP。
 - 不做大范围撒点。
-- 不运行 Kira、Fermat、Rational Tracer 或其它 reduction。
+- 第一阶段不运行 Kira、Fermat、Rational Tracer 或其它 reduction；只有第 15.1--15.2 节冻结并通过后，才按第 15.3 节运行一次受控 Kira。
 - 解析 seed 保持非零符号 zero-point。
 - 每个函数族必须覆盖所有顶点 `+/-`、所有实际可达 sector、每个 sector 的全部 time 与 loop-momentum 生成元，以及全部适用离散 `n=0/1` 状态。
 - 任何 massive `n=2` 一出现就立即 EOM；massless 正式表示从不产生 `n=2`。
@@ -163,6 +163,14 @@ J[aList, linePacks, ispList]
 | `J[[2]] = linePacks` | 每条原始内线的指标包 | `linePacks[[p]]` 永远对应 `e=lineOrder[[p]]`；即使线已缩并也保留该 line slot，只改变 pack 形状 |
 | `J[[3]] = ispList` | ISP numerator 的整数幂 | `ispList[[r]]` 对应 `ispData[[r]]`；被积函数使用 `ISP[r]^ispList[[r]]`，正指标表示 numerator 幂 |
 
+每个 ISP 使用与 014 package 相同的 Association schema：
+
+```mathematica
+<|"name" -> rho1, "expr" -> sp[q1,k], "range" -> {0,1}|>
+```
+
+`name` 是用户侧唯一符号，`expr` 是由声明动量基组成的标量积表达式，`range` 是该 numerator 指标在 seed 中允许的值域。独立推导与 package 对照均直接使用这三个字段，不设 `id/expression` adapter。
+
 每个 line pack 内部的槽位也固定：
 
 | line 状态 | pack | 各槽对应的物理对象 |
@@ -240,7 +248,7 @@ Product[rhor^zr, r=1,...,R]
 
    原传播子函数和端点 `n` 已不在 `J` 中；shrink prefactor 属于整条 relation 的系数。`bS0Sector[e]` 及 merged-time zero-point 是待独立推导的 sector metadata，上式只定义它们在最终记号中的位置，不规定其值。
 
-第三槽中 `zr` 是 `ispData[[r]]["expression"]` 的幂：`zr>0` 表示 numerator，`zr=0` 表示没有该因子，`zr<0` 表示其倒数。第三槽顺序只能跟随 `ispData`，不能按表达式名称重新排序。
+第三槽中 `zr` 是 `ispData[[r]]["expr"]` 的幂：`zr>0` 表示 numerator，`zr=0` 表示没有该因子，`zr<0` 表示其倒数。第三槽顺序只能跟随 `ispData`，不能按表达式名称重新排序。
 
 例如 atomic massless 同分支 top sector 的
 
@@ -267,7 +275,7 @@ q1^(-(b1+beta1)) M[sigma,n1;q1,tau1-tau2]
 | active 顶点 `v` | `a[v]` | `a0Sector[v]` | `(-tau[v])^(a[v]+a0Sector[v])` |
 | unshrunk line `e` | `b[e]` | `b0[e]` | `q[e]^(-(b[e]+b0[e]))` |
 | shrunk line `e` | `bS[e]` | `bS0Sector[e]` | `q[e]^(-(bS[e]+bS0Sector[e]))` |
-| ISP `r` | `ispList[[r]]` | 无零点 | `ispData[[r]]["expression"]^ispList[[r]]` |
+| ISP `r` | `ispList[[r]]` | 无零点 | `ispData[[r]]["expr"]^ispList[[r]]` |
 
 这里的符号约定必须严格区分：`a` 是正的时间幂指标；`b/bS` 是分母幂指标，所以实际 `q` 指数前有负号。`a0/b0/bS0` 可以是符号、质量参数的函数或其它固定表达式，不要求为整数；`a/b/bS` 才是 IBP 后端使用的整数移位变量。
 
@@ -688,8 +696,8 @@ lineData = {
     "massType"->"massless", "bbType"->"exp", "nu"->0|>
 };
 ispData = {
-  <|"id"->1,"expression"->sp[q1,k]|>,
-  <|"id"->2,"expression"->sp[q2,k]|>
+  <|"name"->rho1,"expr"->sp[q1,k],"range"->{0,1}|>,
+  <|"name"->rho2,"expr"->sp[q2,k],"range"->{0,1}|>
 };
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
@@ -794,8 +802,8 @@ lineData = {
     "massType"->"massless", "bbType"->"exp", "nu"->0|>
 };
 ispData = {
-  <|"id"->1,"expression"->sp[l3,k321+l3]|>,
-  <|"id"->2,"expression"->sp[l3,wdnmd]|>
+  <|"name"->rho1,"expr"->sp[l3,k321+l3],"range"->{0,1}|>,
+  <|"name"->rho2,"expr"->sp[l3,wdnmd],"range"->{0,1}|>
 };
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
@@ -869,7 +877,7 @@ lineData = {
     "massType"->"massless", "bbType"->"exp", "nu"->0|>
 };
 ispData = {
-  <|"id"->1, "expression"->sp[ell,k]|>
+  <|"name"->rho1, "expr"->sp[ell,k], "range"->{0,1}|>
 };
 zeroPointRules = {
   a0[v1]->alpha1, a0[v2]->alpha2,
@@ -1053,7 +1061,7 @@ ExternalVectorOperatorBasis = {D_ij | 1 <= i <= j <= K},
 
 并按 `i` 后 `j` 的字典序排列，例如 `K=2` 时必须使用 `{D11,D12,D22}`，不得改用同样满秩但给出不同 raw representative 的 `{D11,D12,D21}`。若该 basis 在指定运动学或所选外不变量坐标上不满秩，必须报告输入/坐标不闭合，不得静默换 basis。顶点能量若为 `Sqrt[s11]` 等非线性函数，必须显式保留普通链式法则。整个乘积法则结果最后统一做 EOM、massless/massive coincidence canonical、family symmetry 和 parity；不能只 canonical 积分导数项而遗漏 `c'_r(s)J_r`。
 
-冻结 `derivation.md` 与 `expectedDerivatives` 后，第二阶段加载 `package/package_012.wl`，用
+冻结 `derivation.md` 与 `expectedDerivatives` 后，第二阶段加载当前 `package/package_014.wl`，用
 
 ```mathematica
 ds[expression, variable, topo]
@@ -1072,7 +1080,7 @@ reference/ref_code/codebubble/002 bubble_de.m
 
 比较前必须显式记录并实施以下映射：
 
-- reference `Vpm=0` 映射 package 的 `--`；顶点能量 convention 必须使 reference `dk0Term` 的两个 top 顶点 shift 和 R1 的系数 2 与 package 相同。
+- reference `Vpm=0` 映射 package 的 `--`，但两边顶点能量参数的符号相反：reference time-IBP 相位项为 `-I P_ref`，package `--` 相位项为 `+I P_pkg`，故 `P_pkg=-P_ref=+I k0`，即 reference basis 中的 `P1=P2=P_ref=-P0=-I k0`。必须在此映射后逐项检查 reference `dk0Term` 的两个 top 顶点 shift、R1 的系数 2，以及 active 17 和辅助 20/21 中的显式能量系数。
 - `G[{n1,n2,n3,n4},{a1,a2},{b1,b2}]` 映射 top `J[{a1,a2},{{b1,n1,n2},{b2,n3,n4}},{}]`。
 - `R1`、`R2` 分别映射 line 1、line 2 shrink；reference 在求导 basis 前已执行 `R2->R1`，所以 R2 必须先由 package `symmetry` canonical 到 R1，不能作为携带另一套 sector metadata 的独立 DE basis。
 - top 使用 `a0=2 nu`、`b0=-2 nu`；必须检查 shrink 后 `a0R=2 nu`、shrunk-line `bS0=0`、未缩并线 `b0=-2 nu`。
@@ -1091,7 +1099,140 @@ reference 对照必须覆盖实际保留的 top/R1 basis 的全部端点 `n=0/1`
 
 `direct-h` 与 `bare-H` 各自和对应独立 expected 逐项比较。`H-to-h` 既要和独立变换后的 expected 比较，也要在相同 `J` 指标基底、zero-point、sector metadata、symmetry/parity 和外部变量表示下，与 `direct-h` 的 package 结果逐条相减。IBP relation、`ds` 总导数、`AT` 编译项和 `WT/shrinkTerms` 四层差值都必须严格为零；只比较矩阵而不比较全部 seeds 不算完成。裸 H `T=I` 与直接 h 属于不同基底，不能跳过 `T_Htoh` 直接声称两者的 `J` 关系相等。
 
-## 14. 完成检查表
+## 14. 013 pure time-IBP/tree 增量 benchmark
+
+本节只适用于 013。它不重复第 9--13 节已经完成的 loop momentum、`ds`、h/H、共同-theta或旧 family expected；独立推导者只对下列两个新增 family 重新手推，并在冻结新增 expected 后加载 `package/package_013.wl`。如果 013 交付物尚不存在或哈希未冻结，应立即停止，不得用 012 或主线开发文件代替。
+
+### 14.1 固定 family 与表示
+
+只使用以下两个 case，不做运行时随机抽样：
+
+1. 两顶点 `{+,+}`，两顶点由一条 massive full line 连接。该线是单一 `G++`，time-IBP 必须产生同号 theta/contact source。
+2. 三顶点 chain `{+,+,-}`，边 `(1,2)` 是单一 `G++`，边 `(2,3)` 是单一 `G+-`。只有 `(1,2)` 可产生 theta/contact source；`G+-` 边不得读取 `WT`，不得产生 shrink/contact。
+
+各顶点允许带 massless 外腿，但它们的能量必须使用与内部 massive 传播子能量相互独立的符号。massless 外腿不占 tree `n` 槽；只作为独立顶点能量进入 time seed。即使 family 用 loop topology 输入，整个 013 benchmark 也只调用 `dtau`，禁止调用或消费 `dqq/dqk`。
+
+Tree 积分固定表示为
+
+```mathematica
+J[{{a1,n11,...,n1p1},{a2,n21,...,n2p2},...}]
+```
+
+第 `e` 个 pack 的长度必须为 `1+p_e`，`p_e` 是该顶点被标记的 massive h 外腿数。master 依 2401.00129 Eq. (3.33) 的二进制顺序排列，最后一个 bit 变化最快。loop 三槽 `J[aList,linePacks,ispList]` 与 tree 单槽 `J[vertexPacks]` 不得混用。
+
+### 14.2 独立推导和 package 对照顺序
+
+每个 case 必须按以下顺序交付：
+
+1. 从 time total derivative、h 一阶系统和 theta 导数独立推导 general-index `dtau` seed，明确列出 regular 项和 contact/lower-sector source。
+2. 把 loop time seed 投影到 tree 单槽表示，逐项记录指标映射和 prefactor。必须使用目标项相对参考 seed 的完整物理幂次差：`a+a0` 给出 `(-1)` 相位，`b+b0` 或 `bS+bS0` 给出显式能量幂；h contact 应得到完整 `(-k)^(-2nu-1)`，只检查整数 `k^-1` 不通过。
+3. 从 2401.00129 Eq. (3.37)、(3.47)、(3.50) 独立构造 `M1/M0`、`A-/A+` 和 general-index 单步递推，不读取 package 的 `repIterative0`。
+4. 冻结 expected 后调用 package 的 `dtau`、tree projection 和 `repIterative0`，在相同 convention 下逐项相减为零。
+5. 使用 Eq. (3.54)--(3.55) 独立生成 dlog connection，检查 package 同时返回完全同序的 matrix、letters 与 master list。letters 固定按 `vertexOrder` 逐顶点拼接 `{该顶点 massiveLegs 顺序的能量 letters, binary master order 的 cut letters}`，最后稳定去重；`letterMatrices` 的 key 顺序必须与该列表一致。
+
+多传播子/多顶点中的 SK 类型始终由一条传播子的两个端点 branch 唯一决定；不得把同一传播子拆成部分 `G++`、部分 `G+-`。三顶点 case 必须有显式负面断言：`G+-` 边的 contact term 数为零，且 trace 中没有该边的 `WT/shrinkTerms` 消费记录。
+
+### 14.3 迭代约化与 time-IBP seed 交叉验证
+
+两种约化路线都要保留 general 连续指标，不允许只检查若干整数 seed：
+
+- 路线 A：把独立手推的 time-IBP seeds 作为线性方程，解出指定下降一步的 tree 积分。
+- 路线 B：直接应用由 `A-/A+` 生成的 `repIterative0`，再由 `repIterative[expr,end]` 迭代到同一 `a_e` 终点。
+
+先比较两条 general relation 严格相同；再选一个确定性的、避开 `M1` 和变换后 `M0` 奇异面的非整数有理参数点，并给 top/lower-sector master 依固定顺序赋确定性有理数，以加速完整数值代入。两路最终结果必须严格相等，不以浮点容差代替。`repIterative` 还必须拒绝终点列表长度错误、非整数/方向不合法终点以及超过显式最大步数的请求。
+
+### 14.4 013 报告门禁
+
+013 报告只统计本节新增 relation、projection、递推、dlog 和 guard，不把此前 012 的通过数重新计入。报告必须给出 package 哈希、手推来源、两个 case 的逐阶段计数、首个失败差值（若有）、确定性参数点和 master 赋值，并归档为 `000-report/YYYY-MM-DD-HHmm-013-内部.md`。发现差异时先归因并修正 013，再从独立手推开始重跑受影响新增项；未全部通过不得进入 014。
+
+## 15. 014 全面物理与工程闭环 benchmark
+
+014 不是只检查新增 wrapper。本节要求在全新独立工作区重做第 2--13 节的全部手推与 package 对照，再重做第 14 节两个 pure-time/tree family；不得直接复制 012/013 expected、报告或运行结果。第一阶段冻结全部手推产物和哈希后，第二阶段才加载 `package/package_014.wl`；第三阶段才运行外部 Kira。若 `package_014.wl/pdf` 尚未冻结或哈希在检验中变化，立即停止并重新开始受影响阶段。
+
+### 15.1 全量物理回归
+
+1. 第 9 节十个 loop family 各固定使用第 9.0 节表中的一个纯同号分支和一个混合分支，不做随机抽样；覆盖两个分支的全部可达 sector、全部 active time 与 `L(L+K)` momentum generators、全部适用离散态和规定的非零 ISP 点。
+2. 对十个 family 的每个初始化独立变量重做 general-index `expectedDerivatives`；比较对象必须包含带动力学量系数的至少两个积分之线性组合，使显式系数导数、积分指标导数和纯系数项同时非零。reference bubble 必须先对齐变量、zero-point、parity 与 symmetry convention。
+3. `atomic_massive_line` 和 `pure_massive_bubble_reference` 依第 13.3 节分别完成 direct-h、bare-H 与 H-to-h；H-to-h 还必须和 direct-h 的全部 seeds、`ds`、`AT` 与 `WT/shrinkTerms` 逐项比较。
+4. 第 14 节两个 tree family 重新推导 loop time seed、完整物理幂投影、sector-tagged 迭代、general 单步/终点约化和同序 dlog connection。另加三条平行 massive h 的定向 contact：同号 case 检查 single/triple odd subset 与逐线显式能量因子乘积；混合 case 必须证明全部传播子统一为 cross，且没有 theta/`WT` source。
+
+手推冻结后才允许调用 014。所有差值在同一 canonical/symmetry/parity 约定下严格为零；不得以浮点 probe 代替符号等式。确定性有理 probe 只作为大表达式的额外交叉检查。
+
+### 15.2 标准 package 与交互门禁
+
+在一个未预加载 dSIBP 符号的新 kernel 中检查：
+
+- `package_014.wl` 可独立加载，`$dSIBPVersion==="014"`，不依赖主线模块路径；所有手册汇总表中的用户函数均有非空 `::usage`，`Options[函数]` 与手册缺省一致。
+- `DSInit` 对输入、ISP 和 contact-reachable sector 做验证；初始化文件只写到 example 同目录的 `init/`，manifest/topology/sectors/conventions 可重新 `Get`，可选 derivatives 文件受选项控制，输入哈希不同且未允许覆盖时必须拒绝。
+- `DSMessagesOn[]/Off[]` 确实控制 info/progress/warning；关闭后 fatal error 仍产生标准 `Message`、红色 notebook 错误提示所需的结构化事件和失败 Association。headless 进度只记录阶段开始、固定比例里程碑与结束，不得按元素刷屏。
+- `DSSeeds -> DSLinear -> DSKiraExport` 只生成并序列化 backend-neutral 关系，不启动 Kira；manifest 的积分双向映射、系数原子映射、active basis、targets、generator-specific ranges 与输入哈希可逆且完整。
+- `DSKiraImport` 对 completion marker、hash、双向映射、targets 和 RHS 非 master 残留各有独立负例；任何一个负例都必须返回失败，不得继续进入 `DSDE`。
+- sector-tagged tree 数据在同 shape lower sectors 间仍按 `sectorKey` 分派；`DSTreeDLogDE` 的 master/矩阵同序，非对角 contact block 只沿 contact DAG 方向出现，zero-point/Wronskian normalization 在迭代前后不丢失。
+
+### 15.3 真实 Kira、DE 与 scaling 闭环
+
+只在第 15.1--15.2 节全部通过后，使用交付 example 中的 pure massive bubble closed-loop case，在独立工作区生成 Kira 输入并由 package 外部运行 Kira。固定 even parity 与同号分支；package 变量为 `P_pkg=P0=+I k0`，reference basis 使用 `P1=P2=P_ref=-P0=-I k0`。只有在这个等能量约束下才可启用顶点交换 symmetry。必须另建保持独立 `P1/P2` 的负例，确认该 symmetry 不会被复用。
+
+闭环按以下顺序验收：
+
+1. `DSKiraExport` 本身不启动 reduction；外部 Kira 完成后，completion log、master list 与完整 reduction 均来自本次独立运行。
+2. 19 个有序 active IDs 必须全部成为 masters；两个辅助关系 ID 不得成为 master。全部选定 targets 都有 reduction，不含 unreduced integral。
+3. 生成 IBP seeds、Kira reduction 和两条 DE 时保留本次声明的全部可求导动力学参数为符号；对 pure massive bubble，这个集合固定为 `{s11,P0}`。`nu`、`epsilon`、`dim`、固定 Wronskian/prefactor 和其它不属于 DE 变量的 family 参数均视为不可求导参数，必须在生成 IBP seeds 前代入一组固定、非奇异的有理数，且每个分子、分母的绝对值均小于 100。不得在求导或 reduction 前把 `s11`、`P0`、`Sqrt[s11]` 或由外不变量规则确定的 `kk[1,1]=s11` 取成常数。该取值表必须原样写入初始化 metadata、export manifest、后处理 summary 和报告，Kira 与 package check 两端不得各自重新取值。
+4. `DSKiraImport -> DSDE[{s11,P0}]` 后 master 顺序不变，矩阵和 source 中没有 residual `J`，约化系数不残留内部 `kk`/ISP 名，也不得残留取值表已经覆盖的其它符号参数；`Sqrt[s11]` 等显式系数导数必须保留。
+5. `DSScaleCheck` 使用变量 `{s11,P0}`、权重 `{2,1}`，逐 master 的 Eq. (51)/(64) Euler residual 与全矩阵 scaling residual 都严格为零。独立第二路线按同目录 `001 bubble_ibp_sym.m`/`002 bubble_de.m` 的 `dk0/dks -> id -> symmetry -> Kira reduction -> DEP0O/DEksO` 顺序生成 reference-style DE；再按 `P_ref=-P0`、`s11=ks^2`、同序 master 和逐项 normalization 变到 package basis，与 `DSDE[{s11,P0}]` 相减。旧 `002` 的统一除以 `ks` 只作诊断；跨 scaling-degree block 必须使用 degree conjugation。bubble reference 当前不是完整 dlog DE，因此本项不检查 primitive、letters、pole 或 dlog form；直接 dlog 双路线只按第 15.5 节用于 tree。
+6. 两条 bubble DE 已构造完成且 scaling 通过后，最终相等门禁固定使用 `ks=43/17`、`P0=29/13`，从而 `s11=1849/289`。代入前必须收集两边全部矩阵元分母并证明该点非奇异；代入后逐项用精确有理算术比较，非零差值数必须为零，不得使用浮点数或容差。该运动学取值与种子 `2026072202` 必须写入 benchmark 结果和报告。
+
+### 15.4 014 报告与修正门禁
+
+报告必须分别给出第 15.1 节各 family/分支/sector/generator 的 passed/total、第 14 节 tree 检查计数、第 15.2 节工程负例计数，以及第 15.3 节 Kira equations、independent relations、masters、targets、unreduced、DE/scaling 计数。还要记录 `package_014.wl/pdf` 哈希、手推冻结哈希、首个失败差值、Kira 版本和执行命令。
+
+报告归档为 `000-report/YYYY-MM-DD-HHmm-014-内部.md`，附件放同名 `-附件/`。发现 package 缺陷时，维护者修正 014 并重新冻结交付；独立检验者不得改 expected 追随 package，而应从受影响的独立推导阶段重跑。未全部通过不得把 014 标为完成。
+
+### 15.5 Tree naive IBP/DE 与直接 dlog 的双路线门禁
+
+在第 14 节的两顶点同号 massive family 上新增一条不使用 `A-/A+` 递推矩阵的路线。先对每个 contact-reachable sector 的全部 `a=0` binary masters，逐活动顶点构造对应 `a_v=1` loop 代表元；调用 loop `dtau` 后按完整物理幂投影成 sector-tagged tree 方程。把这些方程作为一个有限线性系统，固定 master 不参与求解，只解出全部一步升幂 tree 对象。该路线不得调用 `repIterative`、`treeAplus/treeAminus` 或 `DSTreeDLogDE[...]["omega"]` 生成 reduction rules。
+
+Tree 外部变量分为两部分并分别手推：
+
+1. 顶点相位能量导数沿用 loop 代表元的相位项，再做相对 tree 投影；不得把 loop 的完整 momentum derivative 当作 tree derivative。
+2. 每个 massive h 外腿的 `treeEnergy=k` 使用 Eq. (21)：`n=0` 给 `-J[a_v+1,n->1]`，`n=1` 给 `J[a_v+1,n->0]-(2 nu+1)J[a_v,n=1]/k`，并对 `k(variable)` 乘链式法则。若同一线连接两个顶点，两个 endpoint leg 都必须贡献。
+
+先独立冻结上述 raw derivative、naive 线性系统和 Eq. (3.53)--(3.55) 的逐变量 expected。第二阶段再加载 package，并固定使用 `DSTreeDLogDE[context]["masters"]` 给出的同序 `{sectorKey,integral,coefficient}` 列表；`coefficient=N_s` 是 master 定义的一部分，故 `D[N_s,variable] J_s` 必须显式进入 naive 路线。验收顺序为：
+
+1. `DSTreeNaiveIBP` 的 equation/unknown 数相等，全部 solve residual 严格为零。
+2. `DSTreeNaiveDE` 的 master 顺序和 normalization 与直接 dlog 完全相同，source、residual tree `J` 和内部 sector token 均为空。
+3. 每个顶点能量及每个不同 massive-leg energy 的 naive 矩阵先与独立 expected 比较，再与 `D[DSTreeDLogDE[context]["omega"],variable]` 比较；两边全部元素严格为零。
+4. 另固定两顶点 `{+,-}` family 使用同一测试；它只能有 top sector，所有 `contactAudit`、`shrinkConsumptionTrace` 和 `WT` 消费均为空，但 naive 与公式矩阵仍须一致。
+
+报告必须列出 master 数、各变量矩阵维数、equation/unknown 数、非零差值数、首个失败、normalization 导数非零项和 mixed-contact guard。内部互查只允许两条路线共享 topology convention 与显式指定的 master 列表；不得共享 reduction rules 或用一条路线的矩阵构造另一条路线的 expected。
+
+## 16. 015 根号动力学坐标增量 benchmark
+
+本节只检验 015 坐标 adapter，不重做第 2--15 节已经冻结的 014 物理关系。第一阶段不得读取 package、主线或现有 expected；从以下定义独立推导并冻结 `derivation.md` 与 `expected.wl`：
+
+```text
+xij = sp[k_i,k_j],       ssij = Sqrt[xij]
+partial_ssij = 2 ssij partial_xij
+```
+
+`externalMomenta` 是进入 loop-dependent line momentum 的独立外向量，其完整 Gram 基一律保留。`externalLegMomenta` 只声明允许出现在无圈动量线/相位中的向量，不自动输出 Gram 表；从 `lineData`、`vertexEnergies` 和 `extLegs` 中抽取实际出现模长平方，在完整 loop Gram 基上按首次出现顺序做增量秩筛选，只为独立行命名 `sE1,sE2,...`，其余保存 dependent binding。若 `kE1`、`kE1+kE2`、`kE2` 分别出现，则三者独立，禁止自动引入 `Sqrt[sp[kE1,kE2]]`；另固定 `{kE,2 kE,k+kE,k-kE}` 检查从属 binding。
+
+固定做五组小 family：一个 `externalMomenta={k1}` 的单外动量 family、一个 `externalMomenta={k1,k2}` 的两外动量 family、一个实际出现 `{kE1,kE1+kE2,kE2}` 三个无圈模长的顶点相位 family、一条动量为 `kE0` 且仍参与两个顶点 `tau` 积分的 massive h 线，以及 `{kE,2 kE,k+kE,k-kE}` dependent-binding family。必须验证：
+
+1. 缺省公开变量分别严格为 `{ss11}`、`{ss11,ss12,ss22}` 与按出现顺序绑定的 `{sE1,sE2,sE3}`；内部 loop Gram 原子仍为 `kk[i,j]=sp[ki,kj]`，外腿规则中不存在 `sp[kE1,kE2]`。
+2. 对角与非对角 `ssij` 导数都等于独立平方原子导数乘 `2 ssij`，并保持同一 upper-triangular `Dij` decomposition；不得从 package 的 root-coordinate actual 反推 expected。
+3. 只出现在相位/显式系数中的 `sEe` 只贡献相位和系数导数，不产生 loop IBP generator，也不增加 ISP closure 维数。若 `sEe` 绑定一条无圈 massive h 线，则另外从 `r^{-B}h_0(r tau_1)h_0(r tau_2)` 手推并冻结 `-B shift_b(+1)`、两个 endpoint 的 `shift_a(+1),n:0->1`，再叠加相位项；不得调用 package helper 生成该 expected。
+4. 对 `c(ssij,sEe) J1 + d(ssij,sEe) J2 + f(ssij,sEe)` 使用完整乘积法则；指标保持 general，最终统一执行 EOM/symmetry/canonical。
+5. `numericRules->{ssij->r}` 在内部等价于 `kk[i,j]->r^2`。不得使用 `PowerExpand`，也不得默认改变根号分支。
+6. 显式旧输入 `externalInvariantRules->{sp[ki,kj]->sij}` 继续以单位 Jacobian 工作，确认 015 的默认迁移没有改变 014 兼容语义。
+7. 第一阶段独立构造动力学规则左端到基础平方原子的矩阵，以及基础原子对用户参数的 Jacobian。完整重命名必须两者满秩；删除一条规则和让两个基础模长共用同一参数时，分别冻结左端零空间和参数 Jacobian 左零空间。再加入一个依赖规则 `sp[2 k,2 k]->xFourK^2`，冻结其冗余关系与约束 `xFourK^2=4 xLoop^2`。第二阶段要求 package 对欠完备输入拒绝，对过完备输入 warning 后允许 IBP 初始化，但标记 `inverseAvailableQ=False` 并禁用有歧义的独立参数 `ds`。
+8. 固定一个一般混合坐标 `x11=u^2,x12=u v,x22=v^2+w^2`，独立冻结 `partial_u=2u partial_x11+v partial_x12`。package 必须对三个基础平方原子完整求和，不得因 `u` 恰好也是第一个根号坐标名而提前返回；loop 原子已包含的相位导数不得在显式 phase 分支重复计算。该 Jacobian 满秩但不是简单单值逆映射，`ds` 必须可用而 `rep2innerform` 必须明确失败。
+9. 两阶段交互合同必须检查 `selectionTemplate` 已完全求值且等于缺省规则。过完备 context 中 symbolic momentum IBP 必须仍可生成，但冗余变量 `ds` 和 `rep2innerform` 都返回 `$Failed`。
+10. dependent-binding family 必须独立冻结：实际出现 4 个模长而独立无圈模长只有 2 个，`|2 kE|^2=4 sE1^2`、`|k-kE|^2=2 ss11^2+2 sE1^2-sE2^2`；对 `sE1` 求导时，第二条无圈 massive line 乘 `D[Sqrt[4 sE1^2],sE1]`，负组合相位乘 `2 sE1/Sqrt[2 ss11^2+2 sE1^2-sE2^2]`。不得用 `PowerExpand` 或 package helper 生成这两个 Jacobian。
+
+冻结后才加载 `package/package_015.wl`。新 kernel 中要求 `$dSIBPVersion==="015"`，逐项比较上述坐标、Jacobian、相位导数、系数乘积法则、数值映射和 generator/ISP 隔离门禁。报告给出 passed/total、非零差值数、首个失败、`package_015.wl/pdf` 哈希，以及 `package_014.wl/pdf` 的复核哈希；014 任一哈希变化都视为发布失败。
+
+## 17. 完成检查表
 
 每个函数族交付前确认：
 
@@ -1114,9 +1255,16 @@ reference 对照必须覆盖实际保留的 top/R1 basis 的全部端点 `n=0/1`
 - [ ] 每个函数族、固定 sign 分支、规定基底路线、可达 sector 和独立外部变量均已有 general-index `expectedDerivatives`。
 - [ ] 每条总导数检查同时覆盖显式系数导数、两个积分的指标导数和纯系数项，最后对完整结果统一 canonical。
 - [ ] 外不变量求导从有序 `D_ij` 独立推导，raw 反解严格使用 `{D_ij|i<=j}`；`Sqrt[s11]` 等非线性顶点能量已按链式法则处理。
-- [ ] Reference bubble 已完成 `G/R1/R2 -> J`、`Vpm=0 -> --`、zero-point 与 `ks^2=s11` 对齐。
+- [ ] Reference bubble 已完成 `G/R1/R2 -> J`、`Vpm=0 -> --`、`P_ref=-P_pkg`、zero-point 与 `ks^2=s11` 对齐；active 17 和辅助 20/21 的显式能量符号已逐项核对。
 - [ ] Reference 的 symmetry 与 parity 已通过 package `symmetryRules` 应用；R2 在求导 basis 前 canonical 到 R1。
 - [ ] 两个 H family 的 `bare-H(T=I)` 与 `H-to-h` 均已和独立 expected 比较；`H-to-h` 的全部 IBP seeds、`ds`、`AT` 与 `WT/shrinkTerms` 还已和 `direct-h` 逐项比较为零。
 - [ ] 冻结 expected 后才调用 `ds[expression,variable,topo]`，全部差值为零且无 forbidden `n`/内部 `kk`。
 - [ ] 输出没有写回 `independent-benchmark/`。
 - [ ] 保持当前逐线三槽 `J`，并已从原始乘积及明确的统一分布正则化独立推导全部非零 boundary 与可达 sector；未引入其它 Head，也未从任务书外补读答案。
+- [ ] 014 单文件 package 在新 kernel 中独立加载，usage/Options、初始化 metadata、消息开关和 headless 稀疏进度均通过。
+- [ ] 014 Kira exporter/importer 的正例与 completion/hash/maps/targets/RHS 五类负例全部通过，package 未启动 reduction。
+- [ ] 真实 Kira 来自本次独立工作区；19 active masters、两个辅助 ID、全部 targets 和 unreduced 计数均已核对。
+- [ ] 除本次 DE 的全部可求导动力学参数外，其它参数已在 IBP seed 前固定为报告中的精确有理数；`DSDE[{s11,P0}]` 无 residual `J` 或内部 `kk`/ISP，`DSScaleCheck[{2,1}]` residual 严格为零；reference-style bubble DE 经 degree conjugation 后在 `ks=43/17,P0=29/13` 的非奇异精确点逐项差为零。bubble 未误做 dlog/pole 检查。
+- [ ] Tree `++`/`+-` 已在同序 normalized masters 下完成 `DSTreeNaiveIBP -> DSTreeNaiveDE` 与直接 dlog 双路线；传播子能量、顶点能量、`D[N_s]`、solve residual 和 mixed-contact guard 全部通过。
+- [ ] 015 根号坐标 expected 在加载 package 前冻结；`ssij` Jacobian、`sEij` 相位/系数导数、numeric square mapping、旧 `sij` 单位 Jacobian和 loop-generator/ISP 隔离全部通过。
+- [ ] 015 单文件和手册哈希已记录，冻结的 014 程序与手册哈希复核不变。
