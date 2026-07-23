@@ -1,6 +1,6 @@
-# dS-IBP-Package
+# dSIBP-development
 
-面向 de Sitter 圈图的通用 IBP seed 生成框架。目标是支持任意圈数、任意拓扑以及 massive/massless 混合函数族，用统一 `J` 表示生成 time-IBP、loop-momentum IBP、独立变量微分方程 seed、即时 EOM/canonical seed，并转换为后端中立线性系统。Kira 只是可选 serializer；package 不负责运行 reduction。
+这是正式 `dSIBP` Mathematica 程序包的私有开发仓库；仓库名用于区分开发工程与正式发布包，package 名称和 context 仍为 `dSIBP``。项目面向 de Sitter 圈图生成通用 IBP seed，目标是支持任意圈数、任意拓扑以及 massive/massless 混合函数族，用统一 `J` 表示生成 time-IBP、loop-momentum IBP、独立变量微分方程 seed、即时 EOM/canonical seed，并转换为后端中立线性系统。Kira 只是可选 serializer；package 不负责运行 reduction。
 
 ## 先看这里
 
