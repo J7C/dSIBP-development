@@ -419,8 +419,8 @@ ds016LoopGramRows[loopRows_List] := Flatten[
 
 ds016QuadraticSpanAudit[requiredMomenta_List, userMomenta_List, loopMomenta_List, atoms_List] := Module[
    {requiredData, userData, loopData, requiredRows, userRows, loopRows, baseRows,
-    missingPositions, extraPositions, missingRows, extraRows, userNewPositions,
-    invalidRequired, invalidUser, invalidLoop, requiredNewRank, userNewRank, status},
+    missingPositions, extraPositions, missingRows, extraRows, userNewPositions, redundantUserPositions,
+    invalidRequired, invalidUser, invalidLoop, requiredNewRank, userNewRank, quadraticDependencies, status},
    requiredData = ds016LinearVectorData[#, atoms] & /@ requiredMomenta;
    userData = ds016LinearVectorData[#, atoms] & /@ userMomenta;
    loopData = ds016LinearVectorData[#, atoms] & /@ loopMomenta;
@@ -438,6 +438,12 @@ ds016QuadraticSpanAudit[requiredMomenta_List, userMomenta_List, loopMomenta_List
    extraRows = If[extraPositions === {}, {}, userRows[[extraPositions]]];
    requiredNewRank = Length[ds016IndependentRowPositions[requiredRows, baseRows]];
    userNewRank = Length[userNewPositions];
+   redundantUserPositions = Complement[Range[Length[userRows]], userNewPositions];
+   quadraticDependencies = If[
+     Join[baseRows, userRows] === {},
+     {},
+     NullSpace[Transpose[Join[baseRows, userRows]]]
+     ];
    status = Which[
      invalidRequired =!= {} || invalidUser =!= {} || invalidLoop =!= {}, "invalid",
      missingRows =!= {}, "undercomplete",
@@ -452,6 +458,13 @@ ds016QuadraticSpanAudit[requiredMomenta_List, userMomenta_List, loopMomenta_List
     "userMomenta" -> userMomenta,
     "missingMagnitudeSquares" -> If[missingPositions === {}, {}, sp[#, #] & /@ requiredMomenta[[missingPositions]]],
     "extraMagnitudeSquares" -> If[extraPositions === {}, {}, sp[#, #] & /@ userMomenta[[extraPositions]]],
+    "redundantUserPositions" -> redundantUserPositions,
+    "redundantUserMomenta" -> If[redundantUserPositions === {}, {}, userMomenta[[redundantUserPositions]]],
+    "quadraticDependencyOrder" -> Join[
+      Table["loopGram" <> ToString[i], {i, Length[baseRows]}],
+      Table["userMagnitude" <> ToString[i], {i, Length[userRows]}]
+      ],
+    "quadraticDependencies" -> quadraticDependencies,
     "requiredIndependentMagnitudeCount" -> requiredNewRank,
     "userIndependentMagnitudeCount" -> userNewRank,
     "invalidRequiredPositions" -> invalidRequired,
@@ -501,7 +514,14 @@ ds016MomentumDeclarationAudit[case_Association, lines_List, graphAudit_Associati
     AppendTo[issues, <|"severity" -> "warning", "code" -> "overcompleteLoopExternalMomenta", "extraDirections" -> Lookup[loopAudit, "extraDirections", {}], "dependencies" -> Lookup[loopAudit, "userDependencyVectors", {}]|>]
     ];
    If[Lookup[independentAudit, "status", ""] === "overcomplete",
-    AppendTo[issues, <|"severity" -> "warning", "code" -> "overcompleteIndependentExternalMomenta", "extraMagnitudeSquares" -> Lookup[independentAudit, "extraMagnitudeSquares", {}]|>]
+    AppendTo[issues, <|
+      "severity" -> "warning",
+      "code" -> "overcompleteIndependentExternalMomenta",
+      "extraMagnitudeSquares" -> Lookup[independentAudit, "extraMagnitudeSquares", {}],
+      "redundantUserMomenta" -> Lookup[independentAudit, "redundantUserMomenta", {}],
+      "quadraticDependencyOrder" -> Lookup[independentAudit, "quadraticDependencyOrder", {}],
+      "quadraticDependencies" -> Lookup[independentAudit, "quadraticDependencies", {}]
+      |>]
     ];
    capabilities = <|
      "initializationUsableQ" -> MemberQ[{"exact", "overcomplete"}, status],

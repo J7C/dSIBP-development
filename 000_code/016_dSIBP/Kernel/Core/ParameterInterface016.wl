@@ -5,7 +5,9 @@
 (* ::Chapter:: *)
 (*参数 notation*)
 
-dsParameterNotation[topo_Association] := Module[{audit = Lookup[topo, "kinematicCoordinateAudit", <||>]},
+dsParameterNotation[topo_Association] := Module[
+   {audit = Lookup[topo, "kinematicCoordinateAudit", <||>], declarationAudit},
+   declarationAudit = Lookup[topo, "momentumDeclarationAudit", <||>];
    <|
      "loopExternalMomenta" -> Lookup[topo, "loopExternalMomenta", {}],
      "effectiveLoopExternalMomenta" -> Lookup[topo, "effectiveLoopExternalMomenta", Lookup[topo, "externalMomenta", {}]],
@@ -14,17 +16,27 @@ dsParameterNotation[topo_Association] := Module[{audit = Lookup[topo, "kinematic
     "selectedRules" -> Lookup[audit, "selectedRules", {}],
     "selectedUserVariables" -> Lookup[audit, "selectedUserVariables", {}],
     "dependentMagnitudeBindings" -> Lookup[audit, "dependentMagnitudeBindings", {}],
+    "requiredLoopExternalDirections" -> Lookup[declarationAudit, "requiredLoopExternalDirections", {}],
+    "requiredNoLoopMagnitudeMomenta" -> Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}],
+    "requiredMagnitudeCoverage" -> kinematicRequiredMagnitudeCoverage[topo],
+    "parameterRedefinitionGuide" -> kinematicParameterRedefinitionGuide[audit],
     "coordinateStatus" -> Lookup[audit, "status", "unknown"],
     "capabilities" -> Lookup[topo, "capabilities", <||>]
     |>
    ];
 
 
-DSParameterNotation[context_Association] := Module[{resolved = dsResolveContext[context]},
+DSParameterNotation[context_Association] := Module[{resolved = dsResolveContext[context], result, guide},
    If[Head[resolved] === Missing,
     dsErrorPrint["DSParameterNotation 需要有效的 DSInit context。"]; Return[$Failed]
     ];
-   dsParameterNotation[resolved["topology"]]
+   result = dsParameterNotation[resolved["topology"]];
+   guide = Lookup[result, "parameterRedefinitionGuide", <||>];
+   dsInfoPrint[
+    "当前参数 " <> ToString[Lookup[result, "selectedUserVariables", {}], InputForm] <>
+     "。可选重定义示例：" <> Lookup[guide, "commandExample", ""]
+    ];
+   result
    ];
 
 

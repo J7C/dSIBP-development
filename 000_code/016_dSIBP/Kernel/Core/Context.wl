@@ -16,7 +16,7 @@ dsInfoPrint[text_, setting_: Automatic] := If[dsMessagesEnabledQ[setting], Print
 
 dsWarningPrint[text_, setting_: Automatic] := If[
    dsMessagesEnabledQ[setting],
-   If[TrueQ[$Notebooks], Print[Style["Warning: " <> ToString[text], Darker[Orange]]], Print["[dSIBP Warning] ", text]]
+   If[TrueQ[$Notebooks], Print[Style["Warning: " <> ToString[text], Darker[Red]]], Print["[dSIBP Warning] ", text]]
    ];
 
 (* fatal error 不读取全局开关；即使用户关闭可选提醒也必须可见。 *)

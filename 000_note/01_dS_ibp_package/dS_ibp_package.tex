@@ -39,8 +39,8 @@
 \abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前主线为 016：用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。前者使用完整 \texttt{ssij} 根号 Gram 坐标，后者只为用户声明的实际无圈模长生成 \texttt{sE1,sE2,...}。package 只生成、序列化和验证关系，不运行 reduction。}
 
 \begin{document}
+\setcounter{tocdepth}{1}
 \maketitle
-\tableofcontents
 \newpage
 
 \section{快速开始与当前边界}
@@ -94,14 +94,168 @@ linearData = DSLinear[seeds,context];
 
 独立 benchmark 的 \texttt{package/examples/} 提供六个应用例子：
 \begin{verbatim}
+06_root_kinematic_coordinates/main.wl
 01_mixed_bubble_workflow.wl
 02_function_system_hankel.wl
 03_two_loop_isp.wl
 04_pure_massive_bubble_closed_loop/main.wl
 05_tree_two_vertex_time_ibp/main.wl
-06_root_kinematic_coordinates/main.wl
 \end{verbatim}
-它们分别展示 mixed massive/massless 工作流、一般 \texttt{P,Q,T,W} 函数系统、两圈 ISP、pure massive bubble 的外部 Kira 闭环、两顶点 tree pure-time/dlog 路线，以及 016 的 \texttt{ssij/sEe} 初始化与总导数。examples 不含独立 expected；Kira example 只写输入并取回已有结果，不启动 reduction。
+建议先运行第一行的 bubble+tree 经典例子；它展示 016 的显式动量角色、\texttt{ssij/sEe} 初始化、参数重定义、总导数与错误输入门禁。其余例子依次展示 mixed massive/massless 工作流、一般 \texttt{P,Q,T,W} 函数系统、两圈 ISP、pure massive bubble 的外部 Kira 闭环，以及两顶点 tree pure-time/dlog 路线。examples 不含独立 expected；Kira example 只写输入并取回已有结果，不启动 reduction。
+
+\section{第一个完整例子：bubble+tree}
+
+\subsection{先按独立相位能量走通基准流程}
+
+考虑三个时间顶点。\texttt{v1,v2} 之间的 bubble 有两条 cycle lines，动量分别为
+\texttt{l1} 与 \texttt{l1+k1+k2}；\texttt{v2,v3} 之间有一条无圈 bridge line，动量为
+\texttt{k1+k2}。\texttt{v1} 的另一侧外腿也携带 \texttt{k1+k2}，\texttt{v3} 有两条外腿
+\texttt{k1,k2}。输入中的加减法始终是矢量线性组合：
+\begin{equation}
+ |k_1+k_2|=\sqrt{\operatorname{sp}(k_1+k_2,k_1+k_2)}
+ \neq |k_1|+|k_2|
+\end{equation}
+（一般运动学下）。\texttt{nu1,nu2,nu3} 是三条 massive lines 的 Hankel 指标；
+\texttt{E1,E2,E3} 是三个顶点指数相位的独立标量。package 不从前两类对象推断第三类。
+
+完整核心输入为
+\begin{verbatim}
+case = <|
+  "name" -> "016BubbleTreeK1K2",
+  "vertexData" -> {{v1,"+"},{v2,"+"},{v3,"+"}},
+  "lineData" -> {
+    <|"id"->1,"endpoints"->{v1,v2},"momentum"->l1,
+      "nu"->nu1,"bbType"->"h","massType"->"massive"|>,
+    <|"id"->2,"endpoints"->{v1,v2},"momentum"->l1+k1+k2,
+      "nu"->nu2,"bbType"->"h","massType"->"massive"|>,
+    <|"id"->3,"endpoints"->{v2,v3},"momentum"->k1+k2,
+      "nu"->nu3,"bbType"->"h","massType"->"massive"|>
+  },
+  "extLegs" -> {
+    {bubbleLeg,v1,k1+k2},{treeLeg1,v3,k1},{treeLeg2,v3,k2}
+  },
+  "loopMomenta" -> {l1},
+  "loopExternalMomenta" -> {k1+k2},
+  "independentExternalMomenta" -> {k1,k2},
+  "ibpMode" -> "full",
+  "vertexEnergies" -> <|v1->E1,v2->E2,v3->E3|>,
+  "ispData" -> {},
+  "zeroPointRules" -> {
+    a0[v1]->alpha1,a0[v2]->alpha2,a0[v3]->alpha3,
+    b0[1]->beta1,b0[2]->beta2,b0[3]->beta3
+  },
+  "symmetryRules" -> {},
+  "seedPreset" -> "quickCheck"
+|>;
+\end{verbatim}
+
+先查看提案，再初始化：
+\begin{verbatim}
+proposal = DSKinematics[case];
+proposal["selectionTemplate"]
+
+context = DSInit[
+  case,
+  GenerateDerivativeMetadata -> True,
+  ProgressReporting -> True
+];
+topology = context["topology"];
+notation = DSParameterNotation[context];
+\end{verbatim}
+该输入的必要 loop 方向只有 \texttt{k1+k2}。它的完整一维 Gram 已覆盖 bridge 的模长；
+\texttt{k1,k2} 只补齐实际出现的两个独立无圈模长。缺省规则严格为
+\begin{verbatim}
+sp[k1+k2,k1+k2] -> ss11^2
+sp[k1,k1]       -> sE1^2
+sp[k2,k2]       -> sE2^2
+\end{verbatim}
+因此 \texttt{ss11} 是 $|k_1+k_2|$，而 \texttt{sE1+sE2} 才是 $|k_1|+|k_2|$。
+短名必须与 \texttt{DSParameterNotation} 返回的原始 \texttt{sp} binding 一起阅读；
+\texttt{ssij} 在 $i\ne j$ 时是 Gram 点积坐标的根，不表示 $|k_i+k_j|$。
+
+初始化后可以检查公开原子关系和批量工作流：
+\begin{verbatim}
+integral = J[
+  {0,0,0},
+  {{0,0,0},{0,0,0},{0,0}},
+  {}
+];
+
+timeSeed = dtau[v3,integral,topology];
+loopLoopSeed = dqq[1,1,integral,topology];
+loopExternalSeed = dqk[1,1,integral,topology];
+totalDerivative = ds[ss11^2 integral+sE1 integral,sE1,topology];
+
+seeds = DSSeeds[context,DiscreteMode->"all"];
+linearData = DSLinear[seeds,context];
+\end{verbatim}
+cycle line pack 为 \texttt{\{b,n1,n2\}}，bridge pack 只有 \texttt{\{n1,n2\}}；bridge 的动量幂进入显式
+\texttt{ss11} 系数，不伪造 \texttt{b} 指标。解析 seed 不要求给数值规则；若进入数值
+\texttt{linearData}/Kira 输入，才需要补齐 \texttt{ss11,E1,E2,E3,nu1,nu2,nu3} 等数值。
+
+\subsection{方案一：保留两条外腿，把模长和选作坐标}
+
+如果同一顶点的两个外腿指数需要合并成
+\begin{equation}
+ E_0=|k_1|+|k_2|,
+\end{equation}
+是否采用 $E_0$ 是用户的运动学参数选择，不由 package 猜测。保留原 topology 时，先把
+\texttt{v3} 的相位能量显式改为 \texttt{E0}，再做满秩坐标重定义：
+\begin{verbatim}
+boundCase = Join[
+  case,
+  <|"vertexEnergies"-><|v1->E1,v2->E2,v3->E0|>|>
+];
+boundContext0 = DSInit[boundCase,GenerateDerivativeMetadata->True];
+
+boundContext = DSRedefineParameters[boundContext0,{
+  sp[k1+k2,k1+k2] -> ss11^2,
+  sp[k1,k1]       -> (E0-sE2)^2,
+  sp[k2,k2]       -> sE2^2
+}];
+\end{verbatim}
+数学上这正是 \texttt{sE1->E0-sE2,sE2->sE2}，但公开 API 的规则左端必须写
+\texttt{baseCoordinateOrder} 中的原始 \texttt{sp[...]}，不能直接写 \texttt{sE1->...}。
+该坐标图的可求导变量为
+\begin{verbatim}
+{ss11,E0,sE2,E1,E2}
+\end{verbatim}
+其中 \texttt{E0} 只出现一次；\texttt{ds[expr,E0,boundContext]} 同时对显式系数、模长 binding
+和 \texttt{v3} 相位求导。平方规则选择了 $|k_1|=E_0-sE_2$ 的物理支，使用者应在所研究区域保证
+$E_0>s_E2>0$；若需要别的分支，必须显式更换参数化。
+
+只改坐标而仍令 \texttt{v3->E3}，不会建立 $E_3=E_0$；相反，只令 \texttt{v3->E0} 而不重定义
+两个模长，也不会告诉 package $E_0=sE1+sE2$。这两部分必须同时给出。
+
+\subsection{方案二：从输入起采用单一有效外腿}
+
+另一种做法是把 \texttt{v3} 的两条外腿替换成一条有效外腿。此时 topology metadata 已改变，
+不能把它当作上一个 family 的纯坐标改名。为避免同一符号既作矢量又作标量，使用 \texttt{p0}
+标记有效外腿三动量，用 \texttt{E0} 标记其模长和顶点相位：
+\begin{verbatim}
+singleLegCase = Join[case,<|
+  "name" -> "016BubbleTreeSingleEffectiveLeg",
+  "extLegs" -> {
+    {bubbleLeg,v1,k1+k2},
+    {treeLeg0,v3,p0}
+  },
+  "independentExternalMomenta" -> {p0},
+  "vertexEnergies" -> <|v1->E1,v2->E2,v3->E0|>
+|>];
+
+singleLegContext0 = DSInit[
+  singleLegCase,
+  GenerateDerivativeMetadata->True
+];
+singleLegContext = DSRedefineParameters[singleLegContext0,{
+  sp[k1+k2,k1+k2] -> ss11^2,
+  sp[p0,p0]       -> E0^2
+}];
+\end{verbatim}
+此时 \texttt{v3} 只有一条外腿，独立变量为 \texttt{\{ss11,E0,E1,E2\}}。package 只知道
+$|p_0|=E_0$；“这个 $E_0$ 对应原问题的 $|k_1|+|k_2|$”是用户在两个不同 topology 之间建立的
+外部物理对应，不再能从新输入中恢复原来的两个独立模长，也不能分别对它们求导。若后续仍需要
+$k_1,k_2$ 的独立变化、交换对称性或软极限，应使用方案一而不是删除两条外腿。
 
 \section{SK 费曼规则到积分族}
 

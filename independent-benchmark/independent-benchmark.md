@@ -1268,6 +1268,29 @@ partial_ssij = 2 ssij partial_xij
 
 最后比较 `DSPublicAPI[]` 与 `package/examples/coverage_manifest.wl`：每个公开函数至少有一个成品 example，手册汇总表不得漏项。第一阶段 expected 全部冻结后才加载 `package/package_016.wl`，要求 `$dSIBPVersion==="016"`，报告每组 passed/total、非零差值数、首个失败、程序/PDF 哈希，以及冻结 015 核心哈希是否保持不变。
 
+### 17.4 固定 bubble+tree 参数闭合专项
+
+新增一个固定 family，不得用其它 bubble/bridge 输入替代：`v1,v2` 间两条 massive h cycle lines 的动量为 `l1`、`l1+k1+k2`；`v2,v3` 间一条 massive h bridge 的动量为 `k1+k2`；`extLegs` 为 `{v1,k1+k2}`、`{v3,k1}`、`{v3,k2}`。基准相位必须独立输入 `vertexEnergies=<|v1->E1,v2->E2,v3->E3|>`；`E1,E2,E3` 与传播子三动量及 `nu1,nu2,nu3` 互不推断。
+
+第一阶段由执行方从上述 topology 自己选择并手推两个有序动量列表，冻结后才与以下合同比较：
+
+```wl
+"loopMomenta" -> {l1}
+"loopExternalMomenta" -> {k1+k2}
+"independentExternalMomenta" -> {k1,k2}
+```
+
+缺省基础规则必须恰为 `sp[k1+k2,k1+k2]->ss11^2`、`sp[k1,k1]->sE1^2`、`sp[k2,k2]->sE2^2`，全部微分变量恰为 `{ss11,sE1,sE2,E1,E2,E3}`。`ss11` 表示先作矢量和再取模，绝不等于 `sE1+sE2`。执行方先手推并冻结 general `a_i,b_i,n_i` 下的全部 time/momentum seeds、全部六个变量的微分算符、显式系数乘积法则、EOM/symmetry/canonical 与所有 `a0[v]、b0[e]` zero-point 产物；手推阶段不得调用 package helper。
+
+冻结后加载 package，至少完成以下输入矩阵：
+
+1. 分别改变 `loopExternalMomenta` 与 `independentExternalMomenta`，各做 exact、overcomplete、undercomplete。过完备必须给红色 warning、列出额外/冗余方向和二次型依赖，允许 symbolic IBP 但关闭 `ds/DSDE/rep2innerform`；欠完备必须给红色 error、返回 missing/null-space 证据，并使所有下游入口读取失败状态。
+2. 自定义坐标做 exact、overcomplete、undercomplete。exact 使用满秩混合参数化；另外验证保留两条外腿时 `sp[k1,k1]->(E0-sE2)^2`、`sp[k2,k2]->sE2^2` 且 `v3->E0` 得到变量 `{ss11,E0,sE2,E1,E2}`。规则左端只能写原始 `sp[...]`。此项只检验坐标/相位绑定；单一有效外腿属于不同 topology，不与原 family 混作纯重命名。
+3. 对全部 seeds 及微分算符作用于带 general 指标和参数系数的积分组合；把每个 `_J` 替换为独立惰性 token 后对系数取 `Variables`，剔除指标符号，确认没有裸 `kk/qq/qk/xi/externalLegSquaredCoordinate`。比较声明参数集合与所有 seed/DE 系数实际出现参数的并集，分别报告缺失和额外项。
+4. 源码审阅必须确认 bridge 不进入 momentum-IBP 的 `xi` 集合、微分 metadata 对 symbolic 指标不按大小猜 symmetry、EOM 只在离散状态可判定时触发、zero-point 未因 canonical 消失；另列出废弃代码、效率热点和可复用模块候选。
+
+报告逐组给出 passed/total、非零差值数和首个失败，并原样记录 exact/over/under 的消息文本、颜色级别、capability、六变量顺序、参数闭合差集及 frozen expected 哈希。
+
 ## 18. 完成检查表
 
 每个函数族交付前确认：

@@ -95,7 +95,23 @@ dsRelevantInitializationWarningQ[issue_Association, topo_Association] := ! TrueQ
     Lookup[Lookup[topo, "seedOptions", <||>], "DiscreteMode", "sample"] =!= "sample"
    ];
 
+
+dsInitializationIssueText[issue_Association] := Module[{code, details},
+   code = Lookup[issue, "code", "unknownInitializationIssue"];
+   details = KeyDrop[issue, {"severity", "code"}];
+   code <> If[details === <||>, "", "：" <> ToString[details, InputForm]]
+   ];
+
 dsReadExistingManifest[path_String] := If[FileExistsQ[path], Quiet[Check[Get[path], $Failed]], Missing["NoManifest"]];
+
+
+(* 初始化 metadata 固定为 UTF-8/LF 的可读 InputForm，避免 Windows Put 产生 CRLF 与行尾空格。 *)
+dsWriteInitializationExpression[expr_, path_String] := Module[{text},
+   text = ToString[expr, InputForm, PageWidth -> 120] <> "\n";
+   text = StringReplace[text, RegularExpression["[ \\t]+(?=\\n|$)"] -> ""];
+   writeKiraUTF8LFText[path, text]
+   ];
+
 
 dsInitializationConflictQ[directory_String, inputHash_String, overwriteQ_] := Module[{manifestPath, manifest, knownFiles},
    If[TrueQ[overwriteQ] || ! DirectoryQ[directory], Return[False]];
@@ -120,7 +136,7 @@ dsWriteInitializationFiles[context_Association, directory_String, overwriteQ_] :
      |>;
    If[AssociationQ[context["derivatives"]], AssociateTo[fileData, "derivatives.wl" -> context["derivatives"]]];
    paths = AssociationMap[FileNameJoin[{directory, #}] &, Keys[fileData]];
-   writeResult = Quiet[Check[KeyValueMap[(Put[#2, paths[#1]]; #1) &, fileData], $Failed]];
+   writeResult = Quiet[Check[KeyValueMap[(dsWriteInitializationExpression[#2, paths[#1]]; #1) &, fileData], $Failed]];
    If[writeResult === $Failed, Return[<|"status" -> "failed", "directory" -> directory|>]];
    manifest = <|
      "status" -> "initialized",
@@ -133,14 +149,14 @@ dsWriteInitializationFiles[context_Association, directory_String, overwriteQ_] :
      "derivativeMetadataQ" -> AssociationQ[context["derivatives"]]
      |>;
    manifestPath = FileNameJoin[{directory, "manifest.wl"}];
-   If[Quiet[Check[Put[manifest, manifestPath]; True, False]] =!= True, Return[<|"status" -> "failed", "directory" -> directory|>]];
+   If[Quiet[Check[dsWriteInitializationExpression[manifest, manifestPath]; True, False]] =!= True, Return[<|"status" -> "failed", "directory" -> directory|>]];
    <|"status" -> "written", "directory" -> directory, "manifest" -> manifestPath, "files" -> Append[paths, "manifest.wl" -> manifestPath]|>
    ];
 
 DSInit[input_Association, OptionsPattern[]] := Module[
    {progress = OptionValue[ProgressReporting], topologyData, validation, subsetSummary, derivatives, context,
-     inputHash, initDirectory, writeResult = <|"status" -> "notRequested"|>, warnings,
-     effectiveInput, kinematicAudit},
+     inputHash, initDirectory, writeResult = <|"status" -> "notRequested"|>, warnings, errors,
+     effectiveInput, kinematicAudit, declarationAudit, guide},
    effectiveInput = If[
      OptionValue[KinematicRules] === Automatic,
      input,
@@ -159,6 +175,17 @@ DSInit[input_Association, OptionsPattern[]] := Module[
      ];
    validation = Lookup[topologyData, "validationReport", <|"errorCount" -> 1, "issues" -> {}|>];
    kinematicAudit = Lookup[topologyData, "kinematicCoordinateAudit", <||>];
+   declarationAudit = Lookup[topologyData, "momentumDeclarationAudit", <||>];
+   guide = kinematicParameterRedefinitionGuide[kinematicAudit];
+   dsInfoPrint[
+     "动量角色：loopMomenta " <> ToString[Lookup[topologyData, "loopMomenta", {}], InputForm] <>
+      "；loopExternalMomenta " <> ToString[Lookup[topologyData, "loopExternalMomenta", {}], InputForm] <>
+      "；effectiveLoopExternalMomenta " <> ToString[Lookup[topologyData, "effectiveLoopExternalMomenta", {}], InputForm] <>
+      "；independentExternalMomenta " <> ToString[Lookup[topologyData, "independentExternalMomenta", {}], InputForm] <>
+      "；实际需要的 loop 方向 " <> ToString[Lookup[declarationAudit, "requiredLoopExternalDirections", {}], InputForm] <>
+      "；实际需要的无圈模长 " <> ToString[Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}], InputForm],
+     progress
+     ];
    dsInfoPrint[
      "动力学变量选择：" <> ToString[Lookup[kinematicAudit, "status", "unknown"]] <>
       "；缺省规则 " <> ToString[Lookup[kinematicAudit, "defaultRules", {}], InputForm] <>
@@ -166,8 +193,19 @@ DSInit[input_Association, OptionsPattern[]] := Module[
       "；从属模长绑定 " <> ToString[Lookup[kinematicAudit, "dependentMagnitudeBindings", {}], InputForm],
      progress
      ];
+   dsInfoPrint[
+     "必需模长的参数覆盖 " <> ToString[kinematicRequiredMagnitudeCoverage[topologyData], InputForm],
+     progress
+     ];
+   dsInfoPrint[
+     "参数可保持缺省，也可复制以下格式重定义：" <> Lookup[guide, "commandExample", ""] <>
+      "。规则左端写原始 sp[...]，不要写 ssij/sEi -> custom；右端写自定义参数表达式。",
+     progress
+     ];
    If[Lookup[topologyData, "status", None] === "invalidInput" || topologyValidationErrorQ[validation],
-    Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；请检查返回对象的 validationReport。"];
+    errors = Select[Lookup[validation, "issues", {}], Lookup[#, "severity", ""] === "error" &];
+    Scan[dsErrorPrint[dsInitializationIssueText[#]] &, errors];
+    Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；上述详情同时保存在 validationReport[\"issues\"]。"];
     Return[<|"status" -> "failed", "reason" -> "invalidInputOrTopology", "inputHash" -> inputHash, "topologyData" -> topologyData, "validationReport" -> validation|>]
     ];
    subsetSummary = Lookup[topologyData, "precomputedShrinkSectorSummary", <||>];
@@ -179,7 +217,7 @@ DSInit[input_Association, OptionsPattern[]] := Module[
      Lookup[validation, "issues", {}],
      Lookup[#, "severity", ""] === "warning" && dsRelevantInitializationWarningQ[#, topologyData] &
      ];
-   Scan[dsWarningPrint[Lookup[#, "code", #], progress] &, warnings];
+   Scan[dsWarningPrint[dsInitializationIssueText[#], progress] &, warnings];
    derivatives = If[
      TrueQ[OptionValue[GenerateDerivativeMetadata]] && dsTopologyCapabilityQ[topologyData, "derivativeUsableQ"],
      dsDerivativeMetadata[topologyData, progress],

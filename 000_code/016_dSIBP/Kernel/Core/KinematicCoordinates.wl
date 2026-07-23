@@ -443,6 +443,72 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
    ];
 
 
+(* 重定义指南只生成可复制的文本，不创建或赋值任何用户符号。左端始终使用原始动量的 sp 表示，
+   右端才是用户选择的坐标表达式；这样不会把缺省 ss 名误当成规则左端。 *)
+kinematicParameterRedefinitionGuide[audit_Association] := Module[
+   {defaultRules, lhsStrings, customRuleStrings, commandExample},
+   defaultRules = Lookup[audit, "defaultRules", {}];
+   lhsStrings = ToString[First[#], InputForm] & /@ defaultRules;
+   customRuleStrings = MapIndexed[
+     #1 <> " -> custom" <> ToString[First[#2]] <> "^2" &,
+     lhsStrings
+     ];
+   commandExample = "DSRedefineParameters[context, {" <> StringRiffle[customRuleStrings, ", "] <> "}]";
+   <|
+    "optionalQ" -> True,
+    "defaultBehavior" -> "不调用 DSRedefineParameters 时继续使用 defaultRules。",
+    "ruleLeftHandSideFormat" -> "左端必须写 sp[原始动量表达式,原始动量表达式] 或其它 baseCoordinateOrder 中的 sp；不要写 ssij/sEi -> custom。",
+    "ruleRightHandSideFormat" -> "右端写该标量积在自定义参数中的表达式；模长坐标常写 custom^2，也允许满秩混合表达式如 (u+v)^2。",
+    "coverageRequirement" -> "规则左端与右端参数 Jacobian 都必须覆盖全部 baseCoordinateOrder；欠完备拒绝初始化，过完备只允许 symbolic IBP。",
+    "defaultRules" -> defaultRules,
+    "commandExample" -> commandExample
+    |>
+   ];
+
+
+kinematicRequiredMagnitudeCoverage[topo_Association] := Module[
+   {declarationAudit, requiredMomenta, audit, resolvedRules, externalMomenta, canonical, directSquare,
+    externalData, coefficients, expandedSquare, baseData, sourceKind},
+   declarationAudit = Lookup[topo, "momentumDeclarationAudit", <||>];
+   requiredMomenta = Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}];
+   audit = Lookup[topo, "kinematicCoordinateAudit", <||>];
+   resolvedRules = Lookup[audit, "resolvedRules", Lookup[audit, "defaultRules", {}]];
+   externalMomenta = Lookup[topo, "externalMomenta", {}];
+   baseData = Lookup[audit, "baseCoordinateData", {}];
+   Map[
+    Function[momentum,
+     canonical = canonicalExternalLegMomentum[momentum];
+     directSquare = Expand[sp[canonical, canonical] /. resolvedRules];
+     If[directSquare === sp[canonical, canonical],
+      externalData = linearMomentumExpressionData[canonical, externalMomenta];
+      If[TrueQ[Lookup[externalData, "linearQ", False]],
+       coefficients = Lookup[externalData, "coefficients", {}];
+       expandedSquare = Expand[Sum[
+           coefficients[[i]] coefficients[[j]] sp[externalMomenta[[i]], externalMomenta[[j]]],
+           {i, Length[externalMomenta]}, {j, Length[externalMomenta]}
+           ] /. resolvedRules],
+       expandedSquare = Missing["UncoveredMagnitude", canonical]
+       ],
+      expandedSquare = directSquare
+      ];
+     sourceKind = Lookup[
+       SelectFirst[baseData, SameQ[Lookup[#, "inputExpression", Missing["input"]], sp[canonical, canonical]] &, <||>],
+       "kind",
+       If[Head[expandedSquare] === Missing, "uncovered", "derivedBinding"]
+       ];
+     <|
+      "momentum" -> canonical,
+      "squaredExpression" -> sp[canonical, canonical],
+      "userSquaredExpression" -> expandedSquare,
+      "userMagnitudeExpression" -> If[Head[expandedSquare] === Missing, expandedSquare, kinematicRootExpression[expandedSquare]],
+      "coverageKind" -> sourceKind
+      |>
+     ],
+    requiredMomenta
+    ]
+   ];
+
+
 resolveKinematicRulesForCase[case_Association, topo_Association] := Module[
    {combined, loopRules, legRules, selected},
    combined = Lookup[case, "kinematicRules", Automatic];
@@ -600,10 +666,32 @@ rootCoordinateOutputRules[topo_Association] := Flatten@Cases[
    ];
 
 
+(* 无圈模长平方在 Jacobian 原子层使用私有占位符；公开输出必须按当前坐标审计回代，
+   以便缺省坐标和用户满秩重定义共享同一条输出路径。 *)
+externalLegSquaredCoordinateOutputRules[topo_Association] := Module[
+   {audit, baseData, defaultExpressions, squaredExpressions},
+   audit = Lookup[topo, "kinematicCoordinateAudit", <||>];
+   baseData = Lookup[audit, "baseCoordinateData", kinematicBaseCoordinateData[topo]];
+   defaultExpressions = Lookup[baseData, "defaultRHS", {}];
+   squaredExpressions = Lookup[
+     audit,
+     "baseSquaredUserExpressions",
+     defaultExpressions
+     ];
+   If[Length[squaredExpressions] =!= Length[baseData], squaredExpressions = defaultExpressions];
+   Cases[
+    MapThread[Join[#1, <|"userSquaredExpression" -> #2|>] &, {baseData, squaredExpressions}],
+    data_Association /; Lookup[data, "kind", ""] === "externalLegMagnitude" :>
+     Rule[data["internalVariable"], data["userSquaredExpression"]]
+    ]
+   ];
+
+
 scalarProductInternalToUser[expr_, topo_Association] := Module[
    {loops = topo["loopMomenta"], exts = topo["externalMomenta"], result},
    result = expr /. Join[
        externalInvariantInternalToUserRules[topo],
+       externalLegSquaredCoordinateOutputRules[topo],
        {
         HoldPattern[qq[i_Integer, j_Integer]] :> sp[loops[[i]], loops[[j]]],
         HoldPattern[qk[i_Integer, j_Integer]] :> sp[loops[[i]], exts[[j]]]
@@ -1087,7 +1175,8 @@ vertexEnergyNamingReport[topo_Association] := Module[
 (*公开动力学变量提案与重选审计*)
 
 DSKinematics[input_Association, rules_: Automatic] := Module[
-   {effectiveInput, topo, audit, coordinateStatus, declarationAudit, declarationStatus, status, result},
+   {effectiveInput, topo, audit, coordinateStatus, declarationAudit, declarationStatus, status, result,
+    guide, overcompleteDetails},
    effectiveInput = If[rules === Automatic, input, Join[input, <|"kinematicRules" -> rules|>]];
    topo = parseTopology[effectiveInput];
    If[topo === $Failed,
@@ -1105,6 +1194,7 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
       declarationStatus === "exact" && coordinateStatus === "complete", "complete",
       True, coordinateStatus
       ];
+    guide = kinematicParameterRedefinitionGuide[audit];
     result = Join[audit, <|
        "status" -> status,
        "kinematicCoordinateStatus" -> coordinateStatus,
@@ -1115,13 +1205,21 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
        "extraDirections" -> Lookup[Lookup[declarationAudit, "loopExternalAudit", <||>], "extraDirections", {}],
        "missingMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "missingMagnitudeSquares", {}],
        "extraMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "extraMagnitudeSquares", {}],
-       "capabilities" -> Lookup[topo, "capabilities", <||>]
+       "capabilities" -> Lookup[topo, "capabilities", <||>],
+       "requiredMagnitudeCoverage" -> kinematicRequiredMagnitudeCoverage[topo],
+       "parameterRedefinitionGuide" -> guide
        |>];
    dsInfoPrint[
      "动力学变量提案：" <> ToString[Lookup[audit, "defaultRules", {}], InputForm] <>
       "；当前选择：" <> ToString[Lookup[audit, "selectedRules", {}], InputForm] <>
       "；从属模长绑定：" <> ToString[Lookup[audit, "dependentMagnitudeBindings", {}], InputForm] <>
       "；审计状态 " <> ToString[status],
+     Automatic
+     ];
+   dsInfoPrint[
+     "可选参数重定义：" <> Lookup[guide, "ruleLeftHandSideFormat", ""] <>
+      " " <> Lookup[guide, "ruleRightHandSideFormat", ""] <>
+      " 示例：" <> Lookup[guide, "commandExample", ""],
      Automatic
      ];
     Switch[status,
@@ -1131,18 +1229,22 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
         ToString[Join[Lookup[result, "missingDirections", {}], Lookup[result, "missingMagnitudeSquares", {}]], InputForm]
        ],
      "incomplete",
-    dsWarningPrint[
-      "动力学变量不完备；缺失/受约束方向为 " <>
+    dsErrorPrint[
+      "动力学变量欠完备；DSInit 将拒绝继续。缺失/受约束方向为 " <>
        ToString[DeleteDuplicates@Join[
           Lookup[audit, "ruleMissingDirectionExpressions", {}],
           Lookup[audit, "parameterMissingDirectionExpressions", {}]
-          ], InputForm],
-      Automatic
+          ], InputForm]
       ],
     "overcomplete",
+    overcompleteDetails = <|
+      "loopExternalMomenta" -> KeyTake[Lookup[result, "loopExternalAudit", <||>], {"extraDirections", "userDependencyVectors"}],
+      "independentExternalMomenta" -> KeyTake[Lookup[result, "independentExternalAudit", <||>], {"extraMagnitudeSquares", "redundantUserMomenta", "quadraticDependencyOrder", "quadraticDependencies"}],
+      "coordinateConstraints" -> Lookup[audit, "constraintResiduals", {}]
+      |>;
     dsWarningPrint[
-      "动力学变量过完备；IBP 可继续，但冗余坐标 ds 与 rep2innerform 已禁用。约束残差为 " <>
-       ToString[Lookup[audit, "constraintResiduals", {}], InputForm],
+      "动力学变量或动量声明过完备；初始化与 symbolic IBP 可继续，但 ds、DSDE 与唯一 rep2innerform 已禁用。详情：" <>
+       ToString[overcompleteDetails, InputForm],
       Automatic
       ],
     _, Null

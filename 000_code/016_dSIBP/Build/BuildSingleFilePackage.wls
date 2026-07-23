@@ -32,6 +32,17 @@ modulePaths = FileNameJoin[Prepend[#, packageRoot]] & /@ {
 (* ::Chapter:: *)
 (*单文件构造与写出*)
 
+(* 冻结交付件使用 UTF-8 无 BOM 与 LF，保证跨平台 diff 稳定。 *)
+writeUTF8LFText[path_String, text_String] := Module[{stream, normalized, bytes},
+   normalized = StringReplace[text, {"\r\n" -> "\n", "\r" -> "\n"}];
+   bytes = ToCharacterCode[normalized, "UTF8"];
+   stream = OpenWrite[path, BinaryFormat -> True];
+   BinaryWrite[stream, bytes, "Byte"];
+   Close[stream];
+   path
+   ];
+
+
 loaderSource = Import[loaderPath, "Text"];
 firstGet = FirstCase[StringPosition[loaderSource, "\nGet["], {start_, _} :> start, Missing["NoPrivateLoader"]];
 
@@ -57,7 +68,7 @@ singleFileSource = StringRiffle[
    "\n\n"
    ];
 
-Export[outputPath, singleFileSource, "Text"];
+writeUTF8LFText[outputPath, singleFileSource];
 
 Print["package_016.wl: ", outputPath];
 Print["bytes: ", FileByteCount[outputPath]];

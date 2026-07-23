@@ -123,3 +123,11 @@
 - [x] 让 atomic topology 参数统一接受 parsed topology 或完整 `DSInit` context，并验证 mixed-coordinate `ds` 的系数乘积法则。
 - [x] 修复 `rep2innerform` 绕过 topology inverse capability 的最终独立检验缺陷，新增过完备 loop 声明负例。
 - [x] 复核冻结哈希、独立报告和 `git diff --check`，完成发布记录。
+
+# 016 独立 benchmark bubble+tree 扩展（2026-07-23）
+
+- [x] 固定 topology 输入并取得当前 package 的真实角色、参数与提示输出。
+- [x] 审计并补齐参数重定义、完备性与下游 capability 消息合同。
+- [x] 扩展独立任务书：先手推冻结，再做 package、错误输入和源码审阅。
+- [x] 加入 general 指标参数闭合、EOM/symmetry 与 zero-point 专项。
+- [x] 重建并覆盖独立交付 package/手册/examples，运行回归并记录结果。
