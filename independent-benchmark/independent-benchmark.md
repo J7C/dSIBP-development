@@ -1291,6 +1291,19 @@ partial_ssij = 2 ssij partial_xij
 
 报告逐组给出 passed/total、非零差值数和首个失败，并原样记录 exact/over/under 的消息文本、颜色级别、capability、六变量顺序、参数闭合差集及 frozen expected 哈希。
 
+### 17.5 全 family general 参数闭合与条件性 canonical 审计
+
+本节不是新增物理 family，而是把第 9 节十个 loop family、第 14 节两个 pure-time/tree family 和第 17.4 节 bubble+tree 的既有冻结输入统一送入同一套结构审计。执行方必须先完成各节规定的独立手推和 expected 冻结，之后才可加载 `package_016.wl`；不得用本节的 package 输出补造前面缺失的手推关系。
+
+1. 对每个固定 sign 分支、全部 contact-reachable sector、全部规定 seed 与每个初始化微分变量生成 actual。连续 `a_i,b_i,bS_i,ispN_i` 保持 general；离散 Hankel 状态只取任务书规定的 `0/1`，并另放一个确定的 `n=2` 原子输入检查 EOM 触发。不得用 sample seed 代替各节要求的全部 seeds。
+2. 为每个 family 先冻结允许系数参数集合：用户坐标、顶点相位能量、实际 line/tree energy、`nu`/质量参数、`dim`、全部 `a0/b0/bS0`、shrink/Wronskian normalization 以及 family 明确声明的其它常量。对每条 seed 和每条 general-index 总导数，把每个不同 `_J` 替成独立惰性 token，再对各 token 系数和纯系数项分别做 `Together`、`Variables`；禁止直接对含 `J` 指标槽的原表达式调用 `Variables` 后把指标误报成动力学参数。
+3. 每个 family 都输出 `declaredParameters`、`allowedCoefficientParameters`、`seenCoefficientParameters`、`missingDeclaredParameters`、`unexpectedParameters` 和 `forbiddenInternalAtoms`。`kk/qq/qk/xi/z/externalLegSquaredCoordinate`、私有占位符、未消去 ISP 内部名或未声明符号均属于失败。某个声明参数在全部关系并集中未出现时，执行方必须逐项说明它因 topology/固定分支而数学缺席，或判定为遗漏；不得机械要求每个参数出现在每一条关系，也不得静默删除差集。
+4. 对 general `a_i,b_i,ispN_i` 和符号 `n_i` 做条件性检查：符号 `n_i` 不应被假装成 `n=2` 执行 EOM；代入确定的离散 `n=2` 后必须立即约回允许状态。自动 tadpole symmetry 与用户 `symmetryRules` 必须求并集；只有 exact 离散态、可判定奇偶性或用户规则明确匹配时才能作用。不得通过 `OrderedQ`、符号名字符串或未给出的大小假设给 general 指标猜 canonical 次序。
+5. 所有 h family 的每个 active `tau` 幂和每条 active line 的模长幂都必须有显式符号 zero-point。cycle line 检查 `a+a0`、`b+b0` 或 `bS+bS0`；bridge/fixed/timeOnly line 虽无 `b/bS` 指标槽，`b0/bS0` 仍必须进入 metadata 与显式能量系数。单 contact、三条平行 massive h 的 simultaneous contact、tree projection、迭代和 dlog normalization 分别检查 zero-point 因子及其乘积，禁止在 canonical 后把它们设成 0 或丢失。
+6. package 单向比较完成后，只对交付的 `package_016.wl` 做源码审阅；不得回头读取主线 expected。审阅报告必须列出：EOM/symmetry 条件分支的实际实现位置、参数闭合转换链、可能废弃或不可达代码、重复扫描和高复杂度热点、可抽成多处复用模块的候选，以及每项建议是否影响当前正确性。
+
+本节结果单独给出 family/branch/sector/seed/variable 五级计数和四类差集，不得只报告一个总 passed 数。报告还必须把每项结论标成“任务书已要求”“package 已实现”“正式 package 自检通过”“source-isolated 独立通过”之一；后两者不能互相替代。
+
 ## 18. 完成检查表
 
 每个函数族交付前确认：
@@ -1331,3 +1344,8 @@ partial_ssij = 2 ssij partial_xij
 - [ ] 016 欠完备拒绝初始化且所有下游 capability gate 生效；过完备只允许 symbolic seed，`ds/DSDE` 与唯一逆变换拒绝。
 - [ ] 016 cycle/fixed pack、显式幂系数、timeOnly direct pure-time、root sector 继承及 naive/公式 tree 双路线逐项通过。
 - [ ] 016 的 notation/redefinition、9/10/100 补零和 29 项 API/example coverage 通过；当前 `package_016.wl/pdf` 哈希已记录，冻结的 015 源码哈希复核不变。
+- [ ] 固定 bubble+tree 的六变量 general-index `ds`、全部 seeds、exact/over/under 消息合同、参数差集和源码审阅已按第 17.4 节完成；没有把既有 016 package 自检计作独立 expected。
+- [ ] 第 9、14、17 节全部 family 的系数参数并集已按第 17.5 节审计；每个 missing/extra/内部原子都有逐项结论，禁止内部 `kk/qq/qk/xi/z/externalLegSquaredCoordinate` 残留。
+- [ ] general 指标没有触发基于符号大小的 EOM/symmetry/canonical；确定的 `n=2`、离散 symmetry 与 parity 仍按约定生效，自动 tadpole 与用户 symmetry 取并集。
+- [ ] 所有 h family 的 `tau` 与 line magnitude 物理幂均保留符号 zero-point；fixed/timeOnly 的零点进入显式系数，单/多 contact、tree projection、迭代和 dlog normalization 的零点乘积均已核对。
+- [ ] 最终报告明确区分任务书要求、package 实现、正式自检和 source-isolated 独立证据，没有用其中一种状态替代另一种。

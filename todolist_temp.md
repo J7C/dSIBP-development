@@ -129,5 +129,6 @@
 - [x] 固定 topology 输入并取得当前 package 的真实角色、参数与提示输出。
 - [x] 审计并补齐参数重定义、完备性与下游 capability 消息合同。
 - [x] 扩展独立任务书：先手推冻结，再做 package、错误输入和源码审阅。
-- [x] 加入 general 指标参数闭合、EOM/symmetry 与 zero-point 专项。
+- [x] 在任务书中加入固定 bubble+tree 与全 family 的 general 参数闭合、EOM/symmetry 条件性和 zero-point 专项。
+- [ ] 由新的 source-isolated 执行者完成上述专项的冻结手推、package 单向比较、参数差集和源码审阅；旧 016 增量报告不替代本项。
 - [x] 重建并覆盖独立交付 package/手册/examples，运行回归并记录结果。
