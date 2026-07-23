@@ -5,9 +5,7 @@
 (*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "000_code", "016_dSIBP"}]];
-If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
-Needs["dSIBP`"];
+Get[FileNameJoin[{exampleDir, "load_current_package.wl"}]];
 
 
 (* ::Chapter:: *)
@@ -65,7 +63,7 @@ summary = <|
 
 Print[summary];
 If[! And[
-    $dSIBPVersion === "016",
+    ToString[$dSIBPVersion] === currentVersion,
     summary["initStatus"] === "initialized",
     summary["seedStatus"] === "generated",
     summary["linearStatus"] === "generated"

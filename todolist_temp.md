@@ -1,5 +1,28 @@
 # 013 pure time-IBP/tree 与 014 工程化闭环
 
+# 016 独立任务书 convention 与交付加载一致性（2026-07-23）
+
+- [x] 审计第 2--17 节旧外动量字段、平方坐标、line pack、Head 与 package 加载入口。
+- [x] 统一生产性任务到 `loopExternalMomenta/independentExternalMomenta`、`ssij/sEi` 和 cycle/fixed pack。
+- [x] 把两个单 bridge atomic family 改为 `timeOnly` fixed-line oracle，其余八个 family 保持 graph-valid full loop。
+- [x] 为交付 examples 建立动态唯一 package/manual loader，删除仓库版本目录和固定版本断言。
+- [x] 复建单文件并核对 package/PDF 哈希，完成 fresh-kernel 加载、Wolfram 语法、残留与格式检查，清理 smoke 产物。
+
+# 016 自定义变量 DE 与完备性任务书扩展（2026-07-23）
+
+- [x] 固定双 `kL`/双 `kE` mixed-triangle 自定义参数 `k11,k22,k12,e1,e2`，明确和模长与缺省交叉根号不同。
+- [x] 为 bubble+tree、双 `kL`/双 `kE` mixed-triangle、`vertex_energy_signs` 加入 exact/overcomplete/undercomplete 矩阵。
+- [x] 规定 exact 逐变量算符、过完备红色 Warning/约束/关闭导数与 backend、欠完备红色 Error/missing direction/拒绝全部下游。
+- [x] 要求全部 benchmark families 与成品 examples 检查 seed/linearData/逐变量导数及适用 DE 的最终参数闭合。
+- [x] 复核任务书无冲突、Markdown 结构与 `git diff --check`。
+
+# 016 独立任务书完整性与轻量 smoke 目录边界（2026-07-23）
+
+- [x] 核对独立任务书已覆盖全部既定物理、工程、Kira/DE、参数闭合和源码审阅任务，仅增加章节覆盖索引。
+- [x] 在根目录建立 `check-smoke/`，只供维护 agent 的轻量 smoke/check/test，运行产物进入并清理 `results_test/`。
+- [x] 在 AGENTS、任务书和独立 README 中禁止独立审计读取、写入或引用 `check-smoke/`。
+- [x] 复核目录无运行结果、任务书与交付仍存在，并通过 `git diff --check`。
+
 # 016 显式动量角色、图论门禁与桥边指标重建
 
 - [x] 作废未完成的自动角色分类方案，在研究进度登记通盘设计、矛盾点和验收标准。
@@ -18,6 +41,10 @@
 - [x] 建立 bubble+bridge+三点双外腿 example、错误输入 bench 与公开 API example 覆盖 manifest。
 - [x] 更新 AGENTS、README、plan/design/tech note、用户手册和独立 benchmark。
 - [x] 构建 016 模块/单文件/PDF，完成新增手推、受影响全回归、内部报告和临时产物清理。
+- [x] 复现内部报告的 general-index `ds[...,ss11]` 私有 helper 泄漏并修复 fixed-line 显式系数吸收。
+- [x] 给 exact 自定义坐标补逐变量 `ds` 与全部 general-index `DSSeeds/DSLinear` 计算载荷门禁，修复公开 seed/linearData 的 `kk` 残留。
+- [x] 重建 016 单文件，复核 phase 2 `402/402`、bubble+tree `36/36` 及受影响回归。
+- [ ] 由 source-isolated benchmark 完成 custom loop Kira/`DSDE` 与 custom tree naive/dlog 同 basis 闭环；不得用本轮正式自检替代独立 expected。
 
 - [x] 在进度文件登记任务、阶段和验收标准。
 - [x] 核对 loop/tree 论文、bubble reference code 与当前 012 边界。
@@ -130,5 +157,43 @@
 - [x] 审计并补齐参数重定义、完备性与下游 capability 消息合同。
 - [x] 扩展独立任务书：先手推冻结，再做 package、错误输入和源码审阅。
 - [x] 在任务书中加入固定 bubble+tree 与全 family 的 general 参数闭合、EOM/symmetry 条件性和 zero-point 专项。
+- [x] 在任务书中把自定义变量拆成逐变量微分算符、全部 seed/`linearData`、loop `DSDE` 和 tree naive/dlog DE 四层门禁，并检查计算 payload 不残留旧坐标。
 - [ ] 由新的 source-isolated 执行者完成上述专项的冻结手推、package 单向比较、参数差集和源码审阅；旧 016 增量报告不替代本项。
 - [x] 重建并覆盖独立交付 package/手册/examples，运行回归并记录结果。
+
+# 016 general-index fixed bridge 导数缺陷修复（2026-07-23）
+
+- [x] 原样重跑根目录 `check/phase2_package_check.wls`，确认 `ds[...,ss11]` 私有 helper 泄漏与报告一致。
+- [x] 修复 fixed bridge 的线性因子吸收路径，使带显式系数的 `shiftLinePower` 结果正确分解为系数与单一 `J`。
+- [x] 扩展 `016_bubble_tree_parameter_contract.wl`，覆盖 general 指标默认/自定义根变量及任意 `dSIBP`Private`` head/symbol 残留。
+- [x] 重建 016 单文件与独立交付副本，重跑根目录 phase 2、016 正式专项和受影响回归，更新进度与报告结论。
+
+# 016 候选测试版先行发布门禁（2026-07-23）
+
+- [x] 构建器与 016 检查支持显式候选路径，缺省正式路径保持兼容。
+- [x] 在 `000_code/test/results_test/` 构建候选程序和手册并记录哈希。
+- [x] 仅加载候选运行全部 016 专项与 phase 2，全部通过前不覆盖正式交付。
+- [x] 候选通过后覆盖正式交付，复核哈希并重跑正式路径关键门禁。
+- [x] 清理候选产物，更新进度/报告并通过 Git whitespace 审计。
+
+# 016 本轮测试、验证脚本与结果清理（2026-07-23）
+
+- [x] 核对根目录临时 `check/`、对应内部报告、`codex-independent-benchmark/` 及 `results_test` 残留的 tracked/ignored/进程状态。
+- [x] 删除本轮临时验证工作区、`codex-independent-benchmark/` 及 010--016 全部验证脚本；历史归档报告保留，根目录 `check/` 与 `000_code/check/` 只保留为空目录。
+- [x] 删除过往版本 package 的 Kira/reduction/result/tmp 生成物，保留当前 016 成品 examples 及 Kira 信息生成/serializer/import 接口源码作参考。
+- [x] 清除过时引用，复核正式 package/manual、独立审计任务书、归档报告、Kira 生成/serializer/import 接口与当前示例信息文件，并通过 Git whitespace 审计。
+# 2026-07-23 Gate R5 新发现修复
+
+- [x] 修复复合 `kE` 顶层编号并补 energyCaseC smoke。
+- [x] 实现 atomic massless `timeOnly` 的公开 `DSSeeds` 状态枚举。
+- [x] 归一化最终失败 context 的 capability。
+- [x] 撤回任务书 9.9 中双外向量、八 momentum generators 和四 ISP 的错误 sunrise authority。
+- [x] 更新手册、example coverage、构建候选并完成正式路径复验。
+- [x] 清理候选与 smoke 运行产物，记录最终哈希。
+
+# 2026-07-23 两圈 sunrise authority 纠正
+
+- [x] 重算标准 sunrise 的标量积空间、三分母秩、ISP 缺失方向和生成元数量：5、3、2、6。
+- [x] 撤回任务书/smoke 中双外向量、四 ISP、八 momentum generators 的错误 authority。
+- [x] 用模块入口和正式单文件验证最小 ISP closure、五个方向和精确反解；源码无变化，未构建候选或覆盖正式交付。
+- [x] 更新进度与验证记录；本轮无运行产物需要清理。

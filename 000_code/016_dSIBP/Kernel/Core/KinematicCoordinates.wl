@@ -138,9 +138,14 @@ externalLegMagnitudeBasisAnalysis[topo_Association] := Module[
    occurrenceData = MapIndexed[
      Function[{momentum, indexSpec},
       Module[{position = First[indexSpec], declaredPosition, coefficients, externalLegIndex, independentQ},
+       (* 只比较声明列表的完整元素。FirstPosition 的缺省层级会在 p1+p2 内部先命中 p2，
+          从而把后续独立模长错误编号为前一个 sEi。 *)
        declaredPosition = FirstPosition[
-         declaredLegs,
-         item_ /; Expand[item - momentum] === 0 || Expand[item + momentum] === 0,
+         Map[
+          TrueQ[Expand[# - momentum] === 0 || Expand[# + momentum] === 0] &,
+          declaredLegs
+          ],
+         True,
          Missing["Dependent"]
          ];
        independentQ = Head[declaredPosition] =!= Missing;
@@ -1176,7 +1181,7 @@ vertexEnergyNamingReport[topo_Association] := Module[
 
 DSKinematics[input_Association, rules_: Automatic] := Module[
    {effectiveInput, topo, audit, coordinateStatus, declarationAudit, declarationStatus, status, result,
-    guide, overcompleteDetails},
+    guide, overcompleteDetails, reportedCapabilities},
    effectiveInput = If[rules === Automatic, input, Join[input, <|"kinematicRules" -> rules|>]];
    topo = parseTopology[effectiveInput];
    If[topo === $Failed,
@@ -1194,6 +1199,11 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
       declarationStatus === "exact" && coordinateStatus === "complete", "complete",
       True, coordinateStatus
       ];
+    reportedCapabilities = If[
+      MemberQ[{"complete", "overcomplete"}, status],
+      Lookup[topo, "capabilities", <||>],
+      dsDisabledCapabilities[]
+      ];
     guide = kinematicParameterRedefinitionGuide[audit];
     result = Join[audit, <|
        "status" -> status,
@@ -1205,7 +1215,7 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
        "extraDirections" -> Lookup[Lookup[declarationAudit, "loopExternalAudit", <||>], "extraDirections", {}],
        "missingMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "missingMagnitudeSquares", {}],
        "extraMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "extraMagnitudeSquares", {}],
-       "capabilities" -> Lookup[topo, "capabilities", <||>],
+       "capabilities" -> reportedCapabilities,
        "requiredMagnitudeCoverage" -> kinematicRequiredMagnitudeCoverage[topo],
        "parameterRedefinitionGuide" -> guide
        |>];

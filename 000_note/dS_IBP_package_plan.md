@@ -14,13 +14,13 @@
 
 ### P0 动力学坐标边界
 
-016 的用户输入显式区分两类外部动量对象：
+016 的用户输入显式区分两类外部动量对象。下文统一简称前者为 `kL`（`kL1,kL2,...`），后者为 `kE`（`kE1,kE2,...`）；这些简称表示列表角色和位置，不要求用户真的采用这些符号名：
 
-- `loopExternalMomenta={k1,...}` 是用户确认的 loop 外动量独立基，决定完整 Gram、ISP 闭合与 `dqk` 生成元。程序只审计，不替用户命名或猜选。
-- `independentExternalMomenta={P1,...}` 是实际无圈动量模长列表，只生成 `sp[Pe,Pe]->sEe^2`；不生成 `sp[Pe,Pf]`。整体反号视为同一模长，`alice+bob` 与 `alice-bob` 不合并。
+- `loopExternalMomenta={kL1,...}` 是用户确认的圈外动量独立基，决定完整 Gram、ISP 闭合与 `dqk` 生成元。第 `i` 项进入内部 `qk[*,i]`、`kk[i,j]`，公开缺省为 `ssij`。程序只审计，不替用户命名或猜选。
+- `independentExternalMomenta={kE1,...}` 是实际无圈动量模长列表，只生成 `sp[kEe,kEe]->sEe^2`；坐标/Jacobian 内部槽为 `externalLegSquaredCoordinate[e]`，不生成 `sp[kEe,kEf]`。整体反号视为同一模长，`alice+bob` 与 `alice-bob` 不合并。
 - topology 必要方向与两个列表分别比较。exact 通过；overcomplete 允许 seed 但关闭唯一 `ds/DSDE`；undercomplete 返回 missing/null-space 证据并拒绝 `DSInit`。旧字段只作兼容别名。
 
-坐标短名只依赖推断后的稳定顺序。类别总数不超过 9 时保持 `ss11/sE1`；超过 9 时按总数位宽补零，例如 `ss0101/sE01`；超过 99 时自然扩展为三位。用户符号名从不参与编号。
+`kL` 与 `kE` 各自在自己的输入列表中从 1 编号，互不共享编号空间。坐标短名只依赖各自列表的稳定顺序：类别总数不超过 9 时保持 `ss11/sE1`；超过 9 时按该列表总数位宽补零，例如 `ss0101/sE01`；超过 99 时自然扩展为三位。用户符号名从不参与编号。
 
 动力学规则或动量列表欠完备时阻断初始化；`DSKinematics` 返回 `undercomplete`、`missingDirections/missingMagnitudeSquares` 与零空间表达式。过完备返回 warning 并允许 symbolic seed，但 `derivativeUsableQ=False`、`inverseKinematicsUsableQ=False`。
 
@@ -733,6 +733,8 @@ symmetryRules = {
 
 独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_016.wl/pdf` 和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
 
+正式交付采用候选先行门禁：构建器通过 `DSIBP_BUILD_OUTPUT` 把候选单文件写入 `000_code/test/results_test/`，正式检查通过 `DSIBP_PACKAGE_FILE`（phase 2 另用 `DSIBP_PDF_FILE`）显式加载候选。只有候选专项、独立单文件检查和受影响 phase 全部通过后，才用同一候选字节覆盖 `independent-benchmark/package/`，随后在正式路径复验并清理候选。未设置这些环境变量时保留原有正式构建/模块检查合同。
+
 主线按照以下顺序工作：
 
 1. `makeTopologyData` 读取 topology、动量基、传播子、ISP、零点和数值规则，并缓存 index maps 与 sector metadata。
@@ -806,7 +808,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 | 积分 Head | `J[aList, linePacks, ispList]` |
 | cycle line pack | full 为 `{b_e,n...}`，shrunk 保留 `{bS_e,...}`；schema 继承 root topology |
 | bridge/fixed line pack | 只含 endpoint `n...`；物理幂及其 shift 进入显式模长系数 |
-| `timeOnly` pack | 所有 active lines 均为 fixed coefficient，使用 `J[vertexPacks]` |
+| `timeOnly` pack | 所有 active lines 均为 fixed coefficient；massive-only direct tree 使用 `J[vertexPacks]`，含未缩并 `masslessFull` 时使用三槽 `J[aList,linePacks,ispList]` 保留逐线 `{n_e}` |
 | Hankel 离散态 | seed 层枚举 `n=0,1`，`n>=2` 立即 EOM |
 | Sub-sector | 同一 Head `J`，compact `aList` + sector metadata |
 | 数值规则 | 解析 seed 后，在 sampled/linear/backend 层应用 |

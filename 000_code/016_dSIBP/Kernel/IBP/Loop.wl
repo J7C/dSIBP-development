@@ -21,6 +21,44 @@ DSLinear::failed = "linearData 生成未通过门禁：`1`。";
 DSLinear::capability = "当前 context 不具备 linearData 生成所需能力：`1`。";
 DSLinear::context = "seedData 与 context 不是同一次初始化的产物。";
 
+
+(* loop seed 的底层生成器使用 qq/qk/kk；公开高层入口必须在序列化前统一投影到
+   当前 context 的用户坐标，使 DSLinear 与后续 backend 不再接触内部 Gram 原子。 *)
+dsLoopSeedExpressionToPublicCoordinates[expr_, topo_Association] := publicProtectJMap[
+   expr,
+   Function[body,
+    Expand[scalarProductInternalToUser[body /. internalISPToUserRules[topo], topo]]
+    ]
+   ];
+
+
+dsPublicLoopSeedEntry[entry_Association, topo_Association] := If[
+   KeyExistsQ[entry, "equation"],
+   Join[entry, <|
+     "equation" -> dsLoopSeedExpressionToPublicCoordinates[entry["equation"], topo]
+     |>],
+   entry
+   ];
+
+
+dsPublicLoopSeedBatch[seedData_Association, topo_Association] := If[
+   Lookup[seedData, "status", "missing"] === "generated",
+   Join[seedData, <|
+     "equations" -> (dsPublicLoopSeedEntry[#, topo] & /@ Lookup[seedData, "equations", {}]),
+     "coordinateRepresentation" -> "user"
+     |>],
+   seedData
+   ];
+
+
+(* timeOnly 的 massive-only family 可无损投影为 J[vertexPacks]；未缩并 masslessFull
+   仍需在 fixed line pack 中保存 n=0/1，因此自动改走 canonical line-pack 路线。 *)
+dsTimeOnlyNeedsLinePackStateQ[topo_Association] := AnyTrue[
+   Lookup[topo, "lines", {}],
+   Lookup[#, "state", "full"] =!= "shrunk" && Lookup[#, "packType", ""] === "masslessFull" &
+   ];
+
+
 DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedData, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
@@ -37,7 +75,9 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedD
     ];
    seedData = dsStageRun[
      "生成 canonical IBP seeds",
-     If[Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly",
+     If[
+      Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly" &&
+       ! dsTimeOnlyNeedsLinePackStateQ[resolved["topology"]],
       makePureTimeSeedBatch[
        resolved,
        Sequence @@ FilterRules[{opts}, Options[makePureTimeSeedBatch]]
@@ -49,6 +89,9 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedD
       ],
      progress
      ];
+   If[Lookup[seedData, "representation", None] =!= "J[vertexPacks]",
+    seedData = dsPublicLoopSeedBatch[seedData, resolved["topology"]]
+    ];
    If[Lookup[seedData, "status", "missing"] =!= "generated",
     Message[DSSeeds::failed, Lookup[seedData, "status", Missing["status"]]];
     dsErrorPrint["seed generation 返回非 generated 状态。"];

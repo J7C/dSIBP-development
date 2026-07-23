@@ -206,12 +206,18 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     errors = Select[Lookup[validation, "issues", {}], Lookup[#, "severity", ""] === "error" &];
     Scan[dsErrorPrint[dsInitializationIssueText[#]] &, errors];
     Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；上述详情同时保存在 validationReport[\"issues\"]。"];
-    Return[<|"status" -> "failed", "reason" -> "invalidInputOrTopology", "inputHash" -> inputHash, "topologyData" -> topologyData, "validationReport" -> validation|>]
+    Return[dsFailedInitializationData[
+      "invalidInputOrTopology",
+      <|"inputHash" -> inputHash, "topologyData" -> topologyData, "validationReport" -> validation|>
+      ]]
     ];
    subsetSummary = Lookup[topologyData, "precomputedShrinkSectorSummary", <||>];
    If[Lookup[subsetSummary, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[subsetSummary, "completeCoverageQ", False]],
     Message[DSInit::sectorlimit, subsetSummary]; dsErrorPrint["contact-reachable sector 未完整初始化。"];
-    Return[<|"status" -> "failed", "reason" -> "incompleteSectorMetadata", "inputHash" -> inputHash, "topologyData" -> topologyData|>]
+    Return[dsFailedInitializationData[
+      "incompleteSectorMetadata",
+      <|"inputHash" -> inputHash, "topologyData" -> topologyData|>
+      ]]
     ];
    warnings = Select[
      Lookup[validation, "issues", {}],
@@ -248,16 +254,22 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     initDirectory = dsResolveInitializationDirectory[OptionValue[InitializationDirectory]];
     If[initDirectory === $Failed,
      Message[DSInit::writefailed, OptionValue[InitializationDirectory]]; dsErrorPrint["InitializationDirectory 无效。"];
-     Return[Join[context, <|"status" -> "failed", "reason" -> "invalidInitializationDirectory"|>]]
+     Return[dsFailedInitializationData["invalidInitializationDirectory", context]]
      ];
     writeResult = dsWriteInitializationFiles[context, initDirectory, OptionValue[OverwriteInitialization]];
     If[writeResult["status"] === "conflict",
      Message[DSInit::initconflict, initDirectory]; dsErrorPrint["已有初始化信息与当前输入不一致，未覆盖。"];
-     Return[Join[context, <|"status" -> "failed", "reason" -> "initializationConflict", "initializationWrite" -> writeResult|>]]
+     Return[dsFailedInitializationData[
+       "initializationConflict",
+       Join[context, <|"initializationWrite" -> writeResult|>]
+       ]]
      ];
     If[writeResult["status"] =!= "written",
      Message[DSInit::writefailed, initDirectory]; dsErrorPrint["初始化文件未完整写入。"];
-     Return[Join[context, <|"status" -> "failed", "reason" -> "initializationWriteFailed", "initializationWrite" -> writeResult|>]]
+     Return[dsFailedInitializationData[
+       "initializationWriteFailed",
+       Join[context, <|"initializationWrite" -> writeResult|>]
+       ]]
      ];
     context = Join[context, <|"initializationWrite" -> writeResult|>]
     ];
@@ -272,7 +284,11 @@ DSInit[input_Association, OptionsPattern[]] := Module[
    context
    ];
 
-DSInit[input_, OptionsPattern[]] := (Message[DSInit::badinput]; dsErrorPrint["DSInit 需要 Association 输入。"]; <|"status" -> "failed", "reason" -> "inputNotAssociation", "input" -> HoldForm[input]|>);
+DSInit[input_, OptionsPattern[]] := (
+   Message[DSInit::badinput];
+   dsErrorPrint["DSInit 需要 Association 输入。"];
+   dsFailedInitializationData["inputNotAssociation", <|"input" -> HoldForm[input]|>]
+   );
 
 DSInfo[] := Module[{context = dsResolveContext[Automatic]},
    If[Head[context] === Missing, Message[DSInfo::noinit]; Return[<|"status" -> "notInitialized"|>]];

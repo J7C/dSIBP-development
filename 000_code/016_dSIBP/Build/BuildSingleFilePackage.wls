@@ -1,6 +1,7 @@
 (* ::Package:: *)
-(* 本脚本把 016 模块化源码按主 loader 的固定顺序拼成独立交付用单文件。
-   它不改写模块内容，也不参与运行时物理计算；输出仅用于冻结 package_016.wl。 *)
+(* 本脚本把 016 模块化源码按主 loader 的固定顺序拼成独立单文件。
+   它不改写模块内容，也不参与运行时物理计算；可用 DSIBP_BUILD_OUTPUT 先生成候选测试版，
+   未设置该变量时保持原有正式 package_016.wl 输出路径。 *)
 
 (* ::Chapter:: *)
 (*路径与模块顺序*)
@@ -9,7 +10,13 @@ buildDir = DirectoryName[$InputFileName];
 packageRoot = DirectoryName[buildDir];
 projectRoot = DirectoryName[DirectoryName[packageRoot]];
 loaderPath = FileNameJoin[{packageRoot, "Kernel", "dSIBP.wl"}];
-outputPath = FileNameJoin[{projectRoot, "independent-benchmark", "package", "package_016.wl"}];
+defaultOutputPath = FileNameJoin[{projectRoot, "independent-benchmark", "package", "package_016.wl"}];
+outputOverride = Quiet[Environment["DSIBP_BUILD_OUTPUT"]];
+outputPath = If[
+   StringQ[outputOverride] && StringLength[StringTrim[outputOverride]] > 0,
+   ExpandFileName[outputOverride],
+   defaultOutputPath
+   ];
 
 modulePaths = FileNameJoin[Prepend[#, packageRoot]] & /@ {
     {"Kernel", "Core", "TopologyKinematics016.wl"},
@@ -67,6 +74,10 @@ singleFileSource = StringRiffle[
     ],
    "\n\n"
    ];
+
+If[! DirectoryQ[DirectoryName[outputPath]],
+ CreateDirectory[DirectoryName[outputPath], CreateIntermediateDirectories -> True]
+ ];
 
 writeUTF8LFText[outputPath, singleFileSource];
 

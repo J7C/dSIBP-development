@@ -646,6 +646,8 @@ independentExternalMomenta
 \end{verbatim}
 \texttt{loopExternal\allowbreak Momenta} 是圈积分外动量基，决定完整 Gram 坐标、$dqk$ 生成元和 ISP 闭合维数；\texttt{independentExternal\allowbreak Momenta} 是 topology 中实际无圈 line/phase 的独立模长列表，只定义 $|P_e|$，不定义彼此点积。旧字段 \texttt{externalMomenta}/\texttt{externalLegMomenta} 仅作为分别对应这两个字段的兼容别名；同时给新旧字段时以新字段为准。程序会从 line routing 独立计算实际需要的空间并与用户声明比较，而不会替用户选择基。
 
+本手册以后把 \texttt{loopExternalMomenta} 的第 $i$ 项简称为 \texttt{kLi}，把 \texttt{independentExternalMomenta} 的第 $e$ 项简称为 \texttt{kEe}。这是按两个输入列表的位置定义的角色名，不要求用户真的把动量符号写成 \texttt{kL1/kE1}；\texttt{alice}、\texttt{bob} 等任意符号同样合法。两套编号各自从 1 开始且互不共享：\texttt{kL} 第 $i,j$ 项在内部形成 \texttt{qk[*,i]}、\texttt{kk[i,j]}，公开为 \texttt{ssij}；\texttt{kE} 第 $e$ 项的模长平方在坐标/Jacobian 层使用 \texttt{externalLegSquaredCoordinate[e]}，公开为 \texttt{sEe}，不进入 loop-IBP/ISP 的 $K$。
+
 结构圈数由内部无向多重图的第一 Betti 数
 \begin{equation}
  L=E-V+C
@@ -706,14 +708,14 @@ sE1 = Sqrt[sp[PE1,PE1]], sE2 = Sqrt[sp[PE2,PE2]], ...
 \end{verbatim}
 无圈模长只把整体反号 $P\leftrightarrow-P$ 视为同一对象；$|\texttt{alice+bob}|$ 与 $|\texttt{alice-bob}|$ 必须分别声明，不能合并。
 
-坐标名只由两个用户列表的稳定顺序决定，与符号名无关。类别总数为 1--9 时使用 \texttt{ss11/sE1}；10--99 时使用两位补零，例如 \texttt{ss0101,ss0110,sE01}；100 起按总数位数自然扩展。若显式给出旧平方坐标规则，仍以单位 Jacobian 工作，但它不再是 016 缺省：
+坐标名只由两个用户列表各自的稳定顺序决定，与符号名无关。每套列表的总数为 1--9 时使用 \texttt{ss11/sE1}；10--99 时使用两位补零，例如 \texttt{ss0101,ss0110,sE01}；100 起按该列表总数位数自然扩展。若显式给出旧平方坐标规则，仍以单位 Jacobian 工作，但它不再是 016 缺省：
 \begin{verbatim}
 "externalInvariantRules" -> {sp[k1,k1]->s11,...}
 \end{verbatim}
 
 特别地，若 topology 实际分别出现 $|k_{E1}|$、$|k_{E1}+k_{E2}|$、$|k_{E2}|$，用户就应在 \texttt{independentExternal\allowbreak Momenta} 中给出这三个表达式，缺省得到 \texttt{sE1,sE2,sE3}；程序既不输出 \texttt{sp[kE1,kE2]}，也不用余弦定理消去中间变量。若再声明 $2k_{E1}$，它是过完备项并触发 warning。
 
-在 loop 表示中，只有 cycle line 的 pack 含 \texttt{b/bS}；bridge/non-cycle line pack 只含 endpoint \texttt{n}。fixed line 的零点幂和导数产生的幂变化全部进入显式模长系数。\texttt{timeOnly} 下所有 active lines 都使用 fixed-coefficient schema，并转到直接 \texttt{J[vertexPacks]} pure-time 表示；即使输入图含结构圈，也不为 line 伪造 \texttt{b/bS}。
+在 loop 表示中，只有 cycle line 的 pack 含 \texttt{b/bS}；bridge/non-cycle line pack 只含 endpoint \texttt{n}。fixed line 的零点幂和导数产生的幂变化全部进入显式模长系数。\texttt{timeOnly} 下所有 active lines 都使用 fixed-coefficient schema；即使输入图含结构圈，也不为 line 伪造 \texttt{b/bS}。但 \texttt{timeOnly} 不等于一律使用单槽 tree 表示：程序根据离散态能否无损放入 vertex pack 自动选择两条公开路线，详见第~\ref{sec:timeOnlyRepresentations} 节。
 
 初始化采用不阻塞脚本的两阶段接口：
 \begin{verbatim}
@@ -890,6 +892,23 @@ canonical seed 必须满足：
   \item 解析 seed 保留非零 $a0/b0/bS0$。
 \end{itemize}
 
+\subsection{\texttt{timeOnly} 的两种公开表示}
+\label{sec:timeOnlyRepresentations}
+
+\texttt{DSSeeds} 对 \texttt{timeOnly} family 自动选择表示，不要求也不接受用户传入私有的 state selector：
+\begin{itemize}
+  \item 若不存在未缩并的 \texttt{masslessFull} line，binary massive 状态可以按顶点打包，返回 \texttt{representation -> "J[vertexPacks]"}；这是 \texttt{DSTreeSeeds}、\texttt{repIterative} 与两条 tree DE 路线使用的 direct pure-time 表示。
+  \item 若存在未缩并的 \texttt{masslessFull} line，单个有向状态 $n_e$ 属于整条 line，而不是某一个顶点。此时返回 \texttt{representation -> "J[timePowers,linePacks,isp]"}，并在 fixed line pack 中保留 \texttt{\{n[e]\}}；缩并后该 pack 为 \texttt{\{\}}。这种表示仍没有 \texttt{b/bS}、ISP 或 momentum generator。
+\end{itemize}
+
+例如 atomic massless 同分支 family 的公开流程为
+\begin{verbatim}
+context = DSInit[case, RegisterAsCurrent->False];
+seeds = DSSeeds[context, DiscreteMode->"all"];
+linear = DSLinear[seeds, context];
+\end{verbatim}
+其中 top sector 的状态集合为 $n_1\in\{0,1\}$，同分支可达 sector 为 \texttt{\{"top","e1"\}}，异分支只有 \texttt{\{"top"\}} 且 line pack 为 \texttt{\{\}}。两个顶点各自的 time generator 作用于 top 的两个状态；同分支 shrink sector 另有合并顶点的 time seed。成功时 \texttt{DSSeeds} 与 \texttt{DSLinear} 都返回 \texttt{status -> "generated"}。\texttt{DSLinear} 会按 \texttt{representation} 自动消费 direct vertex-pack 或 canonical line-pack batch；调用者不得把单槽 tree 规则强套到 massless line-pack batch。
+
 \texttt{linearData} 是后端中立的 Mathematica Association，不是 reduction 结果。核心字段为：
 \begin{verbatim}
 linearEquations, integralList, integralRules
@@ -971,7 +990,7 @@ init = DSInit[case,
 
 \texttt{init/} 中的 \texttt{manifest.wl}、\texttt{topology.wl}、\texttt{sectors.wl} 和 \texttt{conventions.wl} 是可重新 \texttt{Get} 的 Association。\texttt{derivatives.wl} 缺省不生成；只有显式打开 \texttt{GenerateDerivativeMetadata} 时才写出。已有目录若对应不同输入哈希，缺省拒绝覆盖。
 
-\texttt{DSSeeds} 的公开缺省为 \texttt{DiscreteMode->Automatic}。它读取初始化 topology 的 seed preset：缺省 \texttt{quickCheck} 解析为 \texttt{"sample"}，\texttt{fullDiscrete} 与 \texttt{bounded} 解析为 \texttt{"all"}。正式全离散验证应显式传 \texttt{"all"}，避免调用者把快速检查误解为完整覆盖。
+\texttt{DSSeeds} 的公开缺省为 \texttt{DiscreteMode->Automatic}。它读取初始化 topology 的 seed preset：缺省 \texttt{quickCheck} 解析为 \texttt{"sample"}，\texttt{fullDiscrete} 与 \texttt{bounded} 解析为 \texttt{"all"}。正式全离散验证应显式传 \texttt{"all"}，避免调用者把快速检查误解为完整覆盖。\texttt{timeOnly} 的表示由 topology line state 自动选择；不存在需要用户填写的 \texttt{TreeState} 或其它私有分派参数。
 
 \section{016 运行消息与进度}
 
@@ -1016,11 +1035,11 @@ scale = DSScaleCheck[de,<|
 
 \section{Tree vertex family}
 
-Tree 与 loop 使用同一个 Head，但 tree 是单槽表示：
+Tree 与 loop 使用同一个 Head，但 direct massive-only tree 是单槽表示：
 \begin{verbatim}
 J[{{a1,n11,...,n1p1},{a2,n21,...,n2p2},...}]
 \end{verbatim}
-第 $e$ 个 pack 的第一项是时间幂次偏移 $a_e$，后续 $p_e$ 项是该顶点 massive h 外腿的 $n=0,1$ 状态。pack 长度必须为 $1+p_e$；massless 外腿不占 $n$ 槽。loop 的三槽 \texttt{J[aList,linePacks,ispList]} 与 tree 的单槽 \texttt{J[vertexPacks]} 由 shape validator 分开，不能交叉调用。
+第 $e$ 个 pack 的第一项是时间幂次偏移 $a_e$，后续 $p_e$ 项是该顶点 massive h 外腿的 $n=0,1$ 状态。pack 长度必须为 $1+p_e$；massless 外腿不占 vertex-pack 的 $n$ 槽。因此含未缩并 \texttt{masslessFull} 的 \texttt{timeOnly} family 使用第~\ref{sec:timeOnlyRepresentations} 节的三槽 fixed-line 表示，而不是丢掉其有向 $n_e$。三槽 \texttt{J[aList,linePacks,ispList]} 与单槽 \texttt{J[vertexPacks]} 由 shape validator 分开，不能交叉调用。
 
 Loop 到 tree 的投影使用完整物理幂次。目标项相对参考 seed 的时间相位为 $(-1)^{\Delta\sum(a+a0)}$，每条线的显式能量系数为 $k_e^{-\Delta(b+b0)}$；缩并线改用 $bS+bS0$。当前 sector 的 $a0$ 进入 tree 的 $\nu_0$。所以 h-mode contact 的 $bS=b+1$、$bS0=b0+2\nu$ 必须共同给出 $(-k)^{-2\nu-1}$，不能只保留整数 $k^{-1}$。
 
@@ -1078,15 +1097,14 @@ de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
 \toprule
 函数 & 用途 & 主要 option/缺省 \\
 \midrule
-\texttt{DSKinematics} & 提议或审计动力学变量规则、秩、零空间与可逆性 & rules=Automatic（缺省提案） \\
+\texttt{DSKinematics} & 提议或审计结构/routing、双动量列表、动力学变量规则、秩、零空间与可逆性 & rules=Automatic（缺省提案） \\
 \texttt{DSInit} & 解析 family、注册 context、生成 topology/sector/convention metadata & KinematicRules=Automatic；写初始化文件=False；写导数算符=False；覆盖=False \\
 \texttt{DSInfo} & 返回当前初始化摘要与 readiness & 无 \\
-\texttt{DSKinematics} & 审计结构/routing、双动量列表与动力学规则完备性 & rules=Automatic \\
 \texttt{DSParameterNotation} & 返回缺省/当前根号 notation 与用户变量 & context=当前已注册 context \\
 \texttt{DSRedefineParameters} & 用完整新规则重新初始化参数坐标 & 进度=Automatic \\
 \texttt{DSMessagesOn/Off/Q} & 开关或查询非致命提醒；fatal error 始终保留 & 无 \\
 \texttt{DSPublicAPI} & 返回公开函数分组、清单与高层缺省 options & 无 \\
-\texttt{DSSeeds} & 生成全可达 sector canonical seeds & 离散态=Automatic（由 preset 决定）；生成 shrink sector=True；规模门禁=Automatic \\
+\texttt{DSSeeds} & 生成全可达 sector canonical seeds；\texttt{timeOnly} 自动选择 direct vertex-pack 或保留 massless $n$ 的 fixed line-pack & 离散态=Automatic（由 preset 决定）；生成 shrink sector=True；规模门禁=Automatic \\
 \texttt{DSLinear} & seed 转后端中立 \texttt{linearData} & 系数规则=Automatic；Kira ordering=Automatic \\
 \texttt{DSKiraExport} & 从 \texttt{linearData} 写 Kira 基础输入与映射 & 输出目录=None；active basis=None；job options=Automatic \\
 \texttt{DSKiraImport} & 读回完整 Kira reduction/master 输出 & 结果/master/log 文件=Automatic；进度=Automatic \\

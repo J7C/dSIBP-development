@@ -685,7 +685,8 @@ completeLineMetadata[line_, vertexSignAssoc_] := Module[
    ];
 
 
-(* 将一个 case 解析为通用拓扑对象。externalMomenta 必须给出独立外动量基。 *)
+(* 将一个 case 解析为通用拓扑对象。公开输入分别声明 loopExternalMomenta 与
+   independentExternalMomenta；旧字段只在兼容层映射到内部存储。 *)
 parseTopology::missingkeys = "case 缺少必需字段：`1`。";
 parseTopology::badinput = "case 输入 preflight 失败：`1`。";
 parseTopology::badfunction = "massive line 的函数系统编译失败：`1`。";
@@ -2006,8 +2007,8 @@ externalInvariantNamingReport[topo_Association] := <|
    "externalMomenta" -> Lookup[topo, "externalMomenta", {}],
    "externalInvariantRules" -> Lookup[topo, "externalInvariantRules", defaultExternalInvariantRulesForTopology[topo]],
    "internalExternalInvariantRules" -> externalInvariantInternalToUserRules[topo],
-   "defaultNamingConvention" -> "sij, where i,j are positions in externalMomenta and i<=j",
-   "message" -> "圈动量相关标量积的用户输入统一用 sp[p,r]；外动量-外动量不变量在输出端使用 externalInvariantRules 指定的变量名，未指定时默认按 externalMomenta 顺序输出为 sij。"
+   "defaultNamingConvention" -> "ssij = Sqrt[sp[kLi,kLj]], where i<=j follows loopExternalMomenta order",
+   "message" -> "圈动量相关标量积的用户输入统一用 sp[p,r]；loopExternalMomenta 的完整 Gram 缺省输出为 ssij 根号坐标，exact 自定义规则可改名。"
    |>;
 
 
@@ -2234,7 +2235,7 @@ vertexEnergyMomentumDependenceIssues[topo_Association] := Module[
         "directMomentumSymbols" -> directMomenta,
         "spArgumentIssues" -> spArgIssues,
         "loopScalarProducts" -> scalarProductInternalToUser[#, topo] & /@ loopSPUsed,
-        "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex; use external invariant variables when the energy is tied to externalMomenta space, otherwise use independent ke[i] parameters"
+        "comment" -> "vertexEnergies are scalar time-phase energies; use ssij when tied to loopExternalMomenta, sEi when tied to an independentExternalMomenta magnitude, or an independent scalar otherwise"
         |>
        ]
       ],
@@ -2595,6 +2596,27 @@ absorbLinearFactor[factor_, int_J, topo_Association] := Total[
    ];
 
 
+(* fixed line 的幂移会先产生显式模长系数；这里逐项拆出唯一积分，
+   再复用裸 J 的吸收规则，避免内部 helper 留在公开导数结果中。 *)
+absorbLinearFactorExpressionTerm[factor_, term_, topo_Association] := Module[
+   {integrals, integral, coefficient},
+   integrals = DeleteDuplicates[Cases[term, _J, {0, Infinity}]];
+   If[Length[integrals] =!= 1, Return[factor term]];
+   integral = First[integrals];
+   coefficient = Cancel[term/integral];
+   If[
+    FreeQ[coefficient, _J],
+    coefficient absorbLinearFactor[factor, integral, topo],
+    factor term
+    ]
+   ];
+
+
+absorbLinearFactor[factor_, expr_, topo_Association] := Total[
+   absorbLinearFactorExpressionTerm[factor, #, topo] & /@ linearTerms[Expand[expr]]
+   ];
+
+
 momentumDivergenceTerm[int_J, gen_Association] := If[
    gen["type"] === "momentum" && gen["vectorType"] === "loop" && gen["dLoop"] === gen["vectorIndex"],
    dim int,
@@ -2867,7 +2889,7 @@ vertexEnergyNamingReport[topo_Association] := Module[
     "internalVertexEnergies" -> internal,
     "userVertexEnergies" -> user,
     "dependencyData" -> dependencies,
-    "message" -> "vertexEnergies 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 externalMomenta 空间的外部不变量是同一变量，应写成 externalInvariantRules 输出变量的函数，例如 Sqrt[s11]；否则写独立 ke[i]。不要把 |ke1+ke2| 与 |ke1|+|ke2| 混同；若 |ke1+ke2| 独立，应单独命名为 ke[i]。外腿能量参数之间不生成点积关系。"
+    "message" -> "vertexEnergies 的每个值表示一个顶点外腿打包后的相位能量。若它绑定 loopExternalMomenta，输入原始 Sqrt[sp[p,p]] 并由缺省 ssij 或 exact 自定义规则输出；若绑定 independentExternalMomenta 的实际无圈模长，则输出为 sEi；否则写独立标量。不要把 |p1+p2| 与 |p1|+|p2| 混同，程序不会自动生成无圈动量之间的点积关系。"
     |>
    ];
 
@@ -3332,8 +3354,10 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     "discreteRuleCount" -> discreteData["ruleCount"],
     "timeGeneratorCount" -> Length[timeGenerators],
     "equationCount" -> Length[equations],
-    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ"],
-    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData"]], Null],
+    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ", {}],
+    (* 空 generator family 的 equation 列表必须给空 forbidden 集，
+       不能让 Lookup[{},key] 产生 Missing[KeyAbsent,...] 污染 canonical gate。 *)
+    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null],
     "generators" -> timeGeneratorLabel /@ timeGenerators,
     "continuousSeedRules" -> legacyContinuousRules,
     "generatorSpecificContinuousRangesQ" -> AnyTrue[continuousDataByGenerator, Lookup[#, "rangeSource", "uniform"] === "generatorOverride" &],
@@ -4061,8 +4085,10 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     "discreteRuleCount" -> discreteData["ruleCount"],
     "momentumGeneratorCount" -> Length[momentumGenerators],
     "equationCount" -> Length[equations],
-    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ"],
-    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData"]], Null],
+    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ", {}],
+    (* timeOnly sector 没有 momentum generator；空 equation 列表必须给空 forbidden 集，
+       不能让 Lookup[{},key] 产生 Missing[KeyAbsent,...] 污染 canonical gate。 *)
+    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null],
     "generators" -> momentumGeneratorLabel /@ momentumGenerators,
     "continuousSeedRules" -> legacyContinuousRules,
     "generatorSpecificContinuousRangesQ" -> AnyTrue[continuousDataByGenerator, Lookup[#, "rangeSource", "uniform"] === "generatorOverride" &],
@@ -4532,7 +4558,7 @@ topologyValidationReport[topo_Association] := Module[
     ];
    vertexEnergyMomentumDependenceData = vertexEnergyMomentumDependenceIssues[topo];
    If[vertexEnergyMomentumDependenceData =!= {},
-    appendIssue["error", "invalidVertexEnergyMomentumDependence", <|"issues" -> vertexEnergyMomentumDependenceData, "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex: use external invariant variables such as s11/sigW when they belong to externalMomenta space, otherwise use independent ke[i] parameters"|>]
+    appendIssue["error", "invalidVertexEnergyMomentumDependence", <|"issues" -> vertexEnergyMomentumDependenceData, "comment" -> "vertexEnergies must use declared loopExternalMomenta/independentExternalMomenta through raw Sqrt[sp[p,p]] expressions, or independent scalar phase parameters"|>]
     ];
    If[Lookup[topo, "unknownSeedPreset", None] =!= None,
     appendIssue["error", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "allowedSeedPresets" -> {"quickCheck", "fullDiscrete", "bounded"}|>]
@@ -4580,7 +4606,7 @@ topologyValidationReport[topo_Association] := Module[
     ];
    nonLinearLineMomentumData = lineMomentumLinearityIssues[topo];
    If[nonLinearLineMomentumData =!= {},
-    appendIssue["error", "nonLinearLineMomenta", <|"issues" -> nonLinearLineMomentumData, "comment" -> "line momenta must be linear combinations of loopMomenta, externalMomenta and declared externalLegMomenta"|>]
+    appendIssue["error", "nonLinearLineMomenta", <|"issues" -> nonLinearLineMomentumData, "comment" -> "line momenta must be linear combinations of loopMomenta, loopExternalMomenta and declared independentExternalMomenta"|>]
     ];
    nonLinearScalarProductArgumentData = scalarProductArgumentLinearityIssues[topo];
    If[nonLinearScalarProductArgumentData =!= {},
@@ -4617,7 +4643,7 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingExternalInvariants", <|
       "missingExternalInvariants" -> missingExternalInvariants,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need external invariant value rules, using the output names from externalInvariantRules/default sij"
+      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need values for the selected ssij/sEi or exact custom output parameters"
       |>]
     ];
    missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
@@ -4832,14 +4858,29 @@ Options[makeCanonicalSeedBatch] = Join[
 
 
 makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
-   {momentumBatch, timeBatch, shrinkBatch, seedOpts, shrinkOpts, pendingFeatures, equations, eomCanonicalQ, sectorMetadataList, topologyReport},
+   {momentumBatch, timeBatch, shrinkBatch, seedOpts, shrinkOpts, pendingFeatures, equations,
+    eomCanonicalQ, sectorMetadataList, topologyReport, ibpMode},
    topologyReport = topologyValidationReport[topo];
    If[topologyValidationErrorQ[topologyReport],
     Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> False, "forbiddenNData" -> {}, "pendingFeatures" -> {}, "equations" -> {}|>]
     ];
    seedOpts = FilterRules[{opts}, Options[makeMomentumIBPSeedBatch]];
    shrinkOpts = FilterRules[{opts}, Options[makeShrinkSectorSeedBatch]];
-   momentumBatch = makeMomentumIBPSeedBatch[topo, Sequence @@ seedOpts];
+   ibpMode = Lookup[topo, "ibpMode", "full"];
+   (* timeOnly 的 line-pack 路线仍是 canonical batch，但不伪造 momentum generator。
+      保留标准空摘要，使 sector coverage 与 linearData 可以共用既有结构。 *)
+   momentumBatch = If[
+     ibpMode === "timeOnly",
+     <|
+      "status" -> "generated", "caseName" -> topo["name"],
+      "topologyValidationReport" -> topologyReport,
+      "discreteRuleCount" -> 0, "momentumGeneratorCount" -> 0,
+      "equationCount" -> 0, "eomCanonicalQ" -> True,
+      "forbiddenNData" -> {}, "generators" -> {}, "pendingFeatures" -> {},
+      "completeMomentumIBPQ" -> False, "equations" -> {}
+      |>,
+     makeMomentumIBPSeedBatch[topo, Sequence @@ seedOpts]
+     ];
    timeBatch = makeTimeIBPSeedBatch[topo, Sequence @@ seedOpts];
    shrinkBatch = If[TrueQ[OptionValue[GenerateShrinkSectors]],
      makeShrinkSectorSeedBatch[topo, Sequence @@ shrinkOpts],
@@ -4874,6 +4915,12 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
+    "ibpMode" -> ibpMode,
+    "representation" -> If[
+      ibpMode === "timeOnly",
+      "J[timePowers,linePacks,isp]",
+      "J[timePowers,indexedLinePacks,isp]"
+      ],
     "topologyValidationReport" -> topologyReport,
     "momentumEquationCount" -> momentumBatch["equationCount"],
     "timeEquationCount" -> timeBatch["equationCount"],
@@ -4882,7 +4929,9 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
     "eomCanonicalQ" -> eomCanonicalQ,
     "forbiddenNData" -> DeleteCases[Flatten[{momentumBatch["forbiddenNData"], timeBatch["forbiddenNData"], Lookup[shrinkBatch, "forbiddenNData", {}]}], Null],
     "pendingFeatures" -> pendingFeatures,
-    "completeMomentumIBPQ" -> TrueQ[momentumBatch["eomCanonicalQ"] && Lookup[momentumBatch, "pendingFeatures", {}] === {}],
+    "completeMomentumIBPQ" -> TrueQ[
+      ibpMode === "full" && momentumBatch["eomCanonicalQ"] && Lookup[momentumBatch, "pendingFeatures", {}] === {}
+      ],
     "completeTimeIBPQ" -> TrueQ[pendingFeatures === {}],
     "completeCanonicalQ" -> TrueQ[eomCanonicalQ && pendingFeatures === {}],
     "sectorMetadata" -> First[sectorMetadataList],
@@ -4980,11 +5029,12 @@ sectorGeneratorCoverageChecks[equations_List, expectedBySector_Association, sect
 makeCanonicalSeedCoverageReport[batch_Association] := Module[
    {classified, summary, sectorKeys, equations, sectorClassChecks, topEquations, topQGenerators, topTGenerators,
     expectedQGenerators, expectedTGenerators, expectedBySector, sectorGeneratorChecks,
-    totalClassifiedCount, forbiddenData, reportQ},
+    totalClassifiedCount, forbiddenData, reportQ, momentumRequiredQ},
    classified = classifyCanonicalSeedBatch[batch];
    summary = Lookup[classified, "summary", <||>];
    sectorKeys = Lookup[Lookup[batch, "sectorMetadataList", {}], "sectorKey", {}];
    equations = Lookup[batch, "equations", {}];
+   momentumRequiredQ = Lookup[batch, "ibpMode", "full"] === "full";
    sectorClassChecks = Association @ Table[
       sectorKey -> <|
         "qIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0],
@@ -4992,6 +5042,10 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
         "hasBothQAndT" -> TrueQ[
           Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0] > 0 &&
            Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0] > 0
+          ],
+        "hasRequiredClasses" -> TrueQ[
+          Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0] > 0 &&
+           (! momentumRequiredQ || Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0] > 0)
           ]
         |>,
       {sectorKey, sectorKeys}
@@ -5015,7 +5069,7 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
       totalClassifiedCount === Lookup[batch, "equationCount", Missing["equationCount"]] &&
       Sort[Lookup[classified, "sectorKeys", {}]] === Sort[sectorKeys] &&
       FreeQ[Lookup[classified, "classes", {}], "unknownIBP"] &&
-      And @@ Lookup[Values[sectorClassChecks], "hasBothQAndT", {False}] &&
+      And @@ Lookup[Values[sectorClassChecks], "hasRequiredClasses", {False}] &&
       And @@ Flatten[Lookup[Values[sectorGeneratorChecks], {"qGeneratorCoverageQ", "tGeneratorCoverageQ"}, {False}]] &&
       canonicalGeneratorStrings[topQGenerators] === canonicalGeneratorStrings[expectedQGenerators] &&
       canonicalGeneratorStrings[topTGenerators] === canonicalGeneratorStrings[expectedTGenerators]

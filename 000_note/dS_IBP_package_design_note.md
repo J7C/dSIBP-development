@@ -28,8 +28,9 @@
 - 圈动量基：`q_1,...,q_L`。
 - 内线集合：`e = 1,...,E`，每条内线携带端点 `(u[e], v[e])`、动量 `Q[e] = \sum_l c[e,l] q_l + P_e`、模长 `\xi_e = |Q[e]|`、场参数 `\nu_e`。
 - 外线（Boundary）：`B \to v` 表示外腿连接到顶点 `v`，携带动量 `k_{ext}`。
-- `loopExternalMomenta={p_i}` 由用户显式给出，决定 loop Gram、ISP 与 momentum-IBP；符号名称不携带角色。公开缺省坐标是 `ssij=Sqrt[sp[p_i,p_j]]`，内部仍用 `kk[i,j]`。
-- `independentExternalMomenta={P_e}` 也由用户显式给出，只为实际无圈动量模长生成 `sE1,sE2,...`。整体反号模长等价，但和/差组合不合并；不主动生成外腿间点积。
+- `loopExternalMomenta={p_i}` 由用户显式给出，以下统一简称为 `kL` 列表。它决定 loop Gram、ISP 与 momentum-IBP；符号名称不携带角色。第 `i` 项进入内部 `qk[*,i]`、`kk[i,j]`，公开缺省坐标是 `ssij=Sqrt[sp[kLi,kLj]]`。
+- `independentExternalMomenta={P_e}` 也由用户显式给出，以下统一简称为 `kE` 列表。它只为实际无圈动量模长生成 `sE1,sE2,...`，坐标/Jacobian 内部槽为 `externalLegSquaredCoordinate[e]`。整体反号模长等价，但和/差组合不合并；不主动生成外腿间点积。
+- `kL` 与 `kE` 在各自列表中分别从 1 编号，互不共享编号空间；`kL1/kE1` 是角色简称，不要求用户修改原始符号名。
 - 外部能量按顶点 e 指数输入：若能量由上述动量张成并应复用关系，写成对应根号坐标的函数；否则作为独立 `ke[i]` 标量参数。不要默认把同一顶点的外腿模相加。
 
 以下 family 初始化信息必须一开始设定，但不写进 `J` 的指标槽：
@@ -673,7 +674,7 @@ delta 缩并后，`J` 只保留仍独立的 compact `aList`；原顶点、代表
 
 014 最新独立重检覆盖十个 benchmark family 的 24 组固定 sign/energy 运行和 3018 条方程；ISP 366/366 相等且非零差值 0，H-to-h/direct-h 178/178、bare-H 178/178、compiled `AT/WT/shrinkTerms` 16/16、tree 22/22、general-`ds` 独立 expected 16/16、工程门禁 19/19。文档修正前唯一 contract 失败是 `DSSeeds` 缺省说明；物理关系比较没有非零差值。历史 012 计数只保留为冻结基线的验收记录。
 
-这些检查覆盖约定的顶点符号、可达 sector、离散态和 qIBP/tIBP 生成元，但不是任意拓扑的数学穷尽证明。011 时代的 expected/helper 保留在 `000_code/check/hand-derived-v2/`，用于审计旧 oracle 为何会与旧实现同向通过；012 的修正 expected 和 actual adapters 位于 `000_code/test/012_hand-derived/`、`000_code/test/012_hand_derived_cross_checks/`。
+这些检查覆盖约定的顶点符号、可达 sector、离散态和 qIBP/tIBP 生成元，但不是任意拓扑的数学穷尽证明。011/012 时代的 expected、helper、actual adapters 和临时测试工作区已在 2026-07-23 清理；历史计数仅作为当时版本的验收记录，不再对应仓库内可重跑资产。
 
 仍保留的设计项：
 
@@ -743,6 +744,8 @@ pure massive bubble reference 的 vertex-exchange symmetry 只在 `P1=P2` 成立
 J[aList, linePacks, ispList]  (* loop *)
 J[vertexPacks]                (* tree *)
 ```
+
+这里的单槽 tree 形状只用于可以把全部离散态无损分配到顶点的 direct pure-time family。`ibpMode->"timeOnly"` 只说明不生成 momentum IBP，并不强制单槽表示。若存在未缩并 `masslessFull`，其有向单指标 `n_e` 属于整条 line，不能复制到两个 vertex pack 或直接丢弃；此时 `DSSeeds` 自动保留三槽 `J[aList,linePacks,ispList]`，fixed line pack 为 `{n_e}`、shrunk pack 为 `{}`，仍不引入 `b/bS` 或 ISP。`DSLinear` 根据 batch 的 `representation` 消费两种结果。
 
 `integralKind` 只按 arity 和 shape 返回 `"Loop"`、`"Tree"` 或 failure。tree 的第 `e` 个 pack 为 `{a_e,n_e1,...,n_ep}`，其长度必须等于初始化记录的 `1+p_e`。这里 `p_e` 只数 massive h 外腿；massless 外腿不产生 binary derivative state。
 

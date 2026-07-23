@@ -25,6 +25,8 @@ ibp_equations*.m
 
 # Project generated outputs
 000_code/**/results_test/
+check-smoke/results_test/
+check-smoke/results_temp/
 000_code/results/
 000_code/results_temp/
 000_code/results_ignore/
@@ -43,6 +45,9 @@ codex-independent-benchmark/todolist_temp.md
 
 # Local document-rendering and review scratch
 /tmp/
+
+# Independent audit working tree; only finalized reports under 000-report are project assets.
+/check/
 
 # Retain package scripts from 007 onward; ignore retired 001--006 versions.
 000_code/001_*.wl

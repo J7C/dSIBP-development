@@ -59,6 +59,41 @@ dsProgressMap[label_String, items_List, function_, setting_: Automatic] := Modul
 dsContextQ[context_] := AssociationQ[context] && Lookup[context, "status", Missing["status"]] === "initialized" &&
    parsedTopologyQ[Lookup[context, "topology", Missing["topology"]]];
 
+(* 失败初始化不得携带可被下游误读的部分能力；原始 declaration/kinematics audit
+   仍保留各自的局部状态，公开 context capability 一律关闭。 *)
+dsDisabledCapabilities[] := AssociationMap[
+   False &,
+   {
+    "initializationUsableQ", "timeIBPUsableQ", "momentumIBPUsableQ",
+    "derivativeUsableQ", "inverseKinematicsUsableQ", "backendExportUsableQ"
+    }
+   ];
+
+
+dsTopologyWithDisabledCapabilities[topo_Association] := Join[
+   topo,
+   <|"capabilities" -> dsDisabledCapabilities[]|>
+   ];
+
+
+dsTopologyWithDisabledCapabilities[topo_] := topo;
+
+
+dsFailedInitializationData[reason_String, data_Association : <||>] := Module[{result},
+   result = Join[data, <|
+      "status" -> "failed",
+      "reason" -> reason,
+      "capabilities" -> dsDisabledCapabilities[]
+      |>];
+   If[KeyExistsQ[result, "topologyData"],
+    result = Join[result, <|
+       "topologyData" -> dsTopologyWithDisabledCapabilities[result["topologyData"]]
+       |>]
+    ];
+   result
+   ];
+
+
 dsResolveContext[Automatic] := If[dsContextQ[$dSIBPCurrentContext], $dSIBPCurrentContext, Missing["NotInitialized"]];
 dsResolveContext[context_Association] := If[dsContextQ[context], context, Missing["InvalidContext"]];
 dsResolveContext[_] := Missing["InvalidContext"];

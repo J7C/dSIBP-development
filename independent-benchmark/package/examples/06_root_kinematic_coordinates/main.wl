@@ -7,9 +7,7 @@
 (*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "..", "000_code", "016_dSIBP"}]];
-If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
-Needs["dSIBP`"];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
 
 
 (* ::Chapter:: *)
@@ -283,7 +281,7 @@ summary = <|
 
 Print[InputForm[summary]];
 If[! And[
-    summary["version"] === "016",
+    ToString[summary["version"]] === currentVersion,
     summary["initStatus"] === "initialized",
     summary["graphLoopCount"] === 1,
     summary["loopExternalMomenta"] === {k1 + k2},

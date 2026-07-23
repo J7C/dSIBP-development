@@ -818,6 +818,8 @@ ispData = {
 
 \texttt{sp[p,r]} 是用户口 scalar-product convention，并具有 \texttt{Orderless} 属性。所有含圈 line momentum 与 ISP 参数必须由 \texttt{loopMomenta} 和 \texttt{loopExternalMomenta} 线性张成；实际无圈 line/phase 模长必须由 \texttt{independentExternalMomenta} 完备声明。016 对 loop Gram 使用短名 \texttt{ssij}，对独立无圈模长使用 \texttt{sE1,sE2,...}。类别总数超过 9 时按总数位宽补零。与两类动量声明都无关的相位标量仍可写成 \texttt{ke[i]}。
 
+下文统一把 \texttt{loopExternalMomenta} 的按序元素简称为 $k_{L1},k_{L2},\ldots$（\texttt{kL}），把 \texttt{independentExternalMomenta} 的按序元素简称为 $k_{E1},k_{E2},\ldots$（\texttt{kE}）。简称只编码列表角色与位置，不约束用户符号名。两套编号独立：\texttt{kL} 进入内部 \texttt{qk/kk} 与公开 \texttt{ssij}；\texttt{kE} 的平方模长进入独立的 \texttt{externalLegSquaredCoordinate[e]} 与公开 \texttt{sEe}，不进入 loop scalar-product 空间。
+
 \textbf{完备性验证}：\texttt{verifyISP[topology, ispData]} 检查：
 \begin{enumerate}
   \item 所有标量积 $\{q_l \cdot q_m,\, q_l \cdot k_j\}$ 均可表示为 $\{\xi_e^2\}$ 和 $\{\text{isp}_j\}$ 的线性组合
@@ -1740,12 +1742,17 @@ time IBP 的作用域不同。对顶点 $v$ 做 $\tau_v$ total derivative 时，
 
 \subsection{direct pure-time 模式和能力门禁}
 
-树图缺省、圈图可选的 \texttt{ibpMode->"timeOnly"} 不构造残缺的 loop family。所有 active lines 统一标为 \texttt{fixedCoefficient}，使用
+树图缺省、圈图可选的 \texttt{ibpMode->"timeOnly"} 不构造残缺的 loop family。所有 active lines 统一标为 \texttt{fixedCoefficient}，但表示必须保留实际离散态。若不存在未缩并的 \texttt{masslessFull} line，可使用
 \begin{equation}
  J[\{\{a_v,n_{e_1v},\ldots,n_{e_pv}\}\}_v]
  \label{directPureTimeJ}
 \end{equation}
-的 vertex-pack 表示，并把全部 active line 模长纳入 \texttt{independentExternalMomenta} 审计。此模式没有 momentum generator、$z$/ISP 闭合和 $b/b_S$；\texttt{DSTreeSeeds} 直接生成 pure-time sector rules，\texttt{repIterative} 的 source-aware 首步也消费同一 direct relation，旧 loop 投影只作为独立交叉验证。\texttt{repIterative}、naive time-IBP/DE 与直接 dlog DE 必须使用同序 master 列表比较。
+的 vertex-pack 表示。若存在未缩并的 \texttt{masslessFull} line，则有向状态 $n_e\in\{0,1\}$ 属于整条 line，不能无歧义地分配给某个顶点；此时必须使用
+\begin{equation}
+ J[\{a_v\}_v,\{\{n_e\}\}_{e\,{\rm full}}\cup\{\{\}\}_{e\,{\rm shrunk/cross}},\{\}]
+ \label{directPureTimeMasslessJ}
+\end{equation}
+的三槽 fixed-line 表示。两条路线都把全部 active line 模长纳入 \texttt{independentExternalMomenta} 审计，且都没有 momentum generator、$z$/ISP 闭合和 $b/b_S$。\texttt{DSSeeds} 根据 line state 自动选择表示；\texttt{DiscreteMode->"all"} 枚举完整 $n=0,1$，不引入私有状态参数。只有式~\eqref{directPureTimeJ} 的 direct vertex-pack 路线进入 \texttt{DSTreeSeeds}、\texttt{repIterative} 和 tree DE；式~\eqref{directPureTimeMasslessJ} 由 canonical time seed 与 \texttt{DSLinear} 直接消费。\texttt{repIterative}、naive time-IBP/DE 与直接 dlog DE 必须使用同序 master 列表比较。
 
 用户列表和动力学规则的综合状态决定 context capabilities：exact 开放初始化、time IBP、full 模式下的 momentum IBP、求导及唯一反变换；undercomplete 返回 missing/null-space 后拒绝初始化；overcomplete 允许 symbolic seed，但关闭 \texttt{ds/DSDE} 与唯一反变换。\texttt{DSLinear} 还校验 seed 与 context 的 \texttt{inputHash}，serializer 只消费通过该门禁的 backend-neutral \texttt{linearData}。
 

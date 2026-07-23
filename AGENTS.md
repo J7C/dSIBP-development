@@ -22,8 +22,9 @@
 
 - 当前主线版本由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/016_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
 - 016 的冻结单文件兼容入口是 `independent-benchmark/package/package_016.wl`；`000_code/010_dS_ibp_general.wl` 至 `015_dS_ibp_general.wl` 及其模块目录是只读基线/历史版本，不在新任务中回写。
-- `000_code/check/` 保存当前主线正式验证脚本。
-- `000_code/test/` 保存临时测试脚本，运行产物只放 `000_code/test/results_test/`。
+- 根目录 `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；可复用轻量脚本留在目录根部，运行产物只放 `check-smoke/results_test/` 并在任务结束后清理。
+- `000_code/check/` 与 `000_code/test/` 是已清空的历史目录，不再写入新的日常 smoke/check/test 资产。
+- `check-smoke/` 不属于独立检验工作区。内部或外部独立执行者均不得读取、复制、写入或引用其中的脚本、结果与结论。
 - `independent-benchmark/package/` 只保留当前版本化程序 `package_<version>.wl`、同版本正式用户手册 `package_<version>.pdf` 和少量应用 examples；更新版本时覆盖当前交付并删除旧版本或无版本名副本。
 - `independent-benchmark/package/` 不得放 expected、验证脚本、开发文档、报告或 reduction 输出。
 - 每个发布版本必须维护 `independent-benchmark/package/examples/coverage_manifest.wl`：列出全部需要用户掌握的公开函数及其成品 example；正式检查必须与 package 的 `DSPublicAPI[]` 比较并验证源码调用覆盖，缺项不得发布。
@@ -39,6 +40,7 @@
 
 - 由本 agent 在本项目文件夹中新开独立会话执行。
 - 独立工作区使用 `codex-independent-benchmark/`；不得读取主线 expected 或旧检验结果来生成新的 expected。
+- 内部独立执行者不得读取或使用根目录 `check-smoke/`；该目录只服务主线维护者的非独立轻量检查。
 - 最终报告直接写入 `000-report/`，不得留在工作区或 `independent-benchmark/package/`。
 
 ### 外部检验
@@ -87,3 +89,5 @@
 4. 分 sector 保存 canonical seed 数据，转换为 backend-neutral `linearData`；必要的小规模数值规则只在该层代入。
 5. 由 serializer 导出后端基础输入，不运行 reduction。
 6. 按风险运行专项和受影响回归，更新进度结论；正式独立报告统一归档到 `000-report/`。
+
+更新当前正式交付时必须先在 `000_code/test/results_test/` 生成候选程序/手册，并让受影响检查显式加载候选路径。候选全部通过且记录哈希后，才可用同一候选字节覆盖 `independent-benchmark/package/`；覆盖后还要对正式路径复验，最后清理候选产物。

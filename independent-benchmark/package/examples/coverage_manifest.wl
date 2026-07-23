@@ -18,6 +18,7 @@
      "DSInit", "DSInfo", "DSSeeds", "DSLinear", "DSKiraExport",
      "DSKiraImport", "DSDE", "DSScaleCheck"
      },
+   (* 同一成品同时展示 massive direct vertex-pack 与 atomic massless fixed line-pack。 *)
    "05_tree_two_vertex_time_ibp/main.wl" -> {
      "DSMessagesOn", "DSInit", "DSSeeds", "DSLinear", "DSTreeSeeds",
      "repIterative", "DSTreeNaiveIBP", "DSTreeNaiveDE", "DSTreeDLogDE"

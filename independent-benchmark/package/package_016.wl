@@ -52,7 +52,7 @@ DSInfo::usage = "DSInfo[] 返回当前初始化的简要信息；DSInfo[context,
 DSKinematics::usage = "DSKinematics[input,rules] 返回 topology 的缺省动力学变量提案、全部必需模长覆盖、从属 binding、可复制的参数重定义格式，以及给定规则的秩、零空间、完备性和可逆性审计；rules 缺省读取 input 或使用自动提案。";
 DSParameterNotation::usage = "DSParameterNotation[context] 返回圈外 Gram 根号、独立无圈模长、全部必需模长覆盖、当前用户变量规则及 DSRedefineParameters 的可复制示例；无参数形式读取当前 context。";
 DSRedefineParameters::usage = "DSRedefineParameters[context,rules] 用新的完整动力学变量规则重新初始化并返回新 context；rules 左端写 baseCoordinateOrder 中的 sp[原始动量,...]，右端写自定义参数表达式，不写 ssij->custom；DSRedefineParameters[rules] 只在成功后更新当前 context。";
-DSSeeds::usage = "DSSeeds[context,opts] 生成所有 contact-reachable sector 的 canonical IBP seeds；不运行 reduction。";
+DSSeeds::usage = "DSSeeds[context,opts] 生成所有 contact-reachable sector 的 canonical IBP seeds；不运行 reduction。full 模式返回三槽 J。timeOnly 会自动选择表示：不含未缩并 masslessFull 时返回 direct J[vertexPacks]，否则用三槽 J[timePowers,linePacks,isp] 保留逐线 n=0/1；DiscreteMode->\"all\" 枚举完整离散态，不需要私有状态参数。";
 DSLinear::usage = "DSLinear[seedData,context,opts] 把 canonical seeds 转换为 backend-neutral linearData。";
 DSKiraExport::usage = "DSKiraExport[linearData,opts] 序列化 Kira 基础输入和同源 manifest；不会启动 Kira。";
 DSKiraImport::usage = "DSKiraImport[path,context,opts] 导入并验证完整 Kira reduction、master 顺序和积分双向映射。";
@@ -1366,7 +1366,8 @@ completeLineMetadata[line_, vertexSignAssoc_] := Module[
    ];
 
 
-(* 将一个 case 解析为通用拓扑对象。externalMomenta 必须给出独立外动量基。 *)
+(* 将一个 case 解析为通用拓扑对象。公开输入分别声明 loopExternalMomenta 与
+   independentExternalMomenta；旧字段只在兼容层映射到内部存储。 *)
 parseTopology::missingkeys = "case 缺少必需字段：`1`。";
 parseTopology::badinput = "case 输入 preflight 失败：`1`。";
 parseTopology::badfunction = "massive line 的函数系统编译失败：`1`。";
@@ -2687,8 +2688,8 @@ externalInvariantNamingReport[topo_Association] := <|
    "externalMomenta" -> Lookup[topo, "externalMomenta", {}],
    "externalInvariantRules" -> Lookup[topo, "externalInvariantRules", defaultExternalInvariantRulesForTopology[topo]],
    "internalExternalInvariantRules" -> externalInvariantInternalToUserRules[topo],
-   "defaultNamingConvention" -> "sij, where i,j are positions in externalMomenta and i<=j",
-   "message" -> "圈动量相关标量积的用户输入统一用 sp[p,r]；外动量-外动量不变量在输出端使用 externalInvariantRules 指定的变量名，未指定时默认按 externalMomenta 顺序输出为 sij。"
+   "defaultNamingConvention" -> "ssij = Sqrt[sp[kLi,kLj]], where i<=j follows loopExternalMomenta order",
+   "message" -> "圈动量相关标量积的用户输入统一用 sp[p,r]；loopExternalMomenta 的完整 Gram 缺省输出为 ssij 根号坐标，exact 自定义规则可改名。"
    |>;
 
 
@@ -2915,7 +2916,7 @@ vertexEnergyMomentumDependenceIssues[topo_Association] := Module[
         "directMomentumSymbols" -> directMomenta,
         "spArgumentIssues" -> spArgIssues,
         "loopScalarProducts" -> scalarProductInternalToUser[#, topo] & /@ loopSPUsed,
-        "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex; use external invariant variables when the energy is tied to externalMomenta space, otherwise use independent ke[i] parameters"
+        "comment" -> "vertexEnergies are scalar time-phase energies; use ssij when tied to loopExternalMomenta, sEi when tied to an independentExternalMomenta magnitude, or an independent scalar otherwise"
         |>
        ]
       ],
@@ -3276,6 +3277,27 @@ absorbLinearFactor[factor_, int_J, topo_Association] := Total[
    ];
 
 
+(* fixed line 的幂移会先产生显式模长系数；这里逐项拆出唯一积分，
+   再复用裸 J 的吸收规则，避免内部 helper 留在公开导数结果中。 *)
+absorbLinearFactorExpressionTerm[factor_, term_, topo_Association] := Module[
+   {integrals, integral, coefficient},
+   integrals = DeleteDuplicates[Cases[term, _J, {0, Infinity}]];
+   If[Length[integrals] =!= 1, Return[factor term]];
+   integral = First[integrals];
+   coefficient = Cancel[term/integral];
+   If[
+    FreeQ[coefficient, _J],
+    coefficient absorbLinearFactor[factor, integral, topo],
+    factor term
+    ]
+   ];
+
+
+absorbLinearFactor[factor_, expr_, topo_Association] := Total[
+   absorbLinearFactorExpressionTerm[factor, #, topo] & /@ linearTerms[Expand[expr]]
+   ];
+
+
 momentumDivergenceTerm[int_J, gen_Association] := If[
    gen["type"] === "momentum" && gen["vectorType"] === "loop" && gen["dLoop"] === gen["vectorIndex"],
    dim int,
@@ -3548,7 +3570,7 @@ vertexEnergyNamingReport[topo_Association] := Module[
     "internalVertexEnergies" -> internal,
     "userVertexEnergies" -> user,
     "dependencyData" -> dependencies,
-    "message" -> "vertexEnergies 的每个值表示一个顶点连着的所有外腿打包后的 e 指数能量。若该能量和 externalMomenta 空间的外部不变量是同一变量，应写成 externalInvariantRules 输出变量的函数，例如 Sqrt[s11]；否则写独立 ke[i]。不要把 |ke1+ke2| 与 |ke1|+|ke2| 混同；若 |ke1+ke2| 独立，应单独命名为 ke[i]。外腿能量参数之间不生成点积关系。"
+    "message" -> "vertexEnergies 的每个值表示一个顶点外腿打包后的相位能量。若它绑定 loopExternalMomenta，输入原始 Sqrt[sp[p,p]] 并由缺省 ssij 或 exact 自定义规则输出；若绑定 independentExternalMomenta 的实际无圈模长，则输出为 sEi；否则写独立标量。不要把 |p1+p2| 与 |p1|+|p2| 混同，程序不会自动生成无圈动量之间的点积关系。"
     |>
    ];
 
@@ -4013,8 +4035,10 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     "discreteRuleCount" -> discreteData["ruleCount"],
     "timeGeneratorCount" -> Length[timeGenerators],
     "equationCount" -> Length[equations],
-    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ"],
-    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData"]], Null],
+    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ", {}],
+    (* 空 generator family 的 equation 列表必须给空 forbidden 集，
+       不能让 Lookup[{},key] 产生 Missing[KeyAbsent,...] 污染 canonical gate。 *)
+    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null],
     "generators" -> timeGeneratorLabel /@ timeGenerators,
     "continuousSeedRules" -> legacyContinuousRules,
     "generatorSpecificContinuousRangesQ" -> AnyTrue[continuousDataByGenerator, Lookup[#, "rangeSource", "uniform"] === "generatorOverride" &],
@@ -4742,8 +4766,10 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
     "discreteRuleCount" -> discreteData["ruleCount"],
     "momentumGeneratorCount" -> Length[momentumGenerators],
     "equationCount" -> Length[equations],
-    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ"],
-    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData"]], Null],
+    "eomCanonicalQ" -> And @@ Lookup[equations, "eomCanonicalQ", {}],
+    (* timeOnly sector 没有 momentum generator；空 equation 列表必须给空 forbidden 集，
+       不能让 Lookup[{},key] 产生 Missing[KeyAbsent,...] 污染 canonical gate。 *)
+    "forbiddenNData" -> DeleteCases[Flatten[Lookup[equations, "forbiddenNData", {}]], Null],
     "generators" -> momentumGeneratorLabel /@ momentumGenerators,
     "continuousSeedRules" -> legacyContinuousRules,
     "generatorSpecificContinuousRangesQ" -> AnyTrue[continuousDataByGenerator, Lookup[#, "rangeSource", "uniform"] === "generatorOverride" &],
@@ -5213,7 +5239,7 @@ topologyValidationReport[topo_Association] := Module[
     ];
    vertexEnergyMomentumDependenceData = vertexEnergyMomentumDependenceIssues[topo];
    If[vertexEnergyMomentumDependenceData =!= {},
-    appendIssue["error", "invalidVertexEnergyMomentumDependence", <|"issues" -> vertexEnergyMomentumDependenceData, "comment" -> "vertexEnergies are scalar time-phase energies for all external legs attached to a vertex: use external invariant variables such as s11/sigW when they belong to externalMomenta space, otherwise use independent ke[i] parameters"|>]
+    appendIssue["error", "invalidVertexEnergyMomentumDependence", <|"issues" -> vertexEnergyMomentumDependenceData, "comment" -> "vertexEnergies must use declared loopExternalMomenta/independentExternalMomenta through raw Sqrt[sp[p,p]] expressions, or independent scalar phase parameters"|>]
     ];
    If[Lookup[topo, "unknownSeedPreset", None] =!= None,
     appendIssue["error", "unknownSeedPreset", <|"seedPreset" -> topo["unknownSeedPreset"], "allowedSeedPresets" -> {"quickCheck", "fullDiscrete", "bounded"}|>]
@@ -5261,7 +5287,7 @@ topologyValidationReport[topo_Association] := Module[
     ];
    nonLinearLineMomentumData = lineMomentumLinearityIssues[topo];
    If[nonLinearLineMomentumData =!= {},
-    appendIssue["error", "nonLinearLineMomenta", <|"issues" -> nonLinearLineMomentumData, "comment" -> "line momenta must be linear combinations of loopMomenta, externalMomenta and declared externalLegMomenta"|>]
+    appendIssue["error", "nonLinearLineMomenta", <|"issues" -> nonLinearLineMomentumData, "comment" -> "line momenta must be linear combinations of loopMomenta, loopExternalMomenta and declared independentExternalMomenta"|>]
     ];
    nonLinearScalarProductArgumentData = scalarProductArgumentLinearityIssues[topo];
    If[nonLinearScalarProductArgumentData =!= {},
@@ -5298,7 +5324,7 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingExternalInvariants", <|
       "missingExternalInvariants" -> missingExternalInvariants,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need external invariant value rules, using the output names from externalInvariantRules/default sij"
+      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need values for the selected ssij/sEi or exact custom output parameters"
       |>]
     ];
    missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
@@ -5513,14 +5539,29 @@ Options[makeCanonicalSeedBatch] = Join[
 
 
 makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
-   {momentumBatch, timeBatch, shrinkBatch, seedOpts, shrinkOpts, pendingFeatures, equations, eomCanonicalQ, sectorMetadataList, topologyReport},
+   {momentumBatch, timeBatch, shrinkBatch, seedOpts, shrinkOpts, pendingFeatures, equations,
+    eomCanonicalQ, sectorMetadataList, topologyReport, ibpMode},
    topologyReport = topologyValidationReport[topo];
    If[topologyValidationErrorQ[topologyReport],
     Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> False, "forbiddenNData" -> {}, "pendingFeatures" -> {}, "equations" -> {}|>]
     ];
    seedOpts = FilterRules[{opts}, Options[makeMomentumIBPSeedBatch]];
    shrinkOpts = FilterRules[{opts}, Options[makeShrinkSectorSeedBatch]];
-   momentumBatch = makeMomentumIBPSeedBatch[topo, Sequence @@ seedOpts];
+   ibpMode = Lookup[topo, "ibpMode", "full"];
+   (* timeOnly 的 line-pack 路线仍是 canonical batch，但不伪造 momentum generator。
+      保留标准空摘要，使 sector coverage 与 linearData 可以共用既有结构。 *)
+   momentumBatch = If[
+     ibpMode === "timeOnly",
+     <|
+      "status" -> "generated", "caseName" -> topo["name"],
+      "topologyValidationReport" -> topologyReport,
+      "discreteRuleCount" -> 0, "momentumGeneratorCount" -> 0,
+      "equationCount" -> 0, "eomCanonicalQ" -> True,
+      "forbiddenNData" -> {}, "generators" -> {}, "pendingFeatures" -> {},
+      "completeMomentumIBPQ" -> False, "equations" -> {}
+      |>,
+     makeMomentumIBPSeedBatch[topo, Sequence @@ seedOpts]
+     ];
    timeBatch = makeTimeIBPSeedBatch[topo, Sequence @@ seedOpts];
    shrinkBatch = If[TrueQ[OptionValue[GenerateShrinkSectors]],
      makeShrinkSectorSeedBatch[topo, Sequence @@ shrinkOpts],
@@ -5555,6 +5596,12 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
+    "ibpMode" -> ibpMode,
+    "representation" -> If[
+      ibpMode === "timeOnly",
+      "J[timePowers,linePacks,isp]",
+      "J[timePowers,indexedLinePacks,isp]"
+      ],
     "topologyValidationReport" -> topologyReport,
     "momentumEquationCount" -> momentumBatch["equationCount"],
     "timeEquationCount" -> timeBatch["equationCount"],
@@ -5563,7 +5610,9 @@ makeCanonicalSeedBatch[topo_Association, opts : OptionsPattern[]] := Module[
     "eomCanonicalQ" -> eomCanonicalQ,
     "forbiddenNData" -> DeleteCases[Flatten[{momentumBatch["forbiddenNData"], timeBatch["forbiddenNData"], Lookup[shrinkBatch, "forbiddenNData", {}]}], Null],
     "pendingFeatures" -> pendingFeatures,
-    "completeMomentumIBPQ" -> TrueQ[momentumBatch["eomCanonicalQ"] && Lookup[momentumBatch, "pendingFeatures", {}] === {}],
+    "completeMomentumIBPQ" -> TrueQ[
+      ibpMode === "full" && momentumBatch["eomCanonicalQ"] && Lookup[momentumBatch, "pendingFeatures", {}] === {}
+      ],
     "completeTimeIBPQ" -> TrueQ[pendingFeatures === {}],
     "completeCanonicalQ" -> TrueQ[eomCanonicalQ && pendingFeatures === {}],
     "sectorMetadata" -> First[sectorMetadataList],
@@ -5661,11 +5710,12 @@ sectorGeneratorCoverageChecks[equations_List, expectedBySector_Association, sect
 makeCanonicalSeedCoverageReport[batch_Association] := Module[
    {classified, summary, sectorKeys, equations, sectorClassChecks, topEquations, topQGenerators, topTGenerators,
     expectedQGenerators, expectedTGenerators, expectedBySector, sectorGeneratorChecks,
-    totalClassifiedCount, forbiddenData, reportQ},
+    totalClassifiedCount, forbiddenData, reportQ, momentumRequiredQ},
    classified = classifyCanonicalSeedBatch[batch];
    summary = Lookup[classified, "summary", <||>];
    sectorKeys = Lookup[Lookup[batch, "sectorMetadataList", {}], "sectorKey", {}];
    equations = Lookup[batch, "equations", {}];
+   momentumRequiredQ = Lookup[batch, "ibpMode", "full"] === "full";
    sectorClassChecks = Association @ Table[
       sectorKey -> <|
         "qIBPCount" -> Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0],
@@ -5673,6 +5723,10 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
         "hasBothQAndT" -> TrueQ[
           Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0] > 0 &&
            Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0] > 0
+          ],
+        "hasRequiredClasses" -> TrueQ[
+          Lookup[Lookup[summary, sectorKey, <||>], "tIBP", 0] > 0 &&
+           (! momentumRequiredQ || Lookup[Lookup[summary, sectorKey, <||>], "qIBP", 0] > 0)
           ]
         |>,
       {sectorKey, sectorKeys}
@@ -5696,7 +5750,7 @@ makeCanonicalSeedCoverageReport[batch_Association] := Module[
       totalClassifiedCount === Lookup[batch, "equationCount", Missing["equationCount"]] &&
       Sort[Lookup[classified, "sectorKeys", {}]] === Sort[sectorKeys] &&
       FreeQ[Lookup[classified, "classes", {}], "unknownIBP"] &&
-      And @@ Lookup[Values[sectorClassChecks], "hasBothQAndT", {False}] &&
+      And @@ Lookup[Values[sectorClassChecks], "hasRequiredClasses", {False}] &&
       And @@ Flatten[Lookup[Values[sectorGeneratorChecks], {"qGeneratorCoverageQ", "tGeneratorCoverageQ"}, {False}]] &&
       canonicalGeneratorStrings[topQGenerators] === canonicalGeneratorStrings[expectedQGenerators] &&
       canonicalGeneratorStrings[topTGenerators] === canonicalGeneratorStrings[expectedTGenerators]
@@ -8509,6 +8563,41 @@ dsProgressMap[label_String, items_List, function_, setting_: Automatic] := Modul
 dsContextQ[context_] := AssociationQ[context] && Lookup[context, "status", Missing["status"]] === "initialized" &&
    parsedTopologyQ[Lookup[context, "topology", Missing["topology"]]];
 
+(* 失败初始化不得携带可被下游误读的部分能力；原始 declaration/kinematics audit
+   仍保留各自的局部状态，公开 context capability 一律关闭。 *)
+dsDisabledCapabilities[] := AssociationMap[
+   False &,
+   {
+    "initializationUsableQ", "timeIBPUsableQ", "momentumIBPUsableQ",
+    "derivativeUsableQ", "inverseKinematicsUsableQ", "backendExportUsableQ"
+    }
+   ];
+
+
+dsTopologyWithDisabledCapabilities[topo_Association] := Join[
+   topo,
+   <|"capabilities" -> dsDisabledCapabilities[]|>
+   ];
+
+
+dsTopologyWithDisabledCapabilities[topo_] := topo;
+
+
+dsFailedInitializationData[reason_String, data_Association : <||>] := Module[{result},
+   result = Join[data, <|
+      "status" -> "failed",
+      "reason" -> reason,
+      "capabilities" -> dsDisabledCapabilities[]
+      |>];
+   If[KeyExistsQ[result, "topologyData"],
+    result = Join[result, <|
+       "topologyData" -> dsTopologyWithDisabledCapabilities[result["topologyData"]]
+       |>]
+    ];
+   result
+   ];
+
+
 dsResolveContext[Automatic] := If[dsContextQ[$dSIBPCurrentContext], $dSIBPCurrentContext, Missing["NotInitialized"]];
 dsResolveContext[context_Association] := If[dsContextQ[context], context, Missing["InvalidContext"]];
 dsResolveContext[_] := Missing["InvalidContext"];
@@ -8788,12 +8877,18 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     errors = Select[Lookup[validation, "issues", {}], Lookup[#, "severity", ""] === "error" &];
     Scan[dsErrorPrint[dsInitializationIssueText[#]] &, errors];
     Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；上述详情同时保存在 validationReport[\"issues\"]。"];
-    Return[<|"status" -> "failed", "reason" -> "invalidInputOrTopology", "inputHash" -> inputHash, "topologyData" -> topologyData, "validationReport" -> validation|>]
+    Return[dsFailedInitializationData[
+      "invalidInputOrTopology",
+      <|"inputHash" -> inputHash, "topologyData" -> topologyData, "validationReport" -> validation|>
+      ]]
     ];
    subsetSummary = Lookup[topologyData, "precomputedShrinkSectorSummary", <||>];
    If[Lookup[subsetSummary, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[subsetSummary, "completeCoverageQ", False]],
     Message[DSInit::sectorlimit, subsetSummary]; dsErrorPrint["contact-reachable sector 未完整初始化。"];
-    Return[<|"status" -> "failed", "reason" -> "incompleteSectorMetadata", "inputHash" -> inputHash, "topologyData" -> topologyData|>]
+    Return[dsFailedInitializationData[
+      "incompleteSectorMetadata",
+      <|"inputHash" -> inputHash, "topologyData" -> topologyData|>
+      ]]
     ];
    warnings = Select[
      Lookup[validation, "issues", {}],
@@ -8830,16 +8925,22 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     initDirectory = dsResolveInitializationDirectory[OptionValue[InitializationDirectory]];
     If[initDirectory === $Failed,
      Message[DSInit::writefailed, OptionValue[InitializationDirectory]]; dsErrorPrint["InitializationDirectory 无效。"];
-     Return[Join[context, <|"status" -> "failed", "reason" -> "invalidInitializationDirectory"|>]]
+     Return[dsFailedInitializationData["invalidInitializationDirectory", context]]
      ];
     writeResult = dsWriteInitializationFiles[context, initDirectory, OptionValue[OverwriteInitialization]];
     If[writeResult["status"] === "conflict",
      Message[DSInit::initconflict, initDirectory]; dsErrorPrint["已有初始化信息与当前输入不一致，未覆盖。"];
-     Return[Join[context, <|"status" -> "failed", "reason" -> "initializationConflict", "initializationWrite" -> writeResult|>]]
+     Return[dsFailedInitializationData[
+       "initializationConflict",
+       Join[context, <|"initializationWrite" -> writeResult|>]
+       ]]
      ];
     If[writeResult["status"] =!= "written",
      Message[DSInit::writefailed, initDirectory]; dsErrorPrint["初始化文件未完整写入。"];
-     Return[Join[context, <|"status" -> "failed", "reason" -> "initializationWriteFailed", "initializationWrite" -> writeResult|>]]
+     Return[dsFailedInitializationData[
+       "initializationWriteFailed",
+       Join[context, <|"initializationWrite" -> writeResult|>]
+       ]]
      ];
     context = Join[context, <|"initializationWrite" -> writeResult|>]
     ];
@@ -8854,7 +8955,11 @@ DSInit[input_Association, OptionsPattern[]] := Module[
    context
    ];
 
-DSInit[input_, OptionsPattern[]] := (Message[DSInit::badinput]; dsErrorPrint["DSInit 需要 Association 输入。"]; <|"status" -> "failed", "reason" -> "inputNotAssociation", "input" -> HoldForm[input]|>);
+DSInit[input_, OptionsPattern[]] := (
+   Message[DSInit::badinput];
+   dsErrorPrint["DSInit 需要 Association 输入。"];
+   dsFailedInitializationData["inputNotAssociation", <|"input" -> HoldForm[input]|>]
+   );
 
 DSInfo[] := Module[{context = dsResolveContext[Automatic]},
    If[Head[context] === Missing, Message[DSInfo::noinit]; Return[<|"status" -> "notInitialized"|>]];
@@ -8897,6 +9002,44 @@ DSLinear::failed = "linearData 生成未通过门禁：`1`。";
 DSLinear::capability = "当前 context 不具备 linearData 生成所需能力：`1`。";
 DSLinear::context = "seedData 与 context 不是同一次初始化的产物。";
 
+
+(* loop seed 的底层生成器使用 qq/qk/kk；公开高层入口必须在序列化前统一投影到
+   当前 context 的用户坐标，使 DSLinear 与后续 backend 不再接触内部 Gram 原子。 *)
+dsLoopSeedExpressionToPublicCoordinates[expr_, topo_Association] := publicProtectJMap[
+   expr,
+   Function[body,
+    Expand[scalarProductInternalToUser[body /. internalISPToUserRules[topo], topo]]
+    ]
+   ];
+
+
+dsPublicLoopSeedEntry[entry_Association, topo_Association] := If[
+   KeyExistsQ[entry, "equation"],
+   Join[entry, <|
+     "equation" -> dsLoopSeedExpressionToPublicCoordinates[entry["equation"], topo]
+     |>],
+   entry
+   ];
+
+
+dsPublicLoopSeedBatch[seedData_Association, topo_Association] := If[
+   Lookup[seedData, "status", "missing"] === "generated",
+   Join[seedData, <|
+     "equations" -> (dsPublicLoopSeedEntry[#, topo] & /@ Lookup[seedData, "equations", {}]),
+     "coordinateRepresentation" -> "user"
+     |>],
+   seedData
+   ];
+
+
+(* timeOnly 的 massive-only family 可无损投影为 J[vertexPacks]；未缩并 masslessFull
+   仍需在 fixed line pack 中保存 n=0/1，因此自动改走 canonical line-pack 路线。 *)
+dsTimeOnlyNeedsLinePackStateQ[topo_Association] := AnyTrue[
+   Lookup[topo, "lines", {}],
+   Lookup[#, "state", "full"] =!= "shrunk" && Lookup[#, "packType", ""] === "masslessFull" &
+   ];
+
+
 DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedData, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
@@ -8913,7 +9056,9 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedD
     ];
    seedData = dsStageRun[
      "生成 canonical IBP seeds",
-     If[Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly",
+     If[
+      Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly" &&
+       ! dsTimeOnlyNeedsLinePackStateQ[resolved["topology"]],
       makePureTimeSeedBatch[
        resolved,
        Sequence @@ FilterRules[{opts}, Options[makePureTimeSeedBatch]]
@@ -8925,6 +9070,9 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedD
       ],
      progress
      ];
+   If[Lookup[seedData, "representation", None] =!= "J[vertexPacks]",
+    seedData = dsPublicLoopSeedBatch[seedData, resolved["topology"]]
+    ];
    If[Lookup[seedData, "status", "missing"] =!= "generated",
     Message[DSSeeds::failed, Lookup[seedData, "status", Missing["status"]]];
     dsErrorPrint["seed generation 返回非 generated 状态。"];
@@ -11772,9 +11920,14 @@ externalLegMagnitudeBasisAnalysis[topo_Association] := Module[
    occurrenceData = MapIndexed[
      Function[{momentum, indexSpec},
       Module[{position = First[indexSpec], declaredPosition, coefficients, externalLegIndex, independentQ},
+       (* 只比较声明列表的完整元素。FirstPosition 的缺省层级会在 p1+p2 内部先命中 p2，
+          从而把后续独立模长错误编号为前一个 sEi。 *)
        declaredPosition = FirstPosition[
-         declaredLegs,
-         item_ /; Expand[item - momentum] === 0 || Expand[item + momentum] === 0,
+         Map[
+          TrueQ[Expand[# - momentum] === 0 || Expand[# + momentum] === 0] &,
+          declaredLegs
+          ],
+         True,
          Missing["Dependent"]
          ];
        independentQ = Head[declaredPosition] =!= Missing;
@@ -12810,7 +12963,7 @@ vertexEnergyNamingReport[topo_Association] := Module[
 
 DSKinematics[input_Association, rules_: Automatic] := Module[
    {effectiveInput, topo, audit, coordinateStatus, declarationAudit, declarationStatus, status, result,
-    guide, overcompleteDetails},
+    guide, overcompleteDetails, reportedCapabilities},
    effectiveInput = If[rules === Automatic, input, Join[input, <|"kinematicRules" -> rules|>]];
    topo = parseTopology[effectiveInput];
    If[topo === $Failed,
@@ -12828,6 +12981,11 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
       declarationStatus === "exact" && coordinateStatus === "complete", "complete",
       True, coordinateStatus
       ];
+    reportedCapabilities = If[
+      MemberQ[{"complete", "overcomplete"}, status],
+      Lookup[topo, "capabilities", <||>],
+      dsDisabledCapabilities[]
+      ];
     guide = kinematicParameterRedefinitionGuide[audit];
     result = Join[audit, <|
        "status" -> status,
@@ -12839,7 +12997,7 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
        "extraDirections" -> Lookup[Lookup[declarationAudit, "loopExternalAudit", <||>], "extraDirections", {}],
        "missingMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "missingMagnitudeSquares", {}],
        "extraMagnitudeSquares" -> Lookup[Lookup[declarationAudit, "independentExternalAudit", <||>], "extraMagnitudeSquares", {}],
-       "capabilities" -> Lookup[topo, "capabilities", <||>],
+       "capabilities" -> reportedCapabilities,
        "requiredMagnitudeCoverage" -> kinematicRequiredMagnitudeCoverage[topo],
        "parameterRedefinitionGuide" -> guide
        |>];

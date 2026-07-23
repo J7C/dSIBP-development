@@ -5,9 +5,7 @@
 (*标准 package 加载*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "..", "000_code", "016_dSIBP"}]];
-If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
-Needs["dSIBP`"];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 

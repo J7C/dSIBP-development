@@ -1,14 +1,12 @@
 (* ::Package:: *)
-(* 016 原生 pure-time 示例：两顶点同号 massive line 的 direct seed、迭代约化、
-   naive IBP/DE 与公式型 dlog DE。全流程不构造 loop representative。 *)
+(* 016 pure-time 示例：两顶点同号 massive line 的 direct tree 路线，以及 atomic
+   massless line 保留逐线 n 状态的 canonical 路线。两者都不生成 momentum IBP。 *)
 
 (* ::Chapter:: *)
 (*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-packageDir = ExpandFileName[FileNameJoin[{exampleDir, "..", "..", "..", "..", "000_code", "016_dSIBP"}]];
-If[! MemberQ[$Path, packageDir], AppendTo[$Path, packageDir]];
-Needs["dSIBP`"];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
 
 
 (* ::Chapter:: *)
@@ -36,6 +34,26 @@ treeCaseInput = <|
    "seedPreset" -> "quickCheck"
    |>;
 
+(* masslessFull 的单个有向 n 属于整条 line，不能塞进某一个 vertex pack。
+   DSSeeds 会自动保留三槽 fixed line-pack 表示，不需要私有状态选项。 *)
+atomicMasslessInput = <|
+   "name" -> "016AtomicMasslessTimeOnly",
+   "vertexData" -> {{u1, "+"}, {u2, "+"}},
+   "lineData" -> {
+     <|"id" -> 1, "endpoints" -> {u1, u2}, "momentum" -> pM,
+       "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
+     },
+   "loopMomenta" -> {},
+   "loopExternalMomenta" -> {},
+   "independentExternalMomenta" -> {pM},
+   "ibpMode" -> "timeOnly",
+   "vertexEnergies" -> <|u1 -> EM1, u2 -> EM2|>,
+   "ispData" -> {},
+   "zeroPointRules" -> {a0[u1] -> gamma1, a0[u2] -> gamma2, b0[1] -> deltaM},
+   "symmetryRules" -> {},
+   "seedPreset" -> "fullDiscrete"
+   |>;
+
 
 (* ::Chapter:: *)
 (*缺省选项*)
@@ -61,6 +79,24 @@ DSMessagesOn[];
 treeContext = DSInit[treeCaseInput, Sequence @@ treeInitOptions];
 treeSeedBatch = DSSeeds[treeContext, ProgressReporting -> True];
 treeLinearData = DSLinear[treeSeedBatch, treeContext, ProgressReporting -> True];
+
+atomicContext = DSInit[
+   atomicMasslessInput,
+   RegisterAsCurrent -> False,
+   WriteInitializationFiles -> False,
+   GenerateDerivativeMetadata -> False,
+   ProgressReporting -> True
+   ];
+atomicSeedBatch = DSSeeds[
+   atomicContext,
+   DiscreteMode -> "all",
+   ProgressReporting -> True
+   ];
+atomicLinearData = DSLinear[atomicSeedBatch, atomicContext, ProgressReporting -> True];
+atomicStates = DeleteDuplicates@Flatten[
+    Lookup[Lookup[atomicSeedBatch, "equations", {}], "discreteRules", {}]
+    ];
+atomicSectors = Sort@Lookup[Lookup[atomicSeedBatch, "sectorMetadataList", {}], "sectorKey", {}];
 
 selectedIntegral = J[{{1, 1}, {0, 0}}];
 selectedSeed = DSTreeSeeds[v1, selectedIntegral, treeContext];
@@ -93,12 +129,18 @@ summary = <|
    "naiveIBPStatus" -> Lookup[treeNaiveIBP, "status", "missing"],
    "naiveDEStatus" -> Lookup[treeNaiveDE, "status", "missing"],
    "deRoutesAgree" -> treeDERoutesAgree,
-   "masters" -> Lookup[treeDLog, "masters", {}]
+   "masters" -> Lookup[treeDLog, "masters", {}],
+   "atomicInitStatus" -> Lookup[atomicContext, "status", "missing"],
+   "atomicSeedStatus" -> Lookup[atomicSeedBatch, "status", "missing"],
+   "atomicRepresentation" -> Lookup[atomicSeedBatch, "representation", Missing["representation"]],
+   "atomicStates" -> atomicStates,
+   "atomicSectors" -> atomicSectors,
+   "atomicLinearStatus" -> Lookup[atomicLinearData, "status", "missing"]
    |>;
 
 Print[InputForm[summary]];
 If[! And[
-    summary["version"] === "016",
+    ToString[summary["version"]] === currentVersion,
     summary["initStatus"] === "initialized",
     summary["seedRepresentation"] === "J[vertexPacks]",
     summary["linearRepresentation"] === "sectorTaggedJ[vertexPacks]",
@@ -107,5 +149,11 @@ If[! And[
     summary["dlogStatus"] === "generated",
     summary["naiveIBPStatus"] === "solved",
     summary["naiveDEStatus"] === "generated",
-    summary["deRoutesAgree"]
+    summary["deRoutesAgree"],
+    summary["atomicInitStatus"] === "initialized",
+    summary["atomicSeedStatus"] === "generated",
+    summary["atomicRepresentation"] === "J[timePowers,linePacks,isp]",
+    And @@ (MemberQ[summary["atomicStates"], #] & /@ {n[1] -> 0, n[1] -> 1}),
+    summary["atomicSectors"] === {"e1", "top"},
+    summary["atomicLinearStatus"] === "generated"
     ], Exit[1]];
