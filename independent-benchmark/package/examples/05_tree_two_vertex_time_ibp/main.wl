@@ -1,6 +1,6 @@
 (* ::Package:: *)
-(* 016 pure-time 示例：两顶点同号 massive line 的 direct tree 路线，以及 atomic
-   massless line 保留逐线 n 状态的 canonical 路线。两者都不生成 momentum IBP。 *)
+(* 017 pure-time 示例：公开积分始终使用三参数 J。两顶点 massive-only family 演示
+   Private 论文公式适配；atomic massless family 演示 quotient canonical 与公式路线的明确边界。 *)
 
 (* ::Chapter:: *)
 (*加载标准 package*)
@@ -16,7 +16,7 @@ Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
    p12 是 lineData 中实际出现的独立无圈动量；程序只为其模长建立 sE1。
    treeEnergy=k12 是 time-IBP/dlog 公式使用的物理线能量。 *)
 treeCaseInput = <|
-   "name" -> "016TreeTwoVertexPlusPlus",
+   "name" -> "017TreeTwoVertexPlusPlus",
    "vertexData" -> {{v1, "+"}, {v2, "+"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p12,
@@ -34,10 +34,10 @@ treeCaseInput = <|
    "seedPreset" -> "quickCheck"
    |>;
 
-(* masslessFull 的单个有向 n 属于整条 line，不能塞进某一个 vertex pack。
-   DSSeeds 会自动保留三槽 fixed line-pack 表示，不需要私有状态选项。 *)
+(* masslessFull 保留两个有序端点槽，并在 relation 层约到二维物理基。
+   DSSeeds 与 tree 结果都使用同一个三参数 J，不需要私有状态选项。 *)
 atomicMasslessInput = <|
-   "name" -> "016AtomicMasslessTimeOnly",
+   "name" -> "017AtomicMasslessTimeOnly",
    "vertexData" -> {{u1, "+"}, {u2, "+"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {u1, u2}, "momentum" -> pM,
@@ -68,8 +68,8 @@ treeInitOptions = {
    ProgressReporting -> True
    };
 
-(* 缺省：repIterative 的终点为每个顶点 a=0；这里显式给出相同终点。 *)
-treeReductionEndpoint = {0, 0};
+(* 缺省：repIterative 按当前 sector 的 active 顶点把全部 a 约到 0。 *)
+treeReductionEndpoint = Automatic;
 
 
 (* ::Chapter:: *)
@@ -78,36 +78,39 @@ treeReductionEndpoint = {0, 0};
 DSMessagesOn[];
 treeContext = DSInit[treeCaseInput, Sequence @@ treeInitOptions];
 treeSeedBatch = DSSeeds[treeContext, ProgressReporting -> True];
-treeLinearData = DSLinear[treeSeedBatch, treeContext, ProgressReporting -> True];
+treeAllSeeds = DSAllSeeds[treeSeedBatch];
+treeGeneratedIBP = DSGenerateIBP[treeAllSeeds, {0, 0}];
+treeLinearData = DSLinear[treeGeneratedIBP, treeContext, ProgressReporting -> True];
 
 atomicContext = DSInit[
    atomicMasslessInput,
-   RegisterAsCurrent -> False,
+   RegisterAsCurrent -> True,
    WriteInitializationFiles -> False,
    GenerateDerivativeMetadata -> False,
    ProgressReporting -> True
    ];
 atomicSeedBatch = DSSeeds[
    atomicContext,
-   DiscreteMode -> "all",
    ProgressReporting -> True
    ];
-atomicLinearData = DSLinear[atomicSeedBatch, atomicContext, ProgressReporting -> True];
+atomicAllSeeds = DSAllSeeds[atomicSeedBatch];
+atomicGeneratedIBP = DSGenerateIBP[atomicAllSeeds, {0, 0}];
+atomicLinearData = DSLinear[atomicGeneratedIBP, atomicContext, ProgressReporting -> True];
 atomicStates = DeleteDuplicates@Flatten[
-    Lookup[Lookup[atomicSeedBatch, "equations", {}], "discreteRules", {}]
+    Lookup[atomicAllSeeds, "discreteRules", {}]
     ];
 atomicSectors = Sort@Lookup[Lookup[atomicSeedBatch, "sectorMetadataList", {}], "sectorKey", {}];
 
-selectedIntegral = J[{{1, 1}, {0, 0}}];
+selectedIntegral = J[{1, 0}, {{"F", 1, 0}}, {}];
 selectedSeed = DSTreeSeeds[v1, selectedIntegral, treeContext];
 
 
 (* ::Chapter:: *)
 (*迭代约化、naive IBP/DE 与公式型 dlog DE*)
 
-treeTarget = J[{{-1, 1}, {0, 0}}];
-treeReduction = repIterative[treeTarget, treeReductionEndpoint, treeContext];
 treeDLog = DSTreeDLogDE[treeContext];
+treeTarget = First[treeDLog["masters"]]["integral"];
+treeReduction = repIterative[treeTarget, treeReductionEndpoint, treeContext];
 
 treeDEVariables = {E1, E2, k12};
 treeNaiveIBP = DSTreeNaiveIBP[treeContext, treeDLog["masters"], ProgressReporting -> True];
@@ -117,6 +120,11 @@ treeDEResiduals = Association@Table[
     {variable, treeDEVariables}
     ];
 treeDERoutesAgree = And @@ Flatten[Map[TrueQ[# === 0] &, Values[treeDEResiduals], {2}]];
+atomicFormulaStatus = Lookup[
+   DSTreeDLogDE[atomicContext],
+   {"status", "reason"},
+   Missing["NotAvailable"]
+   ];
 
 summary = <|
    "version" -> $dSIBPVersion,
@@ -135,15 +143,15 @@ summary = <|
    "atomicRepresentation" -> Lookup[atomicSeedBatch, "representation", Missing["representation"]],
    "atomicStates" -> atomicStates,
    "atomicSectors" -> atomicSectors,
-   "atomicLinearStatus" -> Lookup[atomicLinearData, "status", "missing"]
+   "atomicLinearStatus" -> Lookup[atomicLinearData, "status", "missing"],
+   "atomicFormulaStatus" -> atomicFormulaStatus
    |>;
 
 Print[InputForm[summary]];
 If[! And[
     ToString[summary["version"]] === currentVersion,
     summary["initStatus"] === "initialized",
-    summary["seedRepresentation"] === "J[vertexPacks]",
-    summary["linearRepresentation"] === "sectorTaggedJ[vertexPacks]",
+    summary["seedRepresentation"] === "J[aList,linePacks,ispList]",
     summary["selectedSeedRoute"] === "directPureTime",
     summary["iterativeReductionFreeOfFailure"],
     summary["dlogStatus"] === "generated",
@@ -152,8 +160,11 @@ If[! And[
     summary["deRoutesAgree"],
     summary["atomicInitStatus"] === "initialized",
     summary["atomicSeedStatus"] === "generated",
-    summary["atomicRepresentation"] === "J[timePowers,linePacks,isp]",
-    And @@ (MemberQ[summary["atomicStates"], #] & /@ {n[1] -> 0, n[1] -> 1}),
+    summary["atomicRepresentation"] === "J[aList,linePacks,ispList]",
+    And @@ (MemberQ[summary["atomicStates"], #] & /@ {
+       n[1, 1] -> 0, n[1, 1] -> 1, n[1, 2] -> 0, n[1, 2] -> 1
+       }),
     summary["atomicSectors"] === {"e1", "top"},
-    summary["atomicLinearStatus"] === "generated"
+    summary["atomicLinearStatus"] === "generated",
+    atomicFormulaStatus === {"PendingRederivation", "masslessQuotientFormulaNotCertified"}
     ], Exit[1]];

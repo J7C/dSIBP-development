@@ -6,14 +6,12 @@
 (* DSDE 只消费经 KiraImport 验证的 reduction data；不会从不完整日志猜测 master 或规则。 *)
 
 Options[DSDE] = {
-   MaxReductionIterations -> 100,
    OutputDirectory -> None,
    ProgressReporting -> Automatic
    };
 
 DSDE::badreduction = "DSDE 只接受 DSKiraImport 验证通过的 reductionData。";
 DSDE::badvars = "微分变量必须是当前 family 初始化的外部独立变量：`1`。";
-DSDE::baditer = "MaxReductionIterations 必须是正整数，收到 `1`。";
 DSDE::writefailed = "DE 结果写入失败：`1`。";
 
 dsDEResolveVariables[Automatic, context_Association] := scalarProductInternalToUser[#, context["topology"]] & /@
@@ -29,7 +27,9 @@ dsSectorTopologyForIntegral[int_J, context_Association] := Module[{metadata, mat
    If[shrunk === {}, context["topology"], shrinkSectorTopology[context["topology"], shrunk]]
    ];
 
-dsReduceExpression[expr_, rules_List, maxIterations_Integer] := FixedPoint[ReplaceAll[#, rules] &, Expand[expr], maxIterations];
+(* DSKiraImport 已验证每条 reduction 的右端只含 masters，因此一次替换就是完整约化；
+   若外部结果违反该合同，后续 residual gate 会拒绝 DE，而不是用任意迭代次数掩盖问题。 *)
+dsReduceExpression[expr_, rules_List] := Expand[expr /. rules];
 
 (* Kira 关系可以使用内部 kk/ISP 坐标；公开 DE 必须只含 family 声明的外部不变量。 *)
 dsDEReducedExpressionToUser[expr_, context_Association] := Module[{topo = context["topology"]},
@@ -72,19 +72,19 @@ dsSectorAwareDerivative[expr_, variable_, context_Association] := Module[
    If[! FreeQ[integralDerivativeTerms, $Failed], $Failed, Expand[coefficientDerivative + Total[integralDerivativeTerms]]]
    ];
 
-dsDEVariableData[variable_, masterDefinitions_List, masterTokens_List, rules_List, parameterRules_List, context_Association, maxIterations_Integer, progress_] := Module[
+dsDEVariableData[variable_, masterDefinitions_List, masterTokens_List, rules_List, parameterRules_List, context_Association, progress_] := Module[
    {raw, reduced, decompositions},
    raw = dsProgressMap[
-     "正在构造 " <> ToString[variable, InputForm] <> " 导数",
+     "正在构造 " <> ToString[variable, InputForm] <> " 导数 / Building " <> ToString[variable, InputForm] <> " derivatives",
      masterDefinitions,
      Function[master, dsSectorAwareDerivative[master, variable, context] /. parameterRules],
      progress
      ];
    If[MemberQ[raw, $Failed], Return[<|"status" -> "failed", "variable" -> variable, "reason" -> "dsFailed", "rawDerivatives" -> raw|>]];
    reduced = dsProgressMap[
-     "正在约化 " <> ToString[variable, InputForm] <> " 导数",
+     "正在约化 " <> ToString[variable, InputForm] <> " 导数 / Reducing " <> ToString[variable, InputForm] <> " derivatives",
      raw,
-     Function[expr, dsReduceExpression[expr, rules, maxIterations]],
+     Function[expr, dsReduceExpression[expr, rules]],
      progress
      ];
    reduced = dsDEReducedExpressionToUser[#, context] & /@ reduced;
@@ -123,17 +123,17 @@ dsWriteDEResult[data_Association, directory_String] := Module[{paths, compact},
    ];
 
 DSDE[reductionData_Association, variables_: Automatic, OptionsPattern[]] := Module[
-   {context, masters, masterTokens, rules, resolvedVariables, allowedVariables, badVariables, maxIterations,
+   {context, masters, masterTokens, rules, resolvedVariables, allowedVariables, badVariables,
     parameterRules, variableRecords, variableData, status, result, outputDirectory = OptionValue[OutputDirectory], writeResult},
    If[Lookup[reductionData, "status", "missing"] =!= "imported" ||
      Lookup[Lookup[reductionData, "validationReport", <||>], "status", "missing"] =!= "passed",
-    Message[DSDE::badreduction]; dsErrorPrint["reductionData 未经 DSKiraImport 完整验证。"]; Return[<|"status" -> "failed", "reason" -> "unvalidatedReductionData"|>]
+    Message[DSDE::badreduction]; dsErrorPrint["reductionData 未经 DSKiraImport 完整验证。 reductionData has not passed complete DSKiraImport validation."]; Return[<|"status" -> "failed", "reason" -> "unvalidatedReductionData"|>]
     ];
    context = Lookup[reductionData, "context", Missing["context"]];
    If[! dsContextQ[context], Message[DSDE::badreduction]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]];
    If[! dsContextCapabilityQ[context, "derivativeUsableQ"],
     Message[DSDE::badreduction];
-    dsErrorPrint["当前参数声明不支持唯一微分算符。"]; Return[<|
+    dsErrorPrint["当前参数声明不支持唯一微分算符。 The current parameter declaration does not define unique differential operators."]; Return[<|
       "status" -> "failed", "reason" -> "derivativeCapabilityGate",
       "capabilities" -> dsContextCapabilities[context]
       |>]
@@ -154,16 +154,12 @@ DSDE[reductionData_Association, variables_: Automatic, OptionsPattern[]] := Modu
    allowedVariables = dsDEResolveVariables[Automatic, context];
    badVariables = Complement[resolvedVariables, allowedVariables];
    If[badVariables =!= {},
-    Message[DSDE::badvars, badVariables]; dsErrorPrint["DSDE 变量不属于当前 family 的外部表示。"]; Return[<|"status" -> "failed", "reason" -> "invalidVariables", "badVariables" -> badVariables, "allowedVariables" -> allowedVariables|>]
-    ];
-   maxIterations = OptionValue[MaxReductionIterations];
-   If[! IntegerQ[maxIterations] || maxIterations <= 0,
-    Message[DSDE::baditer, maxIterations]; dsErrorPrint["reduction 迭代上限无效。"]; Return[<|"status" -> "failed", "reason" -> "invalidMaxReductionIterations"|>]
+    Message[DSDE::badvars, badVariables]; dsErrorPrint["DSDE 变量不属于当前 family 的外部表示。 The DSDE variables are not external coordinates of the current family."]; Return[<|"status" -> "failed", "reason" -> "invalidVariables", "badVariables" -> badVariables, "allowedVariables" -> allowedVariables|>]
     ];
    variableRecords = dsProgressMap[
-     "正在生成微分方程",
+     "正在生成微分方程 / Building differential equations",
      resolvedVariables,
-     Function[variable, dsDEVariableData[variable, masters, masterTokens, rules, parameterRules, context, maxIterations, OptionValue[ProgressReporting]]],
+     Function[variable, dsDEVariableData[variable, masters, masterTokens, rules, parameterRules, context, OptionValue[ProgressReporting]]],
      OptionValue[ProgressReporting]
      ];
    variableData = AssociationThread[resolvedVariables, variableRecords];
@@ -192,11 +188,11 @@ DSDE[reductionData_Association, variables_: Automatic, OptionsPattern[]] := Modu
      "reductionValidationReport" -> reductionData["validationReport"]
      |>;
    writeResult = If[StringQ[outputDirectory], dsWriteDEResult[result, ExpandFileName[outputDirectory]], <|"status" -> "notRequested"|>];
-   If[Lookup[writeResult, "status", "failed"] === "failed", Message[DSDE::writefailed, outputDirectory]; dsErrorPrint["DE 文件未写出。"]];
+   If[Lookup[writeResult, "status", "failed"] === "failed", Message[DSDE::writefailed, outputDirectory]; dsErrorPrint["DE 文件未写出。 DE files were not written."]];
    Join[result, <|"writeResult" -> writeResult|>]
    ];
 
-DSDE[reductionData_, variables_: Automatic, OptionsPattern[]] := (Message[DSDE::badreduction]; dsErrorPrint["DSDE 输入必须是 reductionData Association。"]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);
+DSDE[reductionData_, variables_: Automatic, OptionsPattern[]] := (Message[DSDE::badreduction]; dsErrorPrint["DSDE 输入必须是 reductionData Association。 DSDE input must be a reductionData Association."]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);
 
 
 (* ::Chapter:: *)
@@ -334,7 +330,7 @@ dsTreeNaiveVariableData[variable_, ibpData_Association, familyContext_Associatio
     tokenExpressions, coefficients, residuals, residualTokens, rows},
    masters = ibpData["masters"];
    derivativeRecords = dsProgressMap[
-     "正在构造 naive tree " <> ToString[variable, InputForm] <> " 导数",
+     "正在构造 naive tree " <> ToString[variable, InputForm] <> " 导数 / Building naive-tree " <> ToString[variable, InputForm] <> " derivatives",
      masters,
      Function[master, dsTreeNaiveMasterDerivative[master, variable, familyContext, context]],
      progress
@@ -387,7 +383,7 @@ dsTreeNaiveDEFromIBP[ibpData_Association, variables_, OptionsPattern[DSTreeNaive
       "allowedVariables" -> allowedVariables|>]
     ];
    variableRecords = dsProgressMap[
-     "正在生成 naive tree 微分方程",
+     "正在生成 naive tree 微分方程 / Building naive-tree differential equations",
      resolvedVariables,
      Function[variable, dsTreeNaiveVariableData[
        variable, ibpData, familyContext, context, OptionValue[ProgressReporting]

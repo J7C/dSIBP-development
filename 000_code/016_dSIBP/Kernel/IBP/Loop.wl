@@ -45,6 +45,7 @@ dsPublicLoopSeedBatch[seedData_Association, topo_Association] := If[
    Lookup[seedData, "status", "missing"] === "generated",
    Join[seedData, <|
      "equations" -> (dsPublicLoopSeedEntry[#, topo] & /@ Lookup[seedData, "equations", {}]),
+     "allSeeds" -> (dsPublicLoopSeedEntry[#, topo] & /@ Lookup[seedData, "allSeeds", {}]),
      "coordinateRepresentation" -> "user"
      |>],
    seedData
@@ -59,22 +60,23 @@ dsTimeOnlyNeedsLinePackStateQ[topo_Association] := AnyTrue[
    ];
 
 
-DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedData, progress = OptionValue[ProgressReporting]},
+DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
+   {resolved, seedData, templateData, sealedTemplates, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
-    Message[DSSeeds::noinit]; dsErrorPrint["请先成功调用 DSInit。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
+    Message[DSSeeds::noinit]; dsErrorPrint["请先成功调用 DSInit。 Run DSInit successfully first."]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
    If[! dsContextCapabilityQ[resolved, "timeIBPUsableQ"] ||
      (Lookup[resolved["topology"], "ibpMode", "full"] === "full" &&
        ! dsContextCapabilityQ[resolved, "momentumIBPUsableQ"]),
     Message[DSSeeds::capability, dsContextCapabilities[resolved]];
-    dsErrorPrint["动量声明审计未授权当前 seed 模式。"]; Return[<|
+    dsErrorPrint["动量声明审计未授权当前 seed 模式。 The momentum-declaration audit did not authorize the current seed mode."]; Return[<|
       "status" -> "failed", "reason" -> "capabilityGate",
       "capabilities" -> dsContextCapabilities[resolved]
       |>]
     ];
    seedData = dsStageRun[
-     "生成 canonical IBP seeds",
+     "生成 canonical IBP seeds / Generating canonical IBP seeds",
      If[
       Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly" &&
        ! dsTimeOnlyNeedsLinePackStateQ[resolved["topology"]],
@@ -89,15 +91,33 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedD
       ],
      progress
      ];
+   If[Lookup[seedData, "status", "missing"] =!= "generated",
+    Message[DSSeeds::failed, Lookup[seedData, "status", Missing["status"]]];
+    dsErrorPrint["seed generation 返回非 generated 状态。 Seed generation returned a status other than generated."];
+    Return[Join[seedData, <|"dSIBPStatus" -> "failed", "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
+    ];
+   templateData = dsStageRun[
+     "构造完整离散态 seed 模板 / Building complete discrete-state seed templates",
+     makeAllSeedTemplateData[resolved, seedData],
+     progress
+     ];
+   If[Lookup[templateData, "status", "failed"] =!= "generated",
+    Message[DSSeeds::failed, Lookup[templateData, "reason", "templateGenerationFailed"]];
+    dsErrorPrint["完整 n_i=0,1 模板生成失败。 Complete n_i=0,1 template generation failed."];
+    Return[Join[seedData, <|"dSIBPStatus" -> "failed", "reason" -> "templateGenerationFailed",
+       "templateData" -> templateData, "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
+    ];
+   seedData = Join[seedData, <|
+      "allSeeds" -> Flatten[templateData["allSeeds"], Infinity],
+      "seedTemplateSummary" -> KeyDrop[templateData, "allSeeds"]
+      |>];
    If[Lookup[seedData, "representation", None] =!= "J[vertexPacks]",
     seedData = dsPublicLoopSeedBatch[seedData, resolved["topology"]]
     ];
-   If[Lookup[seedData, "status", "missing"] =!= "generated",
-    Message[DSSeeds::failed, Lookup[seedData, "status", Missing["status"]]];
-    dsErrorPrint["seed generation 返回非 generated 状态。"];
-    Return[Join[seedData, <|"dSIBPStatus" -> "failed", "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
-    ];
+   sealedTemplates = dsSealSeedTemplates[seedData["allSeeds"], resolved];
+   $dSIBPLastSeedTemplates = sealedTemplates;
    Join[seedData, <|
+     "allSeeds" -> sealedTemplates,
      "dSIBPStatus" -> "generated",
      "dSIBPContextSummary" -> dsContextSummary[resolved],
      "numericRulesAppliedBeforeSeeds" -> TrueQ[OptionValue[ApplyNumericRules]],
@@ -109,14 +129,14 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
    {resolved, linearData, mode = OptionValue[LinearSystemMode], progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
-    Message[DSLinear::noinit]; dsErrorPrint["请传入与 seed 同源的 DSInit context。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
+    Message[DSLinear::noinit]; dsErrorPrint["请传入与 seed 同源的 DSInit context。 Pass the DSInit context from which the seeds originated."]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
     If[! KeyExistsQ[seedData, "completeCanonicalQ"],
-     Message[DSLinear::badseed]; dsErrorPrint["输入不是 canonical seed batch。"]; Return[<|"status" -> "failed", "reason" -> "notCanonicalSeedBatch"|>]
+     Message[DSLinear::badseed]; dsErrorPrint["输入不是 canonical seed batch。 The input is not a canonical seed batch."]; Return[<|"status" -> "failed", "reason" -> "notCanonicalSeedBatch"|>]
      ];
     If[Lookup[Lookup[seedData, "dSIBPContextSummary", <||>], "inputHash", Missing["seedHash"]] =!=
       Lookup[resolved, "inputHash", Missing["contextHash"]],
-     Message[DSLinear::context]; dsErrorPrint["seed 与 context 的 inputHash 不一致。"]; Return[<|
+     Message[DSLinear::context]; dsErrorPrint["seed 与 context 的 inputHash 不一致。 The seed and context inputHash values differ."]; Return[<|
        "status" -> "failed", "reason" -> "contextMismatch"
        |>]
      ];
@@ -125,16 +145,16 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
       (Lookup[resolved["topology"], "ibpMode", "full"] === "full" &&
         ! dsContextCapabilityQ[resolved, "momentumIBPUsableQ"]),
      Message[DSLinear::capability, dsContextCapabilities[resolved]];
-     dsErrorPrint["seed 或 context 未通过 linearData 能力门禁。"]; Return[<|
+     dsErrorPrint["seed 或 context 未通过 linearData 能力门禁。 The seed or context failed the linearData capability gate."]; Return[<|
        "status" -> "failed", "reason" -> "capabilityGate",
        "capabilities" -> dsContextCapabilities[resolved]
        |>]
      ];
    If[! MemberQ[{"symbolic", "numeric"}, mode],
-    Message[DSLinear::badmode, mode]; dsErrorPrint["linearData 模式无效。"]; Return[<|"status" -> "failed", "reason" -> "invalidLinearSystemMode", "mode" -> mode|>]
+    Message[DSLinear::badmode, mode]; dsErrorPrint["linearData 模式无效。 The linearData mode is invalid."]; Return[<|"status" -> "failed", "reason" -> "invalidLinearSystemMode", "mode" -> mode|>]
     ];
    linearData = dsStageRun[
-     "转换 backend-neutral linearData",
+     "转换 backend-neutral linearData / Converting to backend-neutral linearData",
      If[Lookup[seedData, "representation", None] === "J[vertexPacks]",
       With[{treeLinear = makePureTimeLinearSystemData[seedData, resolved]},
        If[mode === "numeric" && Lookup[treeLinear, "status", "missing"] === "generated",
@@ -167,7 +187,7 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
      ];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Message[DSLinear::failed, Lookup[linearData, "status", Missing["status"]]];
-    dsErrorPrint["linearData 未通过 canonical/linearity 门禁。"];
+    dsErrorPrint["linearData 未通过 canonical/linearity 门禁。 linearData failed the canonical or linearity gate."];
     Return[Join[linearData, <|"dSIBPStatus" -> "failed", "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
     ];
    Join[linearData, <|

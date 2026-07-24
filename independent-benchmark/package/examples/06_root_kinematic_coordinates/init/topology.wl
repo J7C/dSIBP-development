@@ -1,4 +1,4 @@
-<|"name" -> "016BubbleTreeK1K2", "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}}, "vertexIds" -> {v1, v2, v3},
+<|"name" -> "017BubbleTreeK1K2", "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}}, "vertexIds" -> {v1, v2, v3},
  "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+", v3 -> "+"|>,
  "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> l1, "nu" -> nu1, "bbType" -> "h",
     "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
@@ -20,45 +20,13 @@
       "shrinkTerms" -> {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu1]))/Pi, "xPower" -> -1 - 2*nu1, "bShift" -> 1,
          "zeroPointShift" -> 2*nu1|>}, "shrinkZeroPointShift" -> 2*nu1|>, "rawMomentum" -> l1, "loopLineQ" -> True,
     "bridgeQ" -> False, "linePowerMode" -> "indexed"|>, <|"id" -> 2, "endpoints" -> {v1, v2},
-    "momentum" -> k1 + k2 + l1, "nu" -> nu2, "bbType" -> "h", "massType" -> "massive", "skType" -> "++",
-    "state" -> "full", "thetaConvention" -> "mergedTwoTheta", "packType" -> "massiveFull",
-    "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-     Missing["NotApplicable"], "functionSystem" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-      "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}},
-      "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1,
-      "shrinkZeroPointShift" -> 2*nu2|>, "compiledFunctionSystem" -> <|"status" -> "compiled",
-      "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1,
-        "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic,
-        "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu2|>, "variable" -> dSIBP`Private`x,
-      "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}},
-      "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-      "A0" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}},
-      "WT" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "derivativeTerms" ->
-       {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>,
-        <|"sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>,
-        <|"sourceState" -> 1, "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu2|>},
-      "shrinkTerms" -> {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu2]))/Pi, "xPower" -> -1 - 2*nu2, "bShift" -> 1,
-         "zeroPointShift" -> 2*nu2|>}, "shrinkZeroPointShift" -> 2*nu2|>, "rawMomentum" -> k1 + k2 + l1,
+    "momentum" -> k1 + k2 + l1, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless", "skType" -> "++",
+    "state" -> "full", "thetaConvention" -> "mergedTwoTheta", "packType" -> "masslessFull",
+    "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2, "rawMomentum" -> k1 + k2 + l1,
     "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-   <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> nu3, "bbType" -> "h", "massType" -> "massive",
-    "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta", "packType" -> "massiveFull",
-    "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-     Missing["NotApplicable"], "functionSystem" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-      "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}},
-      "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1,
-      "shrinkZeroPointShift" -> 2*nu3|>, "compiledFunctionSystem" -> <|"status" -> "compiled",
-      "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1,
-        "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic,
-        "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu3|>, "variable" -> dSIBP`Private`x,
-      "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}},
-      "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-      "A0" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}},
-      "WT" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "derivativeTerms" ->
-       {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>,
-        <|"sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>,
-        <|"sourceState" -> 1, "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu3|>},
-      "shrinkTerms" -> {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu3]))/Pi, "xPower" -> -1 - 2*nu3, "bShift" -> 1,
-         "zeroPointShift" -> 2*nu3|>}, "shrinkZeroPointShift" -> 2*nu3|>, "rawMomentum" -> k1 + k2,
+   <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> 0, "bbType" -> "exp", "massType" -> "massless",
+    "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta", "packType" -> "masslessFull",
+    "masslessN1ReferenceEndpoint" -> v2, "masslessN1OppositeEndpoint" -> v3, "rawMomentum" -> k1 + k2,
     "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" -> "fixedCoefficient"|>},
  "extLegs" -> {{bubbleLeg, v1, k1 + k2}, {treeLeg1, v3, k1}, {treeLeg2, v3, k2}},
  "vertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>, "activeVertexIds" -> {v1, v2, v3}, "fixedAVertexValues" -> <||>,
@@ -89,11 +57,11 @@
      "extraQuadraticRows" -> {}|>, "capabilities" -> <|"initializationUsableQ" -> True, "timeIBPUsableQ" -> True,
      "momentumIBPUsableQ" -> True, "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>, "issues" -> {}|>,
  "capabilities" -> <|"initializationUsableQ" -> True, "timeIBPUsableQ" -> True, "momentumIBPUsableQ" -> True,
-   "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>, "cycleLineIndices" -> {1, 2},
- "bridgeLineIndices" -> {3}, "loopExternalMomenta" -> {k1 + k2}, "effectiveLoopExternalMomenta" -> {k1 + k2},
- "independentExternalMomenta" -> {k1, k2}, "momentumDecompositionBasis" -> {l1, k1 + k2},
- "fixedExternalVectorAtoms" -> {}, "externalMomenta" -> {k1 + k2}, "externalLegMomenta" -> {k1, k2},
- "rawExternalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2},
+   "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True, "parityUsableQ" -> True|>,
+ "cycleLineIndices" -> {1, 2}, "bridgeLineIndices" -> {3}, "loopExternalMomenta" -> {k1 + k2},
+ "effectiveLoopExternalMomenta" -> {k1 + k2}, "independentExternalMomenta" -> {k1, k2},
+ "momentumDecompositionBasis" -> {l1, k1 + k2}, "fixedExternalVectorAtoms" -> {}, "externalMomenta" -> {k1 + k2},
+ "externalLegMomenta" -> {k1, k2}, "rawExternalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2},
  "externalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2}, "rawExternalLegInvariantRules" ->
   {sp[k1, k1] -> sE1^2, sp[k2, k2] -> sE2^2}, "externalLegInvariantRules" ->
   {sp[k1, k1] -> sE1^2, sp[k2, k2] -> sE2^2}, "kinematicRules" -> Automatic,
@@ -132,14 +100,13 @@
  "nE" -> 3, "nL" -> 1, "nK" -> 1, "bMatrix" -> {{1, 1, 0}, {-1, -1, 1}, {0, 0, -1}},
  "vertexLines" -> {{{1, 1}, {2, 1}}, {{1, -1}, {2, -1}, {3, 1}}, {{3, -1}}}, "loopCoeffMatrix" -> {{1}, {1}, {0}},
  "externalCoeffMatrix" -> {{0}, {1}, {1}}, "externalPartList" -> {0, k1 + k2, k1 + k2}, "rawNumericRules" -> {},
- "numericRules" -> {}, "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck",
- "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {},
- "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-   "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
- "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3,
-   b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
+ "numericRules" -> {}, "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+ "generatorSeedRanges" -> {}, "unknownSeedPreset" -> None,
+ "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2,
+   b0[3] -> beta3}, "rootZeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1,
+   b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {}, "parityConstraints" -> {},
  "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
-  <|v1 -> v1, v2 -> v2, v3 -> v3|>, "sectorMetadata" -> <|"caseName" -> "016BubbleTreeK1K2", "sectorShrunkLines" -> {},
+  <|v1 -> v1, v2 -> v2, v3 -> v3|>, "sectorMetadata" -> <|"caseName" -> "017BubbleTreeK1K2", "sectorShrunkLines" -> {},
    "sectorKey" -> "top", "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" ->
     <|v1 -> v1, v2 -> v2, v3 -> v3|>, "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>,
    "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>,
@@ -158,19 +125,36 @@
       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
        Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
       "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[1], "nPositions" -> {2, 3},
-      "packTemplate" -> {b[1], n[1, 1], n[1, 2]}|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "massiveFull",
-      "massType" -> "massive", "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2},
-      "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-       Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
+      "packTemplate" -> {b[1], n[1, 1], n[1, 2]}, "rootLinePosition" -> 1, "powerSlotKind" -> "cycle",
+      "shrunkQ" -> False|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "masslessFull", "massType" -> "massless",
+      "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2}, "masslessN1ReferenceEndpoint" -> v1,
+      "masslessN1OppositeEndpoint" -> v2, "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
       "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2], "nPositions" -> {2, 3},
-      "packTemplate" -> {b[2], n[2, 1], n[2, 2]}|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "massiveFull",
-      "massType" -> "massive", "state" -> "full", "endpoints" -> {v2, v3}, "originalEndpoints" -> {v2, v3},
-      "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-       Missing["NotApplicable"], "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {2, 3},
+      "packTemplate" -> {b[2], n[2, 1], n[2, 2]}, "rootLinePosition" -> 2, "powerSlotKind" -> "cycle",
+      "shrunkQ" -> False|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "masslessFull", "massType" -> "massless",
+      "state" -> "full", "endpoints" -> {v2, v3}, "originalEndpoints" -> {v2, v3}, "masslessN1ReferenceEndpoint" -> v2,
+      "masslessN1OppositeEndpoint" -> v3, "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {2, 3},
       "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-      "nPositions" -> {1, 2}, "packTemplate" -> {n[3, 1], n[3, 2]}|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
-   "bSymbolToLineSlot" -> <|b[1] -> 1, b[2] -> 2|>, "ispSlots" -> {}|>,
- "sectorMetadataList" -> {<|"caseName" -> "016BubbleTreeK1K2", "sectorShrunkLines" -> {}, "sectorKey" -> "top",
+      "nPositions" -> {2, 3}, "packTemplate" -> {"F", n[3, 1], n[3, 2]}, "rootLinePosition" -> 3,
+      "powerSlotKind" -> "fixed", "shrunkQ" -> False|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
+   "bSymbolToLineSlot" -> <|b[1] -> 1, b[2] -> 2|>, "ispSlots" -> {},
+   "sectorPattern" -> {<|"powerKind" -> "cycle", "state" -> "full"|>, <|"powerKind" -> "cycle", "state" -> "full"|>,
+     <|"powerKind" -> "fixed", "state" -> "full"|>}, "sectorPrefactorData" ->
+    <|"lineIndices" -> {3}, "parameterKeys" -> {"fixedLine:3"}, "parameterList" -> {ss11}, "powerList" -> {-beta3},
+     "powerParts" -> {<|"lineIndex" -> 3, "lineId" -> 3, "parameterKey" -> "fixedLine:3", "parameter" -> ss11,
+        "state" -> "full", "sourceZeroPoint" -> beta3, "targetZeroPoint" -> beta3, "derivedTargetZeroPoint" -> beta3,
+        "zeroPointOverrideSource" -> "sourceSector", "integerShift" -> 0, "compiledIntegerShift" -> 0,
+        "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0, "normalizedResidualPower" -> 0,
+        "prefactorPower" -> -beta3|>}, "constantPrefactor" -> 1, "normalizationConvention" -> "zeroPointOnly"|>,
+   "builtInRelationData" -> {<|"lineIndex" -> 2, "lineId" -> 2,
+      "relations" -> {HoldForm[dSIBP`Private`F[2, 0, 1] + dSIBP`Private`F[2, 1, 0] == 0],
+        HoldForm[dSIBP`Private`F[2, 1, 1] + dSIBP`Private`F[2, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>,
+     <|"lineIndex" -> 3, "lineId" -> 3, "relations" -> {HoldForm[dSIBP`Private`F[3, 0, 1] + dSIBP`Private`F[3, 1, 0] ==
+          0], HoldForm[dSIBP`Private`F[3, 1, 1] + dSIBP`Private`F[3, 0, 0] == 0]},
+      "canonicalDirection" -> "n2ToZero"|>}, "parityData" -> <|"status" -> "disabled",
+     "reason" -> "noParityConstraints", "parityUsableQ" -> True, "constraints" -> {}|>,
+   "representation" -> "J[aList,linePacks,ispList]"|>, "sectorMetadataList" ->
+  {<|"caseName" -> "017BubbleTreeK1K2", "sectorShrunkLines" -> {}, "sectorKey" -> "top",
     "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2, v3 -> v3|>,
     "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexIdToCompactASlot" ->
      <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1,
@@ -188,26 +172,45 @@
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
        "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[1], "nPositions" -> {2, 3},
-       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "massiveFull",
-       "massType" -> "massive", "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2},
-       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-        Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
-       "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2], "nPositions" -> {2, 3},
-       "packTemplate" -> {b[2], n[2, 1], n[2, 2]}|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "massiveFull",
-       "massType" -> "massive", "state" -> "full", "endpoints" -> {v2, v3}, "originalEndpoints" -> {v2, v3},
-       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-        Missing["NotApplicable"], "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {2, 3},
-       "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-       "nPositions" -> {1, 2}, "packTemplate" -> {n[3, 1], n[3, 2]}|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
-    "bSymbolToLineSlot" -> <|b[1] -> 1, b[2] -> 2|>, "ispSlots" -> {}|>, <|"caseName" -> "016BubbleTreeK1K2_sector_e1",
-    "sectorShrunkLines" -> {1}, "sectorKey" -> "e1", "aSlotMode" -> "compactActiveSlots",
-    "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v1, v3 -> v3|>, "vertexIdToOriginalASlot" ->
-     <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 1, v3 -> 2|>,
-    "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1, "aSymbol" -> a[v1],
-       "activeQ" -> True, "fixedValue" -> None, "compactASlot" -> 1|>, <|"slot" -> 2, "vertexId" -> v2,
-       "representativeVertexId" -> v1, "aSymbol" -> a[v2], "activeQ" -> False, "fixedValue" -> 0,
-       "compactASlot" -> 1|>, <|"slot" -> 3, "vertexId" -> v3, "representativeVertexId" -> v3, "aSymbol" -> a[v3],
-       "activeQ" -> True, "fixedValue" -> None, "compactASlot" -> 2|>},
+       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}, "rootLinePosition" -> 1, "powerSlotKind" -> "cycle",
+       "shrunkQ" -> False|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "masslessFull", "massType" -> "massless",
+       "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2},
+       "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2, "endpointOriginalASlots" -> {1, 2},
+       "endpointCompactASlots" -> {1, 2}, "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2],
+       "nPositions" -> {2, 3}, "packTemplate" -> {b[2], n[2, 1], n[2, 2]}, "rootLinePosition" -> 2,
+       "powerSlotKind" -> "cycle", "shrunkQ" -> False|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "masslessFull",
+       "massType" -> "massless", "state" -> "full", "endpoints" -> {v2, v3}, "originalEndpoints" -> {v2, v3},
+       "masslessN1ReferenceEndpoint" -> v2, "masslessN1OppositeEndpoint" -> v3, "endpointOriginalASlots" -> {2, 3},
+       "endpointCompactASlots" -> {2, 3}, "linePowerMode" -> "fixedCoefficient",
+       "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None, "nPositions" -> {2, 3},
+       "packTemplate" -> {"F", n[3, 1], n[3, 2]}, "rootLinePosition" -> 3, "powerSlotKind" -> "fixed",
+       "shrunkQ" -> False|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
+    "bSymbolToLineSlot" -> <|b[1] -> 1, b[2] -> 2|>, "ispSlots" -> {},
+    "sectorPattern" -> {<|"powerKind" -> "cycle", "state" -> "full"|>, <|"powerKind" -> "cycle", "state" -> "full"|>,
+      <|"powerKind" -> "fixed", "state" -> "full"|>}, "sectorPrefactorData" ->
+     <|"lineIndices" -> {3}, "parameterKeys" -> {"fixedLine:3"}, "parameterList" -> {ss11}, "powerList" -> {-beta3},
+      "powerParts" -> {<|"lineIndex" -> 3, "lineId" -> 3, "parameterKey" -> "fixedLine:3", "parameter" -> ss11,
+         "state" -> "full", "sourceZeroPoint" -> beta3, "targetZeroPoint" -> beta3, "derivedTargetZeroPoint" -> beta3,
+         "zeroPointOverrideSource" -> "sourceSector", "integerShift" -> 0, "compiledIntegerShift" -> 0,
+         "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+         "normalizedResidualPower" -> 0, "prefactorPower" -> -beta3|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" ->
+     {<|"lineIndex" -> 2, "lineId" -> 2, "relations" ->
+        {HoldForm[dSIBP`Private`F[2, 0, 1] + dSIBP`Private`F[2, 1, 0] == 0],
+         HoldForm[dSIBP`Private`F[2, 1, 1] + dSIBP`Private`F[2, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>,
+      <|"lineIndex" -> 3, "lineId" -> 3, "relations" ->
+        {HoldForm[dSIBP`Private`F[3, 0, 1] + dSIBP`Private`F[3, 1, 0] == 0],
+         HoldForm[dSIBP`Private`F[3, 1, 1] + dSIBP`Private`F[3, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>,
+   <|"caseName" -> "017BubbleTreeK1K2_sector_e1", "sectorShrunkLines" -> {1}, "sectorKey" -> "e1",
+    "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v1, v3 -> v3|>,
+    "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexIdToCompactASlot" ->
+     <|v1 -> 1, v2 -> 1, v3 -> 2|>, "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1,
+       "aSymbol" -> a[v1], "activeQ" -> True, "fixedValue" -> None, "compactASlot" -> 1|>,
+      <|"slot" -> 2, "vertexId" -> v2, "representativeVertexId" -> v1, "aSymbol" -> a[v2], "activeQ" -> False,
+       "fixedValue" -> 0, "compactASlot" -> 1|>, <|"slot" -> 3, "vertexId" -> v3, "representativeVertexId" -> v3,
+       "aSymbol" -> a[v3], "activeQ" -> True, "fixedValue" -> None, "compactASlot" -> 2|>},
     "compactASlots" -> {<|"compactSlot" -> 1, "representativeVertexId" -> v1, "originalVertexIds" -> {v1, v2},
        "originalSlots" -> {1, 2}, "aSymbol" -> a[v1]|>, <|"compactSlot" -> 2, "representativeVertexId" -> v3,
        "originalVertexIds" -> {v3}, "originalSlots" -> {3}, "aSymbol" -> a[v3]|>}, "activeASlots" -> {1, 2},
@@ -215,20 +218,38 @@
        "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2}, "masslessN1ReferenceEndpoint" ->
         Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
        "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "indexed",
-       "bPosition" -> 1, "bSymbol" -> bS[1], "nPositions" -> {}, "packTemplate" -> {bS[1]}|>,
-      <|"slot" -> 2, "lineId" -> 2, "packType" -> "massiveFull", "massType" -> "massive", "state" -> "full",
-       "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2}, "masslessN1ReferenceEndpoint" ->
-        Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
-       "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "indexed",
-       "bPosition" -> 1, "bSymbol" -> b[2], "nPositions" -> {2, 3}, "packTemplate" -> {b[2], n[2, 1], n[2, 2]}|>,
-      <|"slot" -> 3, "lineId" -> 3, "packType" -> "massiveFull", "massType" -> "massive", "state" -> "full",
-       "endpoints" -> {v1, v3}, "originalEndpoints" -> {v2, v3}, "masslessN1ReferenceEndpoint" ->
-        Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
-       "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {1, 2}, "linePowerMode" -> "fixedCoefficient",
-       "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None, "nPositions" -> {1, 2},
-       "packTemplate" -> {n[3, 1], n[3, 2]}|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
-    "bSymbolToLineSlot" -> <|bS[1] -> 1, b[2] -> 2|>, "ispSlots" -> {}|>,
-   <|"caseName" -> "016BubbleTreeK1K2_sector_e2", "sectorShrunkLines" -> {2}, "sectorKey" -> "e2",
+       "bPosition" -> 1, "bSymbol" -> bS[1], "nPositions" -> {}, "packTemplate" -> {bS[1]}, "rootLinePosition" -> 1,
+       "powerSlotKind" -> "cycle", "shrunkQ" -> True|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "masslessFull",
+       "massType" -> "massless", "state" -> "full", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2},
+       "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2, "endpointOriginalASlots" -> {1, 2},
+       "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2],
+       "nPositions" -> {2, 3}, "packTemplate" -> {b[2], n[2, 1], n[2, 2]}, "rootLinePosition" -> 2,
+       "powerSlotKind" -> "cycle", "shrunkQ" -> False|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "masslessFull",
+       "massType" -> "massless", "state" -> "full", "endpoints" -> {v1, v3}, "originalEndpoints" -> {v2, v3},
+       "masslessN1ReferenceEndpoint" -> v2, "masslessN1OppositeEndpoint" -> v3, "endpointOriginalASlots" -> {2, 3},
+       "endpointCompactASlots" -> {1, 2}, "linePowerMode" -> "fixedCoefficient",
+       "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None, "nPositions" -> {2, 3},
+       "packTemplate" -> {"F", n[3, 1], n[3, 2]}, "rootLinePosition" -> 3, "powerSlotKind" -> "fixed",
+       "shrunkQ" -> False|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
+    "bSymbolToLineSlot" -> <|bS[1] -> 1, b[2] -> 2|>, "ispSlots" -> {},
+    "sectorPattern" -> {<|"powerKind" -> "cycle", "state" -> "shrunk"|>, <|"powerKind" -> "cycle", "state" -> "full"|>,
+      <|"powerKind" -> "fixed", "state" -> "full"|>}, "sectorPrefactorData" ->
+     <|"lineIndices" -> {3}, "parameterKeys" -> {"fixedLine:3"}, "parameterList" -> {ss11}, "powerList" -> {-beta3},
+      "powerParts" -> {<|"lineIndex" -> 3, "lineId" -> 3, "parameterKey" -> "fixedLine:3", "parameter" -> ss11,
+         "state" -> "full", "sourceZeroPoint" -> beta3, "targetZeroPoint" -> beta3, "derivedTargetZeroPoint" -> beta3,
+         "zeroPointOverrideSource" -> "sourceSector", "integerShift" -> 0, "compiledIntegerShift" -> 0,
+         "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+         "normalizedResidualPower" -> 0, "prefactorPower" -> -beta3|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" ->
+     {<|"lineIndex" -> 2, "lineId" -> 2, "relations" ->
+        {HoldForm[dSIBP`Private`F[2, 0, 1] + dSIBP`Private`F[2, 1, 0] == 0],
+         HoldForm[dSIBP`Private`F[2, 1, 1] + dSIBP`Private`F[2, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>,
+      <|"lineIndex" -> 3, "lineId" -> 3, "relations" ->
+        {HoldForm[dSIBP`Private`F[3, 0, 1] + dSIBP`Private`F[3, 1, 0] == 0],
+         HoldForm[dSIBP`Private`F[3, 1, 1] + dSIBP`Private`F[3, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>,
+   <|"caseName" -> "017BubbleTreeK1K2_sector_e2", "sectorShrunkLines" -> {2}, "sectorKey" -> "e2",
     "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v1, v3 -> v3|>,
     "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexIdToCompactASlot" ->
      <|v1 -> 1, v2 -> 1, v3 -> 2|>, "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1,
@@ -244,19 +265,35 @@
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1},
        "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[1], "nPositions" -> {2, 3},
-       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "shrunk",
-       "massType" -> "massive", "state" -> "shrunk", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2},
+       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}, "rootLinePosition" -> 1, "powerSlotKind" -> "cycle",
+       "shrunkQ" -> False|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "shrunk", "massType" -> "massless",
+       "state" -> "shrunk", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2},
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1},
        "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> bS[2], "nPositions" -> {},
-       "packTemplate" -> {bS[2]}|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "massiveFull", "massType" -> "massive",
-       "state" -> "full", "endpoints" -> {v1, v3}, "originalEndpoints" -> {v2, v3},
-       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-        Missing["NotApplicable"], "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {1, 2},
+       "packTemplate" -> {bS[2]}, "rootLinePosition" -> 2, "powerSlotKind" -> "cycle", "shrunkQ" -> True|>,
+      <|"slot" -> 3, "lineId" -> 3, "packType" -> "masslessFull", "massType" -> "massless", "state" -> "full",
+       "endpoints" -> {v1, v3}, "originalEndpoints" -> {v2, v3}, "masslessN1ReferenceEndpoint" -> v2,
+       "masslessN1OppositeEndpoint" -> v3, "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {1, 2},
        "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-       "nPositions" -> {1, 2}, "packTemplate" -> {n[3, 1], n[3, 2]}|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
-    "bSymbolToLineSlot" -> <|b[1] -> 1, bS[2] -> 2|>, "ispSlots" -> {}|>,
-   <|"caseName" -> "016BubbleTreeK1K2_sector_e3", "sectorShrunkLines" -> {3}, "sectorKey" -> "e3",
+       "nPositions" -> {2, 3}, "packTemplate" -> {"F", n[3, 1], n[3, 2]}, "rootLinePosition" -> 3,
+       "powerSlotKind" -> "fixed", "shrunkQ" -> False|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
+    "bSymbolToLineSlot" -> <|b[1] -> 1, bS[2] -> 2|>, "ispSlots" -> {},
+    "sectorPattern" -> {<|"powerKind" -> "cycle", "state" -> "full"|>, <|"powerKind" -> "cycle", "state" -> "shrunk"|>,
+      <|"powerKind" -> "fixed", "state" -> "full"|>}, "sectorPrefactorData" ->
+     <|"lineIndices" -> {3}, "parameterKeys" -> {"fixedLine:3"}, "parameterList" -> {ss11}, "powerList" -> {-beta3},
+      "powerParts" -> {<|"lineIndex" -> 3, "lineId" -> 3, "parameterKey" -> "fixedLine:3", "parameter" -> ss11,
+         "state" -> "full", "sourceZeroPoint" -> beta3, "targetZeroPoint" -> beta3, "derivedTargetZeroPoint" -> beta3,
+         "zeroPointOverrideSource" -> "sourceSector", "integerShift" -> 0, "compiledIntegerShift" -> 0,
+         "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+         "normalizedResidualPower" -> 0, "prefactorPower" -> -beta3|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" ->
+     {<|"lineIndex" -> 3, "lineId" -> 3, "relations" ->
+        {HoldForm[dSIBP`Private`F[3, 0, 1] + dSIBP`Private`F[3, 1, 0] == 0],
+         HoldForm[dSIBP`Private`F[3, 1, 1] + dSIBP`Private`F[3, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>,
+   <|"caseName" -> "017BubbleTreeK1K2_sector_e3", "sectorShrunkLines" -> {3}, "sectorKey" -> "e3",
     "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2, v3 -> v2|>,
     "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexIdToCompactASlot" ->
      <|v1 -> 1, v2 -> 2, v3 -> 2|>, "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1,
@@ -272,19 +309,35 @@
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
        "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[1], "nPositions" -> {2, 3},
-       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "massiveFull",
-       "massType" -> "massive", "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2},
-       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-        Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
-       "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2], "nPositions" -> {2, 3},
-       "packTemplate" -> {b[2], n[2, 1], n[2, 2]}|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "shrunk",
-       "massType" -> "massive", "state" -> "shrunk", "endpoints" -> {v2, v2}, "originalEndpoints" -> {v2, v3},
+       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}, "rootLinePosition" -> 1, "powerSlotKind" -> "cycle",
+       "shrunkQ" -> False|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "masslessFull", "massType" -> "massless",
+       "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2},
+       "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2, "endpointOriginalASlots" -> {1, 2},
+       "endpointCompactASlots" -> {1, 2}, "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2],
+       "nPositions" -> {2, 3}, "packTemplate" -> {b[2], n[2, 1], n[2, 2]}, "rootLinePosition" -> 2,
+       "powerSlotKind" -> "cycle", "shrunkQ" -> False|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "shrunk",
+       "massType" -> "massless", "state" -> "shrunk", "endpoints" -> {v2, v2}, "originalEndpoints" -> {v2, v3},
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {2, 2},
        "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-       "nPositions" -> {}, "packTemplate" -> {}|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
-    "bSymbolToLineSlot" -> <|b[1] -> 1, b[2] -> 2|>, "ispSlots" -> {}|>,
-   <|"caseName" -> "016BubbleTreeK1K2_sector_e1_e3", "sectorShrunkLines" -> {1, 3}, "sectorKey" -> "e1_e3",
+       "nPositions" -> {}, "packTemplate" -> {"F"}, "rootLinePosition" -> 3, "powerSlotKind" -> "fixed",
+       "shrunkQ" -> True|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
+    "bSymbolToLineSlot" -> <|b[1] -> 1, b[2] -> 2|>, "ispSlots" -> {},
+    "sectorPattern" -> {<|"powerKind" -> "cycle", "state" -> "full"|>, <|"powerKind" -> "cycle", "state" -> "full"|>,
+      <|"powerKind" -> "fixed", "state" -> "shrunk"|>}, "sectorPrefactorData" ->
+     <|"lineIndices" -> {3}, "parameterKeys" -> {"fixedLine:3"}, "parameterList" -> {ss11}, "powerList" -> {-beta3},
+      "powerParts" -> {<|"lineIndex" -> 3, "lineId" -> 3, "parameterKey" -> "fixedLine:3", "parameter" -> ss11,
+         "state" -> "shrunk", "sourceZeroPoint" -> beta3, "targetZeroPoint" -> beta3, "derivedTargetZeroPoint" ->
+          beta3, "zeroPointOverrideSource" -> "compiledDefault", "integerShift" -> 0, "compiledIntegerShift" -> 0,
+         "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+         "normalizedResidualPower" -> 0, "prefactorPower" -> -beta3|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" ->
+     {<|"lineIndex" -> 2, "lineId" -> 2, "relations" ->
+        {HoldForm[dSIBP`Private`F[2, 0, 1] + dSIBP`Private`F[2, 1, 0] == 0],
+         HoldForm[dSIBP`Private`F[2, 1, 1] + dSIBP`Private`F[2, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>,
+   <|"caseName" -> "017BubbleTreeK1K2_sector_e1_e3", "sectorShrunkLines" -> {1, 3}, "sectorKey" -> "e1_e3",
     "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v1, v3 -> v1|>,
     "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexIdToCompactASlot" ->
      <|v1 -> 1, v2 -> 1, v3 -> 1|>, "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1,
@@ -298,19 +351,35 @@
        "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2}, "masslessN1ReferenceEndpoint" ->
         Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
        "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "indexed",
-       "bPosition" -> 1, "bSymbol" -> bS[1], "nPositions" -> {}, "packTemplate" -> {bS[1]}|>,
-      <|"slot" -> 2, "lineId" -> 2, "packType" -> "massiveFull", "massType" -> "massive", "state" -> "full",
-       "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2}, "masslessN1ReferenceEndpoint" ->
-        Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
-       "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "indexed",
-       "bPosition" -> 1, "bSymbol" -> b[2], "nPositions" -> {2, 3}, "packTemplate" -> {b[2], n[2, 1], n[2, 2]}|>,
-      <|"slot" -> 3, "lineId" -> 3, "packType" -> "shrunk", "massType" -> "massive", "state" -> "shrunk",
-       "endpoints" -> {v1, v1}, "originalEndpoints" -> {v2, v3}, "masslessN1ReferenceEndpoint" ->
-        Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
-       "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "fixedCoefficient",
-       "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None, "nPositions" -> {}, "packTemplate" -> {}|>},
-    "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>, "bSymbolToLineSlot" -> <|bS[1] -> 1, b[2] -> 2|>, "ispSlots" -> {}|>,
-   <|"caseName" -> "016BubbleTreeK1K2_sector_e2_e3", "sectorShrunkLines" -> {2, 3}, "sectorKey" -> "e2_e3",
+       "bPosition" -> 1, "bSymbol" -> bS[1], "nPositions" -> {}, "packTemplate" -> {bS[1]}, "rootLinePosition" -> 1,
+       "powerSlotKind" -> "cycle", "shrunkQ" -> True|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "masslessFull",
+       "massType" -> "massless", "state" -> "full", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2},
+       "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2, "endpointOriginalASlots" -> {1, 2},
+       "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2],
+       "nPositions" -> {2, 3}, "packTemplate" -> {b[2], n[2, 1], n[2, 2]}, "rootLinePosition" -> 2,
+       "powerSlotKind" -> "cycle", "shrunkQ" -> False|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "shrunk",
+       "massType" -> "massless", "state" -> "shrunk", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v2, v3},
+       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
+        Missing["NotApplicable"], "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {1, 1},
+       "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
+       "nPositions" -> {}, "packTemplate" -> {"F"}, "rootLinePosition" -> 3, "powerSlotKind" -> "fixed",
+       "shrunkQ" -> True|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
+    "bSymbolToLineSlot" -> <|bS[1] -> 1, b[2] -> 2|>, "ispSlots" -> {},
+    "sectorPattern" -> {<|"powerKind" -> "cycle", "state" -> "shrunk"|>, <|"powerKind" -> "cycle", "state" -> "full"|>,
+      <|"powerKind" -> "fixed", "state" -> "shrunk"|>}, "sectorPrefactorData" ->
+     <|"lineIndices" -> {3}, "parameterKeys" -> {"fixedLine:3"}, "parameterList" -> {ss11}, "powerList" -> {-beta3},
+      "powerParts" -> {<|"lineIndex" -> 3, "lineId" -> 3, "parameterKey" -> "fixedLine:3", "parameter" -> ss11,
+         "state" -> "shrunk", "sourceZeroPoint" -> beta3, "targetZeroPoint" -> beta3, "derivedTargetZeroPoint" ->
+          beta3, "zeroPointOverrideSource" -> "compiledDefault", "integerShift" -> 0, "compiledIntegerShift" -> 0,
+         "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+         "normalizedResidualPower" -> 0, "prefactorPower" -> -beta3|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" ->
+     {<|"lineIndex" -> 2, "lineId" -> 2, "relations" ->
+        {HoldForm[dSIBP`Private`F[2, 0, 1] + dSIBP`Private`F[2, 1, 0] == 0],
+         HoldForm[dSIBP`Private`F[2, 1, 1] + dSIBP`Private`F[2, 0, 0] == 0]}, "canonicalDirection" -> "n2ToZero"|>},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>,
+   <|"caseName" -> "017BubbleTreeK1K2_sector_e2_e3", "sectorShrunkLines" -> {2, 3}, "sectorKey" -> "e2_e3",
     "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v1, v3 -> v1|>,
     "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>, "vertexIdToCompactASlot" ->
      <|v1 -> 1, v2 -> 1, v3 -> 1|>, "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1,
@@ -325,18 +394,31 @@
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1},
        "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[1], "nPositions" -> {2, 3},
-       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "shrunk",
-       "massType" -> "massive", "state" -> "shrunk", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2},
+       "packTemplate" -> {b[1], n[1, 1], n[1, 2]}, "rootLinePosition" -> 1, "powerSlotKind" -> "cycle",
+       "shrunkQ" -> False|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "shrunk", "massType" -> "massless",
+       "state" -> "shrunk", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2},
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1},
        "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> bS[2], "nPositions" -> {},
-       "packTemplate" -> {bS[2]}|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "shrunk", "massType" -> "massive",
-       "state" -> "shrunk", "endpoints" -> {v1, v1}, "originalEndpoints" -> {v2, v3},
-       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-        Missing["NotApplicable"], "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {1, 1},
-       "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-       "nPositions" -> {}, "packTemplate" -> {}|>}, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
-    "bSymbolToLineSlot" -> <|b[1] -> 1, bS[2] -> 2|>, "ispSlots" -> {}|>},
+       "packTemplate" -> {bS[2]}, "rootLinePosition" -> 2, "powerSlotKind" -> "cycle", "shrunkQ" -> True|>,
+      <|"slot" -> 3, "lineId" -> 3, "packType" -> "shrunk", "massType" -> "massless", "state" -> "shrunk",
+       "endpoints" -> {v1, v1}, "originalEndpoints" -> {v2, v3}, "masslessN1ReferenceEndpoint" ->
+        Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
+       "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "fixedCoefficient",
+       "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None, "nPositions" -> {}, "packTemplate" -> {"F"},
+       "rootLinePosition" -> 3, "powerSlotKind" -> "fixed", "shrunkQ" -> True|>},
+    "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>, "bSymbolToLineSlot" -> <|b[1] -> 1, bS[2] -> 2|>, "ispSlots" -> {},
+    "sectorPattern" -> {<|"powerKind" -> "cycle", "state" -> "full"|>, <|"powerKind" -> "cycle", "state" -> "shrunk"|>,
+      <|"powerKind" -> "fixed", "state" -> "shrunk"|>}, "sectorPrefactorData" ->
+     <|"lineIndices" -> {3}, "parameterKeys" -> {"fixedLine:3"}, "parameterList" -> {ss11}, "powerList" -> {-beta3},
+      "powerParts" -> {<|"lineIndex" -> 3, "lineId" -> 3, "parameterKey" -> "fixedLine:3", "parameter" -> ss11,
+         "state" -> "shrunk", "sourceZeroPoint" -> beta3, "targetZeroPoint" -> beta3, "derivedTargetZeroPoint" ->
+          beta3, "zeroPointOverrideSource" -> "compiledDefault", "integerShift" -> 0, "compiledIntegerShift" -> 0,
+         "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+         "normalizedResidualPower" -> 0, "prefactorPower" -> -beta3|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" -> {},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>},
  "indexMaps" -> <|"vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>,
    "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 2, v3 -> 3|>, "lineIdToSlot" -> <|1 -> 1, 2 -> 2, 3 -> 3|>,
    "bSymbolToLineSlot" -> <|b[1] -> 1, b[2] -> 2|>, "compactASlots" ->
@@ -349,30 +431,31 @@
       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
        Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
       "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[1], "nPositions" -> {2, 3},
-      "packTemplate" -> {b[1], n[1, 1], n[1, 2]}|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "massiveFull",
-      "massType" -> "massive", "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2},
-      "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-       Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
+      "packTemplate" -> {b[1], n[1, 1], n[1, 2]}, "rootLinePosition" -> 1, "powerSlotKind" -> "cycle",
+      "shrunkQ" -> False|>, <|"slot" -> 2, "lineId" -> 2, "packType" -> "masslessFull", "massType" -> "massless",
+      "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2}, "masslessN1ReferenceEndpoint" -> v1,
+      "masslessN1OppositeEndpoint" -> v2, "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
       "linePowerMode" -> "indexed", "bPosition" -> 1, "bSymbol" -> b[2], "nPositions" -> {2, 3},
-      "packTemplate" -> {b[2], n[2, 1], n[2, 2]}|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "massiveFull",
-      "massType" -> "massive", "state" -> "full", "endpoints" -> {v2, v3}, "originalEndpoints" -> {v2, v3},
-      "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
-       Missing["NotApplicable"], "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {2, 3},
+      "packTemplate" -> {b[2], n[2, 1], n[2, 2]}, "rootLinePosition" -> 2, "powerSlotKind" -> "cycle",
+      "shrunkQ" -> False|>, <|"slot" -> 3, "lineId" -> 3, "packType" -> "masslessFull", "massType" -> "massless",
+      "state" -> "full", "endpoints" -> {v2, v3}, "originalEndpoints" -> {v2, v3}, "masslessN1ReferenceEndpoint" -> v2,
+      "masslessN1OppositeEndpoint" -> v3, "endpointOriginalASlots" -> {2, 3}, "endpointCompactASlots" -> {2, 3},
       "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-      "nPositions" -> {1, 2}, "packTemplate" -> {n[3, 1], n[3, 2]}|>}, "ispSlots" -> {}|>,
+      "nPositions" -> {2, 3}, "packTemplate" -> {"F", n[3, 1], n[3, 2]}, "rootLinePosition" -> 3,
+      "powerSlotKind" -> "fixed", "shrunkQ" -> False|>}, "ispSlots" -> {}|>,
  "seedSummary" -> <|"continuousVariables" -> {a[v1], a[v2], a[v3], b[1], b[2]},
    "discreteVariables" -> {n[1, 1], n[1, 2], n[2, 1], n[2, 2], n[3, 1], n[3, 2]}, "discreteStateCount" -> 64,
-   "momentumGeneratorCount" -> 2, "timeGeneratorCount" -> 3,
-   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>, "numericRules" -> {},
-   "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {}, "internalProvidedNumericVariables" -> {},
-     "requiredExternalInvariants" -> {ss11}, "internalRequiredExternalInvariants" -> {kk[1, 1]},
-     "externalInvariantNamingReport" -> <|"externalMomenta" -> {k1 + k2}, "externalInvariantRules" ->
-        {sp[k1 + k2, k1 + k2] -> ss11^2}, "internalExternalInvariantRules" -> {kk[1, 1] -> ss11^2},
-       "coordinateData" -> {<|"internalVariable" -> kk[1, 1], "publicExpression" -> ss11^2, "userVariable" -> ss11,
+   "momentumGeneratorCount" -> 2, "timeGeneratorCount" -> 3, "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+   "numericRules" -> {}, "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {},
+     "internalProvidedNumericVariables" -> {}, "requiredExternalInvariants" -> {ss11},
+     "internalRequiredExternalInvariants" -> {kk[1, 1]}, "externalInvariantNamingReport" ->
+      <|"externalMomenta" -> {k1 + k2}, "externalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2},
+       "internalExternalInvariantRules" -> {kk[1, 1] -> ss11^2}, "coordinateData" ->
+        {<|"internalVariable" -> kk[1, 1], "publicExpression" -> ss11^2, "userVariable" -> ss11,
           "coordinateType" -> "squareRoot", "internalCoordinateExpression" -> Sqrt[kk[1, 1]],
           "internalJacobian" -> 2*Sqrt[kk[1, 1]], "userJacobian" -> 2*ss11|>}, "defaultNamingConvention" ->
         "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order", "message" -> "loopExternalMomenta \
-是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "externalLegInvariantNamingReport" -> <|"externalLegMomenta" -> {k1, k2}, "appearingMagnitudeMomenta" -> {k1, k2},
        "independentMagnitudeMomenta" -> {k1, k2}, "dependentMagnitudeBindings" -> {},
        "externalLegInvariantRules" -> {sp[k1, k1] -> sE1^2, sp[k2, k2] -> sE2^2},
@@ -416,23 +499,22 @@ explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>,
             "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,... follow the first-occurrence independent \
 basis of no-loop momentum magnitudes in lineData, vertexEnergies and extLegs", "automaticCrossProducts" -> False,
          "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>, "message" -> "vertexEnergies 可使用 \
-loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
+loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
 |>, "requiredVertexEnergies" -> {E1, E2, E3}, "internalRequiredVertexEnergies" -> {E1, E2, E3},
-     "requiredLineParameters" -> {nu1, nu2, nu3}, "requiredNumericVariables" -> {ss11, E1, E2, E3, nu1, nu2, nu3},
-     "internalRequiredNumericVariables" -> {kk[1, 1], E1, E2, E3, nu1, nu2, nu3},
-     "missingExternalInvariants" -> {ss11}, "internalMissingExternalInvariants" -> {kk[1, 1]},
-     "missingVertexEnergies" -> {E1, E2, E3}, "internalMissingVertexEnergies" -> {E1, E2, E3},
-     "missingLineParameters" -> {nu1, nu2, nu3}, "missingNumericVariables" -> {E1, E2, E3, nu1, nu2, nu3, ss11},
-     "internalMissingNumericVariables" -> {E1, E2, E3, nu1, nu2, nu3, kk[1, 1]},
-     "completeStaticNumericRulesQ" -> False|>, "externalInvariantNamingReport" ->
-    <|"externalMomenta" -> {k1 + k2}, "externalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2},
-     "internalExternalInvariantRules" -> {kk[1, 1] -> ss11^2}, "coordinateData" ->
-      {<|"internalVariable" -> kk[1, 1], "publicExpression" -> ss11^2, "userVariable" -> ss11,
+     "requiredLineParameters" -> {nu1}, "requiredNumericVariables" -> {ss11, E1, E2, E3, nu1},
+     "internalRequiredNumericVariables" -> {kk[1, 1], E1, E2, E3, nu1}, "missingExternalInvariants" -> {ss11},
+     "internalMissingExternalInvariants" -> {kk[1, 1]}, "missingVertexEnergies" -> {E1, E2, E3},
+     "internalMissingVertexEnergies" -> {E1, E2, E3}, "missingLineParameters" -> {nu1},
+     "missingNumericVariables" -> {E1, E2, E3, nu1, ss11}, "internalMissingNumericVariables" ->
+      {E1, E2, E3, nu1, kk[1, 1]}, "completeStaticNumericRulesQ" -> False|>,
+   "externalInvariantNamingReport" -> <|"externalMomenta" -> {k1 + k2}, "externalInvariantRules" ->
+      {sp[k1 + k2, k1 + k2] -> ss11^2}, "internalExternalInvariantRules" -> {kk[1, 1] -> ss11^2},
+     "coordinateData" -> {<|"internalVariable" -> kk[1, 1], "publicExpression" -> ss11^2, "userVariable" -> ss11,
         "coordinateType" -> "squareRoot", "internalCoordinateExpression" -> Sqrt[kk[1, 1]],
         "internalJacobian" -> 2*Sqrt[kk[1, 1]], "userJacobian" -> 2*ss11|>}, "defaultNamingConvention" ->
       "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order",
      "message" ->
-      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "vertexEnergyNamingReport" -> <|"convention" -> "loop external roots use ssij; the independent basis of actually \
 appearing no-loop momentum magnitudes uses sEe variables and dependent magnitudes keep explicit bindings; unrelated \
 scalar phase parameters remain explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>,
@@ -463,18 +545,17 @@ scalar phase parameters remain explicit user symbols", "rawVertexEnergies" -> <|
           "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,... follow the first-occurrence independent \
 basis of no-loop momentum magnitudes in lineData, vertexEnergies and extLegs", "automaticCrossProducts" -> False,
        "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>, "message" -> "vertexEnergies 可使用 \
-loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
-|>, "sampleDiscreteRules" -> {}|>, "validationReport" -> <|"status" -> "ok", "errorCount" -> 0, "warningCount" -> 4,
-   "pendingCount" -> 0, "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {},
-     "internalProvidedNumericVariables" -> {}, "requiredExternalInvariants" -> {ss11},
-     "internalRequiredExternalInvariants" -> {kk[1, 1]}, "externalInvariantNamingReport" ->
-      <|"externalMomenta" -> {k1 + k2}, "externalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2},
-       "internalExternalInvariantRules" -> {kk[1, 1] -> ss11^2}, "coordinateData" ->
-        {<|"internalVariable" -> kk[1, 1], "publicExpression" -> ss11^2, "userVariable" -> ss11,
+loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
+|>|>, "validationReport" -> <|"status" -> "ok", "errorCount" -> 0, "warningCount" -> 3, "pendingCount" -> 0,
+   "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {}, "internalProvidedNumericVariables" -> {},
+     "requiredExternalInvariants" -> {ss11}, "internalRequiredExternalInvariants" -> {kk[1, 1]},
+     "externalInvariantNamingReport" -> <|"externalMomenta" -> {k1 + k2}, "externalInvariantRules" ->
+        {sp[k1 + k2, k1 + k2] -> ss11^2}, "internalExternalInvariantRules" -> {kk[1, 1] -> ss11^2},
+       "coordinateData" -> {<|"internalVariable" -> kk[1, 1], "publicExpression" -> ss11^2, "userVariable" -> ss11,
           "coordinateType" -> "squareRoot", "internalCoordinateExpression" -> Sqrt[kk[1, 1]],
           "internalJacobian" -> 2*Sqrt[kk[1, 1]], "userJacobian" -> 2*ss11|>}, "defaultNamingConvention" ->
         "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order", "message" -> "loopExternalMomenta \
-是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "externalLegInvariantNamingReport" -> <|"externalLegMomenta" -> {k1, k2}, "appearingMagnitudeMomenta" -> {k1, k2},
        "independentMagnitudeMomenta" -> {k1, k2}, "dependentMagnitudeBindings" -> {},
        "externalLegInvariantRules" -> {sp[k1, k1] -> sE1^2, sp[k2, k2] -> sE2^2},
@@ -518,29 +599,23 @@ explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>,
             "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,... follow the first-occurrence independent \
 basis of no-loop momentum magnitudes in lineData, vertexEnergies and extLegs", "automaticCrossProducts" -> False,
          "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>, "message" -> "vertexEnergies 可使用 \
-loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
+loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
 |>, "requiredVertexEnergies" -> {E1, E2, E3}, "internalRequiredVertexEnergies" -> {E1, E2, E3},
-     "requiredLineParameters" -> {nu1, nu2, nu3}, "requiredNumericVariables" -> {ss11, E1, E2, E3, nu1, nu2, nu3},
-     "internalRequiredNumericVariables" -> {kk[1, 1], E1, E2, E3, nu1, nu2, nu3},
-     "missingExternalInvariants" -> {ss11}, "internalMissingExternalInvariants" -> {kk[1, 1]},
-     "missingVertexEnergies" -> {E1, E2, E3}, "internalMissingVertexEnergies" -> {E1, E2, E3},
-     "missingLineParameters" -> {nu1, nu2, nu3}, "missingNumericVariables" -> {E1, E2, E3, nu1, nu2, nu3, ss11},
-     "internalMissingNumericVariables" -> {E1, E2, E3, nu1, nu2, nu3, kk[1, 1]},
-     "completeStaticNumericRulesQ" -> False|>, "pendingFeatures" -> {},
+     "requiredLineParameters" -> {nu1}, "requiredNumericVariables" -> {ss11, E1, E2, E3, nu1},
+     "internalRequiredNumericVariables" -> {kk[1, 1], E1, E2, E3, nu1}, "missingExternalInvariants" -> {ss11},
+     "internalMissingExternalInvariants" -> {kk[1, 1]}, "missingVertexEnergies" -> {E1, E2, E3},
+     "internalMissingVertexEnergies" -> {E1, E2, E3}, "missingLineParameters" -> {nu1},
+     "missingNumericVariables" -> {E1, E2, E3, nu1, ss11}, "internalMissingNumericVariables" ->
+      {E1, E2, E3, nu1, kk[1, 1]}, "completeStaticNumericRulesQ" -> False|>, "pendingFeatures" -> {},
    "issues" -> {<|"severity" -> "warning", "code" -> "numericRulesMissingExternalInvariants",
-      "missingExternalInvariants" -> {ss11}, "numericRules" -> {}, "comment" -> "analytic seed can still be generated; \
-numeric linear/Kira stages need external invariant value rules, using the output names from \
-externalInvariantRules/default sij"|>, <|"severity" -> "warning", "code" -> "numericRulesMissingVertexEnergies",
-      "missingVertexEnergies" -> {E1, E2, E3}, "numericRules" -> {},
+      "missingExternalInvariants" -> {ss11}, "numericRules" -> {}, "comment" -> "only LinearSystemMode->numeric \
+requires these values; symbolic Kira/DE must keep every requested derivative variable symbolic"|>,
+     <|"severity" -> "warning", "code" -> "numericRulesMissingVertexEnergies", "missingVertexEnergies" -> {E1, E2, E3},
+      "numericRules" -> {}, "comment" -> "only LinearSystemMode->numeric requires these values; symbolic Kira/DE must \
+keep requested vertex-energy derivatives symbolic"|>, <|"severity" -> "warning",
+      "code" -> "numericRulesMissingLineParameters", "missingLineParameters" -> {nu1}, "numericRules" -> {},
       "comment" ->
-       "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"|>,
-     <|"severity" -> "warning", "code" -> "numericRulesMissingLineParameters", "missingLineParameters" ->
-       {nu1, nu2, nu3}, "numericRules" -> {}, "comment" ->
-       "analytic seed can still be generated; numeric linear/Kira stages need massive line parameter rules"|>,
-     <|"severity" -> "warning", "code" -> "sampleDiscreteRulesMissingForDiscreteVariables",
-      "missingVariables" -> {n[1, 1], n[1, 2], n[2, 1], n[2, 2], n[3, 1], n[3, 2]},
-      "comment" ->
-       "sample seed mode needs complete n=0/1 rules; DiscreteMode -> all can enumerate them automatically"|>}|>,
+       "massive parameters may remain symbolic; only an explicitly fully numeric linear system requires values"|>}|>,
  "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {}, "internalProvidedNumericVariables" -> {},
    "requiredExternalInvariants" -> {ss11}, "internalRequiredExternalInvariants" -> {kk[1, 1]},
    "externalInvariantNamingReport" -> <|"externalMomenta" -> {k1 + k2}, "externalInvariantRules" ->
@@ -550,7 +625,7 @@ externalInvariantRules/default sij"|>, <|"severity" -> "warning", "code" -> "num
         "internalJacobian" -> 2*Sqrt[kk[1, 1]], "userJacobian" -> 2*ss11|>}, "defaultNamingConvention" ->
       "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order",
      "message" ->
-      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "externalLegInvariantNamingReport" -> <|"externalLegMomenta" -> {k1, k2}, "appearingMagnitudeMomenta" -> {k1, k2},
      "independentMagnitudeMomenta" -> {k1, k2}, "dependentMagnitudeBindings" -> {},
      "externalLegInvariantRules" -> {sp[k1, k1] -> sE1^2, sp[k2, k2] -> sE2^2},
@@ -595,21 +670,20 @@ explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>,
           "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,... follow the first-occurrence independent \
 basis of no-loop momentum magnitudes in lineData, vertexEnergies and extLegs", "automaticCrossProducts" -> False,
        "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>, "message" -> "vertexEnergies 可使用 \
-loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
+loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
 |>, "requiredVertexEnergies" -> {E1, E2, E3}, "internalRequiredVertexEnergies" -> {E1, E2, E3},
-   "requiredLineParameters" -> {nu1, nu2, nu3}, "requiredNumericVariables" -> {ss11, E1, E2, E3, nu1, nu2, nu3},
-   "internalRequiredNumericVariables" -> {kk[1, 1], E1, E2, E3, nu1, nu2, nu3}, "missingExternalInvariants" -> {ss11},
+   "requiredLineParameters" -> {nu1}, "requiredNumericVariables" -> {ss11, E1, E2, E3, nu1},
+   "internalRequiredNumericVariables" -> {kk[1, 1], E1, E2, E3, nu1}, "missingExternalInvariants" -> {ss11},
    "internalMissingExternalInvariants" -> {kk[1, 1]}, "missingVertexEnergies" -> {E1, E2, E3},
-   "internalMissingVertexEnergies" -> {E1, E2, E3}, "missingLineParameters" -> {nu1, nu2, nu3},
-   "missingNumericVariables" -> {E1, E2, E3, nu1, nu2, nu3, ss11}, "internalMissingNumericVariables" ->
-    {E1, E2, E3, nu1, nu2, nu3, kk[1, 1]}, "completeStaticNumericRulesQ" -> False|>,
+   "internalMissingVertexEnergies" -> {E1, E2, E3}, "missingLineParameters" -> {nu1},
+   "missingNumericVariables" -> {E1, E2, E3, nu1, ss11}, "internalMissingNumericVariables" ->
+    {E1, E2, E3, nu1, kk[1, 1]}, "completeStaticNumericRulesQ" -> False|>,
  "numericRuleTemplate" -> {E1 -> dSIBP`Private`numericValue[E1], E2 -> dSIBP`Private`numericValue[E2],
    E3 -> dSIBP`Private`numericValue[E3], nu1 -> dSIBP`Private`numericValue[nu1],
-   nu2 -> dSIBP`Private`numericValue[nu2], nu3 -> dSIBP`Private`numericValue[nu3],
    ss11 -> dSIBP`Private`numericValue[ss11]}, "tadpoleSymmetryData" ->
   <|"status" -> "generated", "loopReversalData" -> {}, "massiveFullLineIndices" -> {}, "masslessFullLineIndices" -> {},
    "automaticRuleCount" -> 1, "automaticRules" ->
-    {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "016BubbleTreeK1K2",
+    {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "017BubbleTreeK1K2",
           "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}}, "vertexIds" -> {v1, v2, v3},
           "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+", v3 -> "+"|>, "lines" ->
            {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> l1, "nu" -> nu1, "bbType" -> "h",
@@ -632,47 +706,15 @@ loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；
                 {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu1]))/Pi, "xPower" -> -1 - 2*nu1, "bShift" -> 1,
                   "zeroPointShift" -> 2*nu1|>}, "shrinkZeroPointShift" -> 2*nu1|>, "rawMomentum" -> l1,
              "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-            <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> nu2, "bbType" -> "h",
-             "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-             "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-             "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" -> <|"preset" -> "h",
-               "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0,
-                1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic,
-               "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu2|>, "compiledFunctionSystem" ->
-              <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-                 "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*
-                    dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                  2*nu2|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0},
-                {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "A0" ->
-                {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}},
-               "WT" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "derivativeTerms" ->
-                {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|"sourceState" -> 1,
-                  "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1, "targetState" -> 1,
-                  "xPower" -> -1, "coefficient" -> -1 - 2*nu2|>}, "shrinkTerms" ->
-                {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu2]))/Pi, "xPower" -> -1 - 2*nu2, "bShift" -> 1,
-                  "zeroPointShift" -> 2*nu2|>}, "shrinkZeroPointShift" -> 2*nu2|>, "rawMomentum" -> k1 + k2 + l1,
-             "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-            <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> nu3, "bbType" -> "h",
-             "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-             "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-             "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" -> <|"preset" -> "h",
-               "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0,
-                1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic,
-               "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu3|>, "compiledFunctionSystem" ->
-              <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-                 "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*
-                    dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                  2*nu3|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0},
-                {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "A0" ->
-                {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}},
-               "WT" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "derivativeTerms" ->
-                {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|"sourceState" -> 1,
-                  "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1, "targetState" -> 1,
-                  "xPower" -> -1, "coefficient" -> -1 - 2*nu3|>}, "shrinkTerms" ->
-                {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu3]))/Pi, "xPower" -> -1 - 2*nu3, "bShift" -> 1,
-                  "zeroPointShift" -> 2*nu3|>}, "shrinkZeroPointShift" -> 2*nu3|>, "rawMomentum" -> k1 + k2,
-             "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" -> "fixedCoefficient"|>},
-          "extLegs" -> {{bubbleLeg, v1, k1 + k2}, {treeLeg1, v3, k1}, {treeLeg2, v3, k2}},
+            <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> 0, "bbType" -> "exp",
+             "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+             "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2,
+             "rawMomentum" -> k1 + k2 + l1, "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
+            <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> 0, "bbType" -> "exp",
+             "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+             "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v2, "masslessN1OppositeEndpoint" -> v3,
+             "rawMomentum" -> k1 + k2, "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" ->
+              "fixedCoefficient"|>}, "extLegs" -> {{bubbleLeg, v1, k1 + k2}, {treeLeg1, v3, k1}, {treeLeg2, v3, k2}},
           "vertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>, "activeVertexIds" -> {v1, v2, v3},
           "fixedAVertexValues" -> <||>, "loopMomenta" -> {l1}, "ibpMode" -> "full", "graphLoopCount" -> 1,
           "graphTopologyAudit" -> <|"status" -> "valid", "vertexCount" -> 3, "inputLineCount" -> 3,
@@ -746,16 +788,15 @@ loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；
           "vertexLines" -> {{{1, 1}, {2, 1}}, {{1, -1}, {2, -1}, {3, 1}}, {{3, -1}}},
           "loopCoeffMatrix" -> {{1}, {1}, {0}}, "externalCoeffMatrix" -> {{0}, {1}, {1}},
           "externalPartList" -> {0, k1 + k2, k1 + k2}, "rawNumericRules" -> {}, "numericRules" -> {},
-          "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0},
-            "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {}, "seedOptions" ->
-           <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-            "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
-          "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3,
-            b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
-          "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
-           <|v1 -> v1, v2 -> v2, v3 -> v3|>|>, dSIBP`Private`int$]] :> 0}, "userRuleCount" -> 0,
-   "effectiveRuleCount" -> 1|>, "effectiveSymmetryRules" ->
-  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "016BubbleTreeK1K2",
+          "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+          "generatorSeedRanges" -> {}, "unknownSeedPreset" -> None, "zeroPointRules" ->
+           {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3},
+          "rootZeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1,
+            b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
+          "parityConstraints" -> {}, "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>,
+          "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2, v3 -> v3|>|>, dSIBP`Private`int$]] :> 0},
+   "userRuleCount" -> 0, "effectiveRuleCount" -> 1|>, "effectiveSymmetryRules" ->
+  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "017BubbleTreeK1K2",
         "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}}, "vertexIds" -> {v1, v2, v3},
         "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+", v3 -> "+"|>,
         "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> l1, "nu" -> nu1, "bbType" -> "h",
@@ -778,46 +819,14 @@ loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；
               {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu1]))/Pi, "xPower" -> -1 - 2*nu1, "bShift" -> 1,
                 "zeroPointShift" -> 2*nu1|>}, "shrinkZeroPointShift" -> 2*nu1|>, "rawMomentum" -> l1,
            "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-          <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> nu2, "bbType" -> "h",
-           "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-           "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-           "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" ->
-            <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-             "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu2|>, "compiledFunctionSystem" ->
-            <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" ->
-                (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*
-                  dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                2*nu2|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-             "A0" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1,
-                -((1 + 2*nu2)/dSIBP`Private`x)}}, "WT" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-             "derivativeTerms" -> {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|
-                "sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1,
-                "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu2|>}, "shrinkTerms" ->
-              {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu2]))/Pi, "xPower" -> -1 - 2*nu2, "bShift" -> 1,
-                "zeroPointShift" -> 2*nu2|>}, "shrinkZeroPointShift" -> 2*nu2|>, "rawMomentum" -> k1 + k2 + l1,
-           "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-          <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> nu3, "bbType" -> "h",
-           "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-           "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-           "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" ->
-            <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-             "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu3|>, "compiledFunctionSystem" ->
-            <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" ->
-                (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*
-                  dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                2*nu3|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-             "A0" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1,
-                -((1 + 2*nu3)/dSIBP`Private`x)}}, "WT" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-             "derivativeTerms" -> {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|
-                "sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1,
-                "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu3|>}, "shrinkTerms" ->
-              {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu3]))/Pi, "xPower" -> -1 - 2*nu3, "bShift" -> 1,
-                "zeroPointShift" -> 2*nu3|>}, "shrinkZeroPointShift" -> 2*nu3|>, "rawMomentum" -> k1 + k2,
-           "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" -> "fixedCoefficient"|>},
+          <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> 0, "bbType" -> "exp",
+           "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+           "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2,
+           "rawMomentum" -> k1 + k2 + l1, "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
+          <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> 0, "bbType" -> "exp",
+           "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+           "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v2, "masslessN1OppositeEndpoint" -> v3,
+           "rawMomentum" -> k1 + k2, "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" -> "fixedCoefficient"|>},
         "extLegs" -> {{bubbleLeg, v1, k1 + k2}, {treeLeg1, v3, k1}, {treeLeg2, v3, k2}},
         "vertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>, "activeVertexIds" -> {v1, v2, v3},
         "fixedAVertexValues" -> <||>, "loopMomenta" -> {l1}, "ibpMode" -> "full", "graphLoopCount" -> 1,
@@ -893,14 +902,18 @@ loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；
         "vertexLines" -> {{{1, 1}, {2, 1}}, {{1, -1}, {2, -1}, {3, 1}}, {{3, -1}}},
         "loopCoeffMatrix" -> {{1}, {1}, {0}}, "externalCoeffMatrix" -> {{0}, {1}, {1}},
         "externalPartList" -> {0, k1 + k2, k1 + k2}, "rawNumericRules" -> {}, "numericRules" -> {},
-        "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0},
-          "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {},
-        "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-          "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
-        "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3,
-          b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
+        "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+        "generatorSeedRanges" -> {}, "unknownSeedPreset" -> None, "zeroPointRules" ->
+         {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3},
+        "rootZeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2,
+          b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {}, "parityConstraints" -> {},
         "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
          <|v1 -> v1, v2 -> v2, v3 -> v3|>|>, dSIBP`Private`int$]] :> 0}, "masslessBundleCandidates" -> {},
- "masslessEndpointConventions" -> {}, "precomputedShrinkSectorSummary" ->
-  <|"status" -> "generated", "completeCoverageQ" -> True|>, "precomputedShrinkSectorKeys" ->
-  {"top", "e1", "e2", "e3", "e1_e3", "e2_e3"}|>
+ "masslessEndpointConventions" -> {<|"lineIndex" -> 1, "lineId" -> 2, "orderedEndpoints" -> {v1, v2},
+    "n1ReferenceEndpoint" -> v1, "n1OppositeEndpoint" -> v2,
+    "convention" -> "n=1 is the antisymmetric state defined by the first endpoint; swapping endpoints flips n=1"|>,
+   <|"lineIndex" -> 2, "lineId" -> 3, "orderedEndpoints" -> {v2, v3}, "n1ReferenceEndpoint" -> v2,
+    "n1OppositeEndpoint" -> v3, "convention" ->
+     "n=1 is the antisymmetric state defined by the first endpoint; swapping endpoints flips n=1"|>},
+ "precomputedShrinkSectorSummary" -> <|"status" -> "generated", "completeCoverageQ" -> True|>,
+ "precomputedShrinkSectorKeys" -> {"top", "e1", "e2", "e3", "e1_e3", "e2_e3"}|>

@@ -37,7 +37,7 @@ case = <|
      },
    "symmetryRules" -> {},
    "seedPreset" -> "quickCheck",
-   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0, 1}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0, 1}|>
    |>;
 
 
@@ -51,20 +51,23 @@ context = DSInit[
    ];
 seedData = DSSeeds[
    context,
-   DiscreteMode -> "all",
-   GenerateShrinkSectors -> True,
-   MaxEquationCount -> 10000
+   GenerateShrinkSectors -> True
    ];
-linearData = DSLinear[seedData, context, LinearSystemMode -> "symbolic"];
+allSeeds = DSAllSeeds[seedData];
+(* 本例只验证两圈 ISP 与完整生成元闭合；所有连续指标在零点各展开一次。 *)
+generatedIBP = DSGenerateIBP[allSeeds, {0, 0}];
+linearData = DSLinear[generatedIBP, context, LinearSystemMode -> "symbolic"];
 
 summary = <|
    "initStatus" -> Lookup[context, "status", "missing"],
    "ispCount" -> Length[Lookup[Lookup[context, "topology", <||>], "ispData", {}]],
    "generatorCount" -> Total[Length /@ {
-       Lookup[Lookup[seedData, "momentumSummary", <||>], "generators", {}],
-       Lookup[Lookup[seedData, "timeSummary", <||>], "generators", {}]
+       Lookup[Lookup[generatedIBP, "momentumSummary", <||>], "generators", {}],
+       Lookup[Lookup[generatedIBP, "timeSummary", <||>], "generators", {}]
        }],
    "seedStatus" -> Lookup[seedData, "dSIBPStatus", "missing"],
+   "generatedStatus" -> Lookup[generatedIBP, "dSIBPStatus", "missing"],
+   "equationCount" -> Lookup[generatedIBP, "equationCount", 0],
    "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"],
    "linearReason" -> Lookup[linearData, "reason", None],
    "pendingFeatures" -> Lookup[linearData, "pendingFeatures", Lookup[seedData, "pendingFeatures", {}]]
@@ -76,5 +79,8 @@ If[! And[
     summary["initStatus"] === "initialized",
     summary["ispCount"] === 2,
     summary["seedStatus"] === "generated",
+    summary["generatedStatus"] === "generated",
+    summary["generatorCount"] === 8,
+    summary["equationCount"] > 0,
     summary["linearStatus"] === "generated"
     ], Exit[1]];

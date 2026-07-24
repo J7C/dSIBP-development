@@ -44,3 +44,21 @@
 - [x] independent benchmark 明确一般 shrink factor `q^(-s-z)(-tau)^(-s-z)` 如何映射到 `bS=b+s`、`bS0=b0+z`、`aMerged=a_u+a_v-s`、`a0Merged=a0_u+a0_v-z`。
 - [x] `independent-benchmark/package/` 当前只保留 `package_014.wl`、`package_014.pdf` 和更新后的 examples；旧 `package_012` 及无版本名程序/手册已删除。
 - [x] 两份 TeX/PDF 编译并目视检查；运行矛盾扫描、快照哈希和 `git diff --check`。
+
+## E. 017 sector prefactor 与 parity 迁移（已实施，待独立全量审计）
+
+- [x] 每条 full line pack 固定为三槽：cycle/fixed full 分别为 `{b,n1,n2}` / `{"F",n1,n2}`；shrunk line 允许退为单槽 `{bS}` / `{"F"}`，但 root-ordered `linePacks` 的对应位置绝不删除；massless 不退化为单 `n`。
+- [ ] 把 full/shrunk pack pattern 作为 shrink set 的隐式、可逆编码：只由该 pattern 派生 `sectorKey`，并让 seed/metadata/`linearData` 的显式 key 与其交叉核验；不同 shrink set 即使 compact `aList` 相同也不得混合。
+- [ ] fixed/non-loop line 的 `b/bS` 不进入三槽 pack；每个 sector 按 root fixed-line 顺序保存结构化 `sectorPrefactorData`。
+- [ ] `sectorPrefactorData` 分别保存稳定 `parameterKeys`、当前输出坐标的 `parameterList`、`powerList/powerParts` 和常数 prefactor，不缓存已经乘开的 `parameter^power`。
+- [ ] 参数重定义后逐 fixed line 更新 `parameterList`；prefactor materializer、求导、scaling、serializer 和 time-only 转换只消费同一 metadata。
+- [x] 对 normalized `J_s=N_s I_s`，验证 `ds` 含 `D[Log[N_s]] J_s`，跨 sector contact/derivative 含 `N_s/N_t`；atomic massless fixed 幂次不得内外重复。
+- [ ] fixed-line shrink 只由 source/target zero point 的选择决定吸收量；逐 transition 序列化 $B_s$、$B_t$、override 来源、compiled $(s,z)$ 和剩余 coefficient exponent $s+z-(B_t-B_s)$，所有 reduction/DE 路径共用。不得新增与 zero point 平行的整数吸收选项。
+- [x] 缺省 shift 表逐项验收：h 为 `(s,z)=(1,2nu)`、H 为 `(1,0)`、massless 为 `(0,0)`；缺省 $B_t-B_s=z$ 后 h/H 系数保留 $r^{-1}$、massless 无额外模长幂。用户 zero-point override 后系数按一般差公式改变；额外吸收只由 master/basis 选择处理。
+- [x] 文档与实现共同验收缺省 child 映射：h 为 `a->a_u+a_v-1, a0->a0_u+a0_v-2nu, bS->b+1, bS0->b0+2nu`，H 为相同整数 shift 且 zero-point shift 为零；由 `n1+n2=1` 证明两者都保持 cycle-line subsector parity。fixed/non-loop line 不进入 parity；手册建议一般不要修改 shrink shift，override 必须同步 child zero point、coefficient 与 parity metadata。
+- [x] massless 缺省吸收验收：`(s,z)=(0,0)`；cycle 为 `a/a0/bS/bS0` 全无 shift，fixed 为 `B_t-B_s=0`、`N_s/N_t=1`，不得删除 target 中原有 prefactor或额外外乘同一因子。由 `n1+n2=1, bS=b` 验证 cycle child parity offset 翻转 1；fixed line 不参与 parity，simultaneous contact 按 massless cycle 线数模 2 累加。
+- [x] 所有 contact-reachable sector 都必须直接生成该 sector 的完整 time/momentum IBP。sector 继承 root `L`、loop basis、cycle/fixed schema，只替换 compact vertex map、line pack state、zero point、prefactor 与 affine parity；不得用 top-only equations、表观 masters 或 `shrinkSectorSeedGeneration` pending 状态代替。
+- [x] 从实际 compiled shrink data 验证 h/H 缺省 `{bShift,zShift}={1,2nu}` / `{1,0}` 是否与 `n1+n2=1` 共同保持 child parity；不得只按 preset 文本假定。
+- [x] 用户修改 H/h child zero point 时，对可判定整数重基更新 parity offset；非整数或不可判定重基关闭相应 sector parity capability并返回双语诊断。
+
+实现 smoke：load `4/4`、sector model `21/21`、full workflow `14/14`、contact/parity `30/30`。massless quotient 上的公式型 tree 递推与 dlog 仍未重推，017 对五个相关接口返回 `PendingRederivation`；该项保留为未来推导任务，不伪装成已认证能力。

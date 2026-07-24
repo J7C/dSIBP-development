@@ -55,9 +55,7 @@ context = DSInit[
    ];
 seedData = DSSeeds[
    context,
-   DiscreteMode -> "all",
-   GenerateShrinkSectors -> True,
-   MaxEquationCount -> 5000
+   GenerateShrinkSectors -> True
    ];
 
 fullInfo = DSInfo[context, "Full"];

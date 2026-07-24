@@ -163,11 +163,11 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     checks, issues, reductionRules, masters, masterTokens, returnedMasterIDs, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
-    Message[DSKiraImport::mismatch, "missing DSInit context"]; dsErrorPrint["Kira import 需要同源 DSInit context。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
+    Message[DSKiraImport::mismatch, "missing DSInit context"]; dsErrorPrint["Kira import 需要同源 DSInit context。 Kira import requires the matching DSInit context."]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
    workspace = ExpandFileName[root];
    If[! DirectoryQ[workspace],
-    Message[DSKiraImport::badpath, workspace]; dsErrorPrint["Kira workspace 不存在。"]; Return[<|"status" -> "failed", "reason" -> "invalidWorkspace", "workspace" -> workspace|>]
+    Message[DSKiraImport::badpath, workspace]; dsErrorPrint["Kira workspace 不存在。 The Kira workspace does not exist."]; Return[<|"status" -> "failed", "reason" -> "invalidWorkspace", "workspace" -> workspace|>]
     ];
    files = <|
      "manifest" -> FileNameJoin[{workspace, "dsibp-export-manifest.wl"}],
@@ -185,10 +185,10 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
      |>;
    missingFiles = Select[Normal[files], ! StringQ[Last[#]] || ! FileExistsQ[Last[#]] &];
    If[missingFiles =!= {},
-    Message[DSKiraImport::missing, missingFiles]; dsErrorPrint["完整 Kira 结果文件不足，未导入。"]; Return[<|"status" -> "failed", "reason" -> "missingFiles", "workspace" -> workspace, "files" -> files, "missingFiles" -> missingFiles|>]
+    Message[DSKiraImport::missing, missingFiles]; dsErrorPrint["完整 Kira 结果文件不足，未导入。 Required Kira result files are missing, so no result was imported."]; Return[<|"status" -> "failed", "reason" -> "missingFiles", "workspace" -> workspace, "files" -> files, "missingFiles" -> missingFiles|>]
     ];
    {manifest, repJ2Kira, repKira2J, reductionRulesBackend} = dsStageRun[
-     "读取 Kira manifest、映射与 reduction",
+     "读取 Kira manifest、映射与 reduction / Reading the Kira manifest, maps, and reduction",
      dsKiraReadExpression /@ Lookup[files, {"manifest", "repJ2Kira", "repKira2J", "reduction"}],
      progress
      ];
@@ -196,10 +196,10 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
    completionText = Import[files["completion"], "Text"];
    completionQ = StringQ[completionText] && dsKiraCompletionQ[completionText, OptionValue[KiraCompletionPatterns]];
    If[! TrueQ[completionQ],
-    Message[DSKiraImport::incomplete, files["completion"]]; dsErrorPrint["Kira 日志未确认成功完成。"]; Return[<|"status" -> "failed", "reason" -> "completionMarkerMissing", "workspace" -> workspace, "files" -> files|>]
+    Message[DSKiraImport::incomplete, files["completion"]]; dsErrorPrint["Kira 日志未确认成功完成。 The Kira log does not confirm successful completion."]; Return[<|"status" -> "failed", "reason" -> "completionMarkerMissing", "workspace" -> workspace, "files" -> files|>]
     ];
    If[! AssociationQ[manifest] || ! dsRuleListQ[repJ2Kira] || ! dsRuleListQ[repKira2J] || ! dsRuleListQ[reductionRulesBackend],
-    Message[DSKiraImport::invalid, "malformed manifest/map/reduction expression"]; dsErrorPrint["Kira 文件不是预期的 Wolfram 表达式。"]; Return[<|"status" -> "failed", "reason" -> "malformedExpressions", "workspace" -> workspace|>]
+    Message[DSKiraImport::invalid, "malformed manifest/map/reduction expression"]; dsErrorPrint["Kira 文件不是预期的 Wolfram 表达式。 The Kira files are not the expected Wolfram expressions."]; Return[<|"status" -> "failed", "reason" -> "malformedExpressions", "workspace" -> workspace|>]
     ];
    coefficientVariableMap = Lookup[manifest, "coefficientVariableMap", {}];
    backendImaginaryUnit = Lookup[manifest, "backendImaginaryUnit", None];
@@ -259,7 +259,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
      |>;
    issues = Keys @ Select[checks, ! TrueQ[#] &];
    If[issues =!= {},
-    Message[DSKiraImport::mismatch, issues]; dsErrorPrint["Kira 结果未通过同源性/完整性门禁。"]; Return[<|"status" -> "failed", "reason" -> "validationFailed", "workspace" -> workspace, "files" -> files, "validationReport" -> <|"checks" -> checks, "issues" -> issues|>|>]
+    Message[DSKiraImport::mismatch, issues]; dsErrorPrint["Kira 结果未通过同源性/完整性门禁。 The Kira results failed the provenance or completeness gate."]; Return[<|"status" -> "failed", "reason" -> "validationFailed", "workspace" -> workspace, "files" -> files, "validationReport" -> <|"checks" -> checks, "issues" -> issues|>|>]
     ];
    backendMasters = dsKiraBackendMasterObject[#, relationIDs, idToJ] & /@ masterIDs;
    boundaryMasterIDs = Complement[masterIDs, relationIDs];
@@ -292,4 +292,4 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     |>
    ];
 
-DSKiraImport[root_, context_: Automatic, OptionsPattern[]] := (Message[DSKiraImport::badpath, root]; dsErrorPrint["DSKiraImport 的第一个参数必须是目录字符串。"]; <|"status" -> "failed", "reason" -> "workspaceNotString"|>);
+DSKiraImport[root_, context_: Automatic, OptionsPattern[]] := (Message[DSKiraImport::badpath, root]; dsErrorPrint["DSKiraImport 的第一个参数必须是目录字符串。 The first DSKiraImport argument must be a directory string."]; <|"status" -> "failed", "reason" -> "workspaceNotString"|>);

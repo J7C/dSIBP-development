@@ -64,7 +64,7 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
    {relation, variables, weights, degrees, masters, context, matrices, sources, missingVariables,
     declaredDegrees, degreeRules, eulerMatrix, eulerSource, matrixResidual, sourceResidual, checks, status},
    If[Lookup[deData, "status", "missing"] =!= "generated",
-    Message[DSScaleCheck::badde]; dsErrorPrint["DE 尚未闭合，不能宣称标度检查通过。"]; Return[<|"status" -> "failed", "reason" -> "deNotGenerated"|>]
+    Message[DSScaleCheck::badde]; dsErrorPrint["DE 尚未闭合，不能宣称标度检查通过。 The DE is not closed, so the scaling check cannot be reported as passed."]; Return[<|"status" -> "failed", "reason" -> "deNotGenerated"|>]
     ];
    relation = Lookup[spec, "relation", OptionValue[ScalingRelation]];
    variables = Replace[Lookup[spec, "variables", OptionValue[ScalingVariables]], Automatic -> deData["variables"]];
@@ -93,13 +93,13 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
    If[! ListQ[variables] || ! ListQ[weights] || Length[variables] =!= Length[weights] ||
      ! ListQ[degrees] || Length[degrees] =!= Length[masters] || MemberQ[degrees, $Failed],
     Message[DSScaleCheck::badspec, <|"relation" -> relation, "variables" -> variables, "weights" -> weights, "degrees" -> degrees|>];
-    dsErrorPrint["标度检查规格无效。"]; Return[<|"status" -> "failed", "reason" -> "invalidScalingSpecification"|>]
+    dsErrorPrint["标度检查规格无效。 The scaling-check specification is invalid."]; Return[<|"status" -> "failed", "reason" -> "invalidScalingSpecification"|>]
     ];
    matrices = deData["matrices"];
    sources = deData["sources"];
    missingVariables = Select[variables, ! KeyExistsQ[matrices, #] &];
    If[missingVariables =!= {},
-    Message[DSScaleCheck::badspec, missingVariables]; dsErrorPrint["DE 缺少 Euler 算符所需变量。"]; Return[<|"status" -> "failed", "reason" -> "missingDEVariables", "missingVariables" -> missingVariables|>]
+    Message[DSScaleCheck::badspec, missingVariables]; dsErrorPrint["DE 缺少 Euler 算符所需变量。 The DE lacks variables required by the Euler operator."]; Return[<|"status" -> "failed", "reason" -> "missingDEVariables", "missingVariables" -> missingVariables|>]
     ];
    eulerMatrix = Total[MapThread[#1 #2 matrices[#2] &, {weights, variables}]];
    eulerSource = Total[MapThread[#1 #2 sources[#2] &, {weights, variables}]];
@@ -125,4 +125,4 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
     |>
    ];
 
-DSScaleCheck[deData_, spec_: <||>, OptionsPattern[]] := (Message[DSScaleCheck::badde]; dsErrorPrint["DSScaleCheck 输入必须是 DE Association。"]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);
+DSScaleCheck[deData_, spec_: <||>, OptionsPattern[]] := (Message[DSScaleCheck::badde]; dsErrorPrint["DSScaleCheck 输入必须是 DE Association。 DSScaleCheck input must be a DE Association."]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);

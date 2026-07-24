@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* Mixed massive/massless 示例：只用 016 公开入口完成初始化、canonical seed 和 linearData。 *)
+(* Mixed massive/massless 示例：用 017 统一三参数公开入口完成离散模板、连续撒点和 linearData。 *)
 
 (* ::Chapter:: *)
 (*加载标准 package*)
@@ -31,8 +31,6 @@ case = <|
      b0[e1] -> beta1, b0[e2] -> beta2
      },
    "symmetryRules" -> {},
-   (* 成品例固定一个离散分支；全离散态覆盖属于正式 bench，不在用户入门例重复。 *)
-   "sampleDiscreteRules" -> {{n[e1, 1] -> 0, n[e1, 2] -> 0, n[e2] -> 0}},
    "seedPreset" -> "quickCheck"
    |>;
 
@@ -40,9 +38,8 @@ case = <|
 (* ::Chapter:: *)
 (*缺省选项*)
 
-(* 缺省不写初始化文件、不生成导数 metadata；本例枚举全部离散态但保持最小连续范围。 *)
+(* 缺省不写初始化文件、不生成导数 metadata；DSSeeds 始终完整枚举离散态。 *)
 initOptions = {WriteInitializationFiles -> False, GenerateDerivativeMetadata -> False};
-seedOptions = {DiscreteMode -> "sample", GenerateShrinkSectors -> True, MaxEquationCount -> 1000};
 linearOptions = {LinearSystemMode -> "symbolic"};
 
 
@@ -50,21 +47,42 @@ linearOptions = {LinearSystemMode -> "symbolic"};
 (*公开工作流*)
 
 context = DSInit[case, Sequence @@ initOptions];
-seedData = DSSeeds[context, Sequence @@ seedOptions];
+templateSeedData = DSSeeds[context, GenerateShrinkSectors -> True];
+allSeeds = DSAllSeeds[templateSeedData];
+
+(* 统一范围：所有 general 连续指标都取 0。 *)
+seedData = DSGenerateIBP[allSeeds, {0, 0}];
+
+(* 精细范围：必须把 allSeeds 中实际出现的连续指标逐个完整覆盖。 *)
+continuousIndices = DeleteDuplicates@Flatten[Lookup[allSeeds, "continuousIndices", {}], Infinity];
+detailedRanges = ({#, 0, 0} & /@ continuousIndices);
+seedDataDetailed = generateIBP[allSeeds, Sequence @@ detailedRanges];
+
 linearData = DSLinear[seedData, context, Sequence @@ linearOptions];
+kiraPlan = DSKiraPlan[linearData, <|
+    "stage" -> "preReduction",
+    "candidateIntegrals" -> Take[Lookup[linearData, "integralList", {}], UpTo[3]]
+    |>];
 
 summary = <|
    "initStatus" -> Lookup[context, "status", "missing"],
    "sectorCount" -> Length[Lookup[context, "sectors", {}]],
+   "templateStatus" -> Lookup[templateSeedData, "dSIBPStatus", "missing"],
+   "templateCount" -> Length[allSeeds],
    "seedStatus" -> Lookup[seedData, "dSIBPStatus", "missing"],
    "equationCount" -> Lookup[seedData, "equationCount", Missing["NotAvailable"]],
-   "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"]
+   "uniformDetailedEqual" -> (Lookup[seedData, "equations", {}] === Lookup[seedDataDetailed, "equations", {}]),
+   "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"],
+   "kiraPlanStatus" -> Lookup[kiraPlan, "status", "missing"]
    |>;
 
 Print[summary];
 If[! And[
     ToString[$dSIBPVersion] === currentVersion,
     summary["initStatus"] === "initialized",
+    summary["templateStatus"] === "generated",
     summary["seedStatus"] === "generated",
-    summary["linearStatus"] === "generated"
+    TrueQ[summary["uniformDetailedEqual"]],
+    summary["linearStatus"] === "generated",
+    summary["kiraPlanStatus"] === "planned"
     ], Exit[1]];

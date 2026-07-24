@@ -11,11 +11,13 @@
 \usepackage[svgnames]{xcolor}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\setlength{\emergencystretch}{3em}
 
 \title{dS IBP Package 技术笔记}
 \author{基于 2401.00129 (dS IBP) 与 1703.10166 (SK Diagrammatics)}
 
 \begin{document}
+\sloppy
 \maketitle
 \tableofcontents
 \newpage
@@ -30,11 +32,11 @@
   \item building-block 导数项已经包含在 seed 中；
   \item 对每个 sector 先枚举离散 $n=0,1$ 状态，再作用生成元；
   \item 生成元作用后一旦出现 $n=2$ 或更高 Hankel 导数态，立刻用 EOM 递推消去；
-  \item 输出 seed 中所有完整线的 $n$ 指标均已 canonical 到 $0/1$，massless 线保持双 theta 合并指标包 $\{b_e,n_e\}$；
+  \item 输出 seed 中所有完整线的 $n$ 指标均已 canonical 到 $0/1$，massless 线保持双端点三槽指标包 $\{b_e,n_{e,1},n_{e,2}\}$ 并应用 quotient relations；
   \item 同一代表顶点对的 full lines 按共同 theta 生成 odd-subset contact；sector 只枚举这些事件可达的状态。
 \end{itemize}
 
-当前 014 以 012 的 loop 物理核心为只读基线，已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/canonical 门禁；time seed 已包含顶点幂次、外部相位、massive 端点导数、massless 有向 $0\leftrightarrow1$ regular 项、massive/massless theta-boundary shrink 以及目标 sector 的 coincident 抵消，并通过标准 \texttt{dSIBP`} context 提供原子与高层接口。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，importer 只验证并读取外部完整 reduction；二者都不替代任何前端关系或运行 reduction。
+当前 017 以既有 loop 物理核心为只读基线，已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/quotient canonical 门禁；time seed 已包含顶点幂次、外部相位、双端点 regular 项、massive/massless theta-boundary shrink、目标 sector coincident 抵消与 sector prefactor normalization，并通过标准 \texttt{dSIBP`} context 提供原子与高层接口。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，importer 只验证并读取外部完整 reduction；二者都不替代任何前端关系或运行 reduction。
 
 % ============================================================
 \section{h 函数及其性质}
@@ -390,7 +392,7 @@ $e^{\pi\text{Im}[\nu]}$ 是以下两个因素\textbf{共同作用}的结果：
 % ============================================================
 \section{Massless 双 theta 的 time-IBP 缩并与抵消}
 
-本 package 对纯 massless 与 massive/massless 混合积分族都采用逐传播子的双 theta 合并路线。对一条 masslessFull 线，\texttt{lineData["endpoints"]=\{u,v\}} 是有序数据；第一端点 $u$ 定义单指标 $n=1$ 的反对称方向。令 $\Delta=\tau_u-\tau_v$，并对 $++/--$ 分别取 $\sigma=+1/-1$，定义
+本 package 对纯 massless 与 massive/massless 混合积分族都采用逐传播子的双 theta 合并路线。对一条 masslessFull 线，\texttt{lineData["endpoints"]=\{u,v\}} 是有序数据。令 $\Delta=\tau_u-\tau_v$，并对 $++/--$ 分别取 $\sigma=+1/-1$，先定义二维物理基
 \begin{align}
  M_0 &=
  \theta(\Delta)e^{-i\sigma q\Delta}
@@ -400,14 +402,13 @@ $e^{\pi\text{Im}[\nu]}$ 是以下两个因素\textbf{共同作用}的结果：
  +\theta(-\Delta)e^{+i\sigma q\Delta}.
  \label{masslessM01Tech}
 \end{align}
-交换端点时 $M_0$ 不变而 $M_1$ 变号。若临时用双端点导数标签检查，则
+交换端点时 $M_0$ 不变而 $M_1$ 变号。017 的公开 pack 保留双端点标签，并以
 \begin{equation}
- \{10\}=-\{01\},\qquad
- \{20\}=\{02\}=-q^2\{00\},\qquad
- \{11\}=+q^2\{00\}.
+ F_{00}=M_0,\qquad F_{10}=M_1,\qquad
+ F_{01}=-F_{10},\qquad F_{11}=-F_{00}
  \label{masslessDerivativeCanonicalTech}
 \end{equation}
-因此正式积分只保存 $\{b_e,n_e\}$ 且 $n_e\in\{0,1\}$；不建立 massless $n=2$ 状态。
+定义 quotient；动量幂变化另由 $b_e$ shift 保存。因此正式积分保存 $\{b_e,n_{e,1},n_{e,2}\}$，两个端点指标都只取 $0,1$，并以 $n_{e,2}\to0$ 为 canonical 方向；不建立 massless $n=2$ 状态。
 
 \subsection{两个端点的 regular 与 theta-delta 项}
 
@@ -421,20 +422,20 @@ $e^{\pi\text{Im}[\nu]}$ 是以下两个因素\textbf{共同作用}的结果：
    +2n\,\delta(\tau_u-\tau_v).
  \label{masslessTimeRulesTech}
 \end{align}
-regular 部分在指标语言中统一为
+对一般公开态先应用式~\eqref{masslessDerivativeCanonicalTech}。在 canonical representative $\{b_e,n_e,0\}$ 上，regular 部分统一为
 \begin{align}
  \tau_u:\quad
- \{b_e,n_e\}&\longrightarrow\{b_e-1,1-n_e\},
+ \{b_e,n_e,0\}&\longrightarrow\{b_e-1,1-n_e,0\},
  &\text{系数 }+i\sigma,\\
  \tau_v:\quad
- \{b_e,n_e\}&\longrightarrow\{b_e-1,1-n_e\},
+ \{b_e,n_e,0\}&\longrightarrow\{b_e-1,1-n_e,0\},
  &\text{系数 }-i\sigma.
 \end{align}
-连续在同一端点作用两次回到原 $n_e$，并给出 $-q^2$，即指标上为 $-\{b_e-2,n_e\}$。这一步直接由两次 $0\leftrightarrow1$ 翻转实现，不产生临时 $n_e=2$。
+连续在同一端点作用两次回到原 canonical representative，并给出 $-q^2$，即指标上为 $-\{b_e-2,n_e,0\}$。这一步直接由两次 $0\leftrightarrow1$ 翻转实现，不产生临时 $n_e=2$。
 
-theta-delta 项只在 $n_e=1$ 时存在。第一端点系数为 $-2$，第二端点为 $+2$，并触发
+theta-delta 项在公开表示中只对奇数端点态 $n_{e,1}+n_{e,2}=1$ 存在。第一端点系数为 $-2$，第二端点为 $+2$，并触发
 \begin{equation}
- \{b_e,1\}\longrightarrow\{bS_e\},\qquad
+ \{b_e,n_{e,1},n_{e,2}\}\longrightarrow\{bS_e\},\qquad
  bS_e=b_e,\qquad bS0_e=b0_e.
  \label{masslessShrinkTech}
 \end{equation}
@@ -449,9 +450,9 @@ theta-delta 项只在 $n_e=1$ 时存在。第一端点系数为 $-2$，第二端
 
 若其它线的缩并使这条仍完整的 masslessFull 线的两个原端点映到同一个 active vertex，同一个 time 生成元必须同时作用两个端点。于是 regular 的 $+i\sigma/-i\sigma$ 项相消，theta-delta 的 $-2/+2$ 项相消，而且反对称态 $M_1(\tau,\tau)=0$。实现时不得用只返回第一个端点的搜索。
 
-该规则也必须作用于 top-sector 方程中刚产生的 sub-sector 项。012 根据每个输出 $J$ 中已经成为单元素 $\{bS\}$ 的 line packs 重建目标 sector 的代表顶点映射，再判断 coincident $n=1$；若继续使用 source topology 的端点映射，会留下错误的 sub-sector 项。
+该规则也必须作用于 top-sector 方程中刚产生的 sub-sector 项。017 根据每个输出 $J$ 的 root-ordered full/shrunk pack pattern 重建目标 sector 的代表顶点映射，再判断 coincident 奇数端点态；若继续使用 source topology 的端点映射，会留下错误的 sub-sector 项。
 
-masslessCross（$+-$ 或 $-+$）不含 theta，也没有离散 $n_e$ 或 shrink。它的 time-IBP 只对两端点指数相位求导。
+masslessCross（$+-$ 或 $-+$）不含 theta，也没有活动离散态或 shrink。为保持固定三槽，公开 pack 写成 $\{b_e,0,0\}$ 或 fixed 的 $\{\texttt{"F"},0,0\}$；两个零不参加撒点。它的 time-IBP 只对两端点指数相位求导。
 
 \subsection{共同-theta contact 到最终指标表示}
 
@@ -524,7 +525,7 @@ $\longrightarrow$
 \begin{equation}
  \mathcal C_e=\frac{4i}{\pi}e^{\pi\operatorname{Im}\nu_e}.
 \end{equation}
-对 masslessFull，只有 $n_e=1$ 有 contact；第一/第二有序端点的系数为 $-2/+2$，并等价于 $s_e=z_e=0$ 的 atomic term，不调用 $W_T$。
+对 masslessFull，只有 $n_{e,1}+n_{e,2}=1$ 的 odd endpoint state 有 contact；第一/第二有序端点的系数为 $-2/+2$，并等价于 $s_e=z_e=0$ 的 atomic term，不调用 $W_T$。
 
 现在选取式~\eqref{commonThetaOddSubset} 中一个奇数子集 $S$，并对每条 massive $e\in S$ 选定一个 Laurent 项 $\alpha_e$。记包含端点、SK 与 $-w_{e\alpha_e}$ 的完整 atomic 系数为 $c_{e\alpha_e}$。该项的总系数为
 \begin{equation}
@@ -543,7 +544,7 @@ $\longrightarrow$
  bS0_e&=b0_e+z_e,
  \qquad e\in S\text{ massive},
  \label{bundleMassivePackShift}\\
- \{b_e,1\}&\longrightarrow\{b_e\},
+ \{b_e,n_{e,1},n_{e,2}\}&\longrightarrow\{b_e\},
  &
  bS0_e&=b0_e,
  \qquad e\in S\text{ massless}.
@@ -560,7 +561,7 @@ $\longrightarrow$
  \right].
  \label{bundleFinalJIndexForm}
 \end{equation}
-式~\eqref{bundleMergedAShift}--\eqref{bundleFinalJIndexForm} 中，所有选中线只触发一次顶点合并，但其整数与 zero-point shift 分别求和；各 shrunk line 的 $bS/bS0$ 仍逐线记录。未选中的 full lines 在合并后成为 coincident：massless $n=1$ 立即置零，massiveFull 应用 $\{b,1,0\}\to\{b,0,1\}$；它们不再产生 theta boundary。sector 由这些非零 contact 事件做 BFS 得到，不能用 full-line 幂集代替。
+式~\eqref{bundleMergedAShift}--\eqref{bundleFinalJIndexForm} 中，所有选中线只触发一次顶点合并，但其整数与 zero-point shift 分别求和；各 shrunk line 的 $bS/bS0$ 仍逐线记录。未选中的 full lines 在合并后成为 coincident：massless odd endpoint state 立即置零，massiveFull 应用 $\{b,1,0\}\to\{b,0,1\}$；它们不再产生 theta boundary。sector 由这些非零 contact 事件做 BFS 得到，不能用 full-line 幂集代替。
 
 单传播子的对称等时值取 $\theta(0)=1/2$，对应式~\eqref{bundleJDDefinition} 的 $\mathsf J_e$。这只定义单线等时平均，不定义 $\delta\theta^m$；后者必须使用式~\eqref{bundleUniqueBoundary}，或附录~\ref{app:gaussianDerivation} 的统一正则化。
 \section{维度参数约定}
@@ -703,7 +704,7 @@ H 模式使用裸 Hankel 函数 $H_\nu^{(1)}$/$H_{\nu^*}^{(2)}$（无 $(-k\tau)^
 \begin{equation}
   W[e^{ik\tau}, e^{-ik\tau}] = -2ik.
 \end{equation}
-无 Hankel 缩并机制，故无 $\mathcal{C}_e$ prefactor（或等价地 $\mathcal{C}_e^{(\text{massless})} = 1$）。这里说的“无缩并机制”只指没有 Hankel Wronskian 型的 $h/H$ 塌缩 prefactor；massless 的 Heaviside boundary 仍按式~\eqref{commonThetaOddSubset} 与同顶点对的其它 full lines 一起处理，并保持逐线指标包 $\{b_e,n_e\}$。
+无 Hankel 缩并机制，故无 $\mathcal{C}_e$ prefactor（或等价地 $\mathcal{C}_e^{(\text{massless})} = 1$）。这里说的“无缩并机制”只指没有 Hankel Wronskian 型的 $h/H$ 塌缩 prefactor；massless 的 Heaviside boundary 仍按式~\eqref{commonThetaOddSubset} 与同顶点对的其它 full lines 一起处理，并保持逐线指标包 $\{b_e,n_{e,1},n_{e,2}\}$。
 
 \textbf{多次缩并}：当多条线同时缩并时（如 2-line shrink），总 prefactor 为各线 prefactor 之积：
 \begin{equation}
@@ -767,7 +768,7 @@ IBP 恒等式来自全微分在维正规化下积分为零：
 
 \subsection{完备 IBP 生成元集合}
 
-参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，016 要求用户显式给出有序的 \texttt{loopExternalMomenta} 基 $\{k_1,\ldots,k_K\}$；程序不按名字或 line 首次出现自动选择角色。该基的平方 Gram 原子为 $x_{ij}=\operatorname{sp}(k_i,k_j)$，公开变量为 $\sqrt{x_{ij}}$。另一个显式列表 \texttt{independentExternalMomenta} 只声明实际无圈 line/phase 的独立模长；这些对象不计入 $K$、loop IBP 生成元或 ISP 空间，也不自动产生彼此交叉点积。
+参考 FIRE7 和 LiteRed 的方法，对 $L$ 圈积分，017 要求用户显式给出有序的 \texttt{loopExternalMomenta} 基 $\{k_1,\ldots,k_K\}$；程序不按名字或 line 首次出现自动选择角色。该基的平方 Gram 原子为 $x_{ij}=\operatorname{sp}(k_i,k_j)$，公开变量为 $\sqrt{x_{ij}}$。另一个显式列表 \texttt{independentExternalMomenta} 只声明实际无圈 line/phase 的独立模长；这些对象不计入 $K$、loop IBP 生成元或 ISP 空间，也不自动产生彼此交叉点积。
 
 实际需要的 loop-external 空间由 affine routing 独立审计。若所有 line momentum 写成 $Q=Aq+r$，取一组满秩参考行 $A_R$ 并定义
 \begin{equation}
@@ -816,7 +817,7 @@ ispData = {
 };
 \end{verbatim}
 
-\texttt{sp[p,r]} 是用户口 scalar-product convention，并具有 \texttt{Orderless} 属性。所有含圈 line momentum 与 ISP 参数必须由 \texttt{loopMomenta} 和 \texttt{loopExternalMomenta} 线性张成；实际无圈 line/phase 模长必须由 \texttt{independentExternalMomenta} 完备声明。016 对 loop Gram 使用短名 \texttt{ssij}，对独立无圈模长使用 \texttt{sE1,sE2,...}。类别总数超过 9 时按总数位宽补零。与两类动量声明都无关的相位标量仍可写成 \texttt{ke[i]}。
+\texttt{sp[p,r]} 是用户口 scalar-product convention，并具有 \texttt{Orderless} 属性。所有含圈 line momentum 与 ISP 参数必须由 \texttt{loopMomenta} 和 \texttt{loopExternalMomenta} 线性张成；实际无圈 line/phase 模长必须由 \texttt{independentExternalMomenta} 完备声明。017 对 loop Gram 使用短名 \texttt{ssij}，对独立无圈模长使用 \texttt{sE1,sE2,...}。类别总数超过 9 时按总数位宽补零。与两类动量声明都无关的相位标量仍可写成 \texttt{ke[i]}。
 
 下文统一把 \texttt{loopExternalMomenta} 的按序元素简称为 $k_{L1},k_{L2},\ldots$（\texttt{kL}），把 \texttt{independentExternalMomenta} 的按序元素简称为 $k_{E1},k_{E2},\ldots$（\texttt{kE}）。简称只编码列表角色与位置，不约束用户符号名。两套编号独立：\texttt{kL} 进入内部 \texttt{qk/kk} 与公开 \texttt{ssij}；\texttt{kE} 的平方模长进入独立的 \texttt{externalLegSquaredCoordinate[e]} 与公开 \texttt{sEe}，不进入 loop scalar-product 空间。
 
@@ -827,11 +828,66 @@ ispData = {
   \item \texttt{zExprs} 与 ISP 坐标总数等于独立 loop-scalar-products 数量，即 $\# z_e+\#\text{ISP}=N_{\text{sp}}$
   \item line momentum 与 \texttt{sp[p,r]} 参数必须是声明动量基的线性组合；非线性输入会触发 \texttt{nonLinearLineMomenta} 或 \texttt{nonLinearScalarProductArguments}
   \item 数量闭合后必须能实际反解出 \texttt{repSP2Z}；重复或退化传播子动量会触发 \texttt{scalarProductCoordinateSolveFailed}
-  \item \texttt{numericRules} 应覆盖全部外部不变量与顶点能量符号；016 缺省给根号坐标赋值，例如 \verb|ss11 -> value| 或 \verb|sE1 -> value|，程序在内部映射为平方值。显式旧规则或自定义名保持其声明语义；独立顶点能量写 \verb|ke[3] -> value|。
+  \item 数值规则按工作流分类。不再对外部变量求导的 numeric linear 工作流可为 \texttt{ssij/sEe}、自定义坐标或顶点能量给定值；但 Kira 结果若要进入 \texttt{DSDE}，全部 derivative variables、其内部平方原子以及任何含它们的规则右端都必须保持符号。此时只允许固定 \texttt{dim/epsilon}、\texttt{nu}、zero-point 和 normalization 等非微分系数参数。
 \end{enumerate}
 
 这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动从传播子中选择独立子集；若输入中存在重复/退化传播子、ISP 不足或特殊数值外动量导致不可反解，应由用户修正 family 输入。
 验证通过后，才进入 IBP 生成步骤。
+
+\subsection{Seed shift metadata 与目标包络反推}
+
+017 把 ``general seed 中有哪些指标移位'' 与 ``用户最终要生成多大的整数域'' 分成两个步骤。首先调用
+\begin{verbatim}
+seedData = DSSeeds[context];
+allSeeds = DSAllSeeds[seedData];
+seedGroups = DSSeedGroups[seedData];
+groupInfo = DSSeedGroupMetadata[seedData];
+shiftMeta = DSMetaSeedRange[seedGroups,{a1,a2,b1,b2,...}];
+\end{verbatim}
+
+\texttt{DSSeeds} 完整遍历离散 $n_i=0,1$ 并先执行 EOM、symmetry 与 canonical，连续指标保持 general。它同时返回：
+\begin{itemize}
+  \item \texttt{allSeeds}：保持稳定 ordinal 的一维密封模板列表；
+  \item \texttt{seedGroups}：依次按 $\{\texttt{sectorKey},\texttt{ibpClass},\texttt{generator}\}$ 分组，每个二级列表对应一个时间 IBP 顶点或一个复合圈动量 IBP 算符，并包含该算符的全部离散态模板；
+  \item \texttt{seedGroupMetadata}：与上述分组同序的 sector、IBP 类型、生成元、模板 ordinal 与计数。
+\end{itemize}
+默认情况下 \texttt{DSSeeds} 用推荐的 \texttt{seedGroups} 初始化一次 shift metadata。用户可随时再次调用 \texttt{DSMetaSeedRange} 覆盖此前状态：若输入是 flat 列表 $\{s_1,s_2,\ldots\}$，则整体统计为一组；若输入含二级或更深列表，则只以最外层元素分组，每个元素内部无论嵌套多深都先完全 \texttt{Flatten} 后独立统计。因此用户既可逐 IBP 算符合并全部 $n_i$ 状态，也可把每条离散模板分别包装成顶层组。调用时程序用中英双语报告该规则、实际组数和来源。
+
+shift 提取不读取 \texttt{J[aList,linePacks,ispList]} 的槽位长度。对每个积分先把 \texttt{J} 的全部参数统一 \texttt{Flatten} 成指标数据，再用 \texttt{Variables} 得到实际变量集合。用户声明的指标列表只作为完整性审计：声明遗漏的变量记入 \texttt{missingIndices} 并自动补入，声明中不存在于 seed 的变量记入 \texttt{extraIndices} 且不参与撒点；两者均给 warning，但不终止 metadata 初始化。每个输入组、每个实际指标 $x$ 分别保存所有仿射出现
+\begin{equation}
+ x+\delta,\qquad \delta\in\mathbb Z,
+\end{equation}
+的 shift 集、\texttt{shiftBounds}$=\{\min\delta,\max\delta\}$ 以及相对目标包络的 offset。含多个指标的 contact 组合（例如 $a_1+a_2+c$）不用于单轴 shift 统计，而由源 sector 方程自然带入 child sector。
+
+随后用户给最终关系允许出现的目标指标包络。统一形式
+\begin{verbatim}
+DSGenerateIBP[allSeeds,{L,U}]
+\end{verbatim}
+把同一整数区间用于全部 root 指标；逐指标形式
+\begin{verbatim}
+DSGenerateIBP[allSeeds,{a1,La1,Ua1},{b1,Lb1,Ub1},...]
+\end{verbatim}
+要求 root 指标 exact cover。shrink 指标 \texttt{bS[e]} 继承同一 root line 的 \texttt{b[e]} 包络；若两者都显式出现且区间相同则合并，若区间冲突则拒绝该范围输入。
+
+对某组、某指标的全部 shift $\Delta_x$，seed 值必须同时满足
+\begin{equation}
+ L_x\leq x+\delta\leq U_x\qquad (\forall\delta\in\Delta_x).
+\end{equation}
+因此正确的反推区间是逆像的交集
+\begin{equation}
+ x\in\bigl[L_x-\min\Delta_x,\;U_x-\max\Delta_x\bigr].
+ \label{seedEnvelopeInverse017}
+\end{equation}
+该区间相对用户包络缩小；对其中全部 seed 作用该组的全部 shift 后，所得关系的指标外包络刚好回到 $[L_x,U_x]$。不得误用并集外包络 $[L_x-\max\Delta_x,U_x-\min\Delta_x]$，后者会无故扩大撒点域。若用户包络宽度小于某组 shift 跨度，式~\eqref{seedEnvelopeInverse017} 为空；程序 warning 并保留结构化 \texttt{emptySeedRangeGroups}，但该结果的 complete IBP capability 为 false，不能作为完整后端约化系统。
+
+实际生成顺序固定为：按式~\eqref{seedEnvelopeInverse017} 构造候选整数点，\emph{在生成元作用前}按当前 sector 的 parity 筛点，再把数值点代入 general seed，随后执行 EOM/symmetry/canonical 与用户坐标投影。生成后的 parity certificate 只检查关系，不删除关系中的积分，也不把不满足 parity 的积分替换为零。\texttt{candidatePointCount}、\texttt{parityAcceptedPointCount}、逐组 shift/range 和空域状态均写入返回数据。用户包络唯一决定规模；package 不设置 seed 数、离散态数或方程数上限。
+
+在枚举前，\texttt{DSGenerateIBP} 逐输入组用中英双语打印反推范围，显示为
+\begin{verbatim}
+编号 1（来源）：{a1,min,max}, {b1,min,max}, ...
+Group 1 (source): {a1,min,max}, {b1,min,max}, ...
+\end{verbatim}
+编号只表示用户输入的 seed 分组；即使缺省分组通常对应一个物理 IBP 生成元，也不把用户自定义分组称为 IBP 算符。来源取该组的 sector、IBP 类型与生成元；flat 总组则列出其中全部来源。若任一规则出现 $\min>\max$，程序另行 warning 并列出相同编号、来源和空区间。warning 明确解释：目标包络窄于该组 shift 跨度，故不存在能使全部移位后积分仍落在目标包络内的 seed 点；该编号的 IBP 撒点为空，最终方程集合缺少对应关系，不能作为完整约化系统。该组同时写入 \texttt{emptySeedRangeGroups}。全局消息开关可关闭显示，但不改变 metadata、方程集合或 capability 状态。
 
 \subsection{分 Sector IBP 生成流程}
 
@@ -842,14 +898,14 @@ ispData = {
   \item 对每个 sector（由缩并线集合标记）：
   \begin{enumerate}
     \item 构造该 sector 的连续指标盒子 $\{a_v, b_e, n_{\text{isp}}\}$ 与离散 $n$ 状态集合
-    \item 枚举连续 seed（撒点范围控制）
-    \item 对每个连续 seed，先枚举该 sector 的离散 $n=0,1$ 状态；若使用 \texttt{sampleDiscreteRules} 做小样本验证，每条 sample rule 也必须给出完整离散态，不允许残留符号 $n$
-    \item 对每个离散态，遍历 time-IBP 与 momentum-IBP 生成元：
+    \item 按式~\eqref{seedEnvelopeInverse017} 从最终关系包络逐输入组反推连续 seed，并在生成元作用前筛选 parity
+    \item 对每个输入组使用 \texttt{DSSeeds} 已完整枚举的全部离散 $n=0,1$ 模板；生产路径不允许离散抽样，也不允许残留符号 $n$
+    \item 对每个离散态，作用该组对应的 time-IBP 或 momentum-IBP 生成元：
       \begin{itemize}
         \item 应用链式法则 $\to$ $z/\xi$-导数 + ISP-导数 + 相位项
         \item 转化为指标移位算符，包含传播子幂次项与 building-block 导数项
         \item 立即应用 EOM 递推，递归消去所有 $n\geq 2$
-        \item 应用 massless 双 theta 合并关系，保持 $\{b_e,n_e\}$ 指标包
+        \item 应用 massless 双 theta quotient relations，保持 $\{b_e,n_{e,1},n_{e,2}\}$ 指标包
         \item 扫描输出，若仍含 $n=2$ 或未知 pack，则该 seed 失败，不进入后端导出
       \end{itemize}
     \item 保存 EOM-canonical IBP 方程，命名区分 sector 与生成元类型
@@ -873,7 +929,7 @@ canonical seed 先由 \texttt{makeLinearSystemData} 转成后端中立的 \textt
 
 serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编号和文件布局，并执行后端特有的输入检查；它不重新生成 IBP seed，不重新应用 EOM，也不改变 sector convention。当前 Kira serializer 生成 \texttt{userSystem/ibp.kira}、\texttt{list}、\texttt{jobs.yaml}、积分映射和 metadata。未来若接 Rational Tracer，应新增独立 serializer，但 canonical seed 和 linear-system 主线无需重写。
 
-本 package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机 Kira/Fermat 路径。014 的 importer 可读取并验证用户在 package 外生成的完整 reduction 与 master-integral 结果；缺失完成标记、映射或来源 manifest 时必须拒绝继续。
+本 package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机 Kira/Fermat 路径。017 的 importer 可读取并验证用户在 package 外生成的完整 reduction 与 master-integral 结果；缺失完成标记、映射或来源 manifest 时必须拒绝继续。
 
 % ============================================================
 \section{标量积变量与 $z=\xi^2$ 线性变换}
@@ -908,7 +964,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \begin{itemize}
   \item \textbf{圈--圈}：$q_l \cdot q_m$（$l \leq m$），共 $L(L+1)/2$ 个。
   \item \textbf{圈--外}：$q_l \cdot k_j$，共 $LK$ 个。
-  \item \textbf{外--外}：$k_i \cdot k_j$ 定义为独立符号，不保持矢量点积结构；016 未指定 \texttt{KinematicRules} 时，按 \texttt{loopExternalMomenta} 的位置生成 $\operatorname{sp}(k_i,k_j)\to ss_{ij}^{,2}$。在 IBP 生成中这些量作为常数参数处理。
+  \item \textbf{外--外}：$k_i \cdot k_j$ 定义为独立符号，不保持矢量点积结构；017 未指定 \texttt{KinematicRules} 时，按 \texttt{loopExternalMomenta} 的位置生成 $\operatorname{sp}(k_i,k_j)\to ss_{ij}^{,2}$。在 IBP 生成中这些量作为常数参数处理。
 \end{itemize}
 
 总独立标量积数目为
@@ -933,7 +989,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \label{zeExpandFull}
 \end{equation}
 
-其中 $P_e$ 为外动量组合，$P_e^2$ 和 $q_l \cdot P_e$ 中的外动量点积均以当前动力学坐标替代；016 缺省写成 $ss_{ij}^{,2}$，也可由用户重定义。因此 $z_e$ 是标量积变量 $\vec{s}$ 的线性函数加上常数项。
+其中 $P_e$ 为外动量组合，$P_e^2$ 和 $q_l \cdot P_e$ 中的外动量点积均以当前动力学坐标替代；017 缺省写成 $ss_{ij}^{,2}$，也可由用户重定义。因此 $z_e$ 是标量积变量 $\vec{s}$ 的线性函数加上常数项。
 
 对所有线 $e$ 写为矩阵形式：
 \begin{equation}
@@ -1033,7 +1089,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \section{独立变量微分方程求导}
 % ============================================================
 
-微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。016 将独立变量分为三类：由 \texttt{loopExternalMomenta} 完整 Gram 坐标得到的模长、\texttt{independentExternalMomenta} 声明且在 topology 中实际出现的无圈动量模长，以及与任何动量向量都无关的独立标量能量。第一类沿用标准外动量矢量导数；第二类对绑定的 line momentum 作标量径向导数并同时微分相位；第三类只按显式系数与顶点相位依赖求导。构造 $D_{ij}$ 时，$i,j$ 只遍历 \texttt{loopExternalMomenta}。
+微分方程 seed 需要把 $\partial_x J$ 写回同一积分族。017 将独立变量分为三类：由 \texttt{loopExternalMomenta} 完整 Gram 坐标得到的模长、\texttt{independentExternalMomenta} 声明且在 topology 中实际出现的无圈动量模长，以及与任何动量向量都无关的独立标量能量。第一类沿用标准外动量矢量导数；第二类对绑定的 line momentum 作标量径向导数并同时微分相位；第三类只按显式系数与顶点相位依赖求导。构造 $D_{ij}$ 时，$i,j$ 只遍历 \texttt{loopExternalMomenta}。
 
 \subsection{顶点能量参数}
 
@@ -1091,7 +1147,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
   \sum_{ij}c^{(a)}_{ij}D_{ij}x_b=\delta_{ab}.
   \label{externalInvariantDecomposition}
 \end{equation}
-完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。原子实现选择上三角 external-vector basis 给出一组 canonical 解。016 不重写该分解；对直接模长
+完整 $K^2$ 个 $D_{ij}$ 通常有零空间，所以 $c^{(a)}_{ij}$ 不唯一。原子实现选择上三角 external-vector basis 给出一组 canonical 解。017 不重写该分解；对直接模长
 \begin{equation}
   r_a=\sqrt{x_a}=\sqrt{\operatorname{sp}(k_i,k_j)}
 \end{equation}
@@ -1145,7 +1201,7 @@ serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编
 \end{align}
 这正是 \texttt{AT} 编译出的每一条 \texttt{derivativeTerms} 对 $a/b/n$ 的同时移位；其它端点态与其它线指标保持不变。对 h 基底的 $n=0$，$\partial_xh_0=h_1$，式~\eqref{externalLegRadialDerivative} 退化为两端各一个 $a_{v_s}\to a_{v_s}+1,n_{e,s}:0\to1$，再加分母项 $-B_eJ[b_e+1]$。
 
-massless full/cross 线使用各自已固定的端点 phase 符号：full 线同时翻转该线离散态，cross 线保持其单一状态；两者都加同一个分母幂导数。径向求导不微分 theta ordering，不读取 \texttt{WT/shrinkTerms}，所以不会把 time-IBP 的共同-theta contact 规则误用于微分方程。
+massless full/cross 线使用各自已固定的端点 phase 符号：full 线按实际求导端点翻转对应槽后立即应用 quotient canonical，cross 线保持固定的两个零槽；两者都加同一个分母幂导数。径向求导不微分 theta ordering，不读取 \texttt{WT/shrinkTerms}，所以不会把 time-IBP 的共同-theta contact 规则误用于微分方程。
 
 若 $r_e$ 还进入顶点能量，则另加式~\eqref{vertexEnergyDerivative} 的相位项。对用户变量 $u$，实际组合为
 \begin{equation}
@@ -1190,7 +1246,7 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线同
 \begin{equation}
   \mathcal I(s)=\sum_r c_r(s)J_r(s)+c_0(s),
 \end{equation}
-而不是单个指标积分。公开接口 \verb|ds[expr,var]| 使用 family 初始化时的外部变量名；016 缺省为根号坐标的 API 短名，并严格实现
+而不是单个指标积分。公开接口 \verb|ds[expr,var]| 使用 family 初始化时的外部变量名；017 缺省为根号坐标的 API 短名，并严格实现
 \begin{equation}
   {\partial\mathcal I\over\partial s}
   =\sum_r c'_r(s)J_r(s)
@@ -1213,8 +1269,9 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线同
 \begin{itemize}
   \item \textbf{Head}：统一使用 $J[\{a_v\}, \{\text{pack}_e\}, \{n_{\text{isp}_j}\}]$。所有 sector（top 和 sub-sector）使用同一 Head。
   \item \textbf{massive 完整线 pack}：$\{b_e, n_{e,1}, n_{e,2}\}$（3 元素）。$b_e$ 为整数指标（分母幂次），$n_{e,a} \in \{0,1\}$ 为 building block 导数阶数。
-  \item \textbf{massless 完整线 pack}：$\{b_e,n_e\}$（2 元素，双 theta 合并路线）。端点关系 $\{1,0\}=-\{0,1\}$ 和 $\{1,1\}=q_e^2\{0,0\}$ 已在 canonical 层吸收，因此 seed 输出保持逐线 $\{b_e,n_e\}$。
-  \item \textbf{缩并线 pack}：$\{bS_e\}$（1 元素）。$bS_e$ 为整数指标。
+  \item \textbf{massless 完整线 pack}：$\{b_e,n_{e,1},n_{e,2}\}$（3 元素）。端点关系 $F_{01}=-F_{10}$ 和 $F_{11}=-F_{00}$ 在 canonical 层吸收，但公开 root line 槽不退化。
+  \item \textbf{fixed 完整/缩并 pack}：分别为 $\{\texttt{"F"},n_{e,1},n_{e,2}\}$ 与 $\{\texttt{"F"}\}$；字符串只标记没有 $b/bS$ 指标，模长幂属于 sector prefactor。
+  \item \textbf{cycle 缩并线 pack}：$\{bS_e\}$（1 元素）。$bS_e$ 为整数指标。
   \item \textbf{$a$ 指标}：正幂次，$(-\tau_v)^{a_v + a0_v}$。
   \item \textbf{$b$ 指标}：分母幂次，$q_e^{-(b_e + b0_e)}$。
 \end{itemize}
@@ -1255,10 +1312,10 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线同
 \subsection{缩并约定}
 
 \begin{itemize}
-  \item 缩并条件：h/H 模式为 $n_{e,1}+n_{e,2}=1$；masslessFull 为单指标 $n_e=1$，第一/第二有序端点的 theta-delta 系数分别为 $-2/+2$。
+  \item 缩并条件：h/H 与 masslessFull 均为 $n_{e,1}+n_{e,2}=1$；massless 第一/第二有序端点的 theta-delta 系数分别为 $-2/+2$。
   \item 缩并因子幂次（h 模式）：$-(2\nu_e+1)$。整数 $-1$ 进入指标，非整数 $-2\nu_e$ 进入零点。
   \item 缩并因子幂次（H 模式）：$-1$（纯整数，来自 $W[H_\nu^{(1)}, H_{\nu^*}^{(2)}] \propto 1/z$）。零点无移位。
-  \item 缩并因子幂次（无质量）：没有额外 $1/q$、$1/(-\tau)$ 或 $2\nu$ shift；theta-delta contact 把 $\{b_e,1\}$ 变成 $\{bS_e\}$。
+  \item 缩并因子幂次（无质量）：没有额外 $1/q$、$1/(-\tau)$ 或 $2\nu$ shift；theta-delta contact 把 odd endpoint pack $\{b_e,n_{e,1},n_{e,2}\}$ 变成 $\{bS_e\}$。
   \item $a$ 指标移位（h/H）：$a_{\text{merged}} = a_u + a_v - 1$。
   \item $a$ 指标移位（masslessFull）：$a_{\text{merged}} = a_u + a_v$。
   \item $a$ 零点移位（h 模式）：$a0_{\text{merged}} = a0_u + a0_v - 2\nu_e$。
@@ -1287,7 +1344,7 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线同
 \section{Loop reduction 取回、微分方程与标度检验}
 % ============================================================
 
-014 继续保持 ``package 不运行 reduction'' 的边界，但允许读回用户已经运行完成的 Kira 全套输出。导出端的 \texttt{linearData}、积分编号映射和 convention manifest 必须与读回结果同源；否则 reduction rule 即使语法可读，也不能用于微分方程。
+017 继续保持 ``package 不运行 reduction'' 的边界，但允许读回用户已经运行完成的 Kira 全套输出。导出端的 \texttt{linearData}、积分编号映射和 convention manifest 必须与读回结果同源；否则 reduction rule 即使语法可读，也不能用于微分方程。
 
 设完全同序的主积分列向量为 $\bm I=(I_1,\ldots,I_N)^T$。对外部独立变量 $x$，公开总导数 \texttt{ds[expr,x]} 同时作用于显式系数和积分：
 \begin{equation}
@@ -1314,7 +1371,24 @@ residual/tadpole sector 使用该文 Eq.~(64)
  =\left(d-b_1-b_2-a-1\right)R_1[\cdots].
  \label{eq:loop-residual-scaling}
 \end{equation}
-014 的 scaling check 把这些 Euler operator 逐个作用于 master vector，再经相同 reduction rules 约回；检查的是符号残差矩阵为零。数值点只能定位失败，不能取代式~\eqref{eq:loop-top-scaling}、\eqref{eq:loop-residual-scaling} 的全符号检验。
+017 的 scaling check 把这些 Euler operator 逐个作用于 master vector，再经相同 reduction rules 约回。一般写成
+\begin{equation}
+ \partial_{x_a}\bm I=A_a\bm I+\bm s_a,
+ \qquad {\cal E}=\sum_a w_a x_a\partial_{x_a},
+ \qquad {\cal E}I_i=\delta_i I_i,
+\end{equation}
+则同序齐次 master basis 必须满足
+\begin{equation}
+ \sum_a w_a x_a A_a=\operatorname{diag}(\delta_i),
+ \qquad \sum_a w_a x_a\bm s_a=0.
+\end{equation}
+若 $\bm I'=T(x)\bm I$，则
+\begin{equation}
+ A'_a=(\partial_{x_a}T)T^{-1}+TA_aT^{-1},\qquad
+ B'={\cal E}[T]T^{-1}+TBT^{-1},
+ \quad B=\sum_a w_a x_aA_a.
+\end{equation}
+因此依赖动力学变量的 normalization 不能只做共轭；对 $M_i=N_iJ_i$，次数还必须包含 ${\cal E}[N_i]/N_i$。检查对象是上述全符号矩阵和 source 残差；数值点只能定位失败，不能取代式~\eqref{eq:loop-top-scaling}、\eqref{eq:loop-residual-scaling} 及一般 Euler 恒等式的符号检验。
 
 闭环 example 固定选 pure massive bubble reference 的 $--$ branch，并使用与 reference code 相同的 parity-closed subsystem：top sector 中 $n_1+n_2+b_1$ 与 $n_3+n_4+b_2$ 均为偶数；$R_1$ 中 $b_1$ 与 $n_3+n_4+b_2$ 均为偶数。交换对称性、$R_2\to R_1$ 与 parity 必须在前端统一 canonical 中应用，不能在 Kira importer 或 DE 层临时补入。
 
@@ -1361,7 +1435,7 @@ Tree family 不保留 loop 的 $b$ 槽，因此投影必须把完整物理幂次
 
 对 h-mode massive contact，$bS=b+1$、$bS0=b0+2\nu$，同时 $a_{\rm merged}=a_u+a_v-1$、$a0_{\rm merged}=a0_u+a0_v-2\nu$。因此整数和 zero-point 共同产生完整的 $(-k)^{-2\nu-1}$；只写 $k^{-1}$ 会遗漏物理系数。H-mode 采用相同整数 shift 但 zero-point shift 为零，无质量 contact 的两类 shift 均为零。
 
-014 的 sector-tagged \texttt{treeLinearData} 必须为每个未合并 loop 单项分别序列化目标与参考的整数幂、zero-point、完整物理幂及其差值，并保存由这些差值直接重建的式~\eqref{eq:loop-tree-projection-prefactor}。若若干来源投影到相同的 \texttt{\{sectorKey,J[...]\}}，最终系数可以求和，但逐来源 \texttt{contributions} 和 \texttt{physicalPowerAudits} 不得覆盖。对同一 contact 事件同时缩并多条线时，式~\eqref{eq:loop-tree-projection-prefactor} 的乘积逐线保留；例如三条 h 线的显式能量指数分别为 $-1-2\nu_i$，而 merged vertex 的 $\nu_0$ 同时减去 $\sum_i2\nu_i$。
+017 的 sector-tagged \texttt{treeLinearData} 必须为每个未合并 loop 单项分别序列化目标与参考的整数幂、zero-point、完整物理幂及其差值，并保存由这些差值直接重建的式~\eqref{eq:loop-tree-projection-prefactor}。若若干来源投影到相同的 \texttt{\{sectorKey,J[...]\}}，最终系数可以求和，但逐来源 \texttt{contributions} 和 \texttt{physicalPowerAudits} 不得覆盖。对同一 contact 事件同时缩并多条线时，式~\eqref{eq:loop-tree-projection-prefactor} 的乘积逐线保留；例如三条 h 线的显式能量指数分别为 $-1-2\nu_i$，而 merged vertex 的 $\nu_0$ 同时减去 $\sum_i2\nu_i$。
 
 % ============================================================
 \section{Tree 的通用迭代关系}
@@ -1410,7 +1484,7 @@ Tree family 不保留 loop 的 $b$ 槽，因此投影必须把完整物理幂次
 \begin{verbatim}
 repIterative[expr_, end_:Automatic]
 \end{verbatim}
-把每个顶点的 $a_e$ 迭代到指定终点；\texttt{Automatic} 表示全零终点。显式终点的长度必须等于顶点数，且每段步数必须是可判定整数。多 sector 情形按 contact-reachable sector DAG 从低到高处理，避免把含 source 的非齐次关系当作齐次 replacement repeated。016 中凡 sector 含 theta/contact source，raw 与 sector-tagged 迭代均从同一个 direct pure-time seed 生成单步关系；旧三槽 loop 投影只作交叉验证。这个要求保证用户显式给出的 \texttt{treeEnergy} 不会被 fixed-line notation \texttt{sEi} 替换。
+把每个顶点的 $a_e$ 迭代到指定终点；\texttt{Automatic} 表示全零终点。显式终点的长度必须等于顶点数，且每段步数必须是可判定整数。多 sector 情形按 contact-reachable sector DAG 从低到高处理，避免把含 source 的非齐次关系当作齐次 replacement repeated。017 的公开输入始终是三参数 $J$；massive-only family 先按 sector tag 映射到 Private vertex basis，公式内核完成单步关系后再映回同一公开表示。这个要求保证用户显式给出的 \texttt{treeEnergy} 不会被 fixed-line notation \texttt{sEi} 替换。含 massless full line 时 quotient-basis 公式尚未重推，接口返回 \texttt{PendingRederivation}，不使用旧单槽公式猜测结果。
 
 % ============================================================
 \section{Tree 的 dlog DE 与 SK branch}
@@ -1435,7 +1509,7 @@ repIterative[expr_, end_:Automatic]
 
 \subsection{Naive time-IBP 路线的微分方程}
 
-014 另保留一条不使用式~\eqref{eq:tree-dlog} 或 $A_\pm$ 构造约化规则的路线。对每个 sector 的 $a_v=0$ binary master，把一个活动顶点改成 $a_v=1$，反投影为 loop 代表元并调用已经验证的 \texttt{dtau}。完成共同 theta、simultaneous contact、zero point 和 coincident canonical 后再投影为 sector-tagged tree 方程。所有方程一次联立，固定 $a_v=0$ masters，只解一步升幂对象。这正是 \texttt{DSTreeNaiveIBP} 的定义。
+017 另保留一条不使用式~\eqref{eq:tree-dlog} 或 $A_\pm$ 构造约化规则的路线。对每个 sector 的 $a_v=0$ binary master，把一个活动顶点改成 $a_v=1$，反投影为 loop 代表元并调用已经验证的 \texttt{dtau}。完成共同 theta、simultaneous contact、zero point 和 coincident canonical 后再投影为 sector-tagged tree 方程。所有方程一次联立，固定 $a_v=0$ masters，只解一步升幂对象。这正是 \texttt{DSTreeNaiveIBP} 的定义。
 
 顶点相位能量导数仍可由 loop 代表元的相位项投影。传播子的 \texttt{treeEnergy} 则不能使用完整 loop 动量导数，因为后者作用于积分变量。由式~\eqref{dkh0}--\eqref{dkh1}，以 tree 的 $\tau^a$ convention 写成
 \begin{align}
@@ -1532,14 +1606,14 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
 \end{align}
 前三项分别选择一条线 contact，最后一项同时选择三条线；四项都乘同一个 $\delta(\Delta)$。
 
-先取三条同向 masslessFull 线，均为 $n_e=1$，并从它们的第一有序端点求导。由 $\mathsf J_e=0,D_e=-2$，三个 single 项均因含未选中线的 $\mathsf J=0$ 而消失，只剩
+先取三条同向 masslessFull 线，均取 canonical odd endpoint state $\{n_{e,1},n_{e,2}\}=\{1,0\}$，并从它们的第一有序端点求导。由 $\mathsf J_e=0,D_e=-2$，三个 single 项均因含未选中线的 $\mathsf J=0$ 而消失，只剩
 \begin{equation}
  \frac14D_1D_2D_3=\frac14(-2)^3=-2.
 \end{equation}
 因此
 \begin{equation}
  J\!\left[\{a_u,a_v\},
-   \{\{b_1,1\},\{b_2,1\},\{b_3,1\}\},\mathrm{ispList}\right]
+   \{\{b_1,1,0\},\{b_2,1,0\},\{b_3,1,0\}\},\mathrm{ispList}\right]
  \longrightarrow
  -2J\!\left[\{a_u+a_v\},
    \{\{b_1\},\{b_2\},\{b_3\}\},\mathrm{ispList}\right].
@@ -1552,14 +1626,14 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
  -W_{T,1}=\mathcal C_1x_1^{-2\nu_1-1},
  \qquad D_1\longmapsto\mathcal C_1x_1^{-2\nu_1-1}.
 \end{equation}
-若两条 massless 线仍取 $n_2=n_3=1$，则 $\mathsf J_2=\mathsf J_3=0$、$D_2=D_3=-2$。式~\eqref{threeLineDirectExpansion} 仍只剩 triple 项，其系数为
+若两条 massless 线仍取 canonical odd states $\{n_{2,1},n_{2,2}\}=\{n_{3,1},n_{3,2}\}=\{1,0\}$，则 $\mathsf J_2=\mathsf J_3=0$、$D_2=D_3=-2$。式~\eqref{threeLineDirectExpansion} 仍只剩 triple 项，其系数为
 \begin{equation}
  \frac14\mathcal C_1(-2)(-2)=\mathcal C_1.
 \end{equation}
 最终指标与零点是
 \begin{align}
  &J\!\left[\{a_u,a_v\},
-  \{\{b_1,1,0\},\{b_2,1\},\{b_3,1\}\},\mathrm{ispList}\right]
+  \{\{b_1,1,0\},\{b_2,1,0\},\{b_3,1,0\}\},\mathrm{ispList}\right]
  \nonumber\\
  &\qquad\longrightarrow
  \mathcal C_1
@@ -1676,7 +1750,7 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
 
 因此两种方案对总 boundary 完全等价，前提是同一 bundle 使用同一个 regulator，并保留全部逐线贡献及其中心矩项。package 可以任选其一作为 canonical；012 选择共同-theta方案，因为它无 regulator 与逐线归因依赖，直接给出式~\eqref{commonThetaOddSubset}。不同线使用不同 regulator、只取 $H(0)=1/2$、丢弃高阶奇数项，或把 simultaneous contact 写成 $\delta^k$，都不属于上述等价类。
 
-\section{016 图论、fixed line 与 pure-time 表示}
+\section{图论、fixed line 与 pure-time 表示}
 
 \subsection{结构圈数和 root loop space}
 
@@ -1697,16 +1771,18 @@ full loop 模式下统一积分仍写成
 \end{equation}
 但逐线 pack 由 root schema 决定：
 \begin{equation}
- P_e=
+  P_e=
  \begin{cases}
-  \{b_e,n_{e1},\ldots\},&e\text{ 为 full cycle line},\\
-  \{b_{S,e},\ldots\},&e\text{ 为 shrunk cycle line},\\
-  \{n_{e1},\ldots\},&e\text{ 为 fixed massive/massless full line},\\
-  \{\},&e\text{ 为不带离散端点态的 fixed 或 cross line}.
+  \{b_e,n_{e1},n_{e2}\},&e\text{ 为 massive/massless full cycle line},\\
+  \{b_e,0,0\},&e\text{ 为 massless cross cycle line},\\
+  \{b_{S,e}\},&e\text{ 为 shrunk cycle line},\\
+  \{\texttt{"F"},n_{e1},n_{e2}\},&e\text{ 为 massive/massless full fixed line},\\
+  \{\texttt{"F"},0,0\},&e\text{ 为 massless cross fixed line},\\
+  \{\texttt{"F"}\},&e\text{ 为 shrunk fixed line}.
  \end{cases}
  \label{cycleFixedPackSchema}
 \end{equation}
-因此不能由 pack 第一槽或长度猜测 $b$；必须读取 sector metadata。
+其中 \texttt{"F"} 只标记 fixed schema，不是幂指标。pack pattern 与 root line 顺序共同唯一编码 shrink set；物理幂必须读取 sector metadata。
 
 设某项要求物理分母幂 $B_e\to B_e+\Delta_e$。统一 line-power 操作为
 \begin{equation}
@@ -1742,17 +1818,16 @@ time IBP 的作用域不同。对顶点 $v$ 做 $\tau_v$ total derivative 时，
 
 \subsection{direct pure-time 模式和能力门禁}
 
-树图缺省、圈图可选的 \texttt{ibpMode->"timeOnly"} 不构造残缺的 loop family。所有 active lines 统一标为 \texttt{fixedCoefficient}，但表示必须保留实际离散态。若不存在未缩并的 \texttt{masslessFull} line，可使用
+树图缺省、圈图可选的 \texttt{ibpMode->"timeOnly"} 不构造残缺的 loop family。所有 active lines 统一标为 \texttt{fixedCoefficient}，公开对象仍只有
 \begin{equation}
- J[\{\{a_v,n_{e_1v},\ldots,n_{e_pv}\}\}_v]
+ J[\{a_v\}_v,\{P_e^{\rm fixed}\}_e,\{\}],
+ \qquad
+ P_e^{\rm fixed}\in
+ \bigl\{\{\texttt{"F"},n_{e1},n_{e2}\},
+ \{\texttt{"F"},0,0\},\{\texttt{"F"}\}\bigr\}.
  \label{directPureTimeJ}
 \end{equation}
-的 vertex-pack 表示。若存在未缩并的 \texttt{masslessFull} line，则有向状态 $n_e\in\{0,1\}$ 属于整条 line，不能无歧义地分配给某个顶点；此时必须使用
-\begin{equation}
- J[\{a_v\}_v,\{\{n_e\}\}_{e\,{\rm full}}\cup\{\{\}\}_{e\,{\rm shrunk/cross}},\{\}]
- \label{directPureTimeMasslessJ}
-\end{equation}
-的三槽 fixed-line 表示。两条路线都把全部 active line 模长纳入 \texttt{independentExternalMomenta} 审计，且都没有 momentum generator、$z$/ISP 闭合和 $b/b_S$。\texttt{DSSeeds} 根据 line state 自动选择表示；\texttt{DiscreteMode->"all"} 枚举完整 $n=0,1$，不引入私有状态参数。只有式~\eqref{directPureTimeJ} 的 direct vertex-pack 路线进入 \texttt{DSTreeSeeds}、\texttt{repIterative} 和 tree DE；式~\eqref{directPureTimeMasslessJ} 由 canonical time seed 与 \texttt{DSLinear} 直接消费。\texttt{repIterative}、naive time-IBP/DE 与直接 dlog DE 必须使用同序 master 列表比较。
+full massive/massless 线使用第一种三槽，masslessCross 使用固定零态，shrunk line 使用单槽；root line 位置始终保留。全部 active line 模长纳入 \texttt{independentExternalMomenta} 审计，且没有 momentum generator、$z$/ISP 闭合或 $b/b_S$ 指标。\texttt{DSSeeds} 完整枚举允许的端点态并立即应用 EOM/quotient/canonical。论文 vertex basis 只作为 Private massive-only 适配器服务于 \texttt{DSTreeSeeds}、\texttt{repIterative}、naive time-IBP/DE 与直接 dlog DE；结果必须映回同一公开表示并使用同序 master 列表比较。含 massless full line 的公式型 tree 接口在 quotient basis 重新推导前返回 \texttt{PendingRederivation}。
 
 用户列表和动力学规则的综合状态决定 context capabilities：exact 开放初始化、time IBP、full 模式下的 momentum IBP、求导及唯一反变换；undercomplete 返回 missing/null-space 后拒绝初始化；overcomplete 允许 symbolic seed，但关闭 \texttt{ds/DSDE} 与唯一反变换。\texttt{DSLinear} 还校验 seed 与 context 的 \texttt{inputHash}，serializer 只消费通过该门禁的 backend-neutral \texttt{linearData}。
 
@@ -1762,5 +1837,123 @@ time IBP 的作用域不同。对顶点 $v$ 做 $\tau_v$ total derivative 时，
  \texttt{sEi}=\sqrt{\operatorname{sp}(p_i,p_i)},
 \end{equation}
 其中 $k_i$ 与 $p_i$ 分别按两个显式用户列表排序。\texttt{DSRedefineParameters} 只接受覆盖完整基础坐标的规则，并通过 Jacobian 链式法则复用平方 Gram 原子导数；不另写第二套动量微分核心。
+
+\section{017 固定三槽、sector prefactor 与 parity}
+
+本节记录 017 已实施并由模块 smoke 验证的 convention。公开 API、seed、\texttt{linearData}、求导与 tree 结果一律使用三参数表示；不存在可由用户调用的并行 vertex-pack 积分 Head。
+
+\subsection{每条 line 的固定三槽}
+
+017 的公开对象始终为 $J[\texttt{aList},\texttt{linePacks},\texttt{ispList}]$。每条 full root line 固定为三槽；shrunk line 已无端点态，允许退为单槽，但它在 root-ordered \texttt{linePacks} 中的位置永不删除：
+\begin{equation}
+ \begin{array}{c|cc}
+ &\text{massive}&\text{massless}\\ \hline
+ \text{cycle full}&\{b,n_1,n_2\}&\{b,n_1,n_2\}\\
+ \text{fixed full}&\{\texttt{"F"},n_1,n_2\}&\{\texttt{"F"},n_1,n_2\}\\
+ \text{cycle shrunk}&\{b_S\}&\{b_S\}\\
+ \text{fixed shrunk}&\{\texttt{"F"}\}&\{\texttt{"F"}\}
+ \end{array}
+ \label{v017FixedThreeSlotSchema}
+\end{equation}
+短字符串 \texttt{"F"} 表示 fixed line 没有圈幂次指标。省略首项写成 \texttt{\{,n1,n2\}} 会被 Mathematica 解释为 \texttt{Null} 并产生 \texttt{Syntax::com}；\texttt{\_} 是 pattern \texttt{Blank[]}；\texttt{Nothing} 会直接删掉列表元素，三者都不能作为正式数据。massless 仍保留两个有序端点态；其额外关系属于 non-IBP relation 层，不再通过缩短 pack 表示。
+
+完整的 root-ordered full/shrunk pack pattern 是 shrink set 的隐式、可逆编码。例如第 2、4 条 root line 收缩时，第二和第四位置分别改成相应的单槽 shrunk pack，由位置直接重建集合 $\{2,4\}$；fixed shrunk line 同样必须保留 \texttt{\{"F"\}} 槽。canonical \texttt{sectorKey} 只能由该 pattern 派生，再由 seed、metadata 与 \texttt{linearData} 显式携带作交叉核验。不得删除收缩槽位、压缩 \texttt{linePacks}，也不得用 compact \texttt{aList} 充当 sector 身份。
+
+\subsection{结构化 sector prefactor 与求导}
+
+fixed line 的模长幂不进入式~\eqref{v017FixedThreeSlotSchema} 的第一槽，而属于每个 sector 的 normalization。初始化按稳定 fixed-line 顺序保存
+\begin{equation}
+ \{e_i\},\qquad \{\kappa_i\},\qquad \{p_i\},\qquad
+ \{u_i\},\qquad \{(u_i^{\rm int},u_i^{0})\},\qquad c_s,
+ \label{v017SectorPrefactorLists}
+\end{equation}
+分别对应 line indices、稳定内部 parameter keys、当前输出坐标的 parameter list、总 power list、整数/zero-point 分解及常数因子。metadata 不保存已经乘开的 $p_i^{u_i}$；唯一 materializer 在需要时构造
+\begin{equation}
+ N_s=c_s\prod_i p_i^{u_i},\qquad J_s=N_s I_s.
+ \label{v017SectorNormalization}
+\end{equation}
+变量重定义只更新式~\eqref{v017SectorPrefactorLists} 的当前 parameter list，并保留 $e_i\leftrightarrow\kappa_i$ 映射。由此
+\begin{equation}
+ \partial_xJ_s=(\partial_x\log N_s)J_s
+ +\sum_t c_{st}{N_s\over N_t}J_t,
+ \qquad
+ \partial_xI_s=\sum_t c_{st}I_t.
+ \label{v017NormalizedDerivative}
+\end{equation}
+所以 prefactor 虽然逻辑上属于 $J_s$，其导数和跨 sector 比值仍必须由 \texttt{ds/DSDE} 调取。atomic massless lower sector 若 $N_t$ 已含 $s_E^{-\beta}$，contact 项不得再次外乘同一因子。
+
+\subsection{fixed-line shrink normalization convention}
+
+fixed/non-loop line 没有 $b/b_S$ 指标，其 contact 模长幂只由 source/target sector 已选择的 zero point 分配，不设置额外整数吸收开关。若 compiled shrink factor 为
+\begin{equation}
+ -W_{T,e}=\mathcal C_e r_e^{-s_e-z_e}(-\tau)^{-s_e-z_e},
+ \qquad s_e\in\mathbb Z,
+\end{equation}
+且 source/target sector 中该线的 prefactor 分母指数分别为 $B_{s,e}$、$B_{t,e}$，则 normalized target 的模长系数唯一为
+\begin{equation}
+ c^{\rm norm}_{s\to t}
+ =\mathcal C_e r_e^{-\left[s_e+z_e-(B_{t,e}-B_{s,e})\right]}.
+ \label{v017FixedShrinkCoefficient}
+\end{equation}
+共同-theta 系数、端点符号及 $2^{1-|S|}$ 不包含在这里，按原 contact 公式另乘。
+
+017 沿用的缺省 sector zero-point 传播为 $B_{t,e}-B_{s,e}=z_e$，所以式~\eqref{v017FixedShrinkCoefficient} 化为 $\mathcal C_e r_e^{-s_e}$：只通过 zero point 本身吸收 $z_e$，不额外吸收整数 $s_e$。用户若合法改写 source 或 target zero point，式~\eqref{v017FixedShrinkCoefficient} 自动改变 reduction/DE coefficient。package 不提供 \texttt{fixedShrinkConvention}、\texttt{fullContactPower} 或其它平行吸收状态；若需进一步吸收剩余显式模长幂，由用户后续选择 master/basis 处理。
+
+zero-point convention 不改变时间幂映射：始终为 $a_t=a_u+a_v-s_e$、$a_{0,t}=a_{0,u}+a_{0,v}-z_e$。现行 preset 配合缺省 $B_t-B_s=z$ 的结果为
+\begin{center}
+\small
+\begin{tabular}{c|c|c|c}
+ 类型 & $(s_e,z_e)$ & target prefactor exponent & normalized coefficient 的模长部分\\ \hline
+ h & $(1,2\nu_e)$ & $B_{s,e}+2\nu_e$ & $r_e^{-1}$\\
+ H & $(1,0)$ & $B_{s,e}$ & $r_e^{-1}$\\
+ massless & $(0,0)$ & $B_{s,e}$ & $1$
+\end{tabular}
+\end{center}
+h/H 另有 $\mathcal C_e=(4i/\pi)e^{\pi\operatorname{Im}\nu_e}$；massless 没有 Wronskian prefactor，端点 contact 的 $-2/+2$ 仍单独保留。初始化 metadata 对每个 fixed transition 保存 $B_s$、$B_t$、zero-point override 来源、compiled $(s,z)$ 与剩余 exponent $s+z-(B_t-B_s)$，从而可由 $N_s/N_t$ 唯一重建约化系数。
+
+对 cycle line，现行 preset 进入实际 child 指标与 zero point 的完整映射为
+\begin{center}
+\small
+\begin{tabular}{c|c|c|c|c}
+ 类型 & $a_t$ & $a_{0,t}$ & $b_S$ & $b_{S0}$\\ \hline
+ h & $a_u+a_v-1$ & $a_{0,u}+a_{0,v}-2\nu_e$ & $b+1$ & $b_0+2\nu_e$\\
+ H & $a_u+a_v-1$ & $a_{0,u}+a_{0,v}$ & $b+1$ & $b_0$\\
+ massless & $a_u+a_v$ & $a_{0,u}+a_{0,v}$ & $b$ & $b_0$
+\end{tabular}
+\end{center}
+fixed/non-loop line 没有 $b/b_S$ 指标；上表对应的 zero point 改由 sector prefactor 保存。\texttt{shrinkBShift} 与 \texttt{shrinkZeroPointShift} 是由函数系统和 Wronskian 编译出的物理数据，一般不应由用户修改。若确需 override，必须同步重建 child zero point、normalized coefficient 与 parity metadata；额外 normalization 通过 master/basis 选择处理。
+
+\subsection{massless shrink 的缺省吸收与 child-sector parity}
+
+massless theta contact 的 compiled shift 为 $(s_e,z_e)=(0,0)$。对 cycle line，实际映射是
+\begin{equation}
+ a_t=a_u+a_v,\qquad a_{0,t}=a_{0,u}+a_{0,v},\qquad
+ b_S=b,\qquad b_{S0}=b_0.
+ \label{v017MasslessDefaultShrink}
+\end{equation}
+所以没有新增整数幂或 zero-point 幂被吸收。对 fixed/non-loop line，缺省 $B_t-B_s=0$，source/target 保存相同的结构化模长 prefactor，因而 $N_s/N_t=1$；这不表示删除 target 中原有的 fixed-line 因子。normalized contact coefficient 的模长部分为 1，只另乘端点导数的 $-2/+2$ 与共同-theta系数。
+
+massless 的 parity 与 h/H 不同。统一双端点状态的 contact support 为 $n_1+n_2=1$，但式~\eqref{v017MasslessDefaultShrink} 给 $b_S=b$，故
+\begin{equation}
+ b+n_1+n_2=b_S+1\pmod 2.
+ \label{v017MasslessContactParity}
+\end{equation}
+因此含该 cycle line 的 child-sector affine parity offset 相对 parent 翻转 1。fixed/non-loop massless line 不进入 parity generator，因此不翻转 offset。simultaneous contact 的 offset 按被 shrink 的 massless cycle line 数模 2 累加；该计数与事件只有一个 delta 无关。pure massless family 不自动获得 root parity preset，但 mixed h/H family 若已有认证的 root parity，必须在 massless cycle transition 中保留式~\eqref{v017MasslessContactParity} 的 affine constant。
+
+\subsection{h/H shrink 与 child-sector parity}
+
+裸 H 的 EOM 式~\eqref{bareHEOMindex} 保持 $b+n$ 的模二分级：源 $\{n=2,b\}$ 与三个目标 $\{n=0,b\}$、$\{n=1,b+1\}$、$\{n=0,b+2\}$ 同余；h EOM 也保持同一分级。contact 的分级还取决于实际 shrink 数据。h/H 缺省 Wronskian 分别编译为
+\begin{equation}
+ (\Delta b,\Delta b_0)_h=(1,2\nu_e),
+ \qquad
+ (\Delta b,\Delta b_0)_H=(1,0).
+ \label{v017HDefaultShrinkParity}
+\end{equation}
+结合 contact 支持 $n_1+n_2=1$，有
+\begin{equation}
+ b+n_1+n_2=b+1=b_S\pmod 2,
+ \label{v017HContactParity}
+\end{equation}
+故缺省 h/H shrink 都保持 child parity。h 的 $2\nu_e$ 是 zero point，不是整数 seed 指标；H 的 zero-point shift 为零。fixed/non-loop line 不进入 parity generator。017 必须从实际 compiled \texttt{shrinkTerms}、sector zero-point map 和 contact seed 共同验证式~\eqref{v017HDefaultShrinkParity}，不能只按 preset 文本硬编码。用户修改 child zero point 时，只有相对缺省的变化可精确证明为整数，才按其模二值平移 child offset；否则关闭该 sector 的 parity capability并给出双语诊断。
 
 \end{document}

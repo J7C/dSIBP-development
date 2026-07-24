@@ -16,44 +16,13 @@
         <|"sourceState" -> 1, "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu1|>},
       "shrinkTerms" -> {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu1]))/Pi, "xPower" -> -1 - 2*nu1, "bShift" -> 1,
          "zeroPointShift" -> 2*nu1|>}, "shrinkZeroPointShift" -> 2*nu1|>|>,
-   <|"id" -> 2, "massType" -> "massive", "packType" -> "massiveFull", "state" -> "full", "skType" -> "++",
-    "bbType" -> "h", "thetaConvention" -> "mergedTwoTheta", "functionSystem" ->
-     <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1,
-      "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic,
-      "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu2|>, "compiledFunctionSystem" ->
-     <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-        "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}},
-        "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1,
-        "shrinkZeroPointShift" -> 2*nu2|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1,
-      "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-      "A0" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}},
-      "WT" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "derivativeTerms" ->
-       {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>,
-        <|"sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>,
-        <|"sourceState" -> 1, "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu2|>},
-      "shrinkTerms" -> {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu2]))/Pi, "xPower" -> -1 - 2*nu2, "bShift" -> 1,
-         "zeroPointShift" -> 2*nu2|>}, "shrinkZeroPointShift" -> 2*nu2|>|>,
-   <|"id" -> 3, "massType" -> "massive", "packType" -> "massiveFull", "state" -> "full", "skType" -> "++",
-    "bbType" -> "h", "thetaConvention" -> "mergedTwoTheta", "functionSystem" ->
-     <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1,
-      "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic,
-      "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu3|>, "compiledFunctionSystem" ->
-     <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-        "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}},
-        "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1,
-        "shrinkZeroPointShift" -> 2*nu3|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1,
-      "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-      "A0" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}},
-      "WT" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "derivativeTerms" ->
-       {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>,
-        <|"sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>,
-        <|"sourceState" -> 1, "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu3|>},
-      "shrinkTerms" -> {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu3]))/Pi, "xPower" -> -1 - 2*nu3, "bShift" -> 1,
-         "zeroPointShift" -> 2*nu3|>}, "shrinkZeroPointShift" -> 2*nu3|>|>},
- "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2,
-   b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
- "effectiveSymmetryRules" ->
-  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "016BubbleTreeK1K2",
+   <|"id" -> 2, "massType" -> "massless", "packType" -> "masslessFull", "state" -> "full", "skType" -> "++",
+    "bbType" -> "exp", "thetaConvention" -> "mergedTwoTheta"|>, <|"id" -> 3, "massType" -> "massless",
+    "packType" -> "masslessFull", "state" -> "full", "skType" -> "++", "bbType" -> "exp",
+    "thetaConvention" -> "mergedTwoTheta"|>}, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2,
+   a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {},
+ "symmetryRules" -> {}, "effectiveSymmetryRules" ->
+  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "017BubbleTreeK1K2",
         "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}}, "vertexIds" -> {v1, v2, v3},
         "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+", v3 -> "+"|>,
         "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> l1, "nu" -> nu1, "bbType" -> "h",
@@ -76,46 +45,14 @@
               {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu1]))/Pi, "xPower" -> -1 - 2*nu1, "bShift" -> 1,
                 "zeroPointShift" -> 2*nu1|>}, "shrinkZeroPointShift" -> 2*nu1|>, "rawMomentum" -> l1,
            "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-          <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> nu2, "bbType" -> "h",
-           "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-           "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-           "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" ->
-            <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-             "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu2|>, "compiledFunctionSystem" ->
-            <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" ->
-                (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*
-                  dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                2*nu2|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-             "A0" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1,
-                -((1 + 2*nu2)/dSIBP`Private`x)}}, "WT" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi,
-             "derivativeTerms" -> {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|
-                "sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1,
-                "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu2|>}, "shrinkTerms" ->
-              {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu2]))/Pi, "xPower" -> -1 - 2*nu2, "bShift" -> 1,
-                "zeroPointShift" -> 2*nu2|>}, "shrinkZeroPointShift" -> 2*nu2|>, "rawMomentum" -> k1 + k2 + l1,
-           "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-          <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> nu3, "bbType" -> "h",
-           "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-           "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-           "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" ->
-            <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-             "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu3|>, "compiledFunctionSystem" ->
-            <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x, "P" ->
-                (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*
-                  dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                2*nu3|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1,
-             "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-             "A0" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1,
-                -((1 + 2*nu3)/dSIBP`Private`x)}}, "WT" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi,
-             "derivativeTerms" -> {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|
-                "sourceState" -> 1, "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1,
-                "targetState" -> 1, "xPower" -> -1, "coefficient" -> -1 - 2*nu3|>}, "shrinkTerms" ->
-              {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu3]))/Pi, "xPower" -> -1 - 2*nu3, "bShift" -> 1,
-                "zeroPointShift" -> 2*nu3|>}, "shrinkZeroPointShift" -> 2*nu3|>, "rawMomentum" -> k1 + k2,
-           "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" -> "fixedCoefficient"|>},
+          <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> 0, "bbType" -> "exp",
+           "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+           "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2,
+           "rawMomentum" -> k1 + k2 + l1, "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
+          <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> 0, "bbType" -> "exp",
+           "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+           "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v2, "masslessN1OppositeEndpoint" -> v3,
+           "rawMomentum" -> k1 + k2, "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" -> "fixedCoefficient"|>},
         "extLegs" -> {{bubbleLeg, v1, k1 + k2}, {treeLeg1, v3, k1}, {treeLeg2, v3, k2}},
         "vertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>, "activeVertexIds" -> {v1, v2, v3},
         "fixedAVertexValues" -> <||>, "loopMomenta" -> {l1}, "ibpMode" -> "full", "graphLoopCount" -> 1,
@@ -191,18 +128,17 @@
         "vertexLines" -> {{{1, 1}, {2, 1}}, {{1, -1}, {2, -1}, {3, 1}}, {{3, -1}}},
         "loopCoeffMatrix" -> {{1}, {1}, {0}}, "externalCoeffMatrix" -> {{0}, {1}, {1}},
         "externalPartList" -> {0, k1 + k2, k1 + k2}, "rawNumericRules" -> {}, "numericRules" -> {},
-        "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0},
-          "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {},
-        "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-          "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
-        "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3,
-          b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
+        "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+        "generatorSeedRanges" -> {}, "unknownSeedPreset" -> None, "zeroPointRules" ->
+         {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3},
+        "rootZeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2,
+          b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {}, "parityConstraints" -> {},
         "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
          <|v1 -> v1, v2 -> v2, v3 -> v3|>|>, dSIBP`Private`int$]] :> 0},
  "tadpoleSymmetryData" -> <|"status" -> "generated", "loopReversalData" -> {}, "massiveFullLineIndices" -> {},
    "masslessFullLineIndices" -> {}, "automaticRuleCount" -> 1,
    "automaticRules" -> {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[
-         <|"name" -> "016BubbleTreeK1K2", "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}},
+         <|"name" -> "017BubbleTreeK1K2", "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}},
           "vertexIds" -> {v1, v2, v3}, "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+", v3 -> "+"|>,
           "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> l1, "nu" -> nu1, "bbType" -> "h",
              "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
@@ -224,47 +160,15 @@
                 {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu1]))/Pi, "xPower" -> -1 - 2*nu1, "bShift" -> 1,
                   "zeroPointShift" -> 2*nu1|>}, "shrinkZeroPointShift" -> 2*nu1|>, "rawMomentum" -> l1,
              "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-            <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> nu2, "bbType" -> "h",
-             "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-             "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-             "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" -> <|"preset" -> "h",
-               "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0,
-                1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic,
-               "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu2|>, "compiledFunctionSystem" ->
-              <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-                 "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*
-                    dSIBP`Private`x^(-1 - 2*nu2))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                  2*nu2|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu2)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0},
-                {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "A0" ->
-                {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu2)/dSIBP`Private`x)}},
-               "WT" -> ((-4*I)*E^(Pi*Im[nu2])*dSIBP`Private`x^(-1 - 2*nu2))/Pi, "derivativeTerms" ->
-                {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|"sourceState" -> 1,
-                  "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1, "targetState" -> 1,
-                  "xPower" -> -1, "coefficient" -> -1 - 2*nu2|>}, "shrinkTerms" ->
-                {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu2]))/Pi, "xPower" -> -1 - 2*nu2, "bShift" -> 1,
-                  "zeroPointShift" -> 2*nu2|>}, "shrinkZeroPointShift" -> 2*nu2|>, "rawMomentum" -> k1 + k2 + l1,
-             "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
-            <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> nu3, "bbType" -> "h",
-             "massType" -> "massive", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
-             "packType" -> "massiveFull", "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"],
-             "masslessN1OppositeEndpoint" -> Missing["NotApplicable"], "functionSystem" -> <|"preset" -> "h",
-               "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0,
-                1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic,
-               "shrinkBShift" -> 1, "shrinkZeroPointShift" -> 2*nu3|>, "compiledFunctionSystem" ->
-              <|"status" -> "compiled", "input" -> <|"preset" -> "h", "variable" -> dSIBP`Private`x,
-                 "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0}, {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*
-                    dSIBP`Private`x^(-1 - 2*nu3))/Pi, "WT" -> Automatic, "shrinkBShift" -> 1, "shrinkZeroPointShift" ->
-                  2*nu3|>, "variable" -> dSIBP`Private`x, "P" -> (1 + 2*nu3)/dSIBP`Private`x, "Q" -> 1, "T" -> {{1, 0},
-                {0, 1}}, "W" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "A0" ->
-                {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}}, "AT" -> {{0, 1}, {-1, -((1 + 2*nu3)/dSIBP`Private`x)}},
-               "WT" -> ((-4*I)*E^(Pi*Im[nu3])*dSIBP`Private`x^(-1 - 2*nu3))/Pi, "derivativeTerms" ->
-                {<|"sourceState" -> 0, "targetState" -> 1, "xPower" -> 0, "coefficient" -> 1|>, <|"sourceState" -> 1,
-                  "targetState" -> 0, "xPower" -> 0, "coefficient" -> -1|>, <|"sourceState" -> 1, "targetState" -> 1,
-                  "xPower" -> -1, "coefficient" -> -1 - 2*nu3|>}, "shrinkTerms" ->
-                {<|"coefficient" -> ((4*I)*E^(Pi*Im[nu3]))/Pi, "xPower" -> -1 - 2*nu3, "bShift" -> 1,
-                  "zeroPointShift" -> 2*nu3|>}, "shrinkZeroPointShift" -> 2*nu3|>, "rawMomentum" -> k1 + k2,
-             "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" -> "fixedCoefficient"|>},
-          "extLegs" -> {{bubbleLeg, v1, k1 + k2}, {treeLeg1, v3, k1}, {treeLeg2, v3, k2}},
+            <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> k1 + k2 + l1, "nu" -> 0, "bbType" -> "exp",
+             "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+             "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v1, "masslessN1OppositeEndpoint" -> v2,
+             "rawMomentum" -> k1 + k2 + l1, "loopLineQ" -> True, "bridgeQ" -> False, "linePowerMode" -> "indexed"|>,
+            <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2, "nu" -> 0, "bbType" -> "exp",
+             "massType" -> "massless", "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta",
+             "packType" -> "masslessFull", "masslessN1ReferenceEndpoint" -> v2, "masslessN1OppositeEndpoint" -> v3,
+             "rawMomentum" -> k1 + k2, "loopLineQ" -> False, "bridgeQ" -> True, "linePowerMode" ->
+              "fixedCoefficient"|>}, "extLegs" -> {{bubbleLeg, v1, k1 + k2}, {treeLeg1, v3, k1}, {treeLeg2, v3, k2}},
           "vertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E3|>, "activeVertexIds" -> {v1, v2, v3},
           "fixedAVertexValues" -> <||>, "loopMomenta" -> {l1}, "ibpMode" -> "full", "graphLoopCount" -> 1,
           "graphTopologyAudit" -> <|"status" -> "valid", "vertexCount" -> 3, "inputLineCount" -> 3,
@@ -338,15 +242,14 @@
           "vertexLines" -> {{{1, 1}, {2, 1}}, {{1, -1}, {2, -1}, {3, 1}}, {{3, -1}}},
           "loopCoeffMatrix" -> {{1}, {1}, {0}}, "externalCoeffMatrix" -> {{0}, {1}, {1}},
           "externalPartList" -> {0, k1 + k2, k1 + k2}, "rawNumericRules" -> {}, "numericRules" -> {},
-          "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0},
-            "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {}, "seedOptions" ->
-           <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-            "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
-          "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3,
-            b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
-          "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
-           <|v1 -> v1, v2 -> v2, v3 -> v3|>|>, dSIBP`Private`int$]] :> 0}, "userRuleCount" -> 0,
-   "effectiveRuleCount" -> 1|>, "externalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2},
+          "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+          "generatorSeedRanges" -> {}, "unknownSeedPreset" -> None, "zeroPointRules" ->
+           {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1, b0[2] -> beta2, b0[3] -> beta3},
+          "rootZeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, a0[v3] -> alpha3, b0[1] -> beta1,
+            b0[2] -> beta2, b0[3] -> beta3}, "shrinkPrefactorRules" -> {}, "symmetryRules" -> {},
+          "parityConstraints" -> {}, "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>,
+          "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2, v3 -> v3|>|>, dSIBP`Private`int$]] :> 0},
+   "userRuleCount" -> 0, "effectiveRuleCount" -> 1|>, "externalInvariantRules" -> {sp[k1 + k2, k1 + k2] -> ss11^2},
  "externalLegInvariantRules" -> {sp[k1, k1] -> sE1^2, sp[k2, k2] -> sE2^2},
  "externalInvariantCoordinateData" -> {<|"internalVariable" -> kk[1, 1], "publicExpression" -> ss11^2,
     "userVariable" -> ss11, "coordinateType" -> "squareRoot", "internalCoordinateExpression" -> Sqrt[kk[1, 1]],

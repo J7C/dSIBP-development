@@ -102,7 +102,6 @@ energyContext = DSInit[energyCaseC, RegisterAsCurrent -> False, ProgressReportin
 atomicContext = DSInit[atomicMasslessCase, RegisterAsCurrent -> False, ProgressReporting -> False];
 atomicSeeds = DSSeeds[
    atomicContext,
-   DiscreteMode -> "all",
    ProgressReporting -> False
    ];
 atomicLinear = DSLinear[atomicSeeds, atomicContext, ProgressReporting -> False];

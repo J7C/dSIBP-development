@@ -48,35 +48,19 @@ exampleSymmetryRules0 = {
 
 
 (* ::Chapter:: *)
-(*Reference 逐生成元 seed 范围*)
+(*Reference top 目标包络*)
 
-(* Reference 的 seed 不是统一外包矩形。下面逐项翻译 001 bubble_ibp_sym.m：
-   top 的两个 time 与两个 momentum 生成元各有独立范围；e1/e2 都使用 R1 范围，
-   其中 shrunk pack 对应 reference b1，剩余 massive pack 对应 reference b2。 *)
-referenceGeneratorSeedRanges = {
-   <|"sectorKey" -> "top", "generator" -> {"time", v1},
-    "ranges" -> {a[v1] -> Range[0, 4], a[v2] -> Range[-1, 4],
-      b[1] -> Range[-2, 5], b[2] -> Range[-2, 5]}|>,
-   <|"sectorKey" -> "top", "generator" -> {"time", v2},
-    "ranges" -> {a[v1] -> Range[-1, 4], a[v2] -> Range[0, 4],
-      b[1] -> Range[-2, 5], b[2] -> Range[-2, 5]}|>,
-   <|"sectorKey" -> "top", "generator" -> {"momentum", 1, "loop", 1},
-    "ranges" -> {a[v1] -> Range[-1, 3], a[v2] -> Range[-1, 3],
-      b[1] -> Range[-1, 5], b[2] -> Range[-2, 3]}|>,
-   <|"sectorKey" -> "top", "generator" -> {"momentum", 1, "external", 1},
-    "ranges" -> {a[v1] -> Range[-1, 3], a[v2] -> Range[-1, 3],
-      b[1] -> Range[-2, 3], b[2] -> Range[-1, 5]}|>,
-   <|"sectorKey" -> "e1", "generator" -> {"time", v1},
-    "ranges" -> {a[v1] -> Range[-3, 8], bS[1] -> Range[-4, 8], b[2] -> Range[-3, 8]}|>,
-   <|"sectorKey" -> "e1", "generator" -> {"momentum", 1, "loop", 1},
-    "ranges" -> {a[v1] -> Range[-4, 7], bS[1] -> Range[-2, 8], b[2] -> Range[-3, 6]}|>,
-   <|"sectorKey" -> "e1", "generator" -> {"momentum", 1, "external", 1},
-    "ranges" -> {a[v1] -> Range[-4, 7], bS[1] -> Range[-4, 6], b[2] -> Range[-2, 8]}|>,
-   <|"sectorKey" -> "e2", "generator" -> {"time", v1},
-    "ranges" -> {a[v1] -> Range[-3, 8], bS[2] -> Range[-4, 8], b[1] -> Range[-3, 8]}|>,
-   <|"sectorKey" -> "e2", "generator" -> {"momentum", 1, "loop", 1},
-    "ranges" -> {a[v1] -> Range[-4, 7], bS[2] -> Range[-2, 8], b[1] -> Range[-3, 6]}|>,
-   <|"sectorKey" -> "e2", "generator" -> {"momentum", 1, "external", 1},
-    "ranges" -> {a[v1] -> Range[-4, 7], bS[2] -> Range[-4, 6], b[1] -> Range[-2, 8]}|>
+(* Reference 四组 top seed 的共同外包范围是 a in [-1,4]、b in [-2,5]。
+   这里把它作为最终关系的共同目标包络，同时用于 lower sectors；DSGenerateIBP 会按
+   每组 shift 反推出更窄的 seed 点域。只有 DSKiraPlan/DE target closure 明确报告
+   缺口时才扩张对应边界；旧脚本给 R1 随手放大的 [-4,8] 不作为缺省输入。 *)
+referenceTopTargetEnvelope = {
+   {a[v1], -1, 4},
+   {a[v2], -1, 4},
+   {b[1], -2, 5},
+   {b[2], -2, 5}
    };
 
+(* DSMetaSeedRange 的声明集合包含 top 与 shrink sector 实际出现的全部连续指标；
+   bS[e] 的目标包络在 DSGenerateIBP 中自动继承同一 root line 的 b[e]。 *)
+referenceSeedIndices = {a[v1], a[v2], b[1], b[2], bS[1], bS[2]};

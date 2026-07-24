@@ -1,5 +1,91 @@
 # 013 pure time-IBP/tree 与 014 工程化闭环
 
+# 017 统一三槽、sector parity 与 subsector 导数（2026-07-24）
+
+- [x] 核对 016 的 cycle/fixed full/shrunk pack、zero-point 所有权、massless time-only fallback 和 lower-sector `ds` shape gate。
+- [x] 冻结唯一公开三顶层槽 `J[aList,linePacks,ispList]` 方向；full line pack 固定三槽，shrunk pack 可退为单槽但保留 root line 位置；取消 017 的公开单槽 `J[vertexPacks]` 生产路线。
+- [x] 实测省略列表首项会产生 `{Null,...}` 和 `Syntax::com`，`_` 是 `Blank[]` pattern；冻结短字符串 `"F"` schema：cycle/fixed full 为 `{b,n1,n2}` / `{"F",n1,n2}`，cycle/fixed shrink 允许单槽 `{bS}` / `{"F"}`。
+- [x] massless 与 massive 使用同一三槽 line pack；massless 不再退化为 `{b,n}`/`{n}`，额外关系在统一 relation 层处理。
+- [x] 决定 fixed/non-loop line 不保留 `b/bS`：其模长幂属于各 sector 的 normalized `J` prefactor，不参与 Kira token、master 排序或 parity。
+- [x] 冻结 sector 身份语义：`linePacks` 永远保留 root `lineOrder` 的全部位置，full/shrunk pack pattern 是 shrink set 的隐式、可逆编码；`sectorKey` 只能由该 pattern 派生并作外部交叉核验。
+- [x] 核对当前 `aList/a0`：shrink 端点按代表类合并，`a` 求 parent compact 槽之和后减全部整数 shift，`a0` 求原顶点零点之和后减全部 zero-point shift；确认旧单线 coincident `2a` 分支不进入 017。
+- [x] 核对 016 fixed-line 收缩缺省 convention：吸收量只由 source/target zero point 的选择决定；缺省 `B_t-B_s=z`，故整数 shift `s` 留作跨-sector显式系数 `r^-s`。h/H/massless 的 compiled `(s,z)` 分别为 `(1,2nu)`、`(1,0)`、`(0,0)`。
+- [x] 同步 plan/design/tech note/common-theta TODO/用户手册：列出 h/H 缺省 child 指标与 zero-point 映射，说明 `n1+n2=1` 与 `bS=b+1` 保持 subsector parity，并建议用户一般不要修改 shrink shift；override 必须同步 normalization 与 parity metadata。
+- [x] 补齐 massless 缺省吸收与 parity：`(s,z)=(0,0)` 不新增幂次吸收；cycle contact 因 `n1+n2=1, bS=b` 翻转 child offset，fixed line 不参与 parity；同步技术笔记与用户手册并重编 PDF。
+- [x] 复核并归档 11:24 平行报告；排除旧 package、旧 Max 门禁和强制二槽表示结论，确认新增真实问题为 3+ 顶点 contact-reachable sector seed 未生成。
+- [x] 017 建立唯一 vertex-power merge helper，覆盖单线、多线 simultaneous、三顶点顺序收缩和已 coincident 端点负例。
+- [x] 初始化每个 sector 的 `sectorPrefactorData`，以对齐的 `fixedLineIndices/parameterKeys/parameterList/powerList/powerParts` 保存 fixed-line normalization；不直接缓存 `parameter^power` 乘积。
+- [x] fixed-line shrink 不增加独立吸收选项；逐 transition 保存 source/target zero point、override 来源和剩余 coefficient exponent `s+z-(B_t-B_s)`，所有 reduction/DE 系数统一由 `N_s/N_t` 生成。额外吸收只由用户的 master/basis 选择处理。
+- [x] 让参数最终选取和 `DSRedefineParameters` 更新每个 fixed line 的当前 `parameterList`，同时保留稳定内部 key 与 provenance；验证缺省和自定义变量均可逐线调取。
+- [x] 实现唯一 prefactor materializer，并让 `ds/DSDE/scaling/time-only` 使用 `D[Log[N_s]]` 和跨 sector `N_s/N_t`；禁止各模块重复手写 prefactor 展开。
+- [ ] 展开 massless、H、direct h、H-to-h 的 top/contact integrand，冻结整数 shift、zero-point shift、source/target prefactor 与 normalized lower integral 的物理幂次表，并最终裁决 atomic massless 报告项是否重复计数。
+- [x] 新建 `000_code/017_dSIBP/`，冻结 016；加入同一整数版本目录内以 `017.1`、`017.2` 标记兼容修订的项目规则和 build metadata。
+- [x] 统一三槽 schema、sector metadata 和唯一 sector resolver；同形 sector 必须由 term `sectorKey` 消歧。
+- [x] 让每个 contact-reachable sector 使用继承的 root loop space 与该 sector 的 compact metadata 完整生成 time/momentum IBP；删除 `shrinkSectorSeedGeneration` pending 路径，bubble+tree 不得靠只生成 top sector 继续下游。
+- [x] 修复 `ds`/`DSDE`：逐 `J` 先解析 sector，再按 compact shape 求导，并从 sector metadata 调取 normalization derivative 和 source/target prefactor ratio。
+- [x] 合并 massless built-in relations、tadpole/user symmetry 与 EOM；区分可终止 canonical rule 和一般线性 relation。
+- [x] 实现 h/H root parity generator、contact GF(2) transport 和用户 integer zero-point rebase offset；非 h/H 或非整数重基只关闭 parity capability并红字诊断。
+- [x] 在 `DSGenerateIBP` 撒点域用 GF(2) 行约化直接枚举合法 parity tuple；禁止全量生成后删除，禁止 bad-parity `J->0`。
+- [x] 增加生成后轻量 parity signature certificate，覆盖 h EOM、H 三项 EOM、H 缺省 compiled `{bShift,zShift}`、top/contact 默认 parity 不变、奇数/偶数 zero-point override 和非法非整数 override。
+- [x] 统一 pure time-only 的三槽积分、seed、relation、zero point、sector prefactor 和 derivative operator 转换。
+- [x] 017 暂不修改 massless quotient 上的公式型 `repIterative`/dlogDE；massless 体内线返回 `PendingRederivation`，并登记 quotient basis、递推和 dlog 公式重新推导任务。
+- [x] 在 `check-smoke/` 完成 017 定向轻量检查，最终计数为 `4/4`、`21/21`、`14/14`、`30/30`。
+- [x] 扫描并修正用户手册、plan/design/tech note 中残留的 016 massless 单 `n`/二槽和 fixed 空 pack convention；examples 的旧 `init/` 必须由 017 候选重新生成。
+- [ ] 为公开 `DSTreeNaiveIBP` data 增加可逆的 tagged reduction 适配，再调用 Private `DSTreeNaiveDE` 内核；检查 `E1/E2/k12` 无 shape 消息、无 residual，并逐项等于同 basis dlog DE。
+- [ ] 让公开单积分 `DSTreeSeeds` 与批量 `DSSeeds` 共用 direct pure-time 原子生成器，并验证 `generationRoute`、sector tag 与统一三参数 `J` 输出。
+- [ ] 将 `DSGenerateIBP` 的 Cartesian product 下沉到逐 template 自身指标，保留 exact-cover 与 parity-before-generation 门禁，并检查无重复关系、结果集合不变。
+- [ ] 增加 `DSGenerateIBP[allSeeds,routes]` 的逐 sector/generator exact-cover 路由；example 04 原样使用 reference 的七类范围并验证导出 ready。
+- [ ] 更新 tech note、用户手册、examples、独立 benchmark 任务书与 README，完成公开 API/example coverage 检查。
+- [ ] 构建 017 候选 package/manual，记录哈希并用候选路径复验；同字节晋升正式交付后再复验并清理候选产物。
+
+# 016 独立续审数值化改造（2026-07-24）
+
+- [ ] 为 family/tree/DE 对照建立双方共用的确定性非奇异有理规则和 exact numeric key。
+- [x] 删除 Sections 16/17 的全部 notation 位宽/压力测试，只保留会影响数学结果的 coordinate/capability/graph/routing 最小正负例。
+- [ ] 删除消息颜色/措辞、重复 API surface 和重复 example 等非正确性门禁，并在报告中列为用户范围排除。
+- [ ] 对改造后的 checker 做语法、最小 smoke 和 fresh 全量运行，记录逐组相等/非零/首差计数。
+- [ ] 按前置门禁决定是否运行外部 Kira，并更新正式独立报告与进度结论。
+
+# 016 全 package 门禁审计与遗留代码清理（2026-07-24）
+
+- [x] 全量分类数量/规模/迭代/状态门禁，冻结必须保留的数学与来源正确性门禁清单。
+- [x] 删除 `MaxSeedRuleCount`、`MaxDiscreteRuleCount`、`MaxEquationCount`、`MaxShrinkSectorCount` 等 package 自设资源门禁的实现、公开接口与文档。
+- [x] 让公开 `DSSeeds` 缺省和 `Automatic` 只走完整枚举，移除 preset 隐式 sample 与 `UseSampleOnly` 公开分支。
+- [x] 为三条 tree 递推路径加入 endpoint 距离严格下降与 canonical 状态循环检测，删除任意最大步数合同。
+- [x] 修复无动力学变量的重定义指南、欠完备 binding 展示与 Windows UTF-8 标准 `Needs`/直接 `Get`。
+- [x] 清理失效消息、helper、资源门禁字段、兼容壳、占位英文与重复分支，并做未调用符号/残留文本扫描。
+- [x] 验证用户指定连续范围、全部离散态及全部生成元均完整生成，不受旧 `200/64/80` 阈值影响。
+- [x] 从只读 massive-bubble reference 结果提取轻量 19 维 DE/scaling 对照 bundle，补齐来源哈希、convention adapter、README 和任务书读取边界。
+- [x] 更新正式手册、独立任务书、README、examples 与 coverage manifest，清除旧 sample/Max/最大步数说明。
+- [x] 构建并验证候选 package/手册，晋升正式交付并清理候选与运行产物。
+
+# 016 完整手册与独立 benchmark 交付同步（2026-07-23）
+
+- [x] 逐项审计 016 的公开函数、usage、options、手册章节、汇总表和 examples 覆盖。
+- [x] 补齐全部新功能的用户流程、错误边界和可复制示例，保持任务书只依赖公开 API。
+- [x] 重编译并视觉检查候选手册，验证候选单文件和受影响成品 example。
+- [x] 同字节更新独立 benchmark 的 package/manual，正式路径复验并清理候选产物。
+
+# 016 模板化撒点与双语消息（2026-07-23）
+
+- [x] 让 `DSSeeds` 返回扁平 `allSeeds`，模板中已完整枚举 `n_i=0,1` 并完成 EOM/canonical，连续指标保持 general；canonical 精确零保持为可审计状态记录。
+- [x] 实现 `DSGenerateIBP`/`generateIBP` 的统一范围和逐指标 exact-cover 两种调用形式。
+- [x] 增加 unknown/missing/duplicate/bad-range/symbolic-`n`/forbidden-`n` 双语红字门禁和结构化失败结果。
+- [x] 让 `DSLinear` 接受新撒点结果，并保留同源 context、sector metadata、source hash 和 canonical readiness。
+- [x] 重写 `check-smoke/check_016_kira_planning.wl`，先验证新撒点模块，再恢复 Kira plan 的最小 target 检查。
+- [x] 扫描 016 全部面向用户的 info/progress/warning/error，统一为每句中文后接英文；公共初始化与参数提示使用实际英文翻译。
+- [x] 更新手册、成品 example、coverage manifest；候选与正式路径分别复验后按同字节晋升。
+
+# 016 五族数值 Kira、反向撒点与最小 targets（2026-07-23）
+
+- [ ] 冻结五个 loop family 的 branch、逐线 parity channel、active-basis 选择边界和数值 scaling 合同。
+- [x] 删除未验证的 `DSSeedPlan` 整数优化草稿；Kira plan 改为消费 `DSGenerateIBP` 的显式撒点结果与 derivative closure。
+- [x] 实现 `DSKiraPlan`：reference-style 排序、解析导数闭包、pre-reduction 与 formal minimal-target 两阶段计划。
+- [x] 保留缺省符号微分变量门禁，并仅在解析一阶导数及 closure 已冻结后允许 `postDerivative` 数值 Kira。
+- [x] 更新用户手册、成品 example、coverage manifest 和独立任务书中的新模块调用与门禁；五族只读 reference 资产随真实闭环补齐。
+- [x] 构建撒点/Kira planning 候选，完成新增 smoke 和受影响回归；同字节晋升并清理产物。
+- [ ] 完成五族外部 Kira/scaling 闭环并归档独立的数值结果；本次未运行 reduction。
+
 # 016 独立任务书 convention 与交付加载一致性（2026-07-23）
 
 - [x] 审计第 2--17 节旧外动量字段、平方坐标、line pack、Head 与 package 加载入口。
@@ -197,3 +283,11 @@
 - [x] 撤回任务书/smoke 中双外向量、四 ISP、八 momentum generators 的错误 authority。
 - [x] 用模块入口和正式单文件验证最小 ISP closure、五个方向和精确反解；源码无变化，未构建候选或覆盖正式交付。
 - [x] 更新进度与验证记录；本轮无运行产物需要清理。
+
+# 017 seed 包络反推与逐组提示（2026-07-24）
+
+- [x] 按用户 seeds 外层结构保存逐组 shift metadata，并用交集公式从最终关系包络反推较窄 seed 点域。
+- [x] 在撒点前逐组打印 `编号 i / Group i`、来源和 `{index,min,max}`，不把用户自定义分组称为 IBP 算符。
+- [x] 对 `min>max` 明确解释目标包络、shift 跨度、空 IBP 撒点和不完整约化系统之间的因果关系，并关闭相应 complete capability。
+- [x] 增加 custom grouping 空组专项并通过 `10/10`；同步 plan、design note、tech note 和用户手册。
+- [ ] 完成 017 全量 core/examples 回归与候选晋升；当前 `check_017_full_workflow.wls` 的全量 `DSLinear` 路线仍需拆分或优化后完成。

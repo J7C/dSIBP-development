@@ -10,13 +10,11 @@ Options[DSInit] = {
    OverwriteInitialization -> False,
    RegisterAsCurrent -> True,
    ProgressReporting -> Automatic,
-   KinematicRules -> Automatic,
-   MaxShrinkSectorDepth -> Automatic,
-   MaxShrinkSectorCount -> Automatic
+   KinematicRules -> Automatic
    };
 
 DSInit::badinput = "DSInit 输入不是有效的 topology Association，或 ISP/动量坐标不闭合。";
-DSInit::sectorlimit = "无法完整初始化 contact-reachable sectors：`1`。";
+DSInit::sectorincomplete = "无法完整初始化 contact-reachable sectors：`1`。";
 DSInit::initconflict = "初始化目录 `1` 已含不同输入哈希或未知文件；如确认覆盖，请显式设置 OverwriteInitialization -> True。";
 DSInit::writefailed = "初始化 metadata 写入失败：`1`。";
 DSInfo::noinit = "当前没有已注册的 DSInit context。";
@@ -42,7 +40,7 @@ dsResolveInitializationDirectory[_] := $Failed;
 dsDerivativeMetadata[topo_Association, progressSetting_] := Module[{generators, operators},
    generators = makeIndependentVariableDerivativeGenerators[topo];
    operators = dsProgressMap[
-     "正在生成微分算符",
+     "正在生成微分算符 / Building differential operators",
      generators,
      Function[generator,
       <|
@@ -90,16 +88,26 @@ dsConventionMetadata[topo_Association] := <|
      |>
    |>;
 
-dsRelevantInitializationWarningQ[issue_Association, topo_Association] := ! TrueQ[
-   Lookup[issue, "code", ""] === "sampleDiscreteRulesMissingForDiscreteVariables" &&
-    Lookup[Lookup[topo, "seedOptions", <||>], "DiscreteMode", "sample"] =!= "sample"
+(* 缺失 numericRules 只约束显式请求的全数值 linear mode；symbolic Kira/DE 必须保留
+   动力学变量，因此初始化时不把“未数值化”误报为 warning。完整报告仍保存在 metadata。 *)
+dsRelevantInitializationWarningQ[issue_Association, topo_Association] := Module[{code},
+   code = Lookup[issue, "code", ""];
+   ! MemberQ[
+     {
+      "numericRulesMissingExternalInvariants",
+      "numericRulesMissingVertexEnergies",
+      "numericRulesMissingLineParameters"
+      },
+     code
+     ]
    ];
 
 
 dsInitializationIssueText[issue_Association] := Module[{code, details},
    code = Lookup[issue, "code", "unknownInitializationIssue"];
    details = KeyDrop[issue, {"severity", "code"}];
-   code <> If[details === <||>, "", "：" <> ToString[details, InputForm]]
+   "初始化问题 / Initialization issue: " <> code <>
+    If[details === <||>, "", "：" <> ToString[details, InputForm]]
    ];
 
 dsReadExistingManifest[path_String] := If[FileExistsQ[path], Quiet[Check[Get[path], $Failed]], Missing["NoManifest"]];
@@ -164,12 +172,10 @@ DSInit[input_Association, OptionsPattern[]] := Module[
      ];
    inputHash = dsInputHash[effectiveInput];
    topologyData = dsStageRun[
-     "初始化 topology、ISP 与完整 sector metadata",
+     "初始化 topology、ISP 与完整 sector metadata / Initializing topology, ISP, and complete sector metadata",
      makeTopologyData[
        effectiveInput,
-      PrecomputeShrinkSectorMetadata -> True,
-      MaxShrinkSectorDepth -> OptionValue[MaxShrinkSectorDepth],
-      MaxShrinkSectorCount -> OptionValue[MaxShrinkSectorCount]
+      PrecomputeShrinkSectorMetadata -> True
       ],
      progress
      ];
@@ -183,29 +189,42 @@ DSInit[input_Association, OptionsPattern[]] := Module[
       "；effectiveLoopExternalMomenta " <> ToString[Lookup[topologyData, "effectiveLoopExternalMomenta", {}], InputForm] <>
       "；independentExternalMomenta " <> ToString[Lookup[topologyData, "independentExternalMomenta", {}], InputForm] <>
       "；实际需要的 loop 方向 " <> ToString[Lookup[declarationAudit, "requiredLoopExternalDirections", {}], InputForm] <>
-      "；实际需要的无圈模长 " <> ToString[Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}], InputForm],
+      "；实际需要的无圈模长 " <> ToString[Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}], InputForm] <>
+      ". Momentum roles: loopMomenta " <> ToString[Lookup[topologyData, "loopMomenta", {}], InputForm] <>
+      "; loopExternalMomenta " <> ToString[Lookup[topologyData, "loopExternalMomenta", {}], InputForm] <>
+      "; effectiveLoopExternalMomenta " <> ToString[Lookup[topologyData, "effectiveLoopExternalMomenta", {}], InputForm] <>
+      "; independentExternalMomenta " <> ToString[Lookup[topologyData, "independentExternalMomenta", {}], InputForm] <>
+      "; required loop directions " <> ToString[Lookup[declarationAudit, "requiredLoopExternalDirections", {}], InputForm] <>
+      "; required loop-free magnitudes " <> ToString[Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}], InputForm],
      progress
      ];
    dsInfoPrint[
      "动力学变量选择：" <> ToString[Lookup[kinematicAudit, "status", "unknown"]] <>
       "；缺省规则 " <> ToString[Lookup[kinematicAudit, "defaultRules", {}], InputForm] <>
       "；当前规则 " <> ToString[Lookup[kinematicAudit, "selectedRules", {}], InputForm] <>
-      "；从属模长绑定 " <> ToString[Lookup[kinematicAudit, "dependentMagnitudeBindings", {}], InputForm],
+      "；从属模长绑定 " <> ToString[Lookup[kinematicAudit, "dependentMagnitudeBindings", {}], InputForm] <>
+      ". Kinematic-variable selection: " <> ToString[Lookup[kinematicAudit, "status", "unknown"]] <>
+      "; default rules " <> ToString[Lookup[kinematicAudit, "defaultRules", {}], InputForm] <>
+      "; selected rules " <> ToString[Lookup[kinematicAudit, "selectedRules", {}], InputForm] <>
+      "; dependent magnitude bindings " <> ToString[Lookup[kinematicAudit, "dependentMagnitudeBindings", {}], InputForm],
      progress
      ];
    dsInfoPrint[
-     "必需模长的参数覆盖 " <> ToString[kinematicRequiredMagnitudeCoverage[topologyData], InputForm],
+     "必需模长的参数覆盖 " <> ToString[kinematicRequiredMagnitudeCoverage[topologyData], InputForm] <>
+      ". Parameter coverage of required magnitudes " <> ToString[kinematicRequiredMagnitudeCoverage[topologyData], InputForm],
      progress
      ];
    dsInfoPrint[
      "参数可保持缺省，也可复制以下格式重定义：" <> Lookup[guide, "commandExample", ""] <>
-      "。规则左端写原始 sp[...]，不要写 ssij/sEi -> custom；右端写自定义参数表达式。",
+      "。规则左端写原始 sp[...]，不要写 ssij/sEi -> custom；右端写自定义参数表达式。 " <>
+      "Keep the default parameters or copy this form to redefine them: " <> Lookup[guide, "commandExample", ""] <>
+      ". Put the original sp[...] on the left, not ssij/sEi -> custom, and the custom parameter expression on the right.",
      progress
      ];
    If[Lookup[topologyData, "status", None] === "invalidInput" || topologyValidationErrorQ[validation],
     errors = Select[Lookup[validation, "issues", {}], Lookup[#, "severity", ""] === "error" &];
     Scan[dsErrorPrint[dsInitializationIssueText[#]] &, errors];
-    Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；上述详情同时保存在 validationReport[\"issues\"]。"];
+    Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；上述详情同时保存在 validationReport[\"issues\"]。 Topology/ISP initialization failed; the details above are also stored in validationReport[\"issues\"]."];
     Return[dsFailedInitializationData[
       "invalidInputOrTopology",
       <|"inputHash" -> inputHash, "topologyData" -> topologyData, "validationReport" -> validation|>
@@ -213,7 +232,7 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     ];
    subsetSummary = Lookup[topologyData, "precomputedShrinkSectorSummary", <||>];
    If[Lookup[subsetSummary, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[subsetSummary, "completeCoverageQ", False]],
-    Message[DSInit::sectorlimit, subsetSummary]; dsErrorPrint["contact-reachable sector 未完整初始化。"];
+    Message[DSInit::sectorincomplete, subsetSummary]; dsErrorPrint["contact-reachable sector 未完整初始化。 Contact-reachable sectors were not initialized completely."];
     Return[dsFailedInitializationData[
       "incompleteSectorMetadata",
       <|"inputHash" -> inputHash, "topologyData" -> topologyData|>
@@ -253,19 +272,19 @@ DSInit[input_Association, OptionsPattern[]] := Module[
    If[TrueQ[OptionValue[WriteInitializationFiles]],
     initDirectory = dsResolveInitializationDirectory[OptionValue[InitializationDirectory]];
     If[initDirectory === $Failed,
-     Message[DSInit::writefailed, OptionValue[InitializationDirectory]]; dsErrorPrint["InitializationDirectory 无效。"];
+     Message[DSInit::writefailed, OptionValue[InitializationDirectory]]; dsErrorPrint["InitializationDirectory 无效。 InitializationDirectory is invalid."];
      Return[dsFailedInitializationData["invalidInitializationDirectory", context]]
      ];
     writeResult = dsWriteInitializationFiles[context, initDirectory, OptionValue[OverwriteInitialization]];
     If[writeResult["status"] === "conflict",
-     Message[DSInit::initconflict, initDirectory]; dsErrorPrint["已有初始化信息与当前输入不一致，未覆盖。"];
+     Message[DSInit::initconflict, initDirectory]; dsErrorPrint["已有初始化信息与当前输入不一致，未覆盖。 Existing initialization data do not match the current input and were not overwritten."];
      Return[dsFailedInitializationData[
        "initializationConflict",
        Join[context, <|"initializationWrite" -> writeResult|>]
        ]]
      ];
     If[writeResult["status"] =!= "written",
-     Message[DSInit::writefailed, initDirectory]; dsErrorPrint["初始化文件未完整写入。"];
+     Message[DSInit::writefailed, initDirectory]; dsErrorPrint["初始化文件未完整写入。 Initialization files were not written completely."];
      Return[dsFailedInitializationData[
        "initializationWriteFailed",
        Join[context, <|"initializationWrite" -> writeResult|>]
@@ -278,7 +297,8 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     setIBPTopologyContext[context["topology"]]
     ];
    dsInfoPrint[
-    "初始化完成：" <> context["caseName"] <> "，sector " <> ToString[Length[context["sectors"]]] <> "/" <> ToString[Length[context["sectors"]]],
+    "初始化完成：" <> context["caseName"] <> "，sector " <> ToString[Length[context["sectors"]]] <> "/" <> ToString[Length[context["sectors"]]] <>
+     ". Initialization completed: " <> context["caseName"] <> ", sectors " <> ToString[Length[context["sectors"]]] <> "/" <> ToString[Length[context["sectors"]]],
     progress
     ];
    context
@@ -286,7 +306,7 @@ DSInit[input_Association, OptionsPattern[]] := Module[
 
 DSInit[input_, OptionsPattern[]] := (
    Message[DSInit::badinput];
-   dsErrorPrint["DSInit 需要 Association 输入。"];
+   dsErrorPrint["DSInit 需要 Association 输入。 DSInit requires an Association input."];
    dsFailedInitializationData["inputNotAssociation", <|"input" -> HoldForm[input]|>]
    );
 

@@ -20,7 +20,7 @@ parameterProbeRules = {dim -> 37/11, nu -> 7/13, etaNu -> 23/17};
 
 (* 顶点交换 symmetry 只在 reference P1=P2=-P0 时成立；独立 P1/P2 family 不得复用本配置。 *)
 caseInput = <|
-   "name" -> "016PureMassiveBubbleClosedLoopMinusMinus",
+   "name" -> "017PureMassiveBubbleClosedLoopMinusMinus",
    "vertexData" -> {{v1, "-"}, {v2, "-"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
@@ -43,9 +43,7 @@ caseInput = <|
    "shrinkPrefactorRules" -> {Exp[Pi Im[nu]]/Pi -> etaNu},
    "symmetryRules" -> exampleSymmetryRules0,
    "seedPreset" -> "quickCheck",
-   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> False|>,
-   "generatorSeedRanges" -> referenceGeneratorSeedRanges,
-   "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 5000, "MaxEquationCount" -> 100000|>
+   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>
    |>;
 
 context = DSInit[

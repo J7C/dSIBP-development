@@ -12,24 +12,33 @@ DSMessagesQ[] := TrueQ[$dSIBPMessagesEnabled];
 
 dsMessagesEnabledQ[setting_: Automatic] := If[setting === Automatic, DSMessagesQ[], TrueQ[setting]];
 
-dsInfoPrint[text_, setting_: Automatic] := If[dsMessagesEnabledQ[setting], Print["[dSIBP] ", text]];
+(* 所有调用点直接提供逐句中英文本；此层只统一非字符串对象的显示，不伪造占位翻译。 *)
+dsBilingualRuntimeText[text_] := ToString[text];
+
+
+dsInfoPrint[text_, setting_: Automatic] := If[
+   dsMessagesEnabledQ[setting], Print["[dSIBP] ", dsBilingualRuntimeText[text]]
+   ];
 
 dsWarningPrint[text_, setting_: Automatic] := If[
    dsMessagesEnabledQ[setting],
-   If[TrueQ[$Notebooks], Print[Style["Warning: " <> ToString[text], Darker[Red]]], Print["[dSIBP Warning] ", text]]
+   If[TrueQ[$Notebooks],
+    Print[Style["警告 / Warning: " <> dsBilingualRuntimeText[text], Darker[Red]]],
+    Print["[dSIBP 警告 / Warning] ", dsBilingualRuntimeText[text]]
+    ]
    ];
 
 (* fatal error 不读取全局开关；即使用户关闭可选提醒也必须可见。 *)
 dsErrorPrint[text_] := If[
    TrueQ[$Notebooks],
-   Print[Style["Error: " <> ToString[text], Red]],
-   Print["[dSIBP Error] ", text]
+   Print[Style["错误 / Error: " <> dsBilingualRuntimeText[text], Red]],
+   Print["[dSIBP 错误 / Error] ", dsBilingualRuntimeText[text]]
    ];
 
 dsStageRun[label_String, expression_, setting_: Automatic] := Module[{result, elapsed},
-   dsInfoPrint["开始：" <> label, setting];
+   dsInfoPrint["开始 / Start: " <> label, setting];
    {elapsed, result} = AbsoluteTiming[expression];
-   dsInfoPrint["完成：" <> label <> "（" <> ToString[Round[elapsed, 0.001], InputForm] <> " s）", setting];
+   dsInfoPrint["完成 / Completed: " <> label <> " (" <> ToString[Round[elapsed, 0.001], InputForm] <> " s)", setting];
    result
    ];
 
@@ -133,7 +142,7 @@ dsPublicAPISections[] := <|
      "dtau", "dqq", "dqk", "ds", "rep2innerform", "rep2outform", "rep2Integrand",
      "symmetry", "repSymmetry0"
      },
-   "loopWorkflow" -> {"DSSeeds", "DSLinear", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
+   "loopWorkflow" -> {"DSSeeds", "DSAllSeeds", "DSGenerateIBP", "generateIBP", "DSLinear", "DSKiraPlan", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
    "pureTimeWorkflow" -> {
      "DSTreeSeeds", "repIterative", "DSTreeNaiveIBP", "DSTreeNaiveDE", "DSTreeDLogDE"
      },
@@ -145,6 +154,9 @@ dsPublicAPIOptions[] := <|
    "DSInit" -> Options[DSInit],
    "DSSeeds" -> Options[DSSeeds],
    "DSLinear" -> Options[DSLinear],
+   "DSGenerateIBP" -> Options[DSGenerateIBP],
+   "generateIBP" -> Options[generateIBP],
+   "DSKiraPlan" -> Options[DSKiraPlan],
    "DSKiraExport" -> Options[DSKiraExport],
    "DSKiraImport" -> Options[DSKiraImport],
    "DSDE" -> Options[DSDE],

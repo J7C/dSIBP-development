@@ -28,13 +28,15 @@ dsParameterNotation[topo_Association] := Module[
 
 DSParameterNotation[context_Association] := Module[{resolved = dsResolveContext[context], result, guide},
    If[Head[resolved] === Missing,
-    dsErrorPrint["DSParameterNotation 需要有效的 DSInit context。"]; Return[$Failed]
+    dsErrorPrint["DSParameterNotation 需要有效的 DSInit context。 DSParameterNotation requires a valid DSInit context."]; Return[$Failed]
     ];
    result = dsParameterNotation[resolved["topology"]];
    guide = Lookup[result, "parameterRedefinitionGuide", <||>];
    dsInfoPrint[
     "当前参数 " <> ToString[Lookup[result, "selectedUserVariables", {}], InputForm] <>
-     "。可选重定义示例：" <> Lookup[guide, "commandExample", ""]
+     "。可选重定义示例：" <> Lookup[guide, "commandExample", ""] <>
+     ". Current parameters: " <> ToString[Lookup[result, "selectedUserVariables", {}], InputForm] <>
+     ". Optional redefinition example: " <> Lookup[guide, "commandExample", ""]
     ];
    result
    ];
@@ -42,7 +44,7 @@ DSParameterNotation[context_Association] := Module[{resolved = dsResolveContext[
 
 DSParameterNotation[] := Module[{context = dsResolveContext[Automatic]},
    If[Head[context] === Missing,
-    dsErrorPrint["请先成功调用 DSInit。"]; Return[$Failed]
+    dsErrorPrint["请先成功调用 DSInit。 Run DSInit successfully first."]; Return[$Failed]
     ];
    DSParameterNotation[context]
    ];
@@ -57,10 +59,10 @@ Options[DSRedefineParameters] = {ProgressReporting -> Automatic};
 DSRedefineParameters[context_Association, rules_, OptionsPattern[]] := Module[
    {resolved = dsResolveContext[context], input, result, generateDerivativeMetadataQ},
    If[Head[resolved] === Missing,
-    dsErrorPrint["DSRedefineParameters 需要有效的 DSInit context。"]; Return[$Failed]
+    dsErrorPrint["DSRedefineParameters 需要有效的 DSInit context。 DSRedefineParameters requires a valid DSInit context."]; Return[$Failed]
     ];
    If[! ListQ[rules] && ! AssociationQ[rules],
-    dsErrorPrint["参数重定义规则必须是 Rule 列表或 Association。"]; Return[$Failed]
+    dsErrorPrint["参数重定义规则必须是 Rule 列表或 Association。 Parameter redefinition rules must be a Rule list or an Association."]; Return[$Failed]
     ];
    input = KeyDrop[resolved["input"], {"kinematicRules"}];
    generateDerivativeMetadataQ = AssociationQ[Lookup[resolved, "derivatives", Missing["NotGenerated"]]];
@@ -73,7 +75,7 @@ DSRedefineParameters[context_Association, rules_, OptionsPattern[]] := Module[
      ProgressReporting -> OptionValue[ProgressReporting]
      ];
    If[Lookup[result, "status", "failed"] =!= "initialized",
-    dsErrorPrint["参数重定义未通过完备性或 topology 门禁。"]; Return[result]
+    dsErrorPrint["参数重定义未通过完备性或 topology 门禁。 Parameter redefinition failed the completeness or topology gate."]; Return[result]
     ];
    Join[result, <|"parameterRedefinition" -> <|
       "sourceInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
@@ -85,7 +87,7 @@ DSRedefineParameters[context_Association, rules_, OptionsPattern[]] := Module[
 DSRedefineParameters[rules_, OptionsPattern[]] := Module[{current, result},
    current = dsResolveContext[Automatic];
    If[Head[current] === Missing,
-    dsErrorPrint["请先成功调用 DSInit。"]; Return[$Failed]
+    dsErrorPrint["请先成功调用 DSInit。 Run DSInit successfully first."]; Return[$Failed]
     ];
    result = DSRedefineParameters[current, rules, ProgressReporting -> OptionValue[ProgressReporting]];
    If[AssociationQ[result] && Lookup[result, "status", "failed"] === "initialized",

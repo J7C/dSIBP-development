@@ -315,15 +315,17 @@ kinematicRootExpression[rhs_] := Replace[
 
 kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
    {baseData, baseCount, normalizedRules, vectors, supportedPositions, unsupportedPositions,
-    matrix, rhs, rank, rowSelection, baseRHS = {}, resolvedRules = {}, loopCount,
+     matrix, rhs, rank, rowSelection, baseRHS = {}, resolvedRules = {}, loopCount,
     missingDirections, ruleMissingDirections, parameterMissingDirections, ruleDependencies,
     parameterDependencies, constraintResiduals = {}, userVariables, parameterJacobian = {},
     baseExpressions, ruleMissingDirectionExpressions, parameterMissingDirectionExpressions,
     ruleDependencyResiduals, parameterRank = 0, ruleCompleteQ, overcompleteQ, completeQ,
-    inverseAvailableQ, occurrenceData, bindingCoordinates, dependentBindings},
+     inverseAvailableQ, occurrenceData, bindingCoordinates, dependentBindings, defaultExpressions},
    baseData = kinematicBaseCoordinateData[topo];
    baseCount = Length[baseData];
-   baseExpressions = Lookup[baseData, "inputExpression", {}];
+   (* Lookup 对空规则列表返回 KeyAbsent；显式保留空坐标列表，避免用户提示泄漏 Missing。 *)
+   baseExpressions = If[baseData === {}, {}, Lookup[baseData, "inputExpression"]];
+   defaultExpressions = If[baseData === {}, {}, Lookup[baseData, "defaultRHS"]];
    normalizedRules = normalizeKinematicRuleList[rules];
    vectors = kinematicRuleBaseVector[#, topo, baseData] & /@ normalizedRules;
    supportedPositions = Flatten@Position[vectors, _List, {1}, Heads -> False];
@@ -383,18 +385,23 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
      baseRHS,
      Lookup[baseData, "defaultRHS", {}]
      ];
-   dependentBindings = Map[
-     Function[data,
-      With[{squared = Expand[Lookup[data, "baseCoefficients", {}] . bindingCoordinates]},
-       <|
-        "momentum" -> Lookup[data, "momentum"],
-        "squaredExpression" -> Lookup[data, "squaredExpression"],
-        "userSquaredExpression" -> squared,
-        "userMagnitudeExpression" -> kinematicRootExpression[squared]
-        |>
-       ]
+   (* 欠完备坐标没有定义完整 binding；此时只报告零空间/缺失方向，避免伪造 Indeterminate。 *)
+   dependentBindings = If[
+     completeQ,
+     Map[
+      Function[data,
+       With[{squared = Expand[Lookup[data, "baseCoefficients", {}] . bindingCoordinates]},
+        <|
+         "momentum" -> Lookup[data, "momentum"],
+         "squaredExpression" -> Lookup[data, "squaredExpression"],
+         "userSquaredExpression" -> squared,
+         "userMagnitudeExpression" -> kinematicRootExpression[squared]
+         |>
+        ]
+       ],
+      Select[occurrenceData, ! TrueQ[Lookup[#, "independentQ", False]] &]
       ],
-     Select[occurrenceData, ! TrueQ[Lookup[#, "independentQ", False]] &]
+     {}
      ];
    <|
     "status" -> Which[! completeQ, "incomplete", overcompleteQ, "overcomplete", True, "complete"],
@@ -402,8 +409,8 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
     "baseCoordinateData" -> baseData,
     "baseCoordinateOrder" -> baseExpressions,
     "baseCoordinateCount" -> baseCount,
-    "defaultRules" -> Thread[Lookup[baseData, "inputExpression"] -> Lookup[baseData, "defaultRHS"]],
-    "selectionTemplate" -> ("kinematicRules" -> Thread[Lookup[baseData, "inputExpression"] -> Lookup[baseData, "defaultRHS"]]),
+     "defaultRules" -> Thread[baseExpressions -> defaultExpressions],
+     "selectionTemplate" -> ("kinematicRules" -> Thread[baseExpressions -> defaultExpressions]),
     "selectedRules" -> normalizedRules,
     "selectedUserVariables" -> userVariables,
     "userParameterOrder" -> userVariables,
@@ -453,6 +460,18 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
 kinematicParameterRedefinitionGuide[audit_Association] := Module[
    {defaultRules, lhsStrings, customRuleStrings, commandExample},
    defaultRules = Lookup[audit, "defaultRules", {}];
+   If[! ListQ[defaultRules] || defaultRules === {} ||
+     ! VectorQ[defaultRules, MatchQ[Unevaluated[#], _Rule | _RuleDelayed] &],
+    Return[<|
+      "optionalQ" -> True,
+      "defaultBehavior" -> "当前 family 没有可重定义动力学坐标。 This family has no redefinable kinematic coordinates.",
+      "ruleLeftHandSideFormat" -> "无。 None.",
+      "ruleRightHandSideFormat" -> "无。 None.",
+      "coverageRequirement" -> "无需动力学坐标规则。 No kinematic-coordinate rules are required.",
+      "defaultRules" -> {},
+      "commandExample" -> None
+      |>]
+    ];
    lhsStrings = ToString[First[#], InputForm] & /@ defaultRules;
    customRuleStrings = MapIndexed[
      #1 <> " -> custom" <> ToString[First[#2]] <> "^2" &,
@@ -461,10 +480,12 @@ kinematicParameterRedefinitionGuide[audit_Association] := Module[
    commandExample = "DSRedefineParameters[context, {" <> StringRiffle[customRuleStrings, ", "] <> "}]";
    <|
     "optionalQ" -> True,
-    "defaultBehavior" -> "不调用 DSRedefineParameters 时继续使用 defaultRules。",
+    "defaultBehavior" -> "不调用 DSRedefineParameters 时继续使用 defaultRules。 Without DSRedefineParameters, the family continues to use defaultRules.",
     "ruleLeftHandSideFormat" -> "左端必须写 sp[原始动量表达式,原始动量表达式] 或其它 baseCoordinateOrder 中的 sp；不要写 ssij/sEi -> custom。",
+    "ruleLeftHandSideFormatEnglish" -> "The left side must be sp[original momentum expression, original momentum expression], or another sp entry from baseCoordinateOrder; do not write ssij/sEi -> custom.",
     "ruleRightHandSideFormat" -> "右端写该标量积在自定义参数中的表达式；模长坐标常写 custom^2，也允许满秩混合表达式如 (u+v)^2。",
-    "coverageRequirement" -> "规则左端与右端参数 Jacobian 都必须覆盖全部 baseCoordinateOrder；欠完备拒绝初始化，过完备只允许 symbolic IBP。",
+    "ruleRightHandSideFormatEnglish" -> "The right side is the scalar product in custom parameters; magnitude coordinates commonly use custom^2, and full-rank mixed expressions such as (u+v)^2 are allowed.",
+    "coverageRequirement" -> "规则左端与右端参数 Jacobian 都必须覆盖全部 baseCoordinateOrder；欠完备拒绝初始化，过完备只允许 symbolic IBP。 Both rule left sides and the right-side parameter Jacobian must cover all of baseCoordinateOrder; undercomplete input is rejected and overcomplete input permits symbolic IBP only.",
     "defaultRules" -> defaultRules,
     "commandExample" -> commandExample
     |>
@@ -1223,24 +1244,41 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
      "动力学变量提案：" <> ToString[Lookup[audit, "defaultRules", {}], InputForm] <>
       "；当前选择：" <> ToString[Lookup[audit, "selectedRules", {}], InputForm] <>
       "；从属模长绑定：" <> ToString[Lookup[audit, "dependentMagnitudeBindings", {}], InputForm] <>
-      "；审计状态 " <> ToString[status],
+      "；审计状态 " <> ToString[status] <>
+      ". Kinematic-variable proposal: " <> ToString[Lookup[audit, "defaultRules", {}], InputForm] <>
+      "; selected rules: " <> ToString[Lookup[audit, "selectedRules", {}], InputForm] <>
+      "; dependent magnitude bindings: " <> ToString[Lookup[audit, "dependentMagnitudeBindings", {}], InputForm] <>
+      "; audit status " <> ToString[status],
      Automatic
      ];
-   dsInfoPrint[
-     "可选参数重定义：" <> Lookup[guide, "ruleLeftHandSideFormat", ""] <>
-      " " <> Lookup[guide, "ruleRightHandSideFormat", ""] <>
-      " 示例：" <> Lookup[guide, "commandExample", ""],
-     Automatic
-     ];
+   If[StringQ[Lookup[guide, "commandExample", None]],
+    dsInfoPrint[
+      "可选参数重定义：" <> Lookup[guide, "ruleLeftHandSideFormat", ""] <>
+       " " <> Lookup[guide, "ruleRightHandSideFormat", ""] <>
+       " 示例：" <> guide["commandExample"] <>
+       ". Optional parameter redefinition: " <> Lookup[guide, "ruleLeftHandSideFormatEnglish", ""] <>
+       " " <> Lookup[guide, "ruleRightHandSideFormatEnglish", ""] <>
+       "; example: " <> guide["commandExample"],
+      Automatic
+      ],
+    dsInfoPrint[Lookup[guide, "defaultBehavior", ""], Automatic]
+    ];
     Switch[status,
      "undercomplete",
      dsErrorPrint[
        "动量声明欠完备；DSInit 将拒绝继续。缺失方向/模长平方为 " <>
+        ToString[Join[Lookup[result, "missingDirections", {}], Lookup[result, "missingMagnitudeSquares", {}]], InputForm] <>
+        ". Momentum declarations are undercomplete, so DSInit will stop. Missing directions or squared magnitudes: " <>
         ToString[Join[Lookup[result, "missingDirections", {}], Lookup[result, "missingMagnitudeSquares", {}]], InputForm]
        ],
      "incomplete",
     dsErrorPrint[
       "动力学变量欠完备；DSInit 将拒绝继续。缺失/受约束方向为 " <>
+       ToString[DeleteDuplicates@Join[
+          Lookup[audit, "ruleMissingDirectionExpressions", {}],
+          Lookup[audit, "parameterMissingDirectionExpressions", {}]
+          ], InputForm] <>
+       ". Kinematic variables are undercomplete, so DSInit will stop. Missing or constrained directions: " <>
        ToString[DeleteDuplicates@Join[
           Lookup[audit, "ruleMissingDirectionExpressions", {}],
           Lookup[audit, "parameterMissingDirectionExpressions", {}]
@@ -1254,6 +1292,8 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
       |>;
     dsWarningPrint[
       "动力学变量或动量声明过完备；初始化与 symbolic IBP 可继续，但 ds、DSDE 与唯一 rep2innerform 已禁用。详情：" <>
+       ToString[overcompleteDetails, InputForm] <>
+       ". Kinematic variables or momentum declarations are overcomplete. Initialization and symbolic IBP may continue, but ds, DSDE, and unique rep2innerform are disabled. Details: " <>
        ToString[overcompleteDetails, InputForm],
       Automatic
       ],

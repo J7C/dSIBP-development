@@ -26,23 +26,26 @@ modulePaths = FileNameJoin[Prepend[#, packageRoot]] & /@ {
     {"Kernel", "IBP", "Loop.wl"},
     {"Kernel", "IBP", "Tree.wl"},
     {"Kernel", "IBP", "PureTime016.wl"},
+    {"Kernel", "IBP", "GenerateIBP.wl"},
     {"Kernel", "Backends", "KiraExport.wl"},
+    {"Kernel", "Backends", "KiraPlan.wl"},
     {"Kernel", "Backends", "KiraImport.wl"},
     {"Kernel", "DE", "BuildDE.wl"},
     {"Kernel", "DE", "Scaling.wl"},
     {"Kernel", "Tree", "VertexFamily.wl"},
     {"Kernel", "Core", "KinematicCoordinates.wl"},
-    {"Kernel", "Core", "ParameterInterface016.wl"}
+    {"Kernel", "Core", "ParameterInterface016.wl"},
+    {"Kernel", "Core", "BilingualMessages.wl"}
     };
 
 
 (* ::Chapter:: *)
 (*单文件构造与写出*)
 
-(* 冻结交付件使用 UTF-8 无 BOM 与 LF，保证跨平台 diff 稳定。 *)
+(* 冻结交付件使用 UTF-8 BOM 与 LF；BOM 保证 Windows WolframScript 直接 Get 时正确识别中文源码。 *)
 writeUTF8LFText[path_String, text_String] := Module[{stream, normalized, bytes},
    normalized = StringReplace[text, {"\r\n" -> "\n", "\r" -> "\n"}];
-   bytes = ToCharacterCode[normalized, "UTF8"];
+   bytes = Join[{239, 187, 191}, ToCharacterCode[normalized, "UTF8"]];
    stream = OpenWrite[path, BinaryFormat -> True];
    BinaryWrite[stream, bytes, "Byte"];
    Close[stream];
@@ -50,7 +53,7 @@ writeUTF8LFText[path_String, text_String] := Module[{stream, normalized, bytes},
    ];
 
 
-loaderSource = Import[loaderPath, "Text"];
+loaderSource = Import[loaderPath, "Text", CharacterEncoding -> "UTF-8"];
 firstGet = FirstCase[StringPosition[loaderSource, "\nGet["], {start_, _} :> start, Missing["NoPrivateLoader"]];
 
 If[Head[firstGet] === Missing,
@@ -59,7 +62,7 @@ If[Head[firstGet] === Missing,
  ];
 
 loaderPrefix = StringTrim[StringTake[loaderSource, firstGet - 1]];
-moduleSources = Import[#, "Text"] & /@ modulePaths;
+moduleSources = Import[#, "Text", CharacterEncoding -> "UTF-8"] & /@ modulePaths;
 
 If[! FreeQ[moduleSources, $Failed],
  Print["ERROR: 至少一个 016 模块无法读取。"];

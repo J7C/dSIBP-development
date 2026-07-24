@@ -1,4 +1,4 @@
-(* ::Package:: *)
+﻿(* ::Package:: *)
 
 (* ::Chapter:: *)
 (*公开上下文与接口声明*)
@@ -52,9 +52,13 @@ DSInfo::usage = "DSInfo[] 返回当前初始化的简要信息；DSInfo[context,
 DSKinematics::usage = "DSKinematics[input,rules] 返回 topology 的缺省动力学变量提案、全部必需模长覆盖、从属 binding、可复制的参数重定义格式，以及给定规则的秩、零空间、完备性和可逆性审计；rules 缺省读取 input 或使用自动提案。";
 DSParameterNotation::usage = "DSParameterNotation[context] 返回圈外 Gram 根号、独立无圈模长、全部必需模长覆盖、当前用户变量规则及 DSRedefineParameters 的可复制示例；无参数形式读取当前 context。";
 DSRedefineParameters::usage = "DSRedefineParameters[context,rules] 用新的完整动力学变量规则重新初始化并返回新 context；rules 左端写 baseCoordinateOrder 中的 sp[原始动量,...]，右端写自定义参数表达式，不写 ssij->custom；DSRedefineParameters[rules] 只在成功后更新当前 context。";
-DSSeeds::usage = "DSSeeds[context,opts] 生成所有 contact-reachable sector 的 canonical IBP seeds；不运行 reduction。full 模式返回三槽 J。timeOnly 会自动选择表示：不含未缩并 masslessFull 时返回 direct J[vertexPacks]，否则用三槽 J[timePowers,linePacks,isp] 保留逐线 n=0/1；DiscreteMode->\"all\" 枚举完整离散态，不需要私有状态参数。";
+DSSeeds::usage = "DSSeeds[context,opts] 完整展开用户 seedRanges/generatorSeedRanges 和所有 n_i=0,1 状态，生成全部 contact-reachable sector 的 canonical IBP seeds；不抽样、不截断，也不运行 reduction。full 模式返回三槽 J。timeOnly 会自动选择 direct J[vertexPacks] 或保留逐线 n 状态的三槽 J。";
+DSAllSeeds::usage = "DSAllSeeds[seedData] 取出 DSSeeds 返回的一维 allSeeds 模板列表；DSAllSeeds[] 取最近一次成功生成的模板。模板已遍历 n_i=0,1 并执行 EOM/canonical，连续指标仍为 general。";
+DSGenerateIBP::usage = "DSGenerateIBP[seeds,{min,max}] 对全部连续指标使用统一整数范围；DSGenerateIBP[seeds,{index,min,max},...] 要求逐指标 exact cover。n_i 已在模板阶段遍历，不得再次撒点。";
+generateIBP::usage = "generateIBP 是 DSGenerateIBP 的同义入口，支持 generateIBP[seeds,{min,max}] 和逐指标 exact-cover 形式。";
 DSLinear::usage = "DSLinear[seedData,context,opts] 把 canonical seeds 转换为 backend-neutral linearData。";
-DSKiraExport::usage = "DSKiraExport[linearData,opts] 序列化 Kira 基础输入和同源 manifest；不会启动 Kira。";
+DSKiraPlan::usage = "DSKiraPlan[linearData,spec] 生成 reference-style 积分顺序和 preReduction/formal 两阶段 Kira 计划；formal 计划先解析构造 active basis 一阶导数及最小 target closure。";
+DSKiraExport::usage = "DSKiraExport[linearData,opts] 或 DSKiraExport[kiraPlan] 序列化 Kira 基础输入和同源 manifest；不会启动 Kira。缺省禁止数值化微分变量，只有已冻结解析导数闭包的 formal plan 可显式选择 postDerivative 数值阶段。";
 DSKiraImport::usage = "DSKiraImport[path,context,opts] 导入并验证完整 Kira reduction、master 顺序和积分双向映射。";
 DSDE::usage = "DSDE[reductionData,variables,opts] 用 ds 和 reduction rules 构造保持 master 顺序的微分方程矩阵。";
 DSScaleCheck::usage = "DSScaleCheck[deData,spec,opts] 检查约化后的 Euler/标度关系。";
@@ -72,30 +76,23 @@ ProgressReporting::usage = "ProgressReporting 控制单次高层调用的阶段�
 KinematicRules::usage = "KinematicRules 是 DSInit 的可选动力学变量替换规则；缺省 Automatic 使用 input 中的 kinematicRules，若仍未给出则采用 DSKinematics 的缺省提案。";
 
 PrecomputeShrinkSectorMetadata::usage = "PrecomputeShrinkSectorMetadata 控制底层是否预枚举 contact-reachable sector metadata。";
-MaxShrinkSectorDepth::usage = "MaxShrinkSectorDepth 限制 shrink sector 深度；Automatic 使用完整可达深度。";
-MaxShrinkSectorCount::usage = "MaxShrinkSectorCount 限制可初始化的 shrink sector 数。";
-UseSampleOnly::usage = "UseSampleOnly 控制 continuous seed 是否使用 sample-only 范围。";
-DiscreteMode::usage = "DiscreteMode 选择离散态 seed 模式：\"sample\"、\"all\" 或 \"none\"。";
-MaxSeedRuleCount::usage = "MaxSeedRuleCount 限制连续 seed 规则数。";
-MaxDiscreteRuleCount::usage = "MaxDiscreteRuleCount 限制离散态规则数。";
-MaxEquationCount::usage = "MaxEquationCount 限制生成的方程数。";
-ApplyNumericRules::usage = "ApplyNumericRules 控制底层 seed 是否提前代入 numericRules；高层缺省 False，数值替换应优先留到 linearData 层。";
+ApplyNumericRules::usage = "ApplyNumericRules 控制底层 seed 是否提前代入 numericRules；高层缺省 False。准备生成 DE 时只能固定非微分系数参数，全部 DE variables 必须保持符号。";
 GenerateShrinkSectors::usage = "GenerateShrinkSectors 控制 canonical seed 是否生成 contact-reachable shrink sectors；高层完整工作流缺省 True。";
 KiraOrdering::usage = "KiraOrdering 指定 backend-neutral linearData 的 Kira 排序约定。";
-CoefficientRules::usage = "CoefficientRules 指定 linearData 层的小规模系数替换规则。";
+CoefficientRules::usage = "CoefficientRules 指定 linearData 层的小规模系数替换规则；DE 工作流不得直接或间接消去微分变量。";
 LinearSystemMode::usage = "LinearSystemMode 选择 DSLinear 的 \"symbolic\" 或 \"numeric\" 模式。";
 ExportKira::usage = "ExportKira 是底层组合工作流的导出开关；DSKiraExport 本身不运行 Kira。";
 OutputDirectory::usage = "OutputDirectory 指定 serializer 输出目录；None 表示只返回内存数据。";
-KiraCoefficientRules::usage = "KiraCoefficientRules 指定 Kira 导出前的系数规则。";
+KiraCoefficientRules::usage = "KiraCoefficientRules 指定 Kira 导出前的系数规则；配置 KiraActiveBasis 时规则不得触及其 derivativeVariables。";
 KiraIntegralOrder::usage = "KiraIntegralOrder 指定 Kira 导出的显式积分顺序。";
 KiraTargetIntegrals::usage = "KiraTargetIntegrals 指定 Kira job 的目标积分。";
 KiraActiveBasis::usage = "KiraActiveBasis 为 DSKiraExport 指定有序 active basis 线性组合、名称和导数变量；缺省 None。";
+KiraNumericStage::usage = "KiraNumericStage 选择 \"symbolic\"（缺省，DE 变量不得数值化）或 \"postDerivative\"（只在 active basis 的解析一阶导数及 target closure 已构造后允许定点数值 reduction）。";
 KiraJobOptions::usage = "KiraJobOptions 指定仅用于生成 Kira job 文件的选项 Association。";
 KiraReductionFile::usage = "KiraReductionFile 指定 DSKiraImport 读取的 reduction 规则文件；缺省先查 results/Tuserweight/kira_list.m，再兼容 results/kira_list.m。";
 KiraMasterFile::usage = "KiraMasterFile 指定 DSKiraImport 读取的有序 master 文件；缺省先查 results/Tuserweight/masters，再兼容 results/masters。";
 KiraCompletionFile::usage = "KiraCompletionFile 指定 DSKiraImport 检查的完成日志；缺省为 kira.log。";
 KiraCompletionPatterns::usage = "KiraCompletionPatterns 指定完成日志必须匹配的字符串或 RegularExpression 列表。";
-MaxReductionIterations::usage = "MaxReductionIterations 限制 DSDE 对 reduction rules 的 FixedPoint 迭代次数；缺省 100。";
 ScalingRelation::usage = "ScalingRelation 指定 DSScaleCheck 使用的 \"Custom\" 或 \"PureMassiveBubble\" 标度关系。";
 ScalingVariables::usage = "ScalingVariables 指定 Euler 算符中的变量顺序。";
 ScalingWeights::usage = "ScalingWeights 指定 Euler 算符中各变量的系数；016 的 ssij 与独立无圈模长 sEi 都是动量一次量，缺省物理权重为 1。";
@@ -765,8 +762,8 @@ optionalCaseInputKeys[] := {
    "externalLegMomenta", "externalLegInvariantRules", "rawExternalLegInvariantRules",
    "kinematicRules",
    "ispData", "vertexEnergies", "activeVertexIds",
-   "fixedAVertexValues", "numericRules", "rawNumericRules", "sampleDiscreteRules", "seedPreset", "seedRanges",
-   "generatorSeedRanges", "seedOptions", "zeroPointRules", "shrinkPrefactorRules", "symmetryRules", "thetaBoundarySignOffset", "kiraOrdering"
+   "fixedAVertexValues", "numericRules", "rawNumericRules", "seedPreset", "seedRanges",
+   "generatorSeedRanges", "zeroPointRules", "shrinkPrefactorRules", "symmetryRules", "thetaBoundarySignOffset", "kiraOrdering"
    };
 
 
@@ -833,60 +830,14 @@ generatorSeedRangesShapeIssues[data_] := If[
    ];
 
 
-validNonNegativeIntegerQ[value_] := IntegerQ[value] && value >= 0;
-
-
-allowedSeedOptionKeys[] := {
-   "DiscreteMode", "MaxSeedRuleCount", "MaxDiscreteRuleCount", "MaxEquationCount",
-   "MaxShrinkSectorDepth", "MaxShrinkSectorCount"
-   };
-
-
-validSeedOptionValueQ["DiscreteMode", value_] := MemberQ[{"sample", "all", "none"}, value];
-validSeedOptionValueQ["MaxShrinkSectorDepth", value_] := value === Automatic || validNonNegativeIntegerQ[value];
-validSeedOptionValueQ[key_, value_] /; MemberQ[{"MaxSeedRuleCount", "MaxDiscreteRuleCount", "MaxEquationCount", "MaxShrinkSectorCount"}, key] := validNonNegativeIntegerQ[value];
-validSeedOptionValueQ[_, _] := False;
-
-
 validDiscreteReplacementRuleQ[rule_] := MatchQ[Unevaluated[rule], _Rule | _RuleDelayed];
-
-
-sampleDiscreteRuleSetShapeIssue[ruleSet_, index_] := Module[{badRulePositions},
-   If[! ListQ[ruleSet],
-    Return[<|"ruleSetIndex" -> index, "reason" -> "each sample entry must be a list of replacement rules", "entry" -> ruleSet|>]
-    ];
-   badRulePositions = Flatten @ Position[ruleSet, rule_ /; ! validDiscreteReplacementRuleQ[rule], {1}, Heads -> False];
-   If[badRulePositions === {},
-    Nothing,
-    <|"ruleSetIndex" -> index, "badRulePositions" -> badRulePositions, "entry" -> ruleSet|>
-    ]
-   ];
-
-
-sampleDiscreteRulesShapeIssues[rules_] := Module[{badEntries},
-   If[! ListQ[rules],
-    Return[{<|"reason" -> "sampleDiscreteRules must be a list of replacement-rule lists", "value" -> rules|>}]
-    ];
-   badEntries = DeleteCases[
-     MapIndexed[sampleDiscreteRuleSetShapeIssue[#1, First[#2]] &, rules],
-     Nothing
-     ];
-   badEntries
-   ];
-
-
-sampleDiscreteRulePairs[rules_] := Cases[
-   rules,
-   (Verbatim[Rule] | Verbatim[RuleDelayed])[lhs_, rhs_] :> {lhs, rhs},
-   {0, Infinity}
-   ];
 
 
 caseInputMalformedIssues[case_Association] := Module[
    {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, loopExternalMomenta,
-    independentExternalMomenta, ispData, seedRanges, generatorSeedRanges, seedOptions, badVertexPositions,
+    independentExternalMomenta, ispData, seedRanges, generatorSeedRanges, badVertexPositions,
     badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData,
-    sampleDiscreteRules, sampleRuleShapeIssues, generatorRangeShapeIssues, symmetryRules, badSymmetryRulePositions},
+    generatorRangeShapeIssues, symmetryRules, badSymmetryRulePositions},
    If[KeyExistsQ[case, "vertexData"],
     vertexData = case["vertexData"];
     If[! ListQ[vertexData],
@@ -973,12 +924,6 @@ caseInputMalformedIssues[case_Association] := Module[
      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedGeneratorSeedRanges", "issues" -> generatorRangeShapeIssues|>]
      ]
     ];
-   If[KeyExistsQ[case, "seedOptions"],
-    seedOptions = case["seedOptions"];
-    If[! AssociationQ[seedOptions],
-     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSeedOptions", "reason" -> "seedOptions must be an Association"|>]
-     ]
-    ];
    If[KeyExistsQ[case, "symmetryRules"],
     symmetryRules = case["symmetryRules"];
     If[! ListQ[symmetryRules],
@@ -1016,13 +961,6 @@ caseInputMalformedIssues[case_Association] := Module[
       AppendTo[issues, <|"severity" -> "error", "code" -> "ispDataMissingRequiredKeys", "isps" -> ispMissingKeyData|>]
       ]
      ]
-     ];
-    If[KeyExistsQ[case, "sampleDiscreteRules"],
-     sampleDiscreteRules = case["sampleDiscreteRules"];
-     sampleRuleShapeIssues = sampleDiscreteRulesShapeIssues[sampleDiscreteRules];
-     If[sampleRuleShapeIssues =!= {},
-      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSampleDiscreteRules", "issues" -> sampleRuleShapeIssues|>]
-      ]
      ];
     issues
     ];
@@ -1072,37 +1010,31 @@ caseInputPreflightErrorQ[case_Association] := ! TrueQ[caseInputRequirementReport
 seedPresetAssociation[preset_] := Switch[preset,
    "quickCheck" | Automatic | Missing["NotSet"],
    <|
-    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>
     |>,
    "fullDiscrete",
    <|
-    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>
     |>,
    "bounded",
    <|
-    "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}, "sampleOnly" -> False|>,
-    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
+    "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}|>
     |>,
    _,
    <|
-    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
     "unknownPreset" -> preset
     |>
    ];
 
 
 normalizeSeedConfig[case_Association] := Module[
-   {preset = Lookup[case, "seedPreset", "quickCheck"], presetData, seedRanges, seedOptions},
+   {preset = Lookup[case, "seedPreset", "quickCheck"], presetData, seedRanges},
    presetData = seedPresetAssociation[preset];
    seedRanges = Join[Lookup[presetData, "seedRanges", <||>], Lookup[case, "seedRanges", <||>]];
-   seedOptions = Join[Lookup[presetData, "seedOptions", <||>], Lookup[case, "seedOptions", <||>]];
    <|
     "seedPreset" -> preset,
     "seedRanges" -> seedRanges,
-    "seedOptions" -> seedOptions,
     "unknownSeedPreset" -> Lookup[presetData, "unknownPreset", None]
     |>
    ];
@@ -1591,11 +1523,9 @@ parseTopology[case_Association] := Module[
     "externalPartList" -> externalPartList,
     "rawNumericRules" -> Lookup[case, "rawNumericRules", Lookup[case, "numericRules", {}]],
     "numericRules" -> normalizeNumericRulesForTopology[Lookup[case, "rawNumericRules", Lookup[case, "numericRules", {}]], topoContext],
-    "sampleDiscreteRules" -> Lookup[case, "sampleDiscreteRules", {}],
     "seedPreset" -> seedConfig["seedPreset"],
     "seedRanges" -> seedConfig["seedRanges"],
     "generatorSeedRanges" -> Lookup[case, "generatorSeedRanges", {}],
-    "seedOptions" -> seedConfig["seedOptions"],
     "unknownSeedPreset" -> seedConfig["unknownSeedPreset"],
     "zeroPointRules" -> Lookup[case, "zeroPointRules", {}],
     "shrinkPrefactorRules" -> Lookup[case, "shrinkPrefactorRules", {}],
@@ -2007,7 +1937,7 @@ enumerateDiscreteStates[expr_, topo_Association] := Module[
    ];
 
 
-(* 大拓扑下不要为了 summary 展开所有离散态；计数只用逐线状态数相乘。 *)
+(* 离散态计数只用于完整性证书；实际 seed 仍由 enumerateDiscreteStates 全量展开。 *)
 discreteStateCountForLine[line_Association] := Switch[line["packType"],
    "massiveFull", 4,
    "massiveCross", 4,
@@ -2017,37 +1947,6 @@ discreteStateCountForLine[line_Association] := Switch[line["packType"],
 
 
 discreteStateCount[topo_Association] := Times @@ (discreteStateCountForLine /@ topo["lines"]);
-
-
-(* 验证只看手选样本；若 case 未给 sampleDiscreteRules，则只保留未替换模板。 *)
-sampleDiscreteIntegrals[expr_, topo_Association] := Module[{rules = topo["sampleDiscreteRules"]},
-   If[Length[rules] == 0,
-    {expr},
-    expr /. # & /@ rules
-    ]
-   ];
-
-
-(* sample 模式必须给出完整 n=0/1 替换；否则 seed 中会残留符号 n，无法保证即时 EOM。 *)
-sampleDiscreteRuleCoverageIssues[topo_Association, rules_List] := Module[
-   {vars = Flatten[discreteVarsForLine /@ topo["lines"]]},
-   If[vars === {}, Return[{}]];
-    DeleteCases[
-     MapIndexed[
-      Module[{pairs, ruleVars, missing},
-        pairs = sampleDiscreteRulePairs[#1];
-        ruleVars = If[pairs === {}, {}, DeleteDuplicates[pairs[[All, 1]]]];
-        missing = Complement[vars, ruleVars];
-        If[missing === {},
-         Nothing,
-         <|"ruleIndex" -> First[#2], "missingVariables" -> missing, "rule" -> #1|>
-        ]
-       ] &,
-     rules
-     ],
-    Nothing
-    ]
-   ];
 
 
 (* ::Chapter:: *)
@@ -3518,7 +3417,7 @@ applyMomentumGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
 (*轻量 time IBP core seed*)
 
 (* 本章接入 time-IBP 的通用 core 项：顶点幂次、外部能量、massive building-block 端点导数、massless 端点翻转项和 massive/massless theta 边界缩并项。
-   单独 time batch 会把进一步 shrink-sector 生成标为 pending；canonical batch 会在保护阈值内自动补齐这些 sectors。 *)
+   单独 time batch 会把进一步 shrink-sector 生成标为 pending；canonical batch 完整补齐全部 contact-reachable sectors。 *)
 
 rawVertexExternalEnergy[topo_Association, vertexId_] := Module[
    {vertexEnergies = Lookup[topo, "vertexEnergies", Missing["NotSet"]]},
@@ -3930,32 +3829,19 @@ applyTimeGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
    ];
 
 
-Options[makeTimeIBPSeedBatch] = {
-   UseSampleOnly -> Automatic,
-   MaxSeedRuleCount -> Automatic,
-   DiscreteMode -> Automatic,
-   MaxDiscreteRuleCount -> Automatic,
-   MaxEquationCount -> Automatic,
-   ApplyNumericRules -> False
-   };
-makeTimeIBPSeedBatch::toomany =
-   "拓扑 `1` 的 time seed 方程数为 `2`，超过上限 `3`；未展开方程。";
+Options[makeTimeIBPSeedBatch] = {ApplyNumericRules -> False};
 
 
 makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousDataByGenerator, continuousCounts, commonContinuousQ, legacyContinuousCount,
     legacyContinuousRules, discreteData, timeGenerators, equationCount,
-    maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
+     genTemplates, equations, pendingFeatures, topologyReport},
    topologyReport = topologyValidationReport[topo];
    If[topologyValidationErrorQ[topologyReport],
     Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]
     ];
    baseIntegral = makeBaseIntegral[topo];
-   discreteData = selectedDiscreteSeedRules[
-     topo,
-     DiscreteMode -> OptionValue[DiscreteMode],
-     MaxDiscreteRuleCount -> OptionValue[MaxDiscreteRuleCount]
-     ];
+   discreteData = selectedDiscreteSeedRules[topo];
    If[discreteData["status"] =!= "generated",
     Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
    ];
@@ -3964,12 +3850,7 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      With[{label = timeGeneratorLabel[generator]},
       Join[
        <|"generator" -> label|>,
-       makeGeneratorContinuousSeedRules[
-        topo,
-        label,
-        UseSampleOnly -> OptionValue[UseSampleOnly],
-        MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
-        ]
+       makeGeneratorContinuousSeedRules[topo, label]
        ]
       ],
      {generator, timeGenerators}
@@ -3983,21 +3864,6 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    legacyContinuousCount = If[Length[continuousCounts] == 0, 0, If[commonContinuousQ, First[continuousCounts], Total[continuousCounts]]];
    legacyContinuousRules = If[Length[continuousDataByGenerator] > 0 && commonContinuousQ, First[Lookup[continuousDataByGenerator, "rules"]], {}];
    equationCount = Total[continuousCounts] discreteData["ruleCount"];
-   maxEquationCount = resolveSeedOption[topo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
-   If[equationCount > maxEquationCount,
-    Message[makeTimeIBPSeedBatch::toomany, topo["name"], equationCount, maxEquationCount];
-    Return[<|
-      "status" -> "tooMany",
-      "caseName" -> topo["name"],
-      "topologyValidationReport" -> topologyReport,
-      "continuousSeedRuleCount" -> legacyContinuousCount,
-      "generatorContinuousSeedData" -> (KeyDrop[#, "rules"] & /@ continuousDataByGenerator),
-      "discreteRuleCount" -> discreteData["ruleCount"],
-      "timeGeneratorCount" -> Length[timeGenerators],
-      "equationCount" -> equationCount,
-      "equations" -> {}
-      |>]
-   ];
    genTemplates = MapThread[
      <|"generatorData" -> #1, "generator" -> timeGeneratorLabel[#1],
        "template" -> applyTimeGeneratorSeed[topo, baseIntegral, #1], "continuousData" -> #2|> &,
@@ -4052,8 +3918,8 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
 (* ::Chapter:: *)
 (*seed 范围与批量 momentum seed*)
 
-(* 本章把用户给出的 seedRanges 转成受保护的替换规则，并生成小批 momentum seed。
-   默认尊重 sampleOnly，只使用基准连续指标和手选离散态，避免无意中展开整个 family。 *)
+(* 本章把用户给出的 seedRanges 转成受保护的替换规则。每个有限范围都完整展开，
+   generatorSeedRanges 只覆盖明确指定的生成元/指标，不做抽样、截断或数量估算。 *)
 
 rangeValuesFromSpec[spec_] := Which[
    Head[spec] === Missing, {0},
@@ -4076,22 +3942,19 @@ continuousIndexVariables[J[aList_, linePacks_, ispList_]] := Select[
    ];
 
 
-continuousIndexValueLists[topo_Association, J[aList_, linePacks_, ispList_], useSampleOnly_] := Module[
+continuousIndexValueLists[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
    {aValues, bValues, ispValues, globalISPRangeQ, globalISPValues},
-   aValues = ConstantArray[If[TrueQ[useSampleOnly], {0}, seedRangeValues[topo, "a"]], Count[aList, _?indexVariableQ]];
+   aValues = ConstantArray[seedRangeValues[topo, "a"], Count[aList, _?indexVariableQ]];
    bValues = ConstantArray[
-     If[TrueQ[useSampleOnly], {0}, seedRangeValues[topo, "b"]],
+     seedRangeValues[topo, "b"],
      Count[Cases[Flatten[linePacks], _b | _bS], _?indexVariableQ]
      ];
    globalISPRangeQ = KeyExistsQ[topo["seedRanges"], "isp"];
    globalISPValues = seedRangeValues[topo, "isp"];
    ispValues = Table[
-     If[TrueQ[useSampleOnly],
-      {0},
-      If[globalISPRangeQ,
-       globalISPValues,
-       rangeValuesFromSpec[Lookup[topo["ispData"][[j]], "range", Missing["NotSet"]]]
-       ]
+     If[globalISPRangeQ,
+      globalISPValues,
+      rangeValuesFromSpec[Lookup[topo["ispData"][[j]], "range", Missing["NotSet"]]]
       ],
      {j, Length[ispList]}
      ];
@@ -4099,49 +3962,14 @@ continuousIndexValueLists[topo_Association, J[aList_, linePacks_, ispList_], use
    ];
 
 
-resolveUseSampleOnly[topo_Association, value_] := If[value === Automatic,
-   TrueQ[Lookup[topo["seedRanges"], "sampleOnly", False]],
-   TrueQ[value]
-   ];
-
-
-resolveDiscreteMode[topo_Association, value_] := If[value === Automatic,
-   Lookup[Lookup[topo, "seedOptions", <||>], "DiscreteMode", "sample"],
-   value
-   ];
-
-
-resolveSeedOption[topo_Association, key_String, value_, default_] := If[value === Automatic,
-   Lookup[Lookup[topo, "seedOptions", <||>], key, default],
-   value
-   ];
-
-
-Options[makeContinuousSeedRules] = {UseSampleOnly -> Automatic, MaxSeedRuleCount -> Automatic};
-makeContinuousSeedRules::toomany =
-   "拓扑 `1` 的连续 seed 规则数为 `2`，超过上限 `3`；未生成规则。";
+Options[makeContinuousSeedRules] = {};
 
 
 makeContinuousSeedRules[topo_Association, OptionsPattern[]] := Module[
-   {baseIntegral, useSampleOnly, vars, valueLists, ruleCount, maxCount, rules},
+   {baseIntegral, vars, valueLists, rules},
    baseIntegral = makeBaseIntegral[topo];
-   useSampleOnly = resolveUseSampleOnly[topo, OptionValue[UseSampleOnly]];
    vars = continuousIndexVariables[baseIntegral];
-   valueLists = continuousIndexValueLists[topo, baseIntegral, useSampleOnly];
-   ruleCount = Times @@ (Length /@ valueLists);
-   maxCount = resolveSeedOption[topo, "MaxSeedRuleCount", OptionValue[MaxSeedRuleCount], 200];
-   If[ruleCount > maxCount,
-    Message[makeContinuousSeedRules::toomany, topo["name"], ruleCount, maxCount];
-    Return[<|
-      "status" -> "tooMany",
-      "caseName" -> topo["name"],
-      "useSampleOnly" -> useSampleOnly,
-      "variables" -> vars,
-      "valueLists" -> valueLists,
-      "ruleCount" -> ruleCount,
-      "rules" -> {}
-      |>]
-    ];
+   valueLists = continuousIndexValueLists[topo, baseIntegral];
    rules = If[Length[vars] == 0,
      {{}},
      Thread[vars -> #] & /@ Tuples[valueLists]
@@ -4149,7 +3977,6 @@ makeContinuousSeedRules[topo_Association, OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
-    "useSampleOnly" -> useSampleOnly,
     "variables" -> vars,
     "valueLists" -> valueLists,
     "ruleCount" -> Length[rules],
@@ -4169,19 +3996,14 @@ generatorSeedRangeMatches[topo_Association, generatorLabel_List] := Select[
 
 Options[makeGeneratorContinuousSeedRules] = Options[makeContinuousSeedRules];
 makeGeneratorContinuousSeedRules[topo_Association, generatorLabel_List, OptionsPattern[]] := Module[
-   {matches, baseData, useSampleOnly, baseIntegral, vars, baseValueLists, configuredRules,
-    configuredVars, duplicateVars, unknownVars, valueLists, ruleCount, maxCount, rules, sectorKey},
+   {matches, baseData, baseIntegral, vars, baseValueLists, configuredRules,
+    configuredVars, duplicateVars, unknownVars, valueLists, rules, sectorKey},
    sectorKey = sectorKeyFromShrunkLines[Lookup[topo, "sectorShrunkLines", {}]];
-   useSampleOnly = resolveUseSampleOnly[topo, OptionValue[UseSampleOnly]];
    matches = generatorSeedRangeMatches[topo, generatorLabel];
-   If[useSampleOnly || matches === {},
-    baseData = makeContinuousSeedRules[
-      topo,
-      UseSampleOnly -> OptionValue[UseSampleOnly],
-      MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
-      ];
+   If[matches === {},
+    baseData = makeContinuousSeedRules[topo];
     Return[Join[baseData, <|"sectorKey" -> sectorKey, "rangeSource" -> "uniform",
-       "configuredRanges" -> {}, "generatorOverrideIgnoredBySampleOnlyQ" -> TrueQ[useSampleOnly && matches =!= {}]|>]]
+       "configuredRanges" -> {}|>]]
     ];
    If[Length[matches] =!= 1,
     Return[<|"status" -> "duplicateGeneratorRangeEntries", "caseName" -> topo["name"],
@@ -4189,7 +4011,7 @@ makeGeneratorContinuousSeedRules[topo_Association, generatorLabel_List, OptionsP
     ];
    baseIntegral = makeBaseIntegral[topo];
    vars = continuousIndexVariables[baseIntegral];
-   baseValueLists = continuousIndexValueLists[topo, baseIntegral, False];
+   baseValueLists = continuousIndexValueLists[topo, baseIntegral];
    configuredRules = matches[[1]]["ranges"];
    configuredVars = First /@ configuredRules;
    duplicateVars = Cases[Tally[configuredVars], {var_, count_} /; count > 1 :> var];
@@ -4207,56 +4029,20 @@ makeGeneratorContinuousSeedRules[topo_Association, generatorLabel_List, OptionsP
       ],
      {vars, baseValueLists}
      ];
-   ruleCount = Times @@ (Length /@ valueLists);
-   maxCount = resolveSeedOption[topo, "MaxSeedRuleCount", OptionValue[MaxSeedRuleCount], 200];
-   If[ruleCount > maxCount,
-    Message[makeContinuousSeedRules::toomany, topo["name"] <> "/" <> ToString[generatorLabel, InputForm], ruleCount, maxCount];
-    Return[<|"status" -> "tooMany", "caseName" -> topo["name"], "sectorKey" -> sectorKey,
-      "generator" -> generatorLabel, "rangeSource" -> "generatorOverride", "useSampleOnly" -> False,
-      "variables" -> vars, "valueLists" -> valueLists, "configuredRanges" -> configuredRules,
-      "ruleCount" -> ruleCount, "rules" -> {}|>]
-    ];
    rules = If[vars === {}, {{}}, Thread[vars -> #] & /@ Tuples[valueLists]];
    <|"status" -> "generated", "caseName" -> topo["name"], "sectorKey" -> sectorKey,
-    "generator" -> generatorLabel, "rangeSource" -> "generatorOverride", "useSampleOnly" -> False,
+    "generator" -> generatorLabel, "rangeSource" -> "generatorOverride",
     "variables" -> vars, "valueLists" -> valueLists, "configuredRanges" -> configuredRules,
     "ruleCount" -> Length[rules], "rules" -> rules|>
    ];
 
 
-Options[selectedDiscreteSeedRules] = {DiscreteMode -> Automatic, MaxDiscreteRuleCount -> Automatic};
-selectedDiscreteSeedRules::toomany =
-   "拓扑 `1` 的离散态数为 `2`，超过上限 `3`；未生成 all 离散规则。";
+Options[selectedDiscreteSeedRules] = {};
 
 
 selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
-   {mode, maxCount, rules, count, coverageIssues, shapeIssues},
-   mode = resolveDiscreteMode[topo, OptionValue[DiscreteMode]];
-   maxCount = resolveSeedOption[topo, "MaxDiscreteRuleCount", OptionValue[MaxDiscreteRuleCount], 64];
-   Switch[mode,
-    "none",
-    rules = {{}},
-     "sample",
-     rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}];
-     shapeIssues = sampleDiscreteRulesShapeIssues[rules];
-     If[shapeIssues =!= {},
-      Return[<|"status" -> "malformedSampleDiscreteRules", "mode" -> mode, "ruleCount" -> 0, "shapeIssues" -> shapeIssues, "rules" -> {}|>]
-      ];
-     coverageIssues = sampleDiscreteRuleCoverageIssues[topo, rules];
-    If[coverageIssues =!= {},
-     Return[<|"status" -> "incompleteSampleDiscreteRules", "mode" -> mode, "ruleCount" -> Length[rules], "coverageIssues" -> coverageIssues, "rules" -> {}|>]
-     ],
-    "all",
-    count = discreteStateCount[topo];
-    If[count > maxCount,
-     Message[selectedDiscreteSeedRules::toomany, topo["name"], count, maxCount];
-     Return[<|"status" -> "tooMany", "mode" -> mode, "ruleCount" -> count, "rules" -> {}|>]
-     ];
-    rules = enumerateDiscreteStates[makeBaseIntegral[topo], topo]["rules"],
-    _,
-    rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}]
-    ];
-   <|"status" -> "generated", "mode" -> mode, "ruleCount" -> Length[rules], "rules" -> rules|>
+   {rules = enumerateDiscreteStates[makeBaseIntegral[topo], topo]["rules"]},
+   <|"status" -> "generated", "mode" -> "all", "ruleCount" -> Length[rules], "rules" -> rules|>
    ];
 
 
@@ -4661,32 +4447,19 @@ makeIndependentVariableDerivativeSeedBatch[topo_Association, int_J, opts : Optio
    ];
 
 
-Options[makeMomentumIBPSeedBatch] = {
-   UseSampleOnly -> Automatic,
-   MaxSeedRuleCount -> Automatic,
-   DiscreteMode -> Automatic,
-   MaxDiscreteRuleCount -> Automatic,
-   MaxEquationCount -> Automatic,
-   ApplyNumericRules -> False
-   };
-makeMomentumIBPSeedBatch::toomany =
-   "拓扑 `1` 的 momentum seed 方程数为 `2`，超过上限 `3`；未展开方程。";
+Options[makeMomentumIBPSeedBatch] = {ApplyNumericRules -> False};
 
 
 makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousDataByGenerator, continuousCounts, commonContinuousQ, legacyContinuousCount,
     legacyContinuousRules, discreteData, momentumGenerators, equationCount,
-    maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
+     genTemplates, equations, pendingFeatures, topologyReport},
    topologyReport = topologyValidationReport[topo];
    If[topologyValidationErrorQ[topologyReport],
     Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]
     ];
    baseIntegral = makeBaseIntegral[topo];
-   discreteData = selectedDiscreteSeedRules[
-     topo,
-     DiscreteMode -> OptionValue[DiscreteMode],
-     MaxDiscreteRuleCount -> OptionValue[MaxDiscreteRuleCount]
-     ];
+   discreteData = selectedDiscreteSeedRules[topo];
    If[discreteData["status"] =!= "generated",
     Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
    ];
@@ -4695,12 +4468,7 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      With[{label = momentumGeneratorLabel[generator]},
       Join[
        <|"generator" -> label|>,
-       makeGeneratorContinuousSeedRules[
-        topo,
-        label,
-        UseSampleOnly -> OptionValue[UseSampleOnly],
-        MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
-        ]
+       makeGeneratorContinuousSeedRules[topo, label]
        ]
       ],
      {generator, momentumGenerators}
@@ -4714,21 +4482,6 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    legacyContinuousCount = If[Length[continuousCounts] == 0, 0, If[commonContinuousQ, First[continuousCounts], Total[continuousCounts]]];
    legacyContinuousRules = If[Length[continuousDataByGenerator] > 0 && commonContinuousQ, First[Lookup[continuousDataByGenerator, "rules"]], {}];
    equationCount = Total[continuousCounts] discreteData["ruleCount"];
-   maxEquationCount = resolveSeedOption[topo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
-   If[equationCount > maxEquationCount,
-    Message[makeMomentumIBPSeedBatch::toomany, topo["name"], equationCount, maxEquationCount];
-    Return[<|
-      "status" -> "tooMany",
-      "caseName" -> topo["name"],
-      "topologyValidationReport" -> topologyReport,
-      "continuousSeedRuleCount" -> legacyContinuousCount,
-      "generatorContinuousSeedData" -> (KeyDrop[#, "rules"] & /@ continuousDataByGenerator),
-      "discreteRuleCount" -> discreteData["ruleCount"],
-      "momentumGeneratorCount" -> Length[momentumGenerators],
-      "equationCount" -> equationCount,
-      "equations" -> {}
-      |>]
-   ];
    genTemplates = MapThread[
      <|"generatorData" -> #1, "generator" -> momentumGeneratorLabel[#1],
        "template" -> applyMomentumGeneratorSeed[topo, baseIntegral, #1], "continuousData" -> #2|> &,
@@ -4830,17 +4583,6 @@ remapVertexEnergiesToRepresentatives[vertexEnergies_, repMap_Association] := Mod
    ];
 
 
-filterRulesToVariables[rules_List, vars_List] := Module[{varSet = DeleteDuplicates[vars]},
-   Select[rules, MemberQ[varSet, First[#]] &]
-   ];
-
-
-filterSampleDiscreteRulesForTopology[rules_List, topo_Association] := Module[
-   {vars = Flatten[discreteVarsForLine /@ topo["lines"]]},
-   If[rules === {}, {}, filterRulesToVariables[#, vars] & /@ rules]
-   ];
-
-
 shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
    {pairs, repMap, activeVertices, fixedA, newLines, newExtLegs, newZeroPointRules, newCase, sectorTopo},
    pairs = topo["lines"][[#, "endpoints"]] & /@ shrunkLines;
@@ -4879,7 +4621,6 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "ispData" -> topo["ispData"],
      "rawNumericRules" -> Lookup[topo, "rawNumericRules", userNumericRules[topo]],
      "numericRules" -> userNumericRules[topo],
-     "sampleDiscreteRules" -> topo["sampleDiscreteRules"],
      "seedRanges" -> topo["seedRanges"],
      "generatorSeedRanges" -> Lookup[topo, "generatorSeedRanges", {}],
      "zeroPointRules" -> newZeroPointRules,
@@ -4909,8 +4650,7 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
    Join[sectorTopo, <|
     "sectorMetadata" -> makeSectorMetadata[sectorTopo],
     "tadpoleSymmetryData" -> tadpoleSymmetryData[sectorTopo],
-    "effectiveSymmetryRules" -> effectiveSymmetryRules0[sectorTopo],
-    "sampleDiscreteRules" -> filterSampleDiscreteRulesForTopology[topo["sampleDiscreteRules"], sectorTopo]
+    "effectiveSymmetryRules" -> effectiveSymmetryRules0[sectorTopo]
     |>]
    ];
 
@@ -4960,23 +4700,15 @@ contactReachableShrinkSubsets[topo_Association] := Module[
    ];
 
 
-shrinkSectorSubsets[topo_Association, maxDepthSpec_, maxCount_Integer] := Module[
-   {lines = thetaFullLineIndices[topo], maxDepth, allSubsets, subsets},
+shrinkSectorSubsets[topo_Association] := Module[
+   {lines = thetaFullLineIndices[topo], subsets},
    If[lines === {}, Return[<|"status" -> "generated", "subsets" -> {}, "completeCoverageQ" -> True|>]];
-   maxDepth = If[maxDepthSpec === Automatic || maxDepthSpec === All || maxDepthSpec === Infinity,
-     Length[lines],
-     Min[Length[lines], maxDepthSpec]
-     ];
-   allSubsets = contactReachableShrinkSubsets[topo];
-   subsets = Select[allSubsets, Length[#] <= maxDepth &];
-   If[Length[subsets] > maxCount,
-    Return[<|"status" -> "tooMany", "subsets" -> {}, "requestedSubsetCount" -> Length[subsets], "maxCount" -> maxCount, "completeCoverageQ" -> False|>]
-    ];
-   <|"status" -> "generated", "subsets" -> subsets, "completeCoverageQ" -> TrueQ[Length[subsets] === Length[allSubsets]]|>
+   subsets = contactReachableShrinkSubsets[topo];
+   <|"status" -> "generated", "subsets" -> subsets, "completeCoverageQ" -> True|>
    ];
 
 
-Options[makeTopologyData] = {PrecomputeShrinkSectorMetadata -> False, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic};
+Options[makeTopologyData] = {PrecomputeShrinkSectorMetadata -> False};
 
 
 makeTopologyIndexMaps[topo_Association, metadata_Association] := <|
@@ -5000,9 +4732,8 @@ makeTopologySeedSummary[topo_Association] := <|
    "numericRules" -> topo["numericRules"],
    "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
-   "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
-   "sampleDiscreteRules" -> topo["sampleDiscreteRules"]
-   |>;
+    "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo]
+    |>;
 
 
 vertexPairBundleKey[line_Association] := Sort[Lookup[line, "originalEndpoints", line["endpoints"]]];
@@ -5053,14 +4784,13 @@ topologyValidationReport[topo_Association] := Module[
      loopExternalMomentumOverlap, externalLegMomentumOverlap,
      vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
-    ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData, seedOptions,
-     unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport, numericRuleValidationReport,
+    ispNames, seedRangeData, badSeedRangeData, badISPRangeData,
+     kiraOrderingReport, numericRuleValidationReport,
      zeroPointRuleValidationReport, shrinkPrefactorRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     nonLinearLineMomentumData, nonLinearScalarProductArgumentData, vertexEnergyMomentumDependenceData,
-    spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
-    missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
+    spData, missingExternalInvariants, missingVertexEnergies,
      missingLineParameters, numericRequirementReport, pendingFeatures, ruleData, kinematicAudit,
       topologyMomentumAudit, momentumIBPRequiredQ},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
@@ -5081,7 +4811,7 @@ topologyValidationReport[topo_Association] := Module[
     Lookup[topologyMomentumAudit, "issues", {}]
     ];
    ispNames = Lookup[topo["ispData"], "name", {}];
-   seedRangeData = KeyDrop[topo["seedRanges"], {"sampleOnly"}];
+   seedRangeData = topo["seedRanges"];
    If[Lookup[kinematicAudit, "status", "complete"] === "incomplete",
     appendIssue["error", "incompleteKinematicCoordinates", <|
       "coordinateRank" -> Lookup[kinematicAudit, "coordinateRank", Missing["rank"]],
@@ -5099,7 +4829,6 @@ topologyValidationReport[topo_Association] := Module[
       "comment" -> "IBP generation may continue, but inverse conversion and ds in the redundant coordinates are disabled until the family definition supplies the constraints."
       |>]
     ];
-   seedOptions = Lookup[topo, "seedOptions", <||>];
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
@@ -5142,10 +4871,6 @@ topologyValidationReport[topo_Association] := Module[
    If[badSeedRangeData =!= {},
     appendIssue["error", "malformedSeedRangeSpecs", <|"ranges" -> badSeedRangeData, "allowed" -> "integer or nonempty integer list"|>]
     ];
-   badSeedSampleOnlyQ = KeyExistsQ[topo["seedRanges"], "sampleOnly"] && ! BooleanQ[topo["seedRanges", "sampleOnly"]];
-   If[TrueQ[badSeedSampleOnlyQ],
-    appendIssue["error", "malformedSeedSampleOnly", <|"sampleOnly" -> topo["seedRanges", "sampleOnly"], "allowed" -> {True, False}|>]
-    ];
    badISPRangeData = DeleteCases[
      MapIndexed[
       If[KeyExistsQ[#1, "range"] && ! validIndexRangeSpecQ[#1["range"]],
@@ -5158,20 +4883,6 @@ topologyValidationReport[topo_Association] := Module[
      ];
    If[badISPRangeData =!= {},
     appendIssue["error", "malformedISPRangeSpecs", <|"isps" -> badISPRangeData, "allowed" -> "integer or nonempty integer list"|>]
-    ];
-   unknownSeedOptionKeys = Complement[Keys[seedOptions], allowedSeedOptionKeys[]];
-   If[unknownSeedOptionKeys =!= {},
-    appendIssue["error", "unknownSeedOptionKeys", <|"keys" -> unknownSeedOptionKeys, "allowedKeys" -> allowedSeedOptionKeys[]|>]
-    ];
-   badSeedOptionData = KeyValueMap[
-     If[MemberQ[allowedSeedOptionKeys[], #1] && ! validSeedOptionValueQ[#1, #2],
-       <|"optionKey" -> #1, "optionValue" -> #2|>,
-       Nothing
-       ] &,
-     seedOptions
-     ];
-   If[badSeedOptionData =!= {},
-    appendIssue["error", "malformedSeedOptionValues", <|"options" -> badSeedOptionData|>]
     ];
    kiraOrderingReport = validateKiraOrderingSpec[Lookup[topo, "kiraOrdering", <||>]];
    If[Lookup[kiraOrderingReport, "status", "ok"] =!= "ok",
@@ -5324,7 +5035,7 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingExternalInvariants", <|
       "missingExternalInvariants" -> missingExternalInvariants,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need values for the selected ssij/sEi or exact custom output parameters"
+       "comment" -> "only LinearSystemMode->numeric requires these values; symbolic Kira/DE must keep every requested derivative variable symbolic"
       |>]
     ];
    missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
@@ -5332,7 +5043,7 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingVertexEnergies", <|
       "missingVertexEnergies" -> missingVertexEnergies,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"
+       "comment" -> "only LinearSystemMode->numeric requires these values; symbolic Kira/DE must keep requested vertex-energy derivatives symbolic"
       |>]
     ];
    missingLineParameters = numericRequirementReport["missingLineParameters"];
@@ -5340,31 +5051,8 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingLineParameters", <|
       "missingLineParameters" -> missingLineParameters,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need massive line parameter rules"
+       "comment" -> "massive parameters may remain symbolic; only an explicitly fully numeric linear system requires values"
       |>]
-    ];
-   discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
-   sampleRuleShapeIssues = sampleDiscreteRulesShapeIssues[topo["sampleDiscreteRules"]];
-   If[sampleRuleShapeIssues =!= {},
-    appendIssue["error", "malformedSampleDiscreteRules", <|"issues" -> sampleRuleShapeIssues|>],
-    sampleRulePairs = sampleDiscreteRulePairs[topo["sampleDiscreteRules"]];
-    unknownDiscreteRules = Select[sampleRulePairs, ! MemberQ[discreteVars, #[[1]]] &];
-    If[unknownDiscreteRules =!= {},
-     appendIssue["warning", "sampleDiscreteRulesContainUnknownVariables", <|"rules" -> (Rule @@@ unknownDiscreteRules), "allowedDiscreteVariables" -> discreteVars|>]
-     ];
-    badDiscreteValues = Select[sampleRulePairs, MemberQ[discreteVars, #[[1]]] && ! MemberQ[{0, 1}, #[[2]]] &];
-    If[badDiscreteValues =!= {},
-     appendIssue["warning", "sampleDiscreteRulesContainNonBinaryValues", <|"rules" -> (Rule @@@ badDiscreteValues)|>]
-     ];
-    If[discreteVars =!= {} && topo["sampleDiscreteRules"] === {},
-     appendIssue["warning", "sampleDiscreteRulesMissingForDiscreteVariables", <|"missingVariables" -> discreteVars, "comment" -> "sample seed mode needs complete n=0/1 rules; DiscreteMode -> all can enumerate them automatically"|>]
-     ];
-    If[topo["sampleDiscreteRules"] =!= {},
-     missingDiscreteRuleIssues = sampleDiscreteRuleCoverageIssues[topo, topo["sampleDiscreteRules"]];
-     If[missingDiscreteRuleIssues =!= {},
-      appendIssue["error", "sampleDiscreteRulesMissingVariables", <|"issues" -> missingDiscreteRuleIssues, "allowedDiscreteVariables" -> discreteVars|>]
-      ]
-     ]
     ];
    pendingFeatures = unsupportedSeedFeaturesForTopology[topo];
    If[pendingFeatures =!= {},
@@ -5387,7 +5075,7 @@ topologyValidationErrorQ[_] := False;
 
 
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
-   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, maxShrinkDepth, maxShrinkCount, inputReport, validationReport},
+   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, inputReport, validationReport},
    If[caseInputPreflightErrorQ[case],
     inputReport = caseInputRequirementReport[case];
     validationReport = caseInputErrorReport[case];
@@ -5408,10 +5096,8 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
     ];
    topo = parseTopology[case];
    topMetadata = makeSectorMetadata[topo];
-   maxShrinkDepth = resolveSeedOption[topo, "MaxShrinkSectorDepth", OptionValue[MaxShrinkSectorDepth], Automatic];
-   maxShrinkCount = resolveSeedOption[topo, "MaxShrinkSectorCount", OptionValue[MaxShrinkSectorCount], 16];
    subsetData = If[TrueQ[OptionValue[PrecomputeShrinkSectorMetadata]],
-     shrinkSectorSubsets[topo, maxShrinkDepth, maxShrinkCount],
+     shrinkSectorSubsets[topo],
      <|"status" -> "skipped", "subsets" -> {}, "completeCoverageQ" -> False|>
      ];
    sectorTopos = If[Lookup[subsetData, "status", "skipped"] === "generated",
@@ -5436,11 +5122,7 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      |>]
    ];
 
-Options[makeShrinkSectorSeedBatch] = Join[
-   Options[makeMomentumIBPSeedBatch],
-   {MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic}
-   ];
-makeShrinkSectorSeedBatch::toomany = "拓扑 `1` 的 shrink sector 数为 `2`，超过上限 `3`；未展开 shrink sectors。";
+Options[makeShrinkSectorSeedBatch] = Options[makeMomentumIBPSeedBatch];
 
 
 (* shrink sector 的摘要要保留各自的生成元列表；coverage report 依赖它判断每个子 sector 是否同时生成完整 q/t seed。 *)
@@ -5456,15 +5138,9 @@ shrinkSectorBatchSummary[batch_Association] := Module[
 
 
 makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
-   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport, maxShrinkDepth, maxShrinkCount},
+   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport},
    topologyReport = topologyValidationReport[topo];
-   maxShrinkDepth = resolveSeedOption[topo, "MaxShrinkSectorDepth", OptionValue[MaxShrinkSectorDepth], Automatic];
-   maxShrinkCount = resolveSeedOption[topo, "MaxShrinkSectorCount", OptionValue[MaxShrinkSectorCount], 16];
-   subsetData = shrinkSectorSubsets[topo, maxShrinkDepth, maxShrinkCount];
-   If[subsetData["status"] === "tooMany",
-    Message[makeShrinkSectorSeedBatch::toomany, topo["name"], subsetData["requestedSubsetCount"], subsetData["maxCount"]];
-    Return[Join[subsetData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equations" -> {}, "pendingFeatures" -> {"shrinkSectorSeedGeneration"}|>]]
-    ];
+   subsetData = shrinkSectorSubsets[topo];
    subsets = subsetData["subsets"];
    If[subsets === {},
     Return[<|"status" -> "generated", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorCount" -> 0, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> {}, "completeShrinkSectorGenerationQ" -> True, "sectorSummaries" -> {}, "equations" -> {}|>]
@@ -5534,7 +5210,7 @@ canonicalPendingFeatures[momentumBatch_Association, timeBatch_Association] := De
 
 Options[makeCanonicalSeedBatch] = Join[
    Options[makeMomentumIBPSeedBatch],
-   {GenerateShrinkSectors -> True, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic}
+   {GenerateShrinkSectors -> True}
    ];
 
 
@@ -7026,10 +6702,10 @@ publicExternalIndex[topo_Association, item_] := Which[
 
 publicApplyIBPGenerator[expr_, topo_Association, gen_Association] := Module[{result},
    If[gen["type"] === "time" && ! dsTopologyCapabilityQ[topo, "timeIBPUsableQ"],
-    dsErrorPrint["当前 topology 未通过 time-IBP capability gate。"]; Return[$Failed]
+    dsErrorPrint["当前 topology 未通过 time-IBP capability gate。 The current topology failed the time-IBP capability gate."]; Return[$Failed]
     ];
    If[gen["type"] === "momentum" && ! dsTopologyCapabilityQ[topo, "momentumIBPUsableQ"],
-    dsErrorPrint["当前 topology 未通过 momentum-IBP capability gate。"]; Return[$Failed]
+    dsErrorPrint["当前 topology 未通过 momentum-IBP capability gate。 The current topology failed the momentum-IBP capability gate."]; Return[$Failed]
     ];
    If[! validatePublicExpression[expr, topo, True], Return[$Failed]];
    result = Expand[expr /. int_J :> If[
@@ -7197,7 +6873,7 @@ ds[expr_, userVariable_, topoSpec_Association] := Module[
    topo = resolvePublicTopologyContext[topoSpec];
    If[topo === $Failed, Return[$Failed]];
    If[! dsTopologyCapabilityQ[topo, "derivativeUsableQ"],
-    dsErrorPrint["当前参数声明不支持唯一 ds 微分算符。"]; Return[$Failed]
+    dsErrorPrint["当前参数声明不支持唯一 ds 微分算符。 The current parameter declaration does not define a unique ds operator."]; Return[$Failed]
     ];
    If[
     TrueQ[Lookup[Lookup[topo, "kinematicCoordinateAudit", <||>], "overcompleteQ", False]] &&
@@ -7351,12 +7027,7 @@ bubbleMasslessCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5},
-   "sampleDiscreteRules" -> {
-     {n[1] -> 0, n[2] -> 0},
-     {n[1] -> 1, n[2] -> 0},
-     {n[1] -> 0, n[2] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -7372,8 +7043,7 @@ masslessCrossBubbleCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5},
-   "sampleDiscreteRules" -> {{}},
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -7389,11 +7059,7 @@ mixedBubbleCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2, p1 -> 7, p2 -> 11},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -7409,11 +7075,7 @@ massiveCrossBubbleCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -7430,12 +7092,7 @@ mixedTriangleCase = <|
    "externalMomenta" -> {k1, k2},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, kk[1, 2] -> -1, kk[2, 2] -> 7, nuM -> 2},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 0, n[3] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 0, n[3] -> 1},
-     {n[1, 1] -> 0, n[1, 2] -> 1, n[2, 1] -> 1, n[2, 2] -> 0, n[3] -> 0}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -7453,12 +7110,7 @@ masslessBoxCase = <|
    "externalMomenta" -> {k1, k2, k3},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, kk[1, 2] -> -1, kk[1, 3] -> 2, kk[2, 2] -> 7, kk[2, 3] -> -3, kk[3, 3] -> 11, p1 -> 7, p2 -> 11, p3 -> 13, p4 -> 17},
-   "sampleDiscreteRules" -> {
-     {n[1] -> 0, n[2] -> 0, n[3] -> 0, n[4] -> 0},
-     {n[1] -> 1, n[2] -> 0, n[3] -> 1, n[4] -> 0},
-     {n[1] -> 0, n[2] -> 1, n[3] -> 0, n[4] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -7479,12 +7131,7 @@ mixedSunriseCase = <|
      {ispQ2K, sp[q2, k], {0, 1}}
      },
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2] -> 0, n[3] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2] -> 1, n[3] -> 0},
-     {n[1, 1] -> 0, n[1, 2] -> 1, n[2] -> 0, n[3] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}, "sampleOnly" -> True|>,
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}|>,
    "masslessBundleMode" -> "perLinePacksCommonThetaContacts"
    |>;
 
@@ -7507,12 +7154,11 @@ twoLoopISPCase = <|
 
 
 summarizeCase[case_Association] := Module[
-   {topo, baseIntegral, sampleIntegrals, spData, gens, momentumGenCount,
+   {topo, baseIntegral, spData, gens, momentumGenCount,
     discreteCount, seedTemplateCount},
    topo = parseTopology[case];
    baseIntegral = makeBaseIntegral[topo];
    discreteCount = discreteStateCount[topo];
-   sampleIntegrals = sampleDiscreteIntegrals[baseIntegral, topo];
    spData = makeScalarProductData[topo];
    gens = makeIBPGenerators[topo];
    momentumGenCount = Count[Lookup[gens, "type"], "momentum"];
@@ -7527,10 +7173,7 @@ summarizeCase[case_Association] := Module[
     "linePacks" -> makeLinePacks[topo],
     "baseIntegral" -> baseIntegral,
     "discreteStateCount" -> discreteCount,
-    "sampleDiscreteRules" -> topo["sampleDiscreteRules"],
-    "sampleIntegrals" -> sampleIntegrals,
     "seedTemplateCount" -> seedTemplateCount,
-    "maxExpandedSeedCount" -> discreteCount seedTemplateCount,
     "generatorCount" -> Length[gens],
     "generatorList" -> gens,
     "momentumGeneratorCount" -> momentumGenCount,
@@ -7943,33 +7586,76 @@ treeReducibleIntegrals[expr_, endpoints_List, data_Association] := Select[
    ];
 
 
+treeEndpointDistance[int_J, endpoints_List] := Total[Abs[First[int][[All, 1]] - endpoints]];
+
+
+treeProgressKeyLessQ[target : {_, _}, source : {_, _}] :=
+  target[[1]] < source[[1]] || (target[[1]] === source[[1]] && target[[2]] < source[[2]]);
+
+
+treeRecurrenceStateHash[expr_] := IntegerString[Hash[HoldComplete[expr], "SHA256"], 16, 64];
+
+
+(* 每条递推边都必须严格降低到指定 endpoint 的整数 L1 距离。该局部序保证递推 DAG
+   不依赖任意迭代次数；完整表达式哈希另用于诊断实现错误造成的状态循环。 *)
+treeSingleFamilyStepProgress[source_J, replacement_, endpoints_List, data_Association] := Module[
+   {sourceDistance, targets, invalidTargets, targetDistances},
+   sourceDistance = treeEndpointDistance[source, endpoints];
+   targets = DeleteDuplicates[Cases[replacement, int_J, {0, Infinity}]];
+   invalidTargets = Select[
+     targets,
+     ! treeIntegralQ[#, data] || ! And @@ (IntegerQ /@ First[#][[All, 1]]) &
+     ];
+   targetDistances = treeEndpointDistance[#, endpoints] & /@ Complement[targets, invalidTargets];
+   <|
+    "passQ" -> TrueQ[invalidTargets === {} && And @@ (# < sourceDistance & /@ targetDistances)],
+    "source" -> source,
+    "sourceDistance" -> sourceDistance,
+    "targetIntegrals" -> targets,
+    "targetDistances" -> targetDistances,
+    "invalidTargets" -> invalidTargets
+    |>
+   ];
+
+
 repIterativeData::badindex = "tree a 指标必须是可判定整数：`1`。";
-repIterativeData::maxsteps = "tree 迭代超过最大步数 `1`。";
 repIterativeData::nosector = "tree 积分无法唯一匹配 sector family：`1`。";
+repIterativeData::noprogress = "tree 递推没有严格趋近指定终点：`1`。 Tree recurrence did not strictly approach the requested endpoint: `1`.";
+repIterativeData::cycle = "tree 递推检测到重复 canonical 状态：`1`。 Tree recurrence encountered a repeated canonical state: `1`.";
 
 
-Options[repIterativeData] = {MaxIterations -> Automatic};
+Options[repIterativeData] = {};
 
 
 repIterativeData[expr_, end_: Automatic, data_Association, OptionsPattern[]] := Module[
-   {endpoints, result = Expand[expr], integrals, allA, maxSteps, steps = 0, firstInt, packs, vertexIndex},
+   {endpoints, result = Expand[expr], integrals, allA, steps = 0, firstInt, packs, vertexIndex,
+    replacement, progressData, seenStates = <||>, stateHash},
    endpoints = normalizeTreeEndpoints[end, data];
    If[endpoints === $Failed, Return[<|"status" -> "error", "result" -> $Failed, "steps" -> 0|>]];
    integrals = Select[DeleteDuplicates[Cases[result, int_J /; treeIntegralQ[int, data], {0, Infinity}]], True &];
    allA = Flatten[First[#][[All, 1]] & /@ integrals];
    If[! And @@ (IntegerQ /@ allA), Message[repIterativeData::badindex, Select[allA, ! IntegerQ[#] &]]; Return[<|"status" -> "error", "result" -> $Failed, "steps" -> 0|>]];
-   maxSteps = OptionValue[MaxIterations];
-   If[maxSteps === Automatic,
-    maxSteps = If[integrals === {}, 0, Max[Total[Abs[First[#][[All, 1]] - endpoints]] & /@ integrals]]
-    ];
+   AssociateTo[seenStates, treeRecurrenceStateHash[result] -> True];
    While[(integrals = treeReducibleIntegrals[result, endpoints, data]) =!= {},
-    If[steps >= maxSteps, Message[repIterativeData::maxsteps, maxSteps]; Return[<|"status" -> "maxSteps", "result" -> $Failed, "steps" -> steps|>]];
     firstInt = First[integrals];
     packs = First[firstInt];
     vertexIndex = SelectFirst[Range[Length[endpoints]], packs[[#, 1]] =!= endpoints[[#]] &];
-    result = Expand[result /. int_J /; treeIntegralQ[int, data] && First[int][[vertexIndex, 1]] === packs[[vertexIndex, 1]] :>
-        treeSingleStepIntegral[int, vertexIndex, endpoints[[vertexIndex]], data]];
-    If[! FreeQ[result, $Failed], Return[<|"status" -> "singular", "result" -> $Failed, "steps" -> steps|>]];
+    replacement = treeSingleStepIntegral[firstInt, vertexIndex, endpoints[[vertexIndex]], data];
+    If[replacement === $Failed, Return[<|"status" -> "singular", "result" -> $Failed, "steps" -> steps|>]];
+    progressData = treeSingleFamilyStepProgress[firstInt, replacement, endpoints, data];
+    If[! TrueQ[progressData["passQ"]],
+     Message[repIterativeData::noprogress, progressData];
+     Return[<|"status" -> "error", "reason" -> "nonDecreasingRecurrence", "result" -> $Failed,
+       "steps" -> steps, "progressData" -> progressData|>]
+     ];
+    result = Expand[result /. firstInt -> replacement];
+    stateHash = treeRecurrenceStateHash[result];
+    If[KeyExistsQ[seenStates, stateHash],
+     Message[repIterativeData::cycle, stateHash];
+     Return[<|"status" -> "error", "reason" -> "recurrenceCycle", "result" -> $Failed,
+       "steps" -> steps, "stateHash" -> stateHash|>]
+     ];
+    AssociateTo[seenStates, stateHash -> True];
     steps++;
     ];
    <|"status" -> "reduced", "result" -> result, "steps" -> steps, "endpoints" -> endpoints|>
@@ -8007,9 +7693,9 @@ Options[repIterative] = Options[repIterativeData];
 
 repIterative[expr_, end_: Automatic, OptionsPattern[]] := If[
    AssociationQ[$dSIBPTreeFamilyContext],
-   If[KeyExistsQ[$dSIBPTreeFamilyContext, "families"],
-    repIterativeSectorData[expr, end, $dSIBPTreeFamilyContext, MaxIterations -> OptionValue[MaxIterations]]["result"],
-    repIterativeData[expr, end, $dSIBPTreeFamilyContext, MaxIterations -> OptionValue[MaxIterations]]["result"]
+    If[KeyExistsQ[$dSIBPTreeFamilyContext, "families"],
+     repIterativeSectorData[expr, end, $dSIBPTreeFamilyContext]["result"],
+     repIterativeData[expr, end, $dSIBPTreeFamilyContext]["result"]
     ],
    Message[makeTreeFamilyData::badinput, {<|"code" -> "treeContextNotSet"|>}];
    $Failed
@@ -8020,9 +7706,7 @@ repIterative[expr_, end_, data_Association, OptionsPattern[]] /;
    KeyExistsQ[data, "vertices"] && ! KeyExistsQ[data, "families"] := Module[{activeData},
    (* 显式 family 调用同时刷新公开原始规则，保证随后可直接使用 repIterative0。 *)
    activeData = setTreeFamilyContext[data];
-   repIterativeData[
-     expr, end, activeData, MaxIterations -> OptionValue[MaxIterations]
-     ]["result"]
+   repIterativeData[expr, end, activeData]["result"]
    ];
 
 
@@ -8372,19 +8056,41 @@ treeSectorEndpoints[end_, family_Association, context_Association] := Which[
    ];
 
 
+treeSectorIntegralDistanceData[int_J, end_, context_Association] := Module[{family, endpoints},
+   family = treeFamilyForIntegral[int, context];
+   If[Head[family] === Missing, Return[$Failed]];
+   endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, context], family];
+   If[endpoints === $Failed || ! And @@ (IntegerQ /@ First[int][[All, 1]]), Return[$Failed]];
+   <|"integral" -> int, "sector" -> family["sector"], "endpoints" -> endpoints,
+    "remainingThetaLines" -> Length[thetaFullLineIndices[family["topology"]]],
+    "distance" -> treeEndpointDistance[int, endpoints],
+    "progressKey" -> {Length[thetaFullLineIndices[family["topology"]]], treeEndpointDistance[int, endpoints]}|>
+   ];
+
+
+treeSectorStepProgress[source_J, replacement_, end_, context_Association] := Module[
+   {sourceData, targets, targetData, invalidTargets},
+   sourceData = treeSectorIntegralDistanceData[source, end, context];
+   targets = DeleteDuplicates[Cases[replacement, int_J /; integralKind[int] === "Tree", {0, Infinity}]];
+   targetData = treeSectorIntegralDistanceData[#, end, context] & /@ targets;
+   invalidTargets = Pick[targets, Head[#] === Symbol && # === $Failed & /@ targetData];
+   <|
+    "passQ" -> TrueQ[sourceData =!= $Failed && invalidTargets === {} &&
+       And @@ (treeProgressKeyLessQ[Lookup[#, "progressKey", {Infinity, Infinity}], sourceData["progressKey"]] & /@ targetData)],
+    "source" -> sourceData,
+    "targets" -> targetData,
+    "invalidTargets" -> invalidTargets
+    |>
+   ];
+
+
 Options[repIterativeSectorData] = Options[repIterativeData];
 
 
 repIterativeSectorData[expr_, end_: Automatic, context_Association, OptionsPattern[]] := Module[
-   {result = Expand[expr], maxSteps, steps = 0, integrals, item, family, endpoints, packs, vertexIndex, unresolved, scanFailure},
-   maxSteps = OptionValue[MaxIterations];
-   If[maxSteps === Automatic,
-    maxSteps = 10 (1 + Total[Abs[Flatten[First[#][[All, 1]] & /@ DeleteDuplicates[Cases[result, _J, {0, Infinity}]]]]] + Length[context["families"]])
-    ];
-   If[! IntegerQ[maxSteps] || maxSteps < 0,
-    Message[repIterativeData::maxsteps, maxSteps];
-    Return[<|"status" -> "error", "result" -> $Failed, "steps" -> steps|>]
-    ];
+   {result = Expand[expr], steps = 0, integrals, item, family, endpoints, packs, vertexIndex, unresolved,
+    scanFailure, replacement, progressData, seenStates = <||>, stateHash},
+   AssociateTo[seenStates, treeRecurrenceStateHash[result] -> True];
    While[True,
     integrals = DeleteDuplicates[Cases[result, int_J /; integralKind[int] === "Tree", {0, Infinity}]];
     unresolved = {};
@@ -8411,15 +8117,28 @@ repIterativeSectorData[expr_, end_: Automatic, context_Association, OptionsPatte
      ];
     If[AssociationQ[scanFailure], Return[scanFailure]];
     If[unresolved === {}, Break[]];
-    If[steps >= maxSteps, Message[repIterativeData::maxsteps, maxSteps]; Return[<|"status" -> "maxSteps", "result" -> $Failed, "steps" -> steps|>]];
     item = First[unresolved];
     family = treeFamilyForIntegral[item, context];
     endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, context], family];
     If[endpoints === $Failed, Return[<|"status" -> "error", "result" -> $Failed, "steps" -> steps|>]];
     packs = First[item];
     vertexIndex = SelectFirst[Range[Length[endpoints]], packs[[#, 1]] =!= endpoints[[#]] &];
-    result = Expand[result /. item -> treeSingleStepIntegral[item, vertexIndex, endpoints[[vertexIndex]], family]];
-    If[! FreeQ[result, $Failed], Return[<|"status" -> "error", "result" -> $Failed, "steps" -> steps|>]];
+    replacement = treeSingleStepIntegral[item, vertexIndex, endpoints[[vertexIndex]], family];
+    If[replacement === $Failed, Return[<|"status" -> "error", "reason" -> "recurrenceSingular", "result" -> $Failed, "steps" -> steps|>]];
+    progressData = treeSectorStepProgress[item, replacement, end, context];
+    If[! TrueQ[progressData["passQ"]],
+     Message[repIterativeData::noprogress, progressData];
+     Return[<|"status" -> "error", "reason" -> "nonDecreasingRecurrence", "result" -> $Failed,
+       "steps" -> steps, "progressData" -> progressData|>]
+     ];
+    result = Expand[result /. item -> replacement];
+    stateHash = treeRecurrenceStateHash[result];
+    If[KeyExistsQ[seenStates, stateHash],
+     Message[repIterativeData::cycle, stateHash];
+     Return[<|"status" -> "error", "reason" -> "recurrenceCycle", "result" -> $Failed,
+       "steps" -> steps, "stateHash" -> stateHash|>]
+     ];
+    AssociateTo[seenStates, stateHash -> True];
     steps++;
     ];
    <|"status" -> "reduced", "result" -> result, "steps" -> steps|>
@@ -8429,9 +8148,7 @@ repIterativeSectorData[expr_, end_: Automatic, context_Association, OptionsPatte
 repIterative[expr_, end_, context_Association, OptionsPattern[]] /; KeyExistsQ[context, "families"] := Module[{activeContext},
    (* 多 sector context 保留既有唯一分派门禁，同时同步本轮可直接替换的单步规则。 *)
    activeContext = setTreeFamilyContext[context];
-   repIterativeSectorData[
-     expr, end, activeContext, MaxIterations -> OptionValue[MaxIterations]
-     ]["result"]
+   repIterativeSectorData[expr, end, activeContext]["result"]
    ];
 
 
@@ -8516,24 +8233,33 @@ DSMessagesQ[] := TrueQ[$dSIBPMessagesEnabled];
 
 dsMessagesEnabledQ[setting_: Automatic] := If[setting === Automatic, DSMessagesQ[], TrueQ[setting]];
 
-dsInfoPrint[text_, setting_: Automatic] := If[dsMessagesEnabledQ[setting], Print["[dSIBP] ", text]];
+(* 所有调用点直接提供逐句中英文本；此层只统一非字符串对象的显示，不伪造占位翻译。 *)
+dsBilingualRuntimeText[text_] := ToString[text];
+
+
+dsInfoPrint[text_, setting_: Automatic] := If[
+   dsMessagesEnabledQ[setting], Print["[dSIBP] ", dsBilingualRuntimeText[text]]
+   ];
 
 dsWarningPrint[text_, setting_: Automatic] := If[
    dsMessagesEnabledQ[setting],
-   If[TrueQ[$Notebooks], Print[Style["Warning: " <> ToString[text], Darker[Red]]], Print["[dSIBP Warning] ", text]]
+   If[TrueQ[$Notebooks],
+    Print[Style["警告 / Warning: " <> dsBilingualRuntimeText[text], Darker[Red]]],
+    Print["[dSIBP 警告 / Warning] ", dsBilingualRuntimeText[text]]
+    ]
    ];
 
 (* fatal error 不读取全局开关；即使用户关闭可选提醒也必须可见。 *)
 dsErrorPrint[text_] := If[
    TrueQ[$Notebooks],
-   Print[Style["Error: " <> ToString[text], Red]],
-   Print["[dSIBP Error] ", text]
+   Print[Style["错误 / Error: " <> dsBilingualRuntimeText[text], Red]],
+   Print["[dSIBP 错误 / Error] ", dsBilingualRuntimeText[text]]
    ];
 
 dsStageRun[label_String, expression_, setting_: Automatic] := Module[{result, elapsed},
-   dsInfoPrint["开始：" <> label, setting];
+   dsInfoPrint["开始 / Start: " <> label, setting];
    {elapsed, result} = AbsoluteTiming[expression];
-   dsInfoPrint["完成：" <> label <> "（" <> ToString[Round[elapsed, 0.001], InputForm] <> " s）", setting];
+   dsInfoPrint["完成 / Completed: " <> label <> " (" <> ToString[Round[elapsed, 0.001], InputForm] <> " s)", setting];
    result
    ];
 
@@ -8637,7 +8363,7 @@ dsPublicAPISections[] := <|
      "dtau", "dqq", "dqk", "ds", "rep2innerform", "rep2outform", "rep2Integrand",
      "symmetry", "repSymmetry0"
      },
-   "loopWorkflow" -> {"DSSeeds", "DSLinear", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
+   "loopWorkflow" -> {"DSSeeds", "DSAllSeeds", "DSGenerateIBP", "generateIBP", "DSLinear", "DSKiraPlan", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
    "pureTimeWorkflow" -> {
      "DSTreeSeeds", "repIterative", "DSTreeNaiveIBP", "DSTreeNaiveDE", "DSTreeDLogDE"
      },
@@ -8649,6 +8375,9 @@ dsPublicAPIOptions[] := <|
    "DSInit" -> Options[DSInit],
    "DSSeeds" -> Options[DSSeeds],
    "DSLinear" -> Options[DSLinear],
+   "DSGenerateIBP" -> Options[DSGenerateIBP],
+   "generateIBP" -> Options[generateIBP],
+   "DSKiraPlan" -> Options[DSKiraPlan],
    "DSKiraExport" -> Options[DSKiraExport],
    "DSKiraImport" -> Options[DSKiraImport],
    "DSDE" -> Options[DSDE],
@@ -8681,13 +8410,11 @@ Options[DSInit] = {
    OverwriteInitialization -> False,
    RegisterAsCurrent -> True,
    ProgressReporting -> Automatic,
-   KinematicRules -> Automatic,
-   MaxShrinkSectorDepth -> Automatic,
-   MaxShrinkSectorCount -> Automatic
+   KinematicRules -> Automatic
    };
 
 DSInit::badinput = "DSInit 输入不是有效的 topology Association，或 ISP/动量坐标不闭合。";
-DSInit::sectorlimit = "无法完整初始化 contact-reachable sectors：`1`。";
+DSInit::sectorincomplete = "无法完整初始化 contact-reachable sectors：`1`。";
 DSInit::initconflict = "初始化目录 `1` 已含不同输入哈希或未知文件；如确认覆盖，请显式设置 OverwriteInitialization -> True。";
 DSInit::writefailed = "初始化 metadata 写入失败：`1`。";
 DSInfo::noinit = "当前没有已注册的 DSInit context。";
@@ -8713,7 +8440,7 @@ dsResolveInitializationDirectory[_] := $Failed;
 dsDerivativeMetadata[topo_Association, progressSetting_] := Module[{generators, operators},
    generators = makeIndependentVariableDerivativeGenerators[topo];
    operators = dsProgressMap[
-     "正在生成微分算符",
+     "正在生成微分算符 / Building differential operators",
      generators,
      Function[generator,
       <|
@@ -8761,16 +8488,26 @@ dsConventionMetadata[topo_Association] := <|
      |>
    |>;
 
-dsRelevantInitializationWarningQ[issue_Association, topo_Association] := ! TrueQ[
-   Lookup[issue, "code", ""] === "sampleDiscreteRulesMissingForDiscreteVariables" &&
-    Lookup[Lookup[topo, "seedOptions", <||>], "DiscreteMode", "sample"] =!= "sample"
+(* 缺失 numericRules 只约束显式请求的全数值 linear mode；symbolic Kira/DE 必须保留
+   动力学变量，因此初始化时不把“未数值化”误报为 warning。完整报告仍保存在 metadata。 *)
+dsRelevantInitializationWarningQ[issue_Association, topo_Association] := Module[{code},
+   code = Lookup[issue, "code", ""];
+   ! MemberQ[
+     {
+      "numericRulesMissingExternalInvariants",
+      "numericRulesMissingVertexEnergies",
+      "numericRulesMissingLineParameters"
+      },
+     code
+     ]
    ];
 
 
 dsInitializationIssueText[issue_Association] := Module[{code, details},
    code = Lookup[issue, "code", "unknownInitializationIssue"];
    details = KeyDrop[issue, {"severity", "code"}];
-   code <> If[details === <||>, "", "：" <> ToString[details, InputForm]]
+   "初始化问题 / Initialization issue: " <> code <>
+    If[details === <||>, "", "：" <> ToString[details, InputForm]]
    ];
 
 dsReadExistingManifest[path_String] := If[FileExistsQ[path], Quiet[Check[Get[path], $Failed]], Missing["NoManifest"]];
@@ -8835,12 +8572,10 @@ DSInit[input_Association, OptionsPattern[]] := Module[
      ];
    inputHash = dsInputHash[effectiveInput];
    topologyData = dsStageRun[
-     "初始化 topology、ISP 与完整 sector metadata",
+     "初始化 topology、ISP 与完整 sector metadata / Initializing topology, ISP, and complete sector metadata",
      makeTopologyData[
        effectiveInput,
-      PrecomputeShrinkSectorMetadata -> True,
-      MaxShrinkSectorDepth -> OptionValue[MaxShrinkSectorDepth],
-      MaxShrinkSectorCount -> OptionValue[MaxShrinkSectorCount]
+      PrecomputeShrinkSectorMetadata -> True
       ],
      progress
      ];
@@ -8854,29 +8589,42 @@ DSInit[input_Association, OptionsPattern[]] := Module[
       "；effectiveLoopExternalMomenta " <> ToString[Lookup[topologyData, "effectiveLoopExternalMomenta", {}], InputForm] <>
       "；independentExternalMomenta " <> ToString[Lookup[topologyData, "independentExternalMomenta", {}], InputForm] <>
       "；实际需要的 loop 方向 " <> ToString[Lookup[declarationAudit, "requiredLoopExternalDirections", {}], InputForm] <>
-      "；实际需要的无圈模长 " <> ToString[Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}], InputForm],
+      "；实际需要的无圈模长 " <> ToString[Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}], InputForm] <>
+      ". Momentum roles: loopMomenta " <> ToString[Lookup[topologyData, "loopMomenta", {}], InputForm] <>
+      "; loopExternalMomenta " <> ToString[Lookup[topologyData, "loopExternalMomenta", {}], InputForm] <>
+      "; effectiveLoopExternalMomenta " <> ToString[Lookup[topologyData, "effectiveLoopExternalMomenta", {}], InputForm] <>
+      "; independentExternalMomenta " <> ToString[Lookup[topologyData, "independentExternalMomenta", {}], InputForm] <>
+      "; required loop directions " <> ToString[Lookup[declarationAudit, "requiredLoopExternalDirections", {}], InputForm] <>
+      "; required loop-free magnitudes " <> ToString[Lookup[declarationAudit, "requiredIndependentMomentumMagnitudes", {}], InputForm],
      progress
      ];
    dsInfoPrint[
      "动力学变量选择：" <> ToString[Lookup[kinematicAudit, "status", "unknown"]] <>
       "；缺省规则 " <> ToString[Lookup[kinematicAudit, "defaultRules", {}], InputForm] <>
       "；当前规则 " <> ToString[Lookup[kinematicAudit, "selectedRules", {}], InputForm] <>
-      "；从属模长绑定 " <> ToString[Lookup[kinematicAudit, "dependentMagnitudeBindings", {}], InputForm],
+      "；从属模长绑定 " <> ToString[Lookup[kinematicAudit, "dependentMagnitudeBindings", {}], InputForm] <>
+      ". Kinematic-variable selection: " <> ToString[Lookup[kinematicAudit, "status", "unknown"]] <>
+      "; default rules " <> ToString[Lookup[kinematicAudit, "defaultRules", {}], InputForm] <>
+      "; selected rules " <> ToString[Lookup[kinematicAudit, "selectedRules", {}], InputForm] <>
+      "; dependent magnitude bindings " <> ToString[Lookup[kinematicAudit, "dependentMagnitudeBindings", {}], InputForm],
      progress
      ];
    dsInfoPrint[
-     "必需模长的参数覆盖 " <> ToString[kinematicRequiredMagnitudeCoverage[topologyData], InputForm],
+     "必需模长的参数覆盖 " <> ToString[kinematicRequiredMagnitudeCoverage[topologyData], InputForm] <>
+      ". Parameter coverage of required magnitudes " <> ToString[kinematicRequiredMagnitudeCoverage[topologyData], InputForm],
      progress
      ];
    dsInfoPrint[
      "参数可保持缺省，也可复制以下格式重定义：" <> Lookup[guide, "commandExample", ""] <>
-      "。规则左端写原始 sp[...]，不要写 ssij/sEi -> custom；右端写自定义参数表达式。",
+      "。规则左端写原始 sp[...]，不要写 ssij/sEi -> custom；右端写自定义参数表达式。 " <>
+      "Keep the default parameters or copy this form to redefine them: " <> Lookup[guide, "commandExample", ""] <>
+      ". Put the original sp[...] on the left, not ssij/sEi -> custom, and the custom parameter expression on the right.",
      progress
      ];
    If[Lookup[topologyData, "status", None] === "invalidInput" || topologyValidationErrorQ[validation],
     errors = Select[Lookup[validation, "issues", {}], Lookup[#, "severity", ""] === "error" &];
     Scan[dsErrorPrint[dsInitializationIssueText[#]] &, errors];
-    Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；上述详情同时保存在 validationReport[\"issues\"]。"];
+    Message[DSInit::badinput]; dsErrorPrint["topology/ISP 初始化失败；上述详情同时保存在 validationReport[\"issues\"]。 Topology/ISP initialization failed; the details above are also stored in validationReport[\"issues\"]."];
     Return[dsFailedInitializationData[
       "invalidInputOrTopology",
       <|"inputHash" -> inputHash, "topologyData" -> topologyData, "validationReport" -> validation|>
@@ -8884,7 +8632,7 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     ];
    subsetSummary = Lookup[topologyData, "precomputedShrinkSectorSummary", <||>];
    If[Lookup[subsetSummary, "status", "missing"] =!= "generated" || ! TrueQ[Lookup[subsetSummary, "completeCoverageQ", False]],
-    Message[DSInit::sectorlimit, subsetSummary]; dsErrorPrint["contact-reachable sector 未完整初始化。"];
+    Message[DSInit::sectorincomplete, subsetSummary]; dsErrorPrint["contact-reachable sector 未完整初始化。 Contact-reachable sectors were not initialized completely."];
     Return[dsFailedInitializationData[
       "incompleteSectorMetadata",
       <|"inputHash" -> inputHash, "topologyData" -> topologyData|>
@@ -8924,19 +8672,19 @@ DSInit[input_Association, OptionsPattern[]] := Module[
    If[TrueQ[OptionValue[WriteInitializationFiles]],
     initDirectory = dsResolveInitializationDirectory[OptionValue[InitializationDirectory]];
     If[initDirectory === $Failed,
-     Message[DSInit::writefailed, OptionValue[InitializationDirectory]]; dsErrorPrint["InitializationDirectory 无效。"];
+     Message[DSInit::writefailed, OptionValue[InitializationDirectory]]; dsErrorPrint["InitializationDirectory 无效。 InitializationDirectory is invalid."];
      Return[dsFailedInitializationData["invalidInitializationDirectory", context]]
      ];
     writeResult = dsWriteInitializationFiles[context, initDirectory, OptionValue[OverwriteInitialization]];
     If[writeResult["status"] === "conflict",
-     Message[DSInit::initconflict, initDirectory]; dsErrorPrint["已有初始化信息与当前输入不一致，未覆盖。"];
+     Message[DSInit::initconflict, initDirectory]; dsErrorPrint["已有初始化信息与当前输入不一致，未覆盖。 Existing initialization data do not match the current input and were not overwritten."];
      Return[dsFailedInitializationData[
        "initializationConflict",
        Join[context, <|"initializationWrite" -> writeResult|>]
        ]]
      ];
     If[writeResult["status"] =!= "written",
-     Message[DSInit::writefailed, initDirectory]; dsErrorPrint["初始化文件未完整写入。"];
+     Message[DSInit::writefailed, initDirectory]; dsErrorPrint["初始化文件未完整写入。 Initialization files were not written completely."];
      Return[dsFailedInitializationData[
        "initializationWriteFailed",
        Join[context, <|"initializationWrite" -> writeResult|>]
@@ -8949,7 +8697,8 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     setIBPTopologyContext[context["topology"]]
     ];
    dsInfoPrint[
-    "初始化完成：" <> context["caseName"] <> "，sector " <> ToString[Length[context["sectors"]]] <> "/" <> ToString[Length[context["sectors"]]],
+    "初始化完成：" <> context["caseName"] <> "，sector " <> ToString[Length[context["sectors"]]] <> "/" <> ToString[Length[context["sectors"]]] <>
+     ". Initialization completed: " <> context["caseName"] <> ", sectors " <> ToString[Length[context["sectors"]]] <> "/" <> ToString[Length[context["sectors"]]],
     progress
     ];
    context
@@ -8957,7 +8706,7 @@ DSInit[input_Association, OptionsPattern[]] := Module[
 
 DSInit[input_, OptionsPattern[]] := (
    Message[DSInit::badinput];
-   dsErrorPrint["DSInit 需要 Association 输入。"];
+   dsErrorPrint["DSInit 需要 Association 输入。 DSInit requires an Association input."];
    dsFailedInitializationData["inputNotAssociation", <|"input" -> HoldForm[input]|>]
    );
 
@@ -9026,6 +8775,7 @@ dsPublicLoopSeedBatch[seedData_Association, topo_Association] := If[
    Lookup[seedData, "status", "missing"] === "generated",
    Join[seedData, <|
      "equations" -> (dsPublicLoopSeedEntry[#, topo] & /@ Lookup[seedData, "equations", {}]),
+     "allSeeds" -> (dsPublicLoopSeedEntry[#, topo] & /@ Lookup[seedData, "allSeeds", {}]),
      "coordinateRepresentation" -> "user"
      |>],
    seedData
@@ -9040,22 +8790,23 @@ dsTimeOnlyNeedsLinePackStateQ[topo_Association] := AnyTrue[
    ];
 
 
-DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedData, progress = OptionValue[ProgressReporting]},
+DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
+   {resolved, seedData, templateData, sealedTemplates, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
-    Message[DSSeeds::noinit]; dsErrorPrint["请先成功调用 DSInit。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
+    Message[DSSeeds::noinit]; dsErrorPrint["请先成功调用 DSInit。 Run DSInit successfully first."]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
    If[! dsContextCapabilityQ[resolved, "timeIBPUsableQ"] ||
      (Lookup[resolved["topology"], "ibpMode", "full"] === "full" &&
        ! dsContextCapabilityQ[resolved, "momentumIBPUsableQ"]),
     Message[DSSeeds::capability, dsContextCapabilities[resolved]];
-    dsErrorPrint["动量声明审计未授权当前 seed 模式。"]; Return[<|
+    dsErrorPrint["动量声明审计未授权当前 seed 模式。 The momentum-declaration audit did not authorize the current seed mode."]; Return[<|
       "status" -> "failed", "reason" -> "capabilityGate",
       "capabilities" -> dsContextCapabilities[resolved]
       |>]
     ];
    seedData = dsStageRun[
-     "生成 canonical IBP seeds",
+     "生成 canonical IBP seeds / Generating canonical IBP seeds",
      If[
       Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly" &&
        ! dsTimeOnlyNeedsLinePackStateQ[resolved["topology"]],
@@ -9070,15 +8821,33 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[{resolved, seedD
       ],
      progress
      ];
+   If[Lookup[seedData, "status", "missing"] =!= "generated",
+    Message[DSSeeds::failed, Lookup[seedData, "status", Missing["status"]]];
+    dsErrorPrint["seed generation 返回非 generated 状态。 Seed generation returned a status other than generated."];
+    Return[Join[seedData, <|"dSIBPStatus" -> "failed", "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
+    ];
+   templateData = dsStageRun[
+     "构造完整离散态 seed 模板 / Building complete discrete-state seed templates",
+     makeAllSeedTemplateData[resolved, seedData],
+     progress
+     ];
+   If[Lookup[templateData, "status", "failed"] =!= "generated",
+    Message[DSSeeds::failed, Lookup[templateData, "reason", "templateGenerationFailed"]];
+    dsErrorPrint["完整 n_i=0,1 模板生成失败。 Complete n_i=0,1 template generation failed."];
+    Return[Join[seedData, <|"dSIBPStatus" -> "failed", "reason" -> "templateGenerationFailed",
+       "templateData" -> templateData, "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
+    ];
+   seedData = Join[seedData, <|
+      "allSeeds" -> Flatten[templateData["allSeeds"], Infinity],
+      "seedTemplateSummary" -> KeyDrop[templateData, "allSeeds"]
+      |>];
    If[Lookup[seedData, "representation", None] =!= "J[vertexPacks]",
     seedData = dsPublicLoopSeedBatch[seedData, resolved["topology"]]
     ];
-   If[Lookup[seedData, "status", "missing"] =!= "generated",
-    Message[DSSeeds::failed, Lookup[seedData, "status", Missing["status"]]];
-    dsErrorPrint["seed generation 返回非 generated 状态。"];
-    Return[Join[seedData, <|"dSIBPStatus" -> "failed", "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
-    ];
+   sealedTemplates = dsSealSeedTemplates[seedData["allSeeds"], resolved];
+   $dSIBPLastSeedTemplates = sealedTemplates;
    Join[seedData, <|
+     "allSeeds" -> sealedTemplates,
      "dSIBPStatus" -> "generated",
      "dSIBPContextSummary" -> dsContextSummary[resolved],
      "numericRulesAppliedBeforeSeeds" -> TrueQ[OptionValue[ApplyNumericRules]],
@@ -9090,14 +8859,14 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
    {resolved, linearData, mode = OptionValue[LinearSystemMode], progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
-    Message[DSLinear::noinit]; dsErrorPrint["请传入与 seed 同源的 DSInit context。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
+    Message[DSLinear::noinit]; dsErrorPrint["请传入与 seed 同源的 DSInit context。 Pass the DSInit context from which the seeds originated."]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
     If[! KeyExistsQ[seedData, "completeCanonicalQ"],
-     Message[DSLinear::badseed]; dsErrorPrint["输入不是 canonical seed batch。"]; Return[<|"status" -> "failed", "reason" -> "notCanonicalSeedBatch"|>]
+     Message[DSLinear::badseed]; dsErrorPrint["输入不是 canonical seed batch。 The input is not a canonical seed batch."]; Return[<|"status" -> "failed", "reason" -> "notCanonicalSeedBatch"|>]
      ];
     If[Lookup[Lookup[seedData, "dSIBPContextSummary", <||>], "inputHash", Missing["seedHash"]] =!=
       Lookup[resolved, "inputHash", Missing["contextHash"]],
-     Message[DSLinear::context]; dsErrorPrint["seed 与 context 的 inputHash 不一致。"]; Return[<|
+     Message[DSLinear::context]; dsErrorPrint["seed 与 context 的 inputHash 不一致。 The seed and context inputHash values differ."]; Return[<|
        "status" -> "failed", "reason" -> "contextMismatch"
        |>]
      ];
@@ -9106,16 +8875,16 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
       (Lookup[resolved["topology"], "ibpMode", "full"] === "full" &&
         ! dsContextCapabilityQ[resolved, "momentumIBPUsableQ"]),
      Message[DSLinear::capability, dsContextCapabilities[resolved]];
-     dsErrorPrint["seed 或 context 未通过 linearData 能力门禁。"]; Return[<|
+     dsErrorPrint["seed 或 context 未通过 linearData 能力门禁。 The seed or context failed the linearData capability gate."]; Return[<|
        "status" -> "failed", "reason" -> "capabilityGate",
        "capabilities" -> dsContextCapabilities[resolved]
        |>]
      ];
    If[! MemberQ[{"symbolic", "numeric"}, mode],
-    Message[DSLinear::badmode, mode]; dsErrorPrint["linearData 模式无效。"]; Return[<|"status" -> "failed", "reason" -> "invalidLinearSystemMode", "mode" -> mode|>]
+    Message[DSLinear::badmode, mode]; dsErrorPrint["linearData 模式无效。 The linearData mode is invalid."]; Return[<|"status" -> "failed", "reason" -> "invalidLinearSystemMode", "mode" -> mode|>]
     ];
    linearData = dsStageRun[
-     "转换 backend-neutral linearData",
+     "转换 backend-neutral linearData / Converting to backend-neutral linearData",
      If[Lookup[seedData, "representation", None] === "J[vertexPacks]",
       With[{treeLinear = makePureTimeLinearSystemData[seedData, resolved]},
        If[mode === "numeric" && Lookup[treeLinear, "status", "missing"] === "generated",
@@ -9148,7 +8917,7 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
      ];
    If[Lookup[linearData, "status", "missing"] =!= "generated",
     Message[DSLinear::failed, Lookup[linearData, "status", Missing["status"]]];
-    dsErrorPrint["linearData 未通过 canonical/linearity 门禁。"];
+    dsErrorPrint["linearData 未通过 canonical/linearity 门禁。 linearData failed the canonical or linearity gate."];
     Return[Join[linearData, <|"dSIBPStatus" -> "failed", "dSIBPContextSummary" -> dsContextSummary[resolved]|>]]
     ];
    Join[linearData, <|
@@ -9482,22 +9251,47 @@ dsTreeTaggedSingleStep[
    ];
 
 
+dsTreeTokenDistanceData[token : dsTreeToken[sectorKey_String, int_J], end_, familyContext_Association] := Module[
+   {family, endpoints},
+   family = dsTreeFamilyBySector[sectorKey, familyContext];
+   If[Head[family] === Missing || ! treeIntegralQ[int, family] ||
+     ! And @@ (IntegerQ /@ First[int][[All, 1]]), Return[$Failed]];
+   endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, familyContext], family];
+   If[endpoints === $Failed, Return[$Failed]];
+   <|"token" -> token, "sectorKey" -> sectorKey, "endpoints" -> endpoints,
+    "remainingThetaLines" -> Length[thetaFullLineIndices[family["topology"]]],
+    "distance" -> treeEndpointDistance[int, endpoints],
+    "progressKey" -> {Length[thetaFullLineIndices[family["topology"]]], treeEndpointDistance[int, endpoints]}|>
+   ];
+
+
+(* tagged linearData 允许递推跨 contact sector；每条跨 sector 依赖仍须严格降低各自 endpoint 距离。 *)
+dsTreeTaggedStepProgress[source_dsTreeToken, replacement_, end_, familyContext_Association] := Module[
+   {sourceData, targets, targetData, invalidTargets},
+   sourceData = dsTreeTokenDistanceData[source, end, familyContext];
+   targets = DeleteDuplicates[Cases[replacement, token : dsTreeToken[_String, _J] :> token, {0, Infinity}]];
+   targetData = dsTreeTokenDistanceData[#, end, familyContext] & /@ targets;
+   invalidTargets = Pick[targets, (# === $Failed & /@ targetData)];
+   <|
+    "passQ" -> TrueQ[sourceData =!= $Failed && invalidTargets === {} &&
+       And @@ (treeProgressKeyLessQ[Lookup[#, "progressKey", {Infinity, Infinity}], sourceData["progressKey"]] & /@ targetData)],
+    "source" -> sourceData,
+    "targets" -> targetData,
+    "invalidTargets" -> invalidTargets
+    |>
+   ];
+
+
 Options[dsRepIterativeTreeLinearData] = Options[repIterativeData];
 
 
 dsRepIterativeTreeLinearData[data_Association, end_: Automatic, context_Association, OptionsPattern[]] := Module[
-   {familyContext, result, maxSteps, steps = 0, tokens, token, sectorKey, int, family, endpoints, vertexIndex, reducedTerms},
+   {familyContext, result, steps = 0, tokens, token, sectorKey, int, family, endpoints, vertexIndex,
+    reducedTerms, replacement, progressData, seenStates = <||>, stateHash},
    If[! dsTreeLinearDataQ[data], Return[<|"status" -> "error", "reason" -> "invalidTreeLinearData"|>]];
    familyContext = dsTreeFamilyContext[context];
    result = Expand[dsTreeTokenExpression[data]];
-   maxSteps = OptionValue[MaxIterations];
-   If[maxSteps === Automatic,
-    maxSteps = 10 (1 + Total[Abs[Cases[result, dsTreeToken[_, item_J] :> First[item][[All, 1]], Infinity] // Flatten]] + Length[familyContext["families"]])
-    ];
-   If[! IntegerQ[maxSteps] || maxSteps < 0,
-    Message[repIterativeData::maxsteps, maxSteps];
-    Return[<|"status" -> "error", "reason" -> "invalidMaxIterations", "steps" -> steps|>]
-    ];
+   AssociateTo[seenStates, treeRecurrenceStateHash[result] -> True];
    While[True,
     tokens = DeleteDuplicates[Cases[result, token : dsTreeToken[_String, _J] :> token, {0, Infinity}]];
     token = SelectFirst[
@@ -9525,13 +9319,23 @@ dsRepIterativeTreeLinearData[data_Association, end_: Automatic, context_Associat
      ];
     endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, familyContext], family];
     If[endpoints === $Failed, Return[<|"status" -> "error", "reason" -> "invalidEndpoint", "steps" -> steps|>]];
-    If[steps >= maxSteps,
-     Message[repIterativeData::maxsteps, maxSteps];
-     Return[<|"status" -> "maxSteps", "reason" -> "iterationLimit", "steps" -> steps|>]
-     ];
     vertexIndex = SelectFirst[Range[Length[endpoints]], First[int][[#, 1]] =!= endpoints[[#]] &];
-    result = Expand[result /. token -> dsTreeTaggedSingleStep[token, vertexIndex, endpoints[[vertexIndex]], family, familyContext]];
-    If[! FreeQ[result, $Failed], Return[<|"status" -> "error", "reason" -> "taggedStepFailed", "steps" -> steps|>]];
+    replacement = dsTreeTaggedSingleStep[token, vertexIndex, endpoints[[vertexIndex]], family, familyContext];
+    If[replacement === $Failed, Return[<|"status" -> "error", "reason" -> "taggedStepFailed", "steps" -> steps|>]];
+    progressData = dsTreeTaggedStepProgress[token, replacement, end, familyContext];
+    If[! TrueQ[progressData["passQ"]],
+     Message[repIterativeData::noprogress, progressData];
+     Return[<|"status" -> "error", "reason" -> "nonDecreasingRecurrence", "steps" -> steps,
+       "progressData" -> progressData|>]
+     ];
+    result = Expand[result /. token -> replacement];
+    stateHash = treeRecurrenceStateHash[result];
+    If[KeyExistsQ[seenStates, stateHash],
+     Message[repIterativeData::cycle, stateHash];
+     Return[<|"status" -> "error", "reason" -> "recurrenceCycle", "steps" -> steps,
+       "stateHash" -> stateHash|>]
+     ];
+    AssociateTo[seenStates, stateHash -> True];
     steps++;
     ];
    reducedTerms = dsTreeTokenTerms[result];
@@ -9590,7 +9394,7 @@ dsTreeMasterFamilyRecords[masters_List, familyContext_Association] := Map[
 
 
 dsTreeNaiveSeedRecords[masterFamilyRecords_List, familyContext_Association, progress_] := Flatten@dsProgressMap[
-    "正在生成 naive tree time-IBP",
+    "正在生成 naive tree time-IBP / Building naive-tree time-IBP relations",
     masterFamilyRecords,
     Function[item,
      With[{master = item["master"], family = item["family"]},
@@ -10000,11 +9804,6 @@ dsDirectTreeSeedRecord[
 
 Options[makePureTimeSeedBatch] = Options[makeTimeIBPSeedBatch];
 
-makePureTimeSeedBatch::toomany =
-   "拓扑 `1` 的 pure-time tree seed 方程数为 `2`，超过上限 `3`；未展开方程。";
-makePureTimeSeedBatch::toomanystates =
-   "sector `1` 的 massive h 离散态数为 `2`，超过上限 `3`；未展开方程。";
-
 
 (* 每条 generator 继续复用统一 a-range/generator override 解析；tree 表示只消费顶点 a，
    不把 loop 表示中的 b/ISP 变量带入 pure-time 积分。 *)
@@ -10013,9 +9812,7 @@ dsPureTimeGeneratorSeedData[family_Association, vertexId_, opts : OptionsPattern
    generatorLabel = {"time", vertexId};
    continuousData = makeGeneratorContinuousSeedRules[
      topo,
-     generatorLabel,
-     UseSampleOnly -> OptionValue[UseSampleOnly],
-     MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
+     generatorLabel
      ];
    If[Lookup[continuousData, "status", "missing"] =!= "generated", Return[continuousData]];
    aVariables = a /@ family["vertexOrder"];
@@ -10040,8 +9837,8 @@ dsPureTimeGeneratorSeedData[family_Association, vertexId_, opts : OptionsPattern
 (* DSSeeds 的 timeOnly 生产路径：sector tag 保存在 record/linear terms 中，裸积分始终是 J[vertexPacks]。 *)
 makePureTimeSeedBatch[context_Association, opts : OptionsPattern[]] /; dsContextQ[context] := Module[
    {familyContext, families, rootTopo = context["topology"], generatorData, stateCounts,
-    maxDiscreteCount, equationCount, maxEquationCount, records, numericRules, applyNumericRules,
-    sectorMetadataList, badFamilies},
+     equationCount, records, numericRules, applyNumericRules,
+     sectorMetadataList, badFamilies},
    familyContext = dsTreeFamilyContext[context];
    If[familyContext === $Failed,
     Return[<|"status" -> "failed", "reason" -> "treeFamilyInitializationFailed", "equations" -> {}|>]
@@ -10063,16 +9860,6 @@ makePureTimeSeedBatch[context_Association, opts : OptionsPattern[]] /; dsContext
       family["sector"] -> 2^Total[Lookup[family["vertices"], "p", 0]],
       {family, families}
       ];
-   maxDiscreteCount = resolveSeedOption[
-     rootTopo, "MaxDiscreteRuleCount", OptionValue[MaxDiscreteRuleCount], 64
-     ];
-   If[AnyTrue[Values[stateCounts], # > maxDiscreteCount &],
-    With[{sector = SelectFirst[Keys[stateCounts], stateCounts[#] > maxDiscreteCount &]},
-     Message[makePureTimeSeedBatch::toomanystates, sector, stateCounts[sector], maxDiscreteCount];
-     Return[<|"status" -> "tooManyDiscreteStates", "sectorStateCounts" -> stateCounts,
-       "maxDiscreteStateCount" -> maxDiscreteCount, "equations" -> {}|>]
-     ]
-    ];
    generatorData = Flatten@Table[
       dsPureTimeGeneratorSeedData[family, vertexId, opts],
       {family, families}, {vertexId, family["vertexOrder"]}
@@ -10084,13 +9871,6 @@ makePureTimeSeedBatch[context_Association, opts : OptionsPattern[]] /; dsContext
    equationCount = Total[
      Lookup[#, "ruleCount", 0] stateCounts[Lookup[#, "sectorKey", "top"]] & /@ generatorData
      ];
-   maxEquationCount = resolveSeedOption[rootTopo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
-   If[equationCount > maxEquationCount,
-    Message[makePureTimeSeedBatch::toomany, rootTopo["name"], equationCount, maxEquationCount];
-    Return[<|"status" -> "tooManyEquations", "equationCount" -> equationCount,
-      "maxEquationCount" -> maxEquationCount, "generatorSeedData" -> generatorData,
-      "equations" -> {}|>]
-    ];
    records = Flatten@Table[
       With[{family = families[[familyIndex]]},
        Flatten@Table[
@@ -10220,11 +10000,490 @@ makePureTimeLinearSystemData[batch_Association, context_Association] /; dsContex
 
 (* ::Package:: *)
 
+(* 本文件实现 016 的模板化连续指标撒点。DSSeeds 先生成完整离散态并执行
+   EOM/canonical；本模块只展开 general 连续指标，并保留可供 DSLinear 审计的来源信息。 *)
+
+
+(* ::Chapter:: *)
+(*Seed 模板构造与完整性封装*)
+
+If[! ValueQ[$dSIBPLastSeedTemplates], $dSIBPLastSeedTemplates = Missing["NotGenerated"]];
+
+
+DSAllSeeds::noseeds = "尚未生成 seed 模板。请先成功调用 DSSeeds。 No seed templates are available. Run DSSeeds successfully first.";
+DSAllSeeds::badseed = "输入不含 DSSeeds 生成的 allSeeds。 The input does not contain allSeeds generated by DSSeeds.";
+
+
+dsTemplateSource[sectorKey_String, ibpClass_String, shrunkLines_List] := Which[
+   sectorKey === "top" && ibpClass === "qIBP", "momentum",
+   sectorKey === "top" && ibpClass === "tIBP", "time",
+   ibpClass === "qIBP", {"shrinkSectorMomentum", shrunkLines},
+   True, {"shrinkSectorTime", shrunkLines}
+   ];
+
+
+dsTemplateGeneratorLabel[generator_Association] := If[
+   Lookup[generator, "type", "missing"] === "time",
+   timeGeneratorLabel[generator],
+   momentumGeneratorLabel[generator]
+   ];
+
+
+dsTemplateGeneratorClass[generator_Association] := If[
+   Lookup[generator, "type", "missing"] === "time", "tIBP", "qIBP"
+   ];
+
+
+(* loop 模板只遍历离散 n=0,1，不代入任何连续指标。这样 EOM 在撒点前完成，
+   而 a/b/ISP 仍能由 DSGenerateIBP 统一或逐指标展开。 *)
+dsLoopTemplatesForTopology[topo_Association] := Module[
+   {base, continuousIndices, discreteVariables, discreteData, generators, rawTemplates,
+    sectorKey, shrunkLines, metadata, representation, records},
+   base = makeBaseIntegral[topo];
+   continuousIndices = continuousIndexVariables[base];
+   discreteVariables = DeleteDuplicates[Cases[base, _n, Infinity]];
+   discreteData = selectedDiscreteSeedRules[topo];
+   If[Lookup[discreteData, "status", "failed"] =!= "generated",
+    Return[<|"status" -> "failed", "reason" -> "discreteEnumerationFailed",
+      "sectorKey" -> sectorKeyFromShrunkLines[Lookup[topo, "sectorShrunkLines", {}]],
+      "discreteData" -> discreteData|>]
+    ];
+   generators = Select[
+     makeIBPGenerators[topo],
+     Function[generator,
+      Lookup[generator, "type", "missing"] === "time" ||
+       Lookup[topo, "ibpMode", "full"] === "full"
+      ]
+     ];
+   rawTemplates = Table[
+     <|"generatorData" -> generator, "generator" -> dsTemplateGeneratorLabel[generator],
+       "ibpClass" -> dsTemplateGeneratorClass[generator],
+       "expression" -> If[
+         Lookup[generator, "type", "missing"] === "time",
+         applyTimeGeneratorSeed[topo, base, generator],
+         applyMomentumGeneratorSeed[topo, base, generator]
+         ]|>,
+     {generator, generators}
+     ];
+   If[MemberQ[Lookup[rawTemplates, "expression", {}], $Failed],
+    Return[<|"status" -> "failed", "reason" -> "generatorTemplateFailed"|>]
+    ];
+   shrunkLines = Lookup[topo, "sectorShrunkLines", {}];
+   sectorKey = sectorKeyFromShrunkLines[shrunkLines];
+   metadata = Lookup[topo, "sectorMetadata", makeSectorMetadata[topo]];
+   representation = If[
+     Lookup[topo, "ibpMode", "full"] === "timeOnly",
+     "J[timePowers,linePacks,isp]",
+     "J[timePowers,indexedLinePacks,isp]"
+     ];
+   records = Flatten[
+     Table[
+      Module[{expr = applySeedCanonical[template["expression"] /. discreteRule, topo]},
+       <|
+        "source" -> dsTemplateSource[sectorKey, template["ibpClass"], shrunkLines],
+        "sectorKey" -> sectorKey,
+        "sectorShrunkLines" -> shrunkLines,
+        "sectorMetadata" -> metadata,
+        "generator" -> template["generator"],
+        "ibpClass" -> template["ibpClass"],
+        "continuousIndices" -> continuousIndices,
+        "discreteVariables" -> discreteVariables,
+        "discreteRules" -> discreteRule,
+        "discreteStateCountExpected" -> 2^Length[discreteVariables],
+        "equation" -> Expand[expr],
+        "forbiddenNData" -> forbiddenNData[topo, expr],
+        "eomCanonicalQ" -> ! containsForbiddenNQ[topo, expr],
+        "representation" -> representation,
+        "ibpMode" -> Lookup[topo, "ibpMode", "full"]
+        |>
+       ],
+      {template, rawTemplates}, {discreteRule, discreteData["rules"]}
+      ],
+     1
+     ];
+   <|
+    "status" -> "generated",
+    "sectorKey" -> sectorKey,
+    "recordCount" -> Length[records],
+    "discreteVariables" -> discreteVariables,
+    "discreteStateCount" -> Length[discreteData["rules"]],
+    "allSeeds" -> records
+    |>
+   ];
+
+
+dsLoopSeedTemplateData[context_Association, seedData_Association] := Module[
+   {rootTopo, metadataList, shrunkLists, topologies, pieces, bad, records},
+   rootTopo = context["topology"];
+   metadataList = Lookup[seedData, "sectorMetadataList", {makeSectorMetadata[rootTopo]}];
+   shrunkLists = DeleteCases[Lookup[metadataList, "sectorShrunkLines", {}], {}];
+   topologies = Join[{rootTopo}, shrinkSectorTopology[rootTopo, #] & /@ shrunkLists];
+   pieces = dsLoopTemplatesForTopology /@ topologies;
+   bad = Select[pieces, Lookup[#, "status", "failed"] =!= "generated" &];
+   If[bad =!= {}, Return[<|"status" -> "failed", "reason" -> "sectorTemplateFailed", "failures" -> bad|>]];
+   records = Flatten[Lookup[pieces, "allSeeds", {}], Infinity];
+   <|"status" -> "generated", "allSeeds" -> records, "sectorCount" -> Length[pieces],
+     "templateCount" -> Length[records]|>
+   ];
+
+
+(* direct pure-time 表示中的 binary h 状态由 treeMasterList 完整枚举；只有顶点 a 指标
+   保持 general。该路线与 loop line-pack 模板共享同一个 DSGenerateIBP 接口。 *)
+dsPureTimeSeedTemplateData[context_Association] := Module[
+   {familyContext, families, records},
+   familyContext = dsTreeFamilyContext[context];
+   If[familyContext === $Failed, Return[<|"status" -> "failed", "reason" -> "treeFamilyInitializationFailed"|>]];
+   families = familyContext["families"];
+   records = Flatten@Table[
+      Module[{aVariables = a /@ family["vertexOrder"], treeIntegrals},
+       treeIntegrals = treeMasterList[family, aVariables];
+       Table[
+        Module[{record = dsDirectTreeSeedRecord[vertexId, int, family, familyContext]},
+         If[Lookup[record, "status", "failed"] =!= "generated", Return[record]];
+         Join[record, <|
+           "source" -> If[family["sector"] === "top", "time", {"shrinkSectorTime", Lookup[family["topology"], "sectorShrunkLines", {}]}],
+           "ibpClass" -> "tIBP",
+           "continuousIndices" -> aVariables,
+           "discreteVariables" -> {},
+           "discreteRules" -> {},
+           "discreteStateCountExpected" -> 2^Total[Lookup[family["vertices"], "p", 0]],
+           "equation" -> record["treeSeed"],
+           "eomCanonicalQ" -> True,
+           "forbiddenNData" -> {},
+           "representation" -> "J[vertexPacks]",
+           "ibpMode" -> "timeOnly",
+           "sectorMetadata" -> makeSectorMetadata[family["topology"]]
+           |>]
+         ],
+        {vertexId, family["vertexOrder"]}, {int, treeIntegrals}
+        ]
+       ],
+      {family, families}
+      ];
+   If[AnyTrue[records, Lookup[#, "status", "generated"] =!= "generated" &],
+    Return[<|"status" -> "failed", "reason" -> "directPureTimeTemplateFailed", "records" -> records|>]
+    ];
+   <|"status" -> "generated", "allSeeds" -> Flatten[records, Infinity],
+     "sectorCount" -> Length[families], "templateCount" -> Length[Flatten[records, Infinity]]|>
+   ];
+
+
+makeAllSeedTemplateData[context_Association, seedData_Association] := If[
+   Lookup[seedData, "representation", None] === "J[vertexPacks]",
+   dsPureTimeSeedTemplateData[context],
+   dsLoopSeedTemplateData[context, seedData]
+   ];
+
+
+dsSeedTemplateHashPayload[records_List] := KeyDrop[
+    #,
+    {"templateSetHash", "templateOrdinal", "templateCount", "contextInputHash", "caseName"}
+    ] & /@ records;
+
+
+dsSealSeedTemplates[records_List, context_Association] := Module[{flat, payload, hash, count},
+   flat = Flatten[records, Infinity];
+   count = Length[flat];
+   payload = dsSeedTemplateHashPayload[flat];
+   hash = IntegerString[Hash[payload, "SHA256"], 16, 64];
+   MapIndexed[
+    Join[#1, <|"templateSetHash" -> hash, "templateOrdinal" -> First[#2],
+       "templateCount" -> count, "contextInputHash" -> context["inputHash"],
+       "caseName" -> context["caseName"]|>] &,
+    flat
+    ]
+   ];
+
+
+DSAllSeeds[seedData_Association] := Module[{seeds = Lookup[seedData, "allSeeds", Missing["NotFound"]]},
+   If[! ListQ[seeds], Message[DSAllSeeds::badseed]; dsErrorPrint[
+      "输入中没有可用的 allSeeds。 No usable allSeeds field was found in the input."
+      ]; Return[$Failed]];
+   seeds
+   ];
+
+
+DSAllSeeds[] := If[
+   ListQ[$dSIBPLastSeedTemplates],
+   $dSIBPLastSeedTemplates,
+   Message[DSAllSeeds::noseeds];
+   dsErrorPrint["尚无 seed 模板。 No seed templates have been generated."];
+   $Failed
+   ];
+
+
+(* ::Chapter:: *)
+(*连续指标提取与范围门禁*)
+
+DSGenerateIBP::badseeds = "seeds 必须是 DSSeeds 生成的模板列表或含 J 的表达式列表。 seeds must be a template list generated by DSSeeds or a list of expressions containing J.";
+DSGenerateIBP::badrange = "撒点范围格式或整数边界无效：`1`。 The sampling range format or integer bounds are invalid: `1`.";
+DSGenerateIBP::coverage = "精细范围没有精确覆盖模板指标：`1`。 Detailed ranges do not exactly cover the template indices: `1`.";
+DSGenerateIBP::discrete = "n_i 是已在模板阶段遍历的离散指标，不得再次撒点：`1`。 n_i are discrete indices already enumerated in the template stage and must not be sampled again: `1`.";
+DSGenerateIBP::symbolicn = "模板仍含符号 n_i，说明离散态/EOM 阶段未完成：`1`。 Symbolic n_i remain in the templates, so discrete-state enumeration or EOM canonicalization is incomplete: `1`.";
+DSGenerateIBP::integrity = "seed 模板完整性检查失败：`1`。 Seed-template integrity validation failed: `1`.";
+Options[DSGenerateIBP] = {ProgressReporting -> Automatic};
+Options[generateIBP] = Options[DSGenerateIBP];
+
+
+dsSeedTemplateEntries[seeds_] := Flatten[{seeds}, Infinity];
+
+
+dsSeedTemplateEquation[entry_Association] := Lookup[entry, "equation", Lookup[entry, "treeSeed", Missing["NoEquation"]]];
+dsSeedTemplateEquation[entry_] := entry;
+
+
+dsContinuousIndicesFromIntegral[J[aList_, linePacks_, ispList_]] := DeleteDuplicates@Join[
+    Quiet@Check[Variables[Flatten[{aList}]], Cases[aList, _a, Infinity]],
+    DeleteDuplicates[Cases[linePacks, _b | _bS, Infinity]],
+    Quiet@Check[Variables[Flatten[{ispList}]], Flatten[{ispList}]]
+    ];
+dsContinuousIndicesFromIntegral[J[vertexPacks_]] := Quiet@Check[
+   Variables[First /@ vertexPacks],
+   DeleteDuplicates[Cases[vertexPacks, _a, Infinity]]
+   ];
+
+
+dsSeedTemplateContinuousIndices[entries_List] := Module[{declared, inferred},
+   declared = DeleteDuplicates@Flatten[Lookup[Select[entries, AssociationQ], "continuousIndices", {}], Infinity];
+   inferred = DeleteDuplicates@Flatten[
+      dsContinuousIndicesFromIntegral /@ DeleteDuplicates[Cases[dsSeedTemplateEquation /@ entries, _J, Infinity]],
+      Infinity
+      ];
+   DeleteDuplicates@Join[declared, inferred]
+   ];
+
+
+dsSeedTemplateSymbolicN[entries_List] := DeleteDuplicates[Cases[dsSeedTemplateEquation /@ entries, _n, Infinity]];
+
+
+dsSeedTemplateIntegrityAudit[entries_List] := Module[
+   {records, hashes, counts, ordinals, expectedHash, payload, actualHash},
+   records = Select[entries, AssociationQ];
+   If[Length[records] =!= Length[entries],
+    Return[<|"status" -> "unsealed", "passQ" -> False, "reason" -> "rawExpressions"|>]
+    ];
+   hashes = DeleteDuplicates[Lookup[records, "templateSetHash", Missing["MissingHash"]]];
+   counts = DeleteDuplicates[Lookup[records, "templateCount", Missing["MissingCount"]]];
+   ordinals = Lookup[records, "templateOrdinal", Missing["MissingOrdinal"]];
+   If[Length[hashes] =!= 1 || Length[counts] =!= 1 || First[counts] =!= Length[records] ||
+     ordinals =!= Range[Length[records]],
+    Return[<|"status" -> "failed", "passQ" -> False, "reason" -> "metadataMismatch",
+      "hashes" -> hashes, "counts" -> counts, "ordinals" -> ordinals|>]
+   ];
+   expectedHash = First[hashes];
+   payload = dsSeedTemplateHashPayload[records];
+   actualHash = IntegerString[Hash[payload, "SHA256"], 16, 64];
+   <|"status" -> If[expectedHash === actualHash, "passed", "failed"],
+     "passQ" -> TrueQ[expectedHash === actualHash], "expectedHash" -> expectedHash,
+     "actualHash" -> actualHash, "templateCount" -> Length[records]|>
+   ];
+
+
+dsRangePairQ[spec_] := MatchQ[spec, {_Integer, _Integer}] && spec[[1]] <= spec[[2]];
+
+
+dsRangeSpecificationAudit[indices_List, specs_List] := Module[
+   {uniformQ, detailedQ, variables, duplicate, unknown, missing, discrete, invalid},
+   uniformQ = Length[specs] === 1 && dsRangePairQ[First[specs]];
+   detailedQ = specs =!= {} && And @@ (MatchQ[#, {_, _Integer, _Integer}] & /@ specs);
+   If[uniformQ,
+    Return[<|"status" -> "passed", "mode" -> "uniform", "variables" -> indices,
+      "rangeRules" -> Thread[indices -> ConstantArray[First[specs], Length[indices]]],
+      "unknownIndices" -> {}, "missingIndices" -> {}, "duplicateIndices" -> {},
+      "discreteIndicesInRangeSpec" -> {}, "invalidRanges" -> {}|>]
+    ];
+   If[! detailedQ,
+    Return[<|"status" -> "failed", "reason" -> "invalidRangeShape", "invalidRanges" -> specs|>]
+    ];
+   variables = First /@ specs;
+   duplicate = Cases[Tally[variables], {var_, count_} /; count > 1 :> var];
+   discrete = Select[variables, MatchQ[#, _n] &];
+   unknown = Select[variables, Function[var, ! AnyTrue[indices, SameQ[#, var] &] && ! MatchQ[var, _n]]];
+   missing = Select[indices, Function[var, ! AnyTrue[variables, SameQ[#, var] &]]];
+   invalid = Select[specs, #[[2]] > #[[3]] &];
+   <|
+    "status" -> If[Join[duplicate, discrete, unknown, missing, invalid] === {}, "passed", "failed"],
+    "mode" -> "detailed",
+    "variables" -> indices,
+    "rangeRules" -> If[Join[duplicate, discrete, unknown, missing, invalid] === {},
+      (#[[1]] -> #[[2 ;; 3]]) & /@ specs, {}],
+    "unknownIndices" -> unknown,
+    "missingIndices" -> missing,
+    "duplicateIndices" -> duplicate,
+    "discreteIndicesInRangeSpec" -> discrete,
+    "invalidRanges" -> invalid
+    |>
+   ];
+
+
+(* ::Chapter:: *)
+(*公开连续撒点入口*)
+
+dsGeneratedIBPSectorSummaries[records_List] := Module[{sectorKeys},
+   sectorKeys = DeleteCases[DeleteDuplicates[Lookup[records, "sectorKey", {}]], "top"];
+   Table[
+    With[{sectorRecords = Select[records, Lookup[#, "sectorKey", None] === sectorKey &]},
+     <|
+      "sectorKey" -> sectorKey,
+      "sectorShrunkLines" -> Lookup[First[sectorRecords], "sectorShrunkLines", {}],
+      "momentumSummary" -> <|"generators" -> DeleteDuplicates[Lookup[Select[sectorRecords, Lookup[#, "ibpClass", None] === "qIBP" &], "generator", {}]]|>,
+      "timeSummary" -> <|"generators" -> DeleteDuplicates[Lookup[Select[sectorRecords, Lookup[#, "ibpClass", None] === "tIBP" &], "generator", {}]]|>
+      |>
+     ],
+    {sectorKey, sectorKeys}
+    ]
+   ];
+
+
+dsGeneratedIBPBatch[records_List, templates_List, context_Association, rangeAudit_Association,
+   integrityAudit_Association] := Module[
+   {topRecords, metadataList, forbidden, eomQ, representation, ibpMode, templateHash},
+   topRecords = Select[records, Lookup[#, "sectorKey", None] === "top" &];
+   metadataList = DeleteDuplicates[Lookup[templates, "sectorMetadata", {}]];
+   If[metadataList === {}, metadataList = {makeSectorMetadata[context["topology"]]}];
+   forbidden = DeleteCases[Flatten[Lookup[records, "forbiddenNData", {}]], Null];
+   eomQ = And @@ Lookup[records, "eomCanonicalQ", {False}];
+   representation = Lookup[First[templates], "representation", "J[timePowers,indexedLinePacks,isp]"];
+   ibpMode = Lookup[First[templates], "ibpMode", "full"];
+   templateHash = Lookup[First[templates], "templateSetHash", Missing["UnsealedTemplates"]];
+   <|
+    "status" -> "generated",
+    "dSIBPStatus" -> "generated",
+    "generationRoute" -> "DSGenerateIBP",
+    "caseName" -> context["caseName"],
+    "ibpMode" -> ibpMode,
+    "representation" -> representation,
+    "topologyValidationReport" -> topologyValidationReport[context["topology"]],
+    "sectorMetadata" -> First[metadataList],
+    "sectorMetadataList" -> metadataList,
+    "momentumSummary" -> <|"generators" -> DeleteDuplicates[Lookup[Select[topRecords, Lookup[#, "ibpClass", None] === "qIBP" &], "generator", {}]]|>,
+    "timeSummary" -> <|"generators" -> DeleteDuplicates[Lookup[Select[topRecords, Lookup[#, "ibpClass", None] === "tIBP" &], "generator", {}]]|>,
+    "shrinkSectorSummary" -> <|"sectorSummaries" -> dsGeneratedIBPSectorSummaries[records]|>,
+    "equationCount" -> Length[records],
+    "eomCanonicalQ" -> eomQ,
+    "forbiddenNData" -> forbidden,
+    "pendingFeatures" -> {},
+    "completeMomentumIBPQ" -> TrueQ[ibpMode === "full"],
+    "completeTimeIBPQ" -> True,
+    "completeCanonicalQ" -> TrueQ[eomQ && forbidden === {}],
+    "allSeeds" -> templates,
+    "templateSetHash" -> templateHash,
+    "templateIntegrityAudit" -> integrityAudit,
+    "continuousIndices" -> rangeAudit["variables"],
+    "rangeMode" -> rangeAudit["mode"],
+    "rangeRules" -> rangeAudit["rangeRules"],
+    "equations" -> records,
+    "dSIBPContextSummary" -> dsContextSummary[context],
+    "numericRulesAppliedBeforeSeeds" -> False,
+    "seedNumericRules" -> {}
+    |>
+   ];
+
+
+DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
+   {entries, badEntries, indices, symbolicN, audit, integrity, context, hashes,
+    valueLists, pointRules, progress, records, expression, updated},
+   entries = dsSeedTemplateEntries[seeds];
+   (* EOM/canonical 可以把某个完整离散态模板化为精确零；密封模板中的 0 仍是合法恒等式。
+      非零且不含 J 的表达式继续拒绝，避免把任意常数列表误当作 IBP 模板。 *)
+   badEntries = Select[
+     entries,
+     Function[entry,
+      With[{equation = dsSeedTemplateEquation[entry]},
+       Head[equation] === Missing || (! TrueQ[equation === 0] && FreeQ[equation, _J])
+       ]
+      ]
+     ];
+   If[entries === {} || badEntries =!= {},
+    Message[DSGenerateIBP::badseeds];
+    dsErrorPrint["seeds 不是可展开的 IBP 模板列表。 seeds is not an expandable IBP-template list."];
+    Return[<|"status" -> "failed", "reason" -> "invalidSeeds", "invalidEntries" -> badEntries|>]
+    ];
+   symbolicN = dsSeedTemplateSymbolicN[entries];
+   If[symbolicN =!= {},
+    Message[DSGenerateIBP::symbolicn, symbolicN];
+    dsErrorPrint["模板必须先完整遍历 n_i=0,1 并执行 EOM。 Templates must enumerate n_i=0,1 and apply EOM first."];
+    Return[<|"status" -> "failed", "reason" -> "symbolicDiscreteIndices", "symbolicDiscreteIndices" -> symbolicN|>]
+    ];
+   indices = dsSeedTemplateContinuousIndices[entries];
+   audit = dsRangeSpecificationAudit[indices, {specs}];
+   If[Lookup[audit, "discreteIndicesInRangeSpec", {}] =!= {},
+    Message[DSGenerateIBP::discrete, audit["discreteIndicesInRangeSpec"]];
+    dsErrorPrint["n_i 不属于连续撒点范围。 n_i are not continuous sampling indices."];
+    Return[Join[audit, <|"status" -> "failed", "reason" -> "discreteIndexInRangeSpec"|>]]
+    ];
+   If[Lookup[audit, "status", "failed"] =!= "passed",
+    If[Lookup[audit, "reason", None] === "invalidRangeShape",
+     Message[DSGenerateIBP::badrange, Lookup[audit, "invalidRanges", {specs}]],
+     Message[DSGenerateIBP::coverage, KeyTake[audit, {"unknownIndices", "missingIndices", "duplicateIndices", "invalidRanges"}]]
+     ];
+    dsErrorPrint["请修正范围格式并完整覆盖所有连续指标。 Correct the ranges and cover every continuous index exactly once."];
+    Return[Join[audit, <|"status" -> "failed", "reason" -> Lookup[audit, "reason", "rangeCoverageFailed"]|>]]
+    ];
+   integrity = dsSeedTemplateIntegrityAudit[entries];
+   If[AssociationQ[First[entries]] && ! TrueQ[Lookup[integrity, "passQ", False]],
+    Message[DSGenerateIBP::integrity, integrity];
+    dsErrorPrint["模板集合被删改或不完整。 The template set was modified or is incomplete."];
+    Return[<|"status" -> "failed", "reason" -> "templateIntegrityFailed", "templateIntegrityAudit" -> integrity|>]
+    ];
+   context = dsResolveContext[Automatic];
+   hashes = DeleteDuplicates[Lookup[Select[entries, AssociationQ], "contextInputHash", {}]];
+   If[Head[context] === Missing || (hashes =!= {} && hashes =!= {context["inputHash"]}),
+    dsErrorPrint["当前 DSInit context 与模板不同源。 The current DSInit context does not match the templates."];
+    Return[<|"status" -> "failed", "reason" -> "contextMismatch", "templateContextHashes" -> hashes|>]
+   ];
+   valueLists = (Range @@ Last[#]) & /@ audit["rangeRules"];
+   pointRules = If[indices === {}, {{}}, Thread[indices -> #] & /@ Tuples[valueLists]];
+   progress = OptionValue[ProgressReporting];
+   records = dsProgressMap[
+      "正在展开连续 IBP 指标 / Expanding continuous IBP indices",
+      entries,
+      Function[entry,
+       Table[
+        expression = dsSeedTemplateEquation[entry] /. rules;
+        expression = If[Lookup[entry, "representation", ""] === "J[vertexPacks]",
+          Expand[expression], applySeedCanonical[Expand[expression], context["topology"]]];
+        updated = If[AssociationQ[entry], Join[entry, <|
+             "continuousRules" -> rules,
+             "equation" -> expression,
+             "forbiddenNData" -> forbiddenNData[context["topology"], expression],
+             "eomCanonicalQ" -> FreeQ[expression, _n]
+             |>],
+          <|"source" -> "userTemplate", "sectorKey" -> "top", "generator" -> Missing["NotAvailable"],
+            "ibpClass" -> "unknownIBP", "continuousRules" -> rules, "equation" -> expression,
+            "forbiddenNData" -> {}, "eomCanonicalQ" -> FreeQ[expression, _n]|>];
+        If[AssociationQ[entry] && KeyExistsQ[entry, "treeSeed"], updated = Join[updated, <|"treeSeed" -> expression|>]];
+        updated,
+        {rules, pointRules}
+        ]
+       ],
+      progress
+      ] // Flatten[#, 1] &;
+   dsInfoPrint[
+    "已生成 " <> ToString[Length[records]] <> " 条 IBP 方程。 Generated " <>
+     ToString[Length[records]] <> " IBP equations.", progress
+    ];
+   dsGeneratedIBPBatch[records, entries, context, audit, integrity]
+   ];
+
+
+DSGenerateIBP[seeds_, ___] := (
+   Message[DSGenerateIBP::badrange, "expected {min,max} or {index,min,max},..."];
+   dsErrorPrint["调用格式应为 {min,max} 或完整的 {index,min,max},...。 Use {min,max} or a complete sequence of {index,min,max},...."];
+   <|"status" -> "failed", "reason" -> "invalidCall"|>
+   );
+
+
+generateIBP[args___] := DSGenerateIBP[args];
+
+(* ::Package:: *)
+
 (* ::Chapter:: *)
 (*016 Kira 导出边界*)
 
 Options[DSKiraExport] = Join[Options[makeKiraExportData], {
    KiraActiveBasis -> None,
+   KiraNumericStage -> "symbolic",
    ProgressReporting -> Automatic
    }];
 
@@ -10232,6 +10491,8 @@ DSKiraExport::badlinear = "DSKiraExport 需要 DSLinear 返回的 backend-neutra
 DSKiraExport::failed = "Kira 输入未生成：`1`。";
 DSKiraExport::badbasis = "KiraActiveBasis 未通过验证：`1`。";
 DSKiraExport::capability = "linearData 未携带通过 DSLinear 的同源能力门禁。";
+DSKiraExport::devarrules = "数值/系数规则与微分阶段合同冲突，Kira 导出已拒绝：`1`。";
+DSKiraExport::badstage = "KiraNumericStage 只允许 \"symbolic\" 或 \"postDerivative\"，收到 `1`。";
 
 
 (* ::Section::Closed:: *)
@@ -10400,6 +10661,84 @@ dsKiraEffectiveTargets[linearData_Association, targetSpec_] := Module[{activeDat
     ]
    ];
 
+
+(* ::Section::Closed:: *)
+(*DE 变量符号保留门禁*)
+
+(* active-basis 导数是后续 DSDE 的坐标合同。seed、linearData 或 serializer 任一层的
+   替换规则若消去这些变量，外部 reduction 已不足以重建微分方程，必须在写文件前拒绝。 *)
+dsKiraDEVariableRuleAudit[linearData_Association, kiraRules_, numericStage_] := Module[
+   {topo, activeData, variables, audit, baseData, squaredExpressions, protectedInternal,
+    rawRules, normalizedRules, lhsRules, rhsRules, touchesProtectedQ, badLHS, badRHS},
+   topo = Lookup[linearData, "topology", <||>];
+   activeData = Lookup[linearData, "activeBasis", <||>];
+   variables = Lookup[activeData, "derivativeVariables", {}];
+   If[! MemberQ[{"symbolic", "postDerivative"}, numericStage],
+    Return[<|"status" -> "failed", "passQ" -> False, "reason" -> "invalidNumericStage", "numericStage" -> numericStage|>]
+    ];
+   If[Lookup[activeData, "status", "disabled"] =!= "configured" || variables === {},
+    Return[<|
+      "status" -> "notApplicable",
+      "passQ" -> True,
+      "deVariables" -> {},
+      "reason" -> "activeBasisDerivativesNotConfigured",
+      "numericStage" -> numericStage
+      |>]
+    ];
+   audit = Lookup[topo, "kinematicCoordinateAudit", <||>];
+   baseData = Lookup[audit, "baseCoordinateData", {}];
+   squaredExpressions = Lookup[audit, "baseSquaredUserExpressions", {}];
+   protectedInternal = DeleteDuplicates@Join[
+      variables,
+      scalarProductInputToInternal[#, topo] & /@ variables,
+      If[Length[baseData] === Length[squaredExpressions],
+       MapThread[
+        Function[{data, expression},
+         If[
+          AnyTrue[variables, Function[variable, ! FreeQ[expression, variable]]],
+          Lookup[data, "internalVariable", Nothing],
+          Nothing
+          ]
+         ],
+        {baseData, squaredExpressions}
+        ],
+       {}
+       ]
+      ];
+   rawRules = Join[
+     Lookup[linearData, "seedNumericRules", {}],
+     Lookup[linearData, "coefficientRulesApplied", {}],
+     Replace[kiraRules, Automatic :> Lookup[topo, "numericRules", {}]]
+     ];
+   rawRules = Cases[rawRules, _Rule | _RuleDelayed];
+   normalizedRules = normalizeCoefficientRulesForTopology[rawRules, topo];
+   lhsRules = Cases[normalizedRules, (Rule | RuleDelayed)[lhs_, _] :> lhs];
+   rhsRules = Cases[normalizedRules, (Rule | RuleDelayed)[_, rhs_] :> rhs];
+   touchesProtectedQ[expr_] := AnyTrue[protectedInternal, ! FreeQ[Unevaluated[expr], #] &];
+   badLHS = Pick[rawRules, touchesProtectedQ /@ lhsRules];
+   badRHS = Pick[rawRules, touchesProtectedQ /@ rhsRules];
+   If[numericStage === "postDerivative" &&
+     (Lookup[activeData, "rawDerivatives", {}] === {} || Lookup[activeData, "derivativeTargetIntegrals", Missing["closure"]] === Missing["closure"]),
+    Return[<|"status" -> "failed", "passQ" -> False, "reason" -> "analyticDerivativeClosureMissing",
+      "numericStage" -> numericStage, "deVariables" -> variables|>]
+    ];
+   <|
+    "status" -> If[numericStage === "postDerivative" || (badLHS === {} && badRHS === {}), "passed", "failed"],
+    "passQ" -> TrueQ[numericStage === "postDerivative" || (badLHS === {} && badRHS === {})],
+    "numericStage" -> numericStage,
+    "analyticDerivativeConstructedBeforeRulesQ" -> TrueQ[numericStage === "postDerivative"],
+    "deVariablesNumericalizedAfterDerivativeQ" -> TrueQ[numericStage === "postDerivative" && (badLHS =!= {} || badRHS =!= {})],
+    "deVariables" -> variables,
+    "protectedInternalAtoms" -> protectedInternal,
+    "numericRuleLHSIntersection" -> badLHS,
+    "numericRuleRHSDependencies" -> badRHS,
+    "rulesAudited" -> rawRules,
+    "comment" -> If[numericStage === "postDerivative",
+      "rules are applied only after raw active-basis derivatives and derivative target closure were constructed",
+      "differential variables remain symbolic"]
+    |>
+   ];
+
 dsStableTadpoleSymmetryData[data_Association] := KeyDrop[data, {"automaticRules"}];
 dsStableTadpoleSymmetryData[_] := <||>;
 
@@ -10422,7 +10761,8 @@ dsKiraExportManifest[exportData_Association, linearData_Association] := <|
    "integralList" -> Lookup[linearData, "integralList", {}],
    "integralRules" -> Lookup[linearData, "integralRules", {}],
    "kiraOrdering" -> Lookup[linearData, "kiraOrdering", <||>],
-   "activeBasis" -> Lookup[linearData, "activeBasis", <|"status" -> "disabled", "count" -> 0|>],
+    "activeBasis" -> Lookup[linearData, "activeBasis", <|"status" -> "disabled", "count" -> 0|>],
+    "deVariableNumericRuleAudit" -> Lookup[linearData, "deVariableNumericRuleAudit", <|"status" -> "notRun"|>],
    "numericRulesAppliedBeforeSeeds" -> TrueQ[Lookup[linearData, "numericRulesAppliedBeforeSeeds", False]],
    "numericRules" -> Lookup[Lookup[linearData, "topology", <||>], "numericRules", {}],
    "userNumericRules" -> userNumericRules[Lookup[linearData, "topology", <||>]],
@@ -10437,14 +10777,14 @@ dsKiraExportManifest[exportData_Association, linearData_Association] := <|
 
 DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
    {orderedLinearData, preparedLinearData, activeSetting = OptionValue[KiraActiveBasis], effectiveTargets,
-    makeOptions, exportData, manifest, outputDirectory = OptionValue[OutputDirectory], manifestPath,
+     makeOptions, exportData, manifest, deVariableRuleAudit, numericStage = OptionValue[KiraNumericStage], outputDirectory = OptionValue[OutputDirectory], manifestPath,
     progress = OptionValue[ProgressReporting], integralOrder = OptionValue[KiraIntegralOrder]},
     If[! KeyExistsQ[linearData, "linearEquations"],
-     Message[DSKiraExport::badlinear]; dsErrorPrint["输入缺少 linearEquations。"]; Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
+     Message[DSKiraExport::badlinear]; dsErrorPrint["输入缺少 linearEquations。 The input does not contain linearEquations."]; Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
      ];
     If[Lookup[linearData, "dSIBPStatus", "failed"] =!= "generated" ||
       ! TrueQ[Lookup[Lookup[linearData, "contextCapabilities", <||>], "timeIBPUsableQ", False]],
-     Message[DSKiraExport::capability]; dsErrorPrint["请传入 DSLinear 返回且同源门禁通过的 linearData。"]; Return[<|
+     Message[DSKiraExport::capability]; dsErrorPrint["请传入 DSLinear 返回且同源门禁通过的 linearData。 Pass linearData returned by DSLinear with a valid same-source gate."]; Return[<|
        "status" -> "failed", "reason" -> "capabilityGate"
        |>]
      ];
@@ -10453,17 +10793,31 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
     ];
    orderedLinearData = If[ListQ[integralOrder], reorderLinearSystemIntegrals[linearData, integralOrder], linearData];
    preparedLinearData = dsKiraAttachActiveBasis[orderedLinearData, activeSetting];
-   If[Lookup[preparedLinearData, "status", "missing"] =!= "generated",
+    If[Lookup[preparedLinearData, "status", "missing"] =!= "generated",
     Message[DSKiraExport::badbasis, Lookup[preparedLinearData, "reason", "unknown"]];
-    dsErrorPrint["active basis 或其导数 target closure 未通过导出门禁。"]; Return[preparedLinearData]
-    ];
-   effectiveTargets = dsKiraEffectiveTargets[preparedLinearData, OptionValue[KiraTargetIntegrals]];
-   makeOptions = DeleteCases[
-     FilterRules[{opts}, Options[makeKiraExportData]],
-     HoldPattern[(KiraIntegralOrder | KiraTargetIntegrals) -> _]
+    dsErrorPrint["active basis 或其导数 target closure 未通过导出门禁。 The active basis or its derivative target closure failed the export gate."]; Return[preparedLinearData]
+     ];
+    If[! MemberQ[{"symbolic", "postDerivative"}, numericStage],
+     Message[DSKiraExport::badstage, numericStage]; Return[<|"status" -> "failed", "reason" -> "invalidNumericStage"|>]
+     ];
+    deVariableRuleAudit = dsKiraDEVariableRuleAudit[preparedLinearData, OptionValue[KiraCoefficientRules], numericStage];
+    If[! TrueQ[Lookup[deVariableRuleAudit, "passQ", False]],
+     Message[DSKiraExport::devarrules, KeyTake[deVariableRuleAudit, {"deVariables", "numericRuleLHSIntersection", "numericRuleRHSDependencies"}]];
+     dsErrorPrint["symbolic 阶段必须保留 DE 变量；postDerivative 只允许在解析一阶导数与 closure 已构造后使用。 The symbolic stage must preserve every DE variable; postDerivative is allowed only after analytic first derivatives and their closure have been constructed."];
+     Return[<|
+       "status" -> "failed",
+       "reason" -> "differentialVariablesWouldBeNumerical",
+       "deVariableNumericRuleAudit" -> deVariableRuleAudit
+       |>]
+     ];
+    preparedLinearData = Join[preparedLinearData, <|"deVariableNumericRuleAudit" -> deVariableRuleAudit|>];
+    effectiveTargets = dsKiraEffectiveTargets[preparedLinearData, OptionValue[KiraTargetIntegrals]];
+    makeOptions = DeleteCases[
+      FilterRules[{opts}, Options[makeKiraExportData]],
+      HoldPattern[(KiraIntegralOrder | KiraTargetIntegrals | KiraNumericStage) -> _]
      ];
    exportData = dsStageRun[
-     "序列化 Kira 基础输入",
+     "序列化 Kira 基础输入 / Serializing basic Kira input",
      makeKiraExportData[
       preparedLinearData,
       Sequence @@ makeOptions,
@@ -10474,7 +10828,7 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
      ];
    If[Lookup[exportData, "status", "missing"] =!= "ready",
     Message[DSKiraExport::failed, Lookup[exportData, "reason", Lookup[exportData, "status", Missing["status"]]]];
-    dsErrorPrint["package 未运行 Kira；当前只报告导出门禁失败。"]; Return[exportData]
+    dsErrorPrint["package 未运行 Kira；当前只报告导出门禁失败。 The package did not run Kira; only the failed export gate is reported."]; Return[exportData]
     ];
    manifest = dsKiraExportManifest[exportData, Lookup[exportData, "linearSystem", preparedLinearData]];
    If[StringQ[outputDirectory],
@@ -10482,7 +10836,200 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
     Quiet[Check[Put[manifest, manifestPath], manifestPath = $Failed]],
     manifestPath = Missing["NotWritten"]
     ];
-   Join[exportData, <|"dSIBPExportManifest" -> manifest, "dSIBPExportManifestPath" -> manifestPath|>]
+    Join[exportData, <|
+      "deVariableNumericRuleAudit" -> deVariableRuleAudit,
+      "dSIBPExportManifest" -> manifest,
+      "dSIBPExportManifestPath" -> manifestPath
+      |>]
+    ];
+
+(* ::Package:: *)
+
+(* 本文件为 DSGenerateIBP 产生的 linearData 构造 reference-style 积分顺序、
+   预约化 targets 和解析 derivative closure。package 只生成计划与输入，不运行 Kira。 *)
+
+
+(* ::Chapter:: *)
+(*016 Kira 排序与两阶段 reduction 计划*)
+
+DSKiraPlan::badlinear = "DSKiraPlan 需要 DSLinear 返回的 backend-neutral linearData。 DSKiraPlan requires backend-neutral linearData returned by DSLinear.";
+DSKiraPlan::badspec = "Kira 计划配置无效：`1`。 The Kira plan specification is invalid: `1`.";
+DSKiraPlan::badstage = "stage 只允许 \"preReduction\" 或 \"formal\"，收到 `1`。 stage must be \"preReduction\" or \"formal\"; received `1`.";
+DSKiraPlan::badbasis = "formal 计划需要可闭合的 activeBasis：`1`。 A formal plan requires a closed activeBasis: `1`.";
+
+
+Options[DSKiraPlan] = {ProgressReporting -> Automatic};
+
+
+(* ::Section::Closed:: *)
+(*Reference-style 积分顺序*)
+
+dsKiraPlanIntegralFromItem[item_, linearData_Association] := Which[
+   Head[item] === J && MemberQ[linearData["integralList"], item], item,
+   IntegerQ[item] && 1 <= item <= linearData["integralCount"], linearData["integralList"][[item]],
+   True, Missing["UnknownIntegral", item]
+   ];
+
+
+dsKiraPlanIntegralList[items_List, linearData_Association] := DeleteDuplicates@DeleteMissing[
+   dsKiraPlanIntegralFromItem[#, linearData] & /@ items
+   ];
+
+
+dsKiraPlanReferenceKey[int_J, preferred_List, metadata_List] := Module[
+   {allContinuous, aValues, bValues, ispValues, nValues, negativePenalty, preferredPosition,
+    sectorKey, sectorRank},
+   aValues = numericIndexValue /@ int[[1]];
+   bValues = numericIndexValue /@ Cases[Flatten[int[[2]]], _b | _bS];
+   ispValues = numericIndexValue /@ int[[3]];
+   nValues = numericIndexValue /@ Cases[Flatten[int[[2]]], _n];
+   allContinuous = Join[aValues, bValues, ispValues];
+   negativePenalty = If[AnyTrue[allContinuous, # < 0 &], 50, 0];
+   preferredPosition = FirstPosition[preferred, int, Missing["NotPreferred"], {1}, Heads -> False];
+   sectorKey = integralSectorKey[int, metadata];
+   sectorRank = If[sectorKey === "top", 1, 2 + FirstPosition[Lookup[metadata, "sectorKey", {}], sectorKey, {10^6}][[1]]];
+   {
+    If[Head[preferredPosition] === Missing, 1, 0],
+    If[Head[preferredPosition] === Missing, 10^9, First[preferredPosition]],
+    Total[Abs /@ allContinuous], negativePenalty, sectorRank,
+    Total[aValues], aValues, bValues, ispValues, nValues, ToString[int, InputForm]
+    }
+   ];
+
+
+dsKiraPlanReferenceOrder[linearData_Association, preferred_List] := SortBy[
+   linearData["integralList"],
+   dsKiraPlanReferenceKey[#, preferred, Lookup[linearData, "sectorMetadataList", {}]] &
+   ];
+
+
+dsKiraPlanCertificate[activeData_Association] := Module[{payload},
+   payload = HoldComplete[
+     Lookup[activeData, "activeExpressions", {}],
+     Lookup[activeData, "derivativeVariables", {}],
+     Lookup[activeData, "rawDerivatives", {}],
+     Lookup[activeData, "derivativeTargetIntegrals", {}]
+     ];
+   <|
+    "status" -> "frozenBeforeNumericalRules",
+    "hashAlgorithm" -> "SHA256",
+    "hash" -> IntegerString[Hash[payload, "SHA256"], 16, 64],
+    "activeCount" -> Lookup[activeData, "activeCount", 0],
+    "derivativeVariableCount" -> Length[Lookup[activeData, "derivativeVariables", {}]],
+    "derivativeTargetCount" -> Length[Lookup[activeData, "derivativeTargetIntegrals", {}]]
+    |>
+   ];
+
+
+(* ::Section:: *)
+(*公开 Kira 两阶段计划*)
+
+DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module[
+   {stage, preferred, order, ordered, candidates, activeSetting, preview, activeData, targets,
+    numericStage, coefficientRules, outputDirectory, jobOptions, certificate, progress},
+   If[Lookup[linearData, "dSIBPStatus", "failed"] =!= "generated" || ! KeyExistsQ[linearData, "linearEquations"],
+    Message[DSKiraPlan::badlinear]; Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
+    ];
+   progress = OptionValue[ProgressReporting];
+   stage = Lookup[spec, "stage", Missing["stage"]];
+   If[! MemberQ[{"preReduction", "formal"}, stage],
+    Message[DSKiraPlan::badstage, stage]; Return[<|"status" -> "failed", "reason" -> "invalidStage"|>]
+    ];
+   preferred = dsKiraPlanIntegralList[Lookup[spec, "preferredIntegrals", {}], linearData];
+   order = dsKiraPlanReferenceOrder[linearData, preferred];
+   ordered = reorderLinearSystemIntegrals[linearData, order];
+   coefficientRules = Lookup[spec, "coefficientRules", {}];
+   outputDirectory = Lookup[spec, "outputDirectory", None];
+   jobOptions = Lookup[spec, "jobOptions", Automatic];
+   If[! MemberQ[{None, Automatic}, outputDirectory] && ! StringQ[outputDirectory],
+    Message[DSKiraPlan::badspec, "outputDirectory must be a string or None"];
+    Return[<|"status" -> "failed", "reason" -> "invalidOutputDirectory"|>]
+    ];
+   If[stage === "preReduction",
+    candidates = Replace[Lookup[spec, "candidateIntegrals", Automatic], Automatic :> order];
+    If[! ListQ[candidates], candidates = {candidates}];
+    candidates = dsKiraPlanIntegralList[candidates, ordered];
+    If[candidates === {},
+     Message[DSKiraPlan::badspec, "empty candidateIntegrals"];
+     Return[<|"status" -> "failed", "reason" -> "emptyCandidateIntegrals"|>]
+     ];
+    Return[<|
+      "status" -> "planned", "kiraPlanQ" -> True, "stage" -> stage,
+      "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
+      "linearData" -> linearData, "integralOrder" -> order,
+      "orderingConvention" -> "referenceActiveThenComplexityPenaltySectorIndices",
+      "preferredIntegrals" -> preferred, "targetIntegrals" -> candidates,
+      "targetCount" -> Length[candidates], "activeBasis" -> None,
+      "numericStage" -> "symbolic", "coefficientRules" -> coefficientRules,
+      "outputDirectory" -> outputDirectory, "jobOptions" -> jobOptions,
+      "phaseIsolation" -> <|"stage" -> stage, "requiresSeparateOutputDirectoryQ" -> True|>
+      |>]
+    ];
+   activeSetting = Lookup[spec, "activeBasis", Missing["activeBasis"]];
+   If[! AssociationQ[activeSetting],
+    Message[DSKiraPlan::badbasis, "missing activeBasis Association"];
+    Return[<|"status" -> "failed", "reason" -> "missingActiveBasis"|>]
+    ];
+   preview = dsStageRun[
+     "构造解析 active-basis 一阶导数与 target closure / Building analytic active-basis first derivatives and target closure",
+     dsKiraAttachActiveBasis[ordered, activeSetting],
+     progress
+     ];
+   If[Lookup[preview, "status", "missing"] =!= "generated" ||
+     Lookup[Lookup[preview, "activeBasis", <||>], "status", "failed"] =!= "configured",
+    Message[DSKiraPlan::badbasis, Lookup[preview, "reason", "closure failed"]];
+    Return[<|"status" -> "failed", "reason" -> "activeBasisClosureFailed", "preview" -> preview|>]
+    ];
+   activeData = preview["activeBasis"];
+   targets = activeData["targetIntegralIDs"];
+   numericStage = Lookup[spec, "numericStage", "symbolic"];
+   If[! MemberQ[{"symbolic", "postDerivative"}, numericStage],
+    Message[DSKiraPlan::badspec, "numericStage"];
+    Return[<|"status" -> "failed", "reason" -> "invalidNumericStage"|>]
+    ];
+   certificate = dsKiraPlanCertificate[activeData];
+   <|
+    "status" -> "planned", "kiraPlanQ" -> True, "stage" -> stage,
+    "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
+    "linearData" -> linearData, "integralOrder" -> order,
+    "orderingConvention" -> "referenceActiveThenComplexityPenaltySectorIndices",
+    "preferredIntegrals" -> preferred, "activeBasis" -> activeSetting,
+    "activeBasisPreview" -> activeData,
+    "analyticDerivativeCertificate" -> certificate,
+    "targetIntegralIDsPreview" -> targets,
+    "minimalTargetsQ" -> True,
+    "numericStage" -> numericStage, "coefficientRules" -> coefficientRules,
+    "outputDirectory" -> outputDirectory, "jobOptions" -> jobOptions,
+    "phaseIsolation" -> <|"stage" -> stage, "requiresSeparateOutputDirectoryQ" -> True|>
+    |>
+   ];
+
+
+dsKiraPlanQ[plan_Association] := TrueQ[Lookup[plan, "kiraPlanQ", False]] &&
+   Lookup[plan, "status", "failed"] === "planned";
+
+
+(* ::Section:: *)
+(*计划驱动的 Kira 导出*)
+
+DSKiraExport[plan_Association] /; dsKiraPlanQ[plan] := Module[{result, manifest, path},
+   result = DSKiraExport[
+     plan["linearData"],
+     KiraActiveBasis -> plan["activeBasis"],
+     KiraIntegralOrder -> plan["integralOrder"],
+     KiraTargetIntegrals -> Lookup[plan, "targetIntegrals", Automatic],
+     KiraCoefficientRules -> plan["coefficientRules"],
+     KiraJobOptions -> plan["jobOptions"],
+     KiraNumericStage -> plan["numericStage"],
+     OutputDirectory -> plan["outputDirectory"]
+     ];
+   If[Lookup[result, "status", "failed"] =!= "ready", Return[result]];
+   manifest = Join[Lookup[result, "dSIBPExportManifest", <||>], <|
+      "kiraPlan" -> KeyDrop[plan, {"linearData", "activeBasisPreview"}]
+      |>];
+   path = Lookup[result, "dSIBPExportManifestPath", Missing["NotWritten"]];
+   If[StringQ[path], Quiet[Check[Put[manifest, path], Null]]];
+   Join[result, <|"dSIBPExportManifest" -> manifest|>]
    ];
 
 (* ::Package:: *)
@@ -10650,11 +11197,11 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     checks, issues, reductionRules, masters, masterTokens, returnedMasterIDs, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
-    Message[DSKiraImport::mismatch, "missing DSInit context"]; dsErrorPrint["Kira import 需要同源 DSInit context。"]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
+    Message[DSKiraImport::mismatch, "missing DSInit context"]; dsErrorPrint["Kira import 需要同源 DSInit context。 Kira import requires the matching DSInit context."]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]
     ];
    workspace = ExpandFileName[root];
    If[! DirectoryQ[workspace],
-    Message[DSKiraImport::badpath, workspace]; dsErrorPrint["Kira workspace 不存在。"]; Return[<|"status" -> "failed", "reason" -> "invalidWorkspace", "workspace" -> workspace|>]
+    Message[DSKiraImport::badpath, workspace]; dsErrorPrint["Kira workspace 不存在。 The Kira workspace does not exist."]; Return[<|"status" -> "failed", "reason" -> "invalidWorkspace", "workspace" -> workspace|>]
     ];
    files = <|
      "manifest" -> FileNameJoin[{workspace, "dsibp-export-manifest.wl"}],
@@ -10672,10 +11219,10 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
      |>;
    missingFiles = Select[Normal[files], ! StringQ[Last[#]] || ! FileExistsQ[Last[#]] &];
    If[missingFiles =!= {},
-    Message[DSKiraImport::missing, missingFiles]; dsErrorPrint["完整 Kira 结果文件不足，未导入。"]; Return[<|"status" -> "failed", "reason" -> "missingFiles", "workspace" -> workspace, "files" -> files, "missingFiles" -> missingFiles|>]
+    Message[DSKiraImport::missing, missingFiles]; dsErrorPrint["完整 Kira 结果文件不足，未导入。 Required Kira result files are missing, so no result was imported."]; Return[<|"status" -> "failed", "reason" -> "missingFiles", "workspace" -> workspace, "files" -> files, "missingFiles" -> missingFiles|>]
     ];
    {manifest, repJ2Kira, repKira2J, reductionRulesBackend} = dsStageRun[
-     "读取 Kira manifest、映射与 reduction",
+     "读取 Kira manifest、映射与 reduction / Reading the Kira manifest, maps, and reduction",
      dsKiraReadExpression /@ Lookup[files, {"manifest", "repJ2Kira", "repKira2J", "reduction"}],
      progress
      ];
@@ -10683,10 +11230,10 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
    completionText = Import[files["completion"], "Text"];
    completionQ = StringQ[completionText] && dsKiraCompletionQ[completionText, OptionValue[KiraCompletionPatterns]];
    If[! TrueQ[completionQ],
-    Message[DSKiraImport::incomplete, files["completion"]]; dsErrorPrint["Kira 日志未确认成功完成。"]; Return[<|"status" -> "failed", "reason" -> "completionMarkerMissing", "workspace" -> workspace, "files" -> files|>]
+    Message[DSKiraImport::incomplete, files["completion"]]; dsErrorPrint["Kira 日志未确认成功完成。 The Kira log does not confirm successful completion."]; Return[<|"status" -> "failed", "reason" -> "completionMarkerMissing", "workspace" -> workspace, "files" -> files|>]
     ];
    If[! AssociationQ[manifest] || ! dsRuleListQ[repJ2Kira] || ! dsRuleListQ[repKira2J] || ! dsRuleListQ[reductionRulesBackend],
-    Message[DSKiraImport::invalid, "malformed manifest/map/reduction expression"]; dsErrorPrint["Kira 文件不是预期的 Wolfram 表达式。"]; Return[<|"status" -> "failed", "reason" -> "malformedExpressions", "workspace" -> workspace|>]
+    Message[DSKiraImport::invalid, "malformed manifest/map/reduction expression"]; dsErrorPrint["Kira 文件不是预期的 Wolfram 表达式。 The Kira files are not the expected Wolfram expressions."]; Return[<|"status" -> "failed", "reason" -> "malformedExpressions", "workspace" -> workspace|>]
     ];
    coefficientVariableMap = Lookup[manifest, "coefficientVariableMap", {}];
    backendImaginaryUnit = Lookup[manifest, "backendImaginaryUnit", None];
@@ -10746,7 +11293,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
      |>;
    issues = Keys @ Select[checks, ! TrueQ[#] &];
    If[issues =!= {},
-    Message[DSKiraImport::mismatch, issues]; dsErrorPrint["Kira 结果未通过同源性/完整性门禁。"]; Return[<|"status" -> "failed", "reason" -> "validationFailed", "workspace" -> workspace, "files" -> files, "validationReport" -> <|"checks" -> checks, "issues" -> issues|>|>]
+    Message[DSKiraImport::mismatch, issues]; dsErrorPrint["Kira 结果未通过同源性/完整性门禁。 The Kira results failed the provenance or completeness gate."]; Return[<|"status" -> "failed", "reason" -> "validationFailed", "workspace" -> workspace, "files" -> files, "validationReport" -> <|"checks" -> checks, "issues" -> issues|>|>]
     ];
    backendMasters = dsKiraBackendMasterObject[#, relationIDs, idToJ] & /@ masterIDs;
    boundaryMasterIDs = Complement[masterIDs, relationIDs];
@@ -10779,7 +11326,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     |>
    ];
 
-DSKiraImport[root_, context_: Automatic, OptionsPattern[]] := (Message[DSKiraImport::badpath, root]; dsErrorPrint["DSKiraImport 的第一个参数必须是目录字符串。"]; <|"status" -> "failed", "reason" -> "workspaceNotString"|>);
+DSKiraImport[root_, context_: Automatic, OptionsPattern[]] := (Message[DSKiraImport::badpath, root]; dsErrorPrint["DSKiraImport 的第一个参数必须是目录字符串。 The first DSKiraImport argument must be a directory string."]; <|"status" -> "failed", "reason" -> "workspaceNotString"|>);
 
 (* ::Package:: *)
 
@@ -10789,14 +11336,12 @@ DSKiraImport[root_, context_: Automatic, OptionsPattern[]] := (Message[DSKiraImp
 (* DSDE 只消费经 KiraImport 验证的 reduction data；不会从不完整日志猜测 master 或规则。 *)
 
 Options[DSDE] = {
-   MaxReductionIterations -> 100,
    OutputDirectory -> None,
    ProgressReporting -> Automatic
    };
 
 DSDE::badreduction = "DSDE 只接受 DSKiraImport 验证通过的 reductionData。";
 DSDE::badvars = "微分变量必须是当前 family 初始化的外部独立变量：`1`。";
-DSDE::baditer = "MaxReductionIterations 必须是正整数，收到 `1`。";
 DSDE::writefailed = "DE 结果写入失败：`1`。";
 
 dsDEResolveVariables[Automatic, context_Association] := scalarProductInternalToUser[#, context["topology"]] & /@
@@ -10812,7 +11357,9 @@ dsSectorTopologyForIntegral[int_J, context_Association] := Module[{metadata, mat
    If[shrunk === {}, context["topology"], shrinkSectorTopology[context["topology"], shrunk]]
    ];
 
-dsReduceExpression[expr_, rules_List, maxIterations_Integer] := FixedPoint[ReplaceAll[#, rules] &, Expand[expr], maxIterations];
+(* DSKiraImport 已验证每条 reduction 的右端只含 masters，因此一次替换就是完整约化；
+   若外部结果违反该合同，后续 residual gate 会拒绝 DE，而不是用任意迭代次数掩盖问题。 *)
+dsReduceExpression[expr_, rules_List] := Expand[expr /. rules];
 
 (* Kira 关系可以使用内部 kk/ISP 坐标；公开 DE 必须只含 family 声明的外部不变量。 *)
 dsDEReducedExpressionToUser[expr_, context_Association] := Module[{topo = context["topology"]},
@@ -10855,19 +11402,19 @@ dsSectorAwareDerivative[expr_, variable_, context_Association] := Module[
    If[! FreeQ[integralDerivativeTerms, $Failed], $Failed, Expand[coefficientDerivative + Total[integralDerivativeTerms]]]
    ];
 
-dsDEVariableData[variable_, masterDefinitions_List, masterTokens_List, rules_List, parameterRules_List, context_Association, maxIterations_Integer, progress_] := Module[
+dsDEVariableData[variable_, masterDefinitions_List, masterTokens_List, rules_List, parameterRules_List, context_Association, progress_] := Module[
    {raw, reduced, decompositions},
    raw = dsProgressMap[
-     "正在构造 " <> ToString[variable, InputForm] <> " 导数",
+     "正在构造 " <> ToString[variable, InputForm] <> " 导数 / Building " <> ToString[variable, InputForm] <> " derivatives",
      masterDefinitions,
      Function[master, dsSectorAwareDerivative[master, variable, context] /. parameterRules],
      progress
      ];
    If[MemberQ[raw, $Failed], Return[<|"status" -> "failed", "variable" -> variable, "reason" -> "dsFailed", "rawDerivatives" -> raw|>]];
    reduced = dsProgressMap[
-     "正在约化 " <> ToString[variable, InputForm] <> " 导数",
+     "正在约化 " <> ToString[variable, InputForm] <> " 导数 / Reducing " <> ToString[variable, InputForm] <> " derivatives",
      raw,
-     Function[expr, dsReduceExpression[expr, rules, maxIterations]],
+     Function[expr, dsReduceExpression[expr, rules]],
      progress
      ];
    reduced = dsDEReducedExpressionToUser[#, context] & /@ reduced;
@@ -10906,17 +11453,17 @@ dsWriteDEResult[data_Association, directory_String] := Module[{paths, compact},
    ];
 
 DSDE[reductionData_Association, variables_: Automatic, OptionsPattern[]] := Module[
-   {context, masters, masterTokens, rules, resolvedVariables, allowedVariables, badVariables, maxIterations,
+   {context, masters, masterTokens, rules, resolvedVariables, allowedVariables, badVariables,
     parameterRules, variableRecords, variableData, status, result, outputDirectory = OptionValue[OutputDirectory], writeResult},
    If[Lookup[reductionData, "status", "missing"] =!= "imported" ||
      Lookup[Lookup[reductionData, "validationReport", <||>], "status", "missing"] =!= "passed",
-    Message[DSDE::badreduction]; dsErrorPrint["reductionData 未经 DSKiraImport 完整验证。"]; Return[<|"status" -> "failed", "reason" -> "unvalidatedReductionData"|>]
+    Message[DSDE::badreduction]; dsErrorPrint["reductionData 未经 DSKiraImport 完整验证。 reductionData has not passed complete DSKiraImport validation."]; Return[<|"status" -> "failed", "reason" -> "unvalidatedReductionData"|>]
     ];
    context = Lookup[reductionData, "context", Missing["context"]];
    If[! dsContextQ[context], Message[DSDE::badreduction]; Return[<|"status" -> "failed", "reason" -> "missingContext"|>]];
    If[! dsContextCapabilityQ[context, "derivativeUsableQ"],
     Message[DSDE::badreduction];
-    dsErrorPrint["当前参数声明不支持唯一微分算符。"]; Return[<|
+    dsErrorPrint["当前参数声明不支持唯一微分算符。 The current parameter declaration does not define unique differential operators."]; Return[<|
       "status" -> "failed", "reason" -> "derivativeCapabilityGate",
       "capabilities" -> dsContextCapabilities[context]
       |>]
@@ -10937,16 +11484,12 @@ DSDE[reductionData_Association, variables_: Automatic, OptionsPattern[]] := Modu
    allowedVariables = dsDEResolveVariables[Automatic, context];
    badVariables = Complement[resolvedVariables, allowedVariables];
    If[badVariables =!= {},
-    Message[DSDE::badvars, badVariables]; dsErrorPrint["DSDE 变量不属于当前 family 的外部表示。"]; Return[<|"status" -> "failed", "reason" -> "invalidVariables", "badVariables" -> badVariables, "allowedVariables" -> allowedVariables|>]
-    ];
-   maxIterations = OptionValue[MaxReductionIterations];
-   If[! IntegerQ[maxIterations] || maxIterations <= 0,
-    Message[DSDE::baditer, maxIterations]; dsErrorPrint["reduction 迭代上限无效。"]; Return[<|"status" -> "failed", "reason" -> "invalidMaxReductionIterations"|>]
+    Message[DSDE::badvars, badVariables]; dsErrorPrint["DSDE 变量不属于当前 family 的外部表示。 The DSDE variables are not external coordinates of the current family."]; Return[<|"status" -> "failed", "reason" -> "invalidVariables", "badVariables" -> badVariables, "allowedVariables" -> allowedVariables|>]
     ];
    variableRecords = dsProgressMap[
-     "正在生成微分方程",
+     "正在生成微分方程 / Building differential equations",
      resolvedVariables,
-     Function[variable, dsDEVariableData[variable, masters, masterTokens, rules, parameterRules, context, maxIterations, OptionValue[ProgressReporting]]],
+     Function[variable, dsDEVariableData[variable, masters, masterTokens, rules, parameterRules, context, OptionValue[ProgressReporting]]],
      OptionValue[ProgressReporting]
      ];
    variableData = AssociationThread[resolvedVariables, variableRecords];
@@ -10975,11 +11518,11 @@ DSDE[reductionData_Association, variables_: Automatic, OptionsPattern[]] := Modu
      "reductionValidationReport" -> reductionData["validationReport"]
      |>;
    writeResult = If[StringQ[outputDirectory], dsWriteDEResult[result, ExpandFileName[outputDirectory]], <|"status" -> "notRequested"|>];
-   If[Lookup[writeResult, "status", "failed"] === "failed", Message[DSDE::writefailed, outputDirectory]; dsErrorPrint["DE 文件未写出。"]];
+   If[Lookup[writeResult, "status", "failed"] === "failed", Message[DSDE::writefailed, outputDirectory]; dsErrorPrint["DE 文件未写出。 DE files were not written."]];
    Join[result, <|"writeResult" -> writeResult|>]
    ];
 
-DSDE[reductionData_, variables_: Automatic, OptionsPattern[]] := (Message[DSDE::badreduction]; dsErrorPrint["DSDE 输入必须是 reductionData Association。"]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);
+DSDE[reductionData_, variables_: Automatic, OptionsPattern[]] := (Message[DSDE::badreduction]; dsErrorPrint["DSDE 输入必须是 reductionData Association。 DSDE input must be a reductionData Association."]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);
 
 
 (* ::Chapter:: *)
@@ -11117,7 +11660,7 @@ dsTreeNaiveVariableData[variable_, ibpData_Association, familyContext_Associatio
     tokenExpressions, coefficients, residuals, residualTokens, rows},
    masters = ibpData["masters"];
    derivativeRecords = dsProgressMap[
-     "正在构造 naive tree " <> ToString[variable, InputForm] <> " 导数",
+     "正在构造 naive tree " <> ToString[variable, InputForm] <> " 导数 / Building naive-tree " <> ToString[variable, InputForm] <> " derivatives",
      masters,
      Function[master, dsTreeNaiveMasterDerivative[master, variable, familyContext, context]],
      progress
@@ -11170,7 +11713,7 @@ dsTreeNaiveDEFromIBP[ibpData_Association, variables_, OptionsPattern[DSTreeNaive
       "allowedVariables" -> allowedVariables|>]
     ];
    variableRecords = dsProgressMap[
-     "正在生成 naive tree 微分方程",
+     "正在生成 naive tree 微分方程 / Building naive-tree differential equations",
      resolvedVariables,
      Function[variable, dsTreeNaiveVariableData[
        variable, ibpData, familyContext, context, OptionValue[ProgressReporting]
@@ -11281,7 +11824,7 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
    {relation, variables, weights, degrees, masters, context, matrices, sources, missingVariables,
     declaredDegrees, degreeRules, eulerMatrix, eulerSource, matrixResidual, sourceResidual, checks, status},
    If[Lookup[deData, "status", "missing"] =!= "generated",
-    Message[DSScaleCheck::badde]; dsErrorPrint["DE 尚未闭合，不能宣称标度检查通过。"]; Return[<|"status" -> "failed", "reason" -> "deNotGenerated"|>]
+    Message[DSScaleCheck::badde]; dsErrorPrint["DE 尚未闭合，不能宣称标度检查通过。 The DE is not closed, so the scaling check cannot be reported as passed."]; Return[<|"status" -> "failed", "reason" -> "deNotGenerated"|>]
     ];
    relation = Lookup[spec, "relation", OptionValue[ScalingRelation]];
    variables = Replace[Lookup[spec, "variables", OptionValue[ScalingVariables]], Automatic -> deData["variables"]];
@@ -11310,13 +11853,13 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
    If[! ListQ[variables] || ! ListQ[weights] || Length[variables] =!= Length[weights] ||
      ! ListQ[degrees] || Length[degrees] =!= Length[masters] || MemberQ[degrees, $Failed],
     Message[DSScaleCheck::badspec, <|"relation" -> relation, "variables" -> variables, "weights" -> weights, "degrees" -> degrees|>];
-    dsErrorPrint["标度检查规格无效。"]; Return[<|"status" -> "failed", "reason" -> "invalidScalingSpecification"|>]
+    dsErrorPrint["标度检查规格无效。 The scaling-check specification is invalid."]; Return[<|"status" -> "failed", "reason" -> "invalidScalingSpecification"|>]
     ];
    matrices = deData["matrices"];
    sources = deData["sources"];
    missingVariables = Select[variables, ! KeyExistsQ[matrices, #] &];
    If[missingVariables =!= {},
-    Message[DSScaleCheck::badspec, missingVariables]; dsErrorPrint["DE 缺少 Euler 算符所需变量。"]; Return[<|"status" -> "failed", "reason" -> "missingDEVariables", "missingVariables" -> missingVariables|>]
+    Message[DSScaleCheck::badspec, missingVariables]; dsErrorPrint["DE 缺少 Euler 算符所需变量。 The DE lacks variables required by the Euler operator."]; Return[<|"status" -> "failed", "reason" -> "missingDEVariables", "missingVariables" -> missingVariables|>]
     ];
    eulerMatrix = Total[MapThread[#1 #2 matrices[#2] &, {weights, variables}]];
    eulerSource = Total[MapThread[#1 #2 sources[#2] &, {weights, variables}]];
@@ -11342,7 +11885,7 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
     |>
    ];
 
-DSScaleCheck[deData_, spec_: <||>, OptionsPattern[]] := (Message[DSScaleCheck::badde]; dsErrorPrint["DSScaleCheck 输入必须是 DE Association。"]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);
+DSScaleCheck[deData_, spec_: <||>, OptionsPattern[]] := (Message[DSScaleCheck::badde]; dsErrorPrint["DSScaleCheck 输入必须是 DE Association。 DSScaleCheck input must be a DE Association."]; <|"status" -> "failed", "reason" -> "inputNotAssociation"|>);
 
 (* ::Package:: *)
 
@@ -11497,7 +12040,7 @@ dsTreeContactRows[family_Association, masters_List, context_Association] := Modu
           "coefficientConvention" -> "complete physical powers: a+a0 and b+b0 or bS+bS0"|>;
         reducedSource = If[terms === {},
           Join[sourceData, <|"status" -> "reduced"|>],
-          dsRepIterativeTreeLinearData[sourceData, Automatic, context, MaxIterations -> Automatic]
+          dsRepIterativeTreeLinearData[sourceData, Automatic, context]
           ];
         If[Lookup[reducedSource, "status", "error"] =!= "reduced",
          Return[<|"status" -> "error", "reason" -> "contactSourceReductionFailed",
@@ -12097,15 +12640,17 @@ kinematicRootExpression[rhs_] := Replace[
 
 kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
    {baseData, baseCount, normalizedRules, vectors, supportedPositions, unsupportedPositions,
-    matrix, rhs, rank, rowSelection, baseRHS = {}, resolvedRules = {}, loopCount,
+     matrix, rhs, rank, rowSelection, baseRHS = {}, resolvedRules = {}, loopCount,
     missingDirections, ruleMissingDirections, parameterMissingDirections, ruleDependencies,
     parameterDependencies, constraintResiduals = {}, userVariables, parameterJacobian = {},
     baseExpressions, ruleMissingDirectionExpressions, parameterMissingDirectionExpressions,
     ruleDependencyResiduals, parameterRank = 0, ruleCompleteQ, overcompleteQ, completeQ,
-    inverseAvailableQ, occurrenceData, bindingCoordinates, dependentBindings},
+     inverseAvailableQ, occurrenceData, bindingCoordinates, dependentBindings, defaultExpressions},
    baseData = kinematicBaseCoordinateData[topo];
    baseCount = Length[baseData];
-   baseExpressions = Lookup[baseData, "inputExpression", {}];
+   (* Lookup 对空规则列表返回 KeyAbsent；显式保留空坐标列表，避免用户提示泄漏 Missing。 *)
+   baseExpressions = If[baseData === {}, {}, Lookup[baseData, "inputExpression"]];
+   defaultExpressions = If[baseData === {}, {}, Lookup[baseData, "defaultRHS"]];
    normalizedRules = normalizeKinematicRuleList[rules];
    vectors = kinematicRuleBaseVector[#, topo, baseData] & /@ normalizedRules;
    supportedPositions = Flatten@Position[vectors, _List, {1}, Heads -> False];
@@ -12165,18 +12710,23 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
      baseRHS,
      Lookup[baseData, "defaultRHS", {}]
      ];
-   dependentBindings = Map[
-     Function[data,
-      With[{squared = Expand[Lookup[data, "baseCoefficients", {}] . bindingCoordinates]},
-       <|
-        "momentum" -> Lookup[data, "momentum"],
-        "squaredExpression" -> Lookup[data, "squaredExpression"],
-        "userSquaredExpression" -> squared,
-        "userMagnitudeExpression" -> kinematicRootExpression[squared]
-        |>
-       ]
+   (* 欠完备坐标没有定义完整 binding；此时只报告零空间/缺失方向，避免伪造 Indeterminate。 *)
+   dependentBindings = If[
+     completeQ,
+     Map[
+      Function[data,
+       With[{squared = Expand[Lookup[data, "baseCoefficients", {}] . bindingCoordinates]},
+        <|
+         "momentum" -> Lookup[data, "momentum"],
+         "squaredExpression" -> Lookup[data, "squaredExpression"],
+         "userSquaredExpression" -> squared,
+         "userMagnitudeExpression" -> kinematicRootExpression[squared]
+         |>
+        ]
+       ],
+      Select[occurrenceData, ! TrueQ[Lookup[#, "independentQ", False]] &]
       ],
-     Select[occurrenceData, ! TrueQ[Lookup[#, "independentQ", False]] &]
+     {}
      ];
    <|
     "status" -> Which[! completeQ, "incomplete", overcompleteQ, "overcomplete", True, "complete"],
@@ -12184,8 +12734,8 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
     "baseCoordinateData" -> baseData,
     "baseCoordinateOrder" -> baseExpressions,
     "baseCoordinateCount" -> baseCount,
-    "defaultRules" -> Thread[Lookup[baseData, "inputExpression"] -> Lookup[baseData, "defaultRHS"]],
-    "selectionTemplate" -> ("kinematicRules" -> Thread[Lookup[baseData, "inputExpression"] -> Lookup[baseData, "defaultRHS"]]),
+     "defaultRules" -> Thread[baseExpressions -> defaultExpressions],
+     "selectionTemplate" -> ("kinematicRules" -> Thread[baseExpressions -> defaultExpressions]),
     "selectedRules" -> normalizedRules,
     "selectedUserVariables" -> userVariables,
     "userParameterOrder" -> userVariables,
@@ -12235,6 +12785,18 @@ kinematicCoordinateAudit[topo_Association, rules_List, source_String] := Module[
 kinematicParameterRedefinitionGuide[audit_Association] := Module[
    {defaultRules, lhsStrings, customRuleStrings, commandExample},
    defaultRules = Lookup[audit, "defaultRules", {}];
+   If[! ListQ[defaultRules] || defaultRules === {} ||
+     ! VectorQ[defaultRules, MatchQ[Unevaluated[#], _Rule | _RuleDelayed] &],
+    Return[<|
+      "optionalQ" -> True,
+      "defaultBehavior" -> "当前 family 没有可重定义动力学坐标。 This family has no redefinable kinematic coordinates.",
+      "ruleLeftHandSideFormat" -> "无。 None.",
+      "ruleRightHandSideFormat" -> "无。 None.",
+      "coverageRequirement" -> "无需动力学坐标规则。 No kinematic-coordinate rules are required.",
+      "defaultRules" -> {},
+      "commandExample" -> None
+      |>]
+    ];
    lhsStrings = ToString[First[#], InputForm] & /@ defaultRules;
    customRuleStrings = MapIndexed[
      #1 <> " -> custom" <> ToString[First[#2]] <> "^2" &,
@@ -12243,10 +12805,12 @@ kinematicParameterRedefinitionGuide[audit_Association] := Module[
    commandExample = "DSRedefineParameters[context, {" <> StringRiffle[customRuleStrings, ", "] <> "}]";
    <|
     "optionalQ" -> True,
-    "defaultBehavior" -> "不调用 DSRedefineParameters 时继续使用 defaultRules。",
+    "defaultBehavior" -> "不调用 DSRedefineParameters 时继续使用 defaultRules。 Without DSRedefineParameters, the family continues to use defaultRules.",
     "ruleLeftHandSideFormat" -> "左端必须写 sp[原始动量表达式,原始动量表达式] 或其它 baseCoordinateOrder 中的 sp；不要写 ssij/sEi -> custom。",
+    "ruleLeftHandSideFormatEnglish" -> "The left side must be sp[original momentum expression, original momentum expression], or another sp entry from baseCoordinateOrder; do not write ssij/sEi -> custom.",
     "ruleRightHandSideFormat" -> "右端写该标量积在自定义参数中的表达式；模长坐标常写 custom^2，也允许满秩混合表达式如 (u+v)^2。",
-    "coverageRequirement" -> "规则左端与右端参数 Jacobian 都必须覆盖全部 baseCoordinateOrder；欠完备拒绝初始化，过完备只允许 symbolic IBP。",
+    "ruleRightHandSideFormatEnglish" -> "The right side is the scalar product in custom parameters; magnitude coordinates commonly use custom^2, and full-rank mixed expressions such as (u+v)^2 are allowed.",
+    "coverageRequirement" -> "规则左端与右端参数 Jacobian 都必须覆盖全部 baseCoordinateOrder；欠完备拒绝初始化，过完备只允许 symbolic IBP。 Both rule left sides and the right-side parameter Jacobian must cover all of baseCoordinateOrder; undercomplete input is rejected and overcomplete input permits symbolic IBP only.",
     "defaultRules" -> defaultRules,
     "commandExample" -> commandExample
     |>
@@ -13005,24 +13569,41 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
      "动力学变量提案：" <> ToString[Lookup[audit, "defaultRules", {}], InputForm] <>
       "；当前选择：" <> ToString[Lookup[audit, "selectedRules", {}], InputForm] <>
       "；从属模长绑定：" <> ToString[Lookup[audit, "dependentMagnitudeBindings", {}], InputForm] <>
-      "；审计状态 " <> ToString[status],
+      "；审计状态 " <> ToString[status] <>
+      ". Kinematic-variable proposal: " <> ToString[Lookup[audit, "defaultRules", {}], InputForm] <>
+      "; selected rules: " <> ToString[Lookup[audit, "selectedRules", {}], InputForm] <>
+      "; dependent magnitude bindings: " <> ToString[Lookup[audit, "dependentMagnitudeBindings", {}], InputForm] <>
+      "; audit status " <> ToString[status],
      Automatic
      ];
-   dsInfoPrint[
-     "可选参数重定义：" <> Lookup[guide, "ruleLeftHandSideFormat", ""] <>
-      " " <> Lookup[guide, "ruleRightHandSideFormat", ""] <>
-      " 示例：" <> Lookup[guide, "commandExample", ""],
-     Automatic
-     ];
+   If[StringQ[Lookup[guide, "commandExample", None]],
+    dsInfoPrint[
+      "可选参数重定义：" <> Lookup[guide, "ruleLeftHandSideFormat", ""] <>
+       " " <> Lookup[guide, "ruleRightHandSideFormat", ""] <>
+       " 示例：" <> guide["commandExample"] <>
+       ". Optional parameter redefinition: " <> Lookup[guide, "ruleLeftHandSideFormatEnglish", ""] <>
+       " " <> Lookup[guide, "ruleRightHandSideFormatEnglish", ""] <>
+       "; example: " <> guide["commandExample"],
+      Automatic
+      ],
+    dsInfoPrint[Lookup[guide, "defaultBehavior", ""], Automatic]
+    ];
     Switch[status,
      "undercomplete",
      dsErrorPrint[
        "动量声明欠完备；DSInit 将拒绝继续。缺失方向/模长平方为 " <>
+        ToString[Join[Lookup[result, "missingDirections", {}], Lookup[result, "missingMagnitudeSquares", {}]], InputForm] <>
+        ". Momentum declarations are undercomplete, so DSInit will stop. Missing directions or squared magnitudes: " <>
         ToString[Join[Lookup[result, "missingDirections", {}], Lookup[result, "missingMagnitudeSquares", {}]], InputForm]
        ],
      "incomplete",
     dsErrorPrint[
       "动力学变量欠完备；DSInit 将拒绝继续。缺失/受约束方向为 " <>
+       ToString[DeleteDuplicates@Join[
+          Lookup[audit, "ruleMissingDirectionExpressions", {}],
+          Lookup[audit, "parameterMissingDirectionExpressions", {}]
+          ], InputForm] <>
+       ". Kinematic variables are undercomplete, so DSInit will stop. Missing or constrained directions: " <>
        ToString[DeleteDuplicates@Join[
           Lookup[audit, "ruleMissingDirectionExpressions", {}],
           Lookup[audit, "parameterMissingDirectionExpressions", {}]
@@ -13036,6 +13617,8 @@ DSKinematics[input_Association, rules_: Automatic] := Module[
       |>;
     dsWarningPrint[
       "动力学变量或动量声明过完备；初始化与 symbolic IBP 可继续，但 ds、DSDE 与唯一 rep2innerform 已禁用。详情：" <>
+       ToString[overcompleteDetails, InputForm] <>
+       ". Kinematic variables or momentum declarations are overcomplete. Initialization and symbolic IBP may continue, but ds, DSDE, and unique rep2innerform are disabled. Details: " <>
        ToString[overcompleteDetails, InputForm],
       Automatic
       ],
@@ -13082,13 +13665,15 @@ dsParameterNotation[topo_Association] := Module[
 
 DSParameterNotation[context_Association] := Module[{resolved = dsResolveContext[context], result, guide},
    If[Head[resolved] === Missing,
-    dsErrorPrint["DSParameterNotation 需要有效的 DSInit context。"]; Return[$Failed]
+    dsErrorPrint["DSParameterNotation 需要有效的 DSInit context。 DSParameterNotation requires a valid DSInit context."]; Return[$Failed]
     ];
    result = dsParameterNotation[resolved["topology"]];
    guide = Lookup[result, "parameterRedefinitionGuide", <||>];
    dsInfoPrint[
     "当前参数 " <> ToString[Lookup[result, "selectedUserVariables", {}], InputForm] <>
-     "。可选重定义示例：" <> Lookup[guide, "commandExample", ""]
+     "。可选重定义示例：" <> Lookup[guide, "commandExample", ""] <>
+     ". Current parameters: " <> ToString[Lookup[result, "selectedUserVariables", {}], InputForm] <>
+     ". Optional redefinition example: " <> Lookup[guide, "commandExample", ""]
     ];
    result
    ];
@@ -13096,7 +13681,7 @@ DSParameterNotation[context_Association] := Module[{resolved = dsResolveContext[
 
 DSParameterNotation[] := Module[{context = dsResolveContext[Automatic]},
    If[Head[context] === Missing,
-    dsErrorPrint["请先成功调用 DSInit。"]; Return[$Failed]
+    dsErrorPrint["请先成功调用 DSInit。 Run DSInit successfully first."]; Return[$Failed]
     ];
    DSParameterNotation[context]
    ];
@@ -13111,10 +13696,10 @@ Options[DSRedefineParameters] = {ProgressReporting -> Automatic};
 DSRedefineParameters[context_Association, rules_, OptionsPattern[]] := Module[
    {resolved = dsResolveContext[context], input, result, generateDerivativeMetadataQ},
    If[Head[resolved] === Missing,
-    dsErrorPrint["DSRedefineParameters 需要有效的 DSInit context。"]; Return[$Failed]
+    dsErrorPrint["DSRedefineParameters 需要有效的 DSInit context。 DSRedefineParameters requires a valid DSInit context."]; Return[$Failed]
     ];
    If[! ListQ[rules] && ! AssociationQ[rules],
-    dsErrorPrint["参数重定义规则必须是 Rule 列表或 Association。"]; Return[$Failed]
+    dsErrorPrint["参数重定义规则必须是 Rule 列表或 Association。 Parameter redefinition rules must be a Rule list or an Association."]; Return[$Failed]
     ];
    input = KeyDrop[resolved["input"], {"kinematicRules"}];
    generateDerivativeMetadataQ = AssociationQ[Lookup[resolved, "derivatives", Missing["NotGenerated"]]];
@@ -13127,7 +13712,7 @@ DSRedefineParameters[context_Association, rules_, OptionsPattern[]] := Module[
      ProgressReporting -> OptionValue[ProgressReporting]
      ];
    If[Lookup[result, "status", "failed"] =!= "initialized",
-    dsErrorPrint["参数重定义未通过完备性或 topology 门禁。"]; Return[result]
+    dsErrorPrint["参数重定义未通过完备性或 topology 门禁。 Parameter redefinition failed the completeness or topology gate."]; Return[result]
     ];
    Join[result, <|"parameterRedefinition" -> <|
       "sourceInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
@@ -13139,7 +13724,7 @@ DSRedefineParameters[context_Association, rules_, OptionsPattern[]] := Module[
 DSRedefineParameters[rules_, OptionsPattern[]] := Module[{current, result},
    current = dsResolveContext[Automatic];
    If[Head[current] === Missing,
-    dsErrorPrint["请先成功调用 DSInit。"]; Return[$Failed]
+    dsErrorPrint["请先成功调用 DSInit。 Run DSInit successfully first."]; Return[$Failed]
     ];
    result = DSRedefineParameters[current, rules, ProgressReporting -> OptionValue[ProgressReporting]];
    If[AssociationQ[result] && Lookup[result, "status", "failed"] === "initialized",
@@ -13148,6 +13733,105 @@ DSRedefineParameters[rules_, OptionsPattern[]] := Module[{current, result},
     ];
    result
    ];
+
+(* ::Package:: *)
+
+(* 本文件集中冻结 016 的运行时 Message 文本。所有消息逐句先中文、后英文；
+   只覆盖展示字符串，不改变任何 status、reason、capability 或返回数据。 *)
+
+
+(* ::Chapter:: *)
+(*高层 workflow 消息*)
+
+DSInit::badinput = "DSInit 输入不是有效的 topology Association，或 ISP/动量坐标不闭合。 The DSInit input is not a valid topology Association, or its ISP/momentum coordinates are not closed.";
+DSInit::sectorincomplete = "无法完整初始化 contact-reachable sectors：`1`。 Contact-reachable sectors could not be initialized completely: `1`.";
+DSInit::initconflict = "初始化目录 `1` 已含不同输入哈希或未知文件；如确认覆盖，请显式设置 OverwriteInitialization -> True。 Initialization directory `1` contains a different input hash or unknown files; set OverwriteInitialization -> True explicitly to replace it.";
+DSInit::writefailed = "初始化 metadata 写入失败：`1`。 Initialization metadata could not be written: `1`.";
+DSInfo::noinit = "当前没有已注册的 DSInit context。 No DSInit context is currently registered.";
+DSInfo::badcontext = "给定对象不是有效的 DSInit context。 The supplied object is not a valid DSInit context.";
+
+DSSeeds::noinit = "DSSeeds 需要有效的 DSInit context。 DSSeeds requires a valid DSInit context.";
+DSSeeds::failed = "canonical seed 生成未通过门禁：`1`。 Canonical seed generation failed its gate: `1`.";
+DSSeeds::capability = "当前 context 不具备 seed 生成所需能力：`1`。 The current context lacks the capabilities required for seed generation: `1`.";
+DSLinear::noinit = "DSLinear 需要有效的 DSInit context。 DSLinear requires a valid DSInit context.";
+DSLinear::badseed = "DSLinear 需要 DSSeeds 或 DSGenerateIBP 返回的 canonical seed Association。 DSLinear requires a canonical seed Association returned by DSSeeds or DSGenerateIBP.";
+DSLinear::badmode = "LinearSystemMode 只允许 \"symbolic\" 或 \"numeric\"，收到 `1`。 LinearSystemMode must be \"symbolic\" or \"numeric\"; received `1`.";
+DSLinear::failed = "linearData 生成未通过门禁：`1`。 linearData generation failed its gate: `1`.";
+DSLinear::capability = "当前 context 不具备 linearData 生成所需能力：`1`。 The current context lacks the capabilities required for linearData generation: `1`.";
+DSLinear::context = "seedData 与 context 不是同一次初始化的产物。 seedData and context do not originate from the same initialization.";
+
+DSKiraExport::badlinear = "DSKiraExport 需要 DSLinear 返回的 backend-neutral linearData。 DSKiraExport requires backend-neutral linearData returned by DSLinear.";
+DSKiraExport::failed = "Kira 输入未生成：`1`。 Kira input was not generated: `1`.";
+DSKiraExport::badbasis = "KiraActiveBasis 未通过验证：`1`。 KiraActiveBasis failed validation: `1`.";
+DSKiraExport::capability = "linearData 未携带通过 DSLinear 的同源能力门禁。 linearData does not carry a passed DSLinear provenance/capability gate.";
+DSKiraExport::devarrules = "数值/系数规则与微分阶段合同冲突，Kira 导出已拒绝：`1`。 Numeric/coefficient rules conflict with the differentiation-stage contract, so Kira export was rejected: `1`.";
+DSKiraExport::badstage = "KiraNumericStage 只允许 \"symbolic\" 或 \"postDerivative\"，收到 `1`。 KiraNumericStage must be \"symbolic\" or \"postDerivative\"; received `1`.";
+
+DSKiraImport::badpath = "Kira workspace 路径不存在或不是目录：`1`。 The Kira workspace path does not exist or is not a directory: `1`.";
+DSKiraImport::missing = "Kira 结果缺少必需文件：`1`。 Required Kira result files are missing: `1`.";
+DSKiraImport::incomplete = "Kira 完成日志没有成功标记：`1`。 The Kira completion log has no success marker: `1`.";
+DSKiraImport::mismatch = "Kira 结果与当前 export/context 不一致：`1`。 Kira results do not match the current export/context: `1`.";
+DSKiraImport::invalid = "Kira reduction 数据未通过完整性检查：`1`。 Kira reduction data failed its integrity check: `1`.";
+
+DSDE::badreduction = "DSDE 只接受 DSKiraImport 验证通过的 reductionData。 DSDE accepts only reductionData validated by DSKiraImport.";
+DSDE::badvars = "微分变量必须是当前 family 初始化的外部独立变量：`1`。 Differentiation variables must be initialized independent external variables of the current family: `1`.";
+DSDE::writefailed = "DE 结果写入失败：`1`。 DE results could not be written: `1`.";
+DSScaleCheck::badde = "DSScaleCheck 需要 DSDE 返回的 generated DE 数据。 DSScaleCheck requires generated DE data returned by DSDE.";
+DSScaleCheck::badspec = "标度 relation/variables/weights/degrees 不完整或长度不一致：`1`。 Scaling relation/variables/weights/degrees are incomplete or have inconsistent lengths: `1`.";
+
+
+(* ::Chapter:: *)
+(*底层 seed、坐标与 serializer 消息*)
+
+parseTopology::missingkeys = "case 缺少必需字段：`1`。 The case is missing required fields: `1`.";
+parseTopology::badinput = "case 输入 preflight 失败：`1`。 Case-input preflight failed: `1`.";
+parseTopology::badfunction = "massive line 的函数系统编译失败：`1`。 Compilation of a massive-line function system failed: `1`.";
+makeLinePack::badtype = "未知 packType `1`，line id = `2`。 Unknown packType `1`; line id = `2`.";
+assertNoForbiddenN::badn = "表达式仍含 forbidden n 指标：`1`。 The expression still contains forbidden n indices: `1`.";
+symmetry::badrules = "symmetryRules 必须是 Rule/RuleDelayed 的列表。 symmetryRules must be a list of Rule or RuleDelayed expressions.";
+
+applyMomentumGeneratorSeed::nosp = "拓扑 `1` 的标量积反解不可用，不能生成 momentum seed：`2`。 Scalar-product inversion is unavailable for topology `1`, so a momentum seed cannot be generated: `2`.";
+applyTimeGeneratorSeed::badgen = "time seed 只能使用 time 生成元，收到：`1`。 A time seed requires a time generator; received `1`.";
+applyExternalVectorDerivativeSeed::badgen = "external-vector seed 只能使用 externalVector 生成元，收到：`1`。 An external-vector seed requires an externalVector generator; received `1`.";
+applyExternalVectorDerivativeSeed::nosp = "拓扑 `1` 的标量积反解不可用，不能生成 external-vector seed：`2`。 Scalar-product inversion is unavailable for topology `1`, so an external-vector seed cannot be generated: `2`.";
+makeExternalInvariantDerivativeDecomposition::badvar = "变量 `1` 不是当前支持的外部不变量。 Variable `1` is not a supported external invariant.";
+makeExternalInvariantDerivativeDecomposition::nosol = "变量 `1` 无法由外动量矢量导数基 `2` 分解。 Variable `1` cannot be decomposed in the external-vector derivative basis `2`.";
+makeKiraExportData::notlinearinput = "Kira 导出只接受 linear-system 数据，不直接接受 seed batch：`1`。 Kira export accepts only linear-system data, not a seed batch directly: `1`.";
+makeKiraExportData::badlinear = "linear-system 不能导出 Kira：`1`。 The linear system cannot be exported to Kira: `1`.";
+
+dSIBPPublicAPI::notopo = "当前没有已注册的 topology context。 No topology context is currently registered.";
+dSIBPPublicAPI::badtopo = "topology context 无效或解析失败：`1`。 The topology context is invalid or failed to parse: `1`.";
+dSIBPPublicAPI::badshape = "表达式中的 J 与 topology context 不兼容：`1`。 J objects in the expression are incompatible with the topology context: `1`.";
+dSIBPPublicAPI::badstate = "IBP 公开算子要求所有 full-line 离散态已显式取 0/1：`1`。 Public IBP operators require every full-line discrete state to be explicitly 0 or 1: `1`.";
+dSIBPPublicAPI::badgen = "找不到请求的 IBP 生成元：`1`。 The requested IBP generator was not found: `1`.";
+dSIBPPublicAPI::badvar = "变量 `1` 不在当前 topology 初始化的外部独立变量列表 `2` 中。 Variable `1` is not in the initialized independent external-variable list `2`.";
+dSIBPPublicAPI::ambiguousvar = "变量 `1` 属于过完备动力学坐标；重选独立变量前，ds 已禁用。 Variable `1` belongs to overcomplete kinematic coordinates; ds is disabled until an independent set is chosen.";
+dSIBPPublicAPI::noinverse = "当前动力学规则没有唯一的用户坐标到基础标量积反向映射；rep2innerform 已拒绝。审计：`1`。 The current kinematic rules have no unique inverse map from user coordinates to base scalar products; rep2innerform was rejected. Audit: `1`.";
+dSIBPPublicAPI::nonlinear = "ds 只接受 J 的线性组合；检测到非线性或非多项式 J 依赖：`1`。 ds accepts only linear combinations of J; nonlinear or nonpolynomial J dependence was found: `1`.";
+dSIBPPublicAPI::derivativefailed = "变量 `1` 的积分导数生成失败。 Integral differentiation with respect to variable `1` failed.";
+
+
+(* ::Chapter:: *)
+(*Tree 与 pure-time 消息*)
+
+makeTreeFamilyData::badinput = "tree family 输入无效：`1`。 Tree-family input is invalid: `1`.";
+treeIntegralShape::badshape = "tree J 的 pack 形状与 family 不一致：`1`。 The pack shape of tree J is inconsistent with the family: `1`.";
+treeDiagonalInverse::singular = "tree recurrence 位于奇异面：`1`。 The tree recurrence lies on a singular locus: `1`.";
+treeLoopIntegralFromTree::unsupported = "tree 到 loop seed 的反投影尚不支持该 line pack：`1`。 Back-projection from tree to loop seed does not support this line pack: `1`.";
+treeEndpointData::badend = "tree 迭代终点无效：`1`。 The tree-iteration endpoint is invalid: `1`.";
+repIterativeData::badindex = "tree a 指标必须是可判定整数：`1`。 Tree a indices must be decidable integers: `1`.";
+repIterativeData::noprogress = "tree 递推没有严格趋近指定终点：`1`。 Tree recurrence did not strictly approach the requested endpoint: `1`.";
+repIterativeData::cycle = "tree 递推检测到重复 canonical 状态：`1`。 Tree recurrence encountered a repeated canonical state: `1`.";
+repIterativeData::nosector = "tree 积分无法唯一匹配 sector family：`1`。 The tree integral cannot be matched uniquely to a sector family: `1`.";
+loopToTreeProjection::badloop = "loop-to-tree 投影只接受合法三槽 loop J：`1`。 Loop-to-tree projection accepts only a valid three-slot loop J: `1`.";
+loopToTreeProjection::mixedcontact = "mixed-sign line 不得产生 theta/contact shrink：`1`。 A mixed-sign line must not produce a theta/contact shrink: `1`.";
+makeTreeTimeReductionRules::incomplete = "tree time seed 状态组不完整：`1`。 The tree time-seed state group is incomplete: `1`.";
+treeFamilyForIntegral::ambiguous = "tree J 的 pack 形状同时匹配多个 sector：`1`。当前表示无法唯一确定 sector，已拒绝继续约化。 The pack shape of tree J matches multiple sectors: `1`. The current representation cannot determine a unique sector, so reduction was rejected.";
+DSTreeNaiveIBP::badmasters = "tree naive IBP 需要非空、无重复且可唯一匹配 sector 的 tagged master 列表。 Tree naive IBP requires a nonempty, duplicate-free tagged master list with unique sector matches.";
+DSTreeNaiveIBP::nonsquare = "tree naive IBP 方程数 `1` 与待约化对象数 `2` 不相等。 The tree naive IBP equation count `1` differs from the reducible-object count `2`.";
+DSTreeNaiveIBP::solvefailed = "tree naive IBP 线性系统求解失败。 Solving the tree naive IBP linear system failed.";
+DSTreeNaiveDE::badibp = "DSTreeNaiveDE 需要 DSTreeNaiveIBP 成功返回的数据或合法 DSInit context。 DSTreeNaiveDE requires successful DSTreeNaiveIBP data or a valid DSInit context.";
+DSTreeNaiveDE::badvars = "tree 微分变量必须是当前 family 初始化的外部独立变量：`1`。 Tree differentiation variables must be initialized independent external variables of the current family: `1`.";
 
 End[];
 EndPackage[];

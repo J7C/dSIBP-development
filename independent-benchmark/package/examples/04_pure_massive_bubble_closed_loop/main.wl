@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 016 pure massive bubble：固定 -- branch/parity，从 topology 到 Kira 取回、DE 与标度检查。 *)
+(* 017 pure massive bubble：固定 -- branch/parity，从 topology 到 Kira 取回、DE 与标度检查。 *)
 
 (* ::Chapter:: *)
 (*标准 package 加载*)
@@ -21,7 +21,7 @@ parameterProbeRules = {dim -> 37/11, nu -> 7/13, etaNu -> 23/17};
 (* s11=k.k 与 P0 是 ds 的独立变量；P_pkg=P0=+I k0，reference P1=P2=-P0=-I k0。 *)
 (* J 只保存整数指标；a0=2 nu、b0=-2 nu 留在 metadata，并在 shrink/tree 投影时进入完整物理幂次。 *)
 caseInput = <|
-   "name" -> "016PureMassiveBubbleClosedLoopMinusMinus",
+   "name" -> "017PureMassiveBubbleClosedLoopMinusMinus",
    "vertexData" -> {{v1, "-"}, {v2, "-"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
@@ -44,11 +44,9 @@ caseInput = <|
    (* Fermat 只处理有理系数域；massive contact 的非有理归一化打包成独立 prefactor 参数。 *)
    "shrinkPrefactorRules" -> {Exp[Pi Im[nu]]/Pi -> etaNu},
    "symmetryRules" -> exampleSymmetryRules0,
-   (* 统一范围只作未覆盖生成元的兼容 fallback；本例的七类物理生成元全部由下项精确覆盖。 *)
+   (* seedPreset/seedRanges 只保留为底层模板兼容输入；连续撒点由后面的目标包络统一控制。 *)
    "seedPreset" -> "quickCheck",
-   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> False|>,
-   "generatorSeedRanges" -> referenceGeneratorSeedRanges,
-   "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 5000, "MaxEquationCount" -> 100000|>
+   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>
    |>;
 
 (* ::Chapter:: *)
@@ -61,13 +59,6 @@ initOptions = {
    GenerateDerivativeMetadata -> True,
    (* 本闭环例会随输入配置刷新同目录 metadata；缺省仍为 False。 *)
    OverwriteInitialization -> True
-   };
-
-(* 缺省：DiscreteMode 由 preset 决定；本例固定 all，随后由 package symmetry 统一施加 parity/canonical。 *)
-seedOptions = {
-   DiscreteMode -> "all",
-   MaxSeedRuleCount -> 5000,
-   MaxEquationCount -> 100000
    };
 
 (* 缺省：LinearSystemMode->"symbolic"；CoefficientRules->Automatic；KiraOrdering->Automatic。 *)
@@ -99,8 +90,14 @@ kiraOptions = {
 context = DSInit[caseInput, Sequence @@ initOptions];
 DSInfo[context]
 
-seedData = DSSeeds[context, Sequence @@ seedOptions, ApplyNumericRules -> True];
-linearData = DSLinear[seedData, context, Sequence @@ linearOptions];
+seedData = DSSeeds[context, ApplyNumericRules -> True];
+allSeeds = DSAllSeeds[seedData];
+seedGroups = DSSeedGroups[seedData];
+seedGroupMetadata = DSSeedGroupMetadata[seedData];
+seedRangeMetadata = DSMetaSeedRange[seedGroups, referenceSeedIndices];
+(* 输入描述 top 目标积分包络；程序逐组反推 seed 点域、先筛 parity，再代入数值点。 *)
+generatedIBP = DSGenerateIBP[allSeeds, Sequence @@ referenceTopTargetEnvelope];
+linearData = DSLinear[generatedIBP, context, Sequence @@ linearOptions];
 kiraExport = DSKiraExport[linearData, Sequence @@ kiraOptions];
 exportSyntaxReport = Lookup[
    kiraExport,
@@ -173,6 +170,8 @@ closedLoopSummary = If[
     "requiredFiles" -> requiredKiraResults
     |>
    ];
-Print["016 pure massive bubble closed-loop summary: ", closedLoopSummary];
+Print["017 pure massive bubble closed-loop summary: ", closedLoopSummary];
+
+If[! exportReadyQ, Exit[1]];
 
 closedLoopResult

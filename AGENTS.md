@@ -22,6 +22,7 @@
 
 - 当前主线版本由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/016_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
 - 016 的冻结单文件兼容入口是 `independent-benchmark/package/package_016.wl`；`000_code/010_dS_ibp_general.wl` 至 `015_dS_ibp_general.wl` 及其模块目录是只读基线/历史版本，不在新任务中回写。
+- 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录，例如下一版 `000_code/017_dSIBP/`。同一整数版本内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `017.1`、`017.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。017 尚未完成候选晋升前，当前主线与正式交付仍是 016。
 - 根目录 `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；可复用轻量脚本留在目录根部，运行产物只放 `check-smoke/results_test/` 并在任务结束后清理。
 - `000_code/check/` 与 `000_code/test/` 是已清空的历史目录，不再写入新的日常 smoke/check/test 资产。
 - `check-smoke/` 不属于独立检验工作区。内部或外部独立执行者均不得读取、复制、写入或引用其中的脚本、结果与结论。
@@ -84,10 +85,11 @@
 ## 开发流程
 
 1. 先更新 `研究计划与研究进度.md`，写清任务、未完成项和验收标准。
-2. 读取 topology 与 ISP 配置，验证输入和 ISP 完备性。
-3. 构造完整生成元；按 contact-reachable sector 枚举 canonical seeds，生成指标移位并应用 EOM、symmetry 和 parity。
-4. 分 sector 保存 canonical seed 数据，转换为 backend-neutral `linearData`；必要的小规模数值规则只在该层代入。
-5. 由 serializer 导出后端基础输入，不运行 reduction。
-6. 按风险运行专项和受影响回归，更新进度结论；正式独立报告统一归档到 `000-report/`。
+2. 每实现或修复一个独立功能，必须在继续下一功能或正式验证前同步更新 `研究计划与研究进度.md`，并把该功能的接口、数据流、公式、边界、状态和错误处理细节整合补入 `000_note/dS_IBP_package_tech_note.tex` 的对应用户步骤位置。已有记录不得重复堆叠，应就地校正和补全。
+3. 读取 topology 与 ISP 配置，验证输入和 ISP 完备性。
+4. 构造完整生成元；按 contact-reachable sector 枚举 canonical seeds，生成指标移位并应用 EOM、symmetry 和 parity。
+5. 分 sector 保存 canonical seed 数据，转换为 backend-neutral `linearData`；必要的小规模数值规则只在该层代入。
+6. 由 serializer 导出后端基础输入，不运行 reduction。
+7. 按风险运行专项和受影响回归，更新进度结论；正式独立报告统一归档到 `000-report/`。
 
 更新当前正式交付时必须先在 `000_code/test/results_test/` 生成候选程序/手册，并让受影响检查显式加载候选路径。候选全部通过且记录哈希后，才可用同一候选字节覆盖 `independent-benchmark/package/`；覆盖后还要对正式路径复验，最后清理候选产物。

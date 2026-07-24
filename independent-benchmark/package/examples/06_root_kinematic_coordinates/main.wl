@@ -1,7 +1,7 @@
 (* ::Package:: *)
-(* 016 显式动量角色示例：bubble 的 cycle momenta 为 l1 与 l1+k1+k2，bridge 和 bubble
-   另一外腿均携带 k1+k2，三点顶点另接 k1、k2。本例覆盖角色审计、参数重定义、
-   用户变量微分 metadata、bridge 指标以及两类动量列表和坐标规则的完备性负例。 *)
+(* 017 显式动量角色示例：bubble 的 cycle momenta 为 l1 与 l1+k1+k2，前者 massive、
+   后者 massless；massless bridge 和 bubble 另一外腿均携带 k1+k2，三点顶点另接 k1、k2。
+   本例覆盖角色审计、参数重定义、用户变量微分 metadata、bridge 指标及坐标完备性负例。 *)
 
 (* ::Chapter:: *)
 (*加载标准 package*)
@@ -17,15 +17,15 @@ Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
    independentExternalMomenta 只给 loop Gram 尚未覆盖的实际无圈模长 {k1,k2}，产生 sE1,sE2。
    bridge/bubble 外腿的 |k1+k2| 已由 ss11 覆盖，不再生成 sE3 或 sp[k1,k2]。 *)
 caseInput = <|
-   "name" -> "016BubbleTreeK1K2",
+   "name" -> "017BubbleTreeK1K2",
    "vertexData" -> {{v1, "+"}, {v2, "+"}, {v3, "+"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> l1,
        "nu" -> nu1, "bbType" -> "h", "massType" -> "massive"|>,
      <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> l1 + k1 + k2,
-       "nu" -> nu2, "bbType" -> "h", "massType" -> "massive"|>,
+       "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>,
      <|"id" -> 3, "endpoints" -> {v2, v3}, "momentum" -> k1 + k2,
-       "nu" -> nu3, "bbType" -> "h", "massType" -> "massive"|>
+       "nu" -> 0, "bbType" -> "exp", "massType" -> "massless"|>
      },
    "extLegs" -> {
      {bubbleLeg, v1, k1 + k2},
@@ -79,10 +79,10 @@ contextInfo = DSInfo[context, "Full"];
 notation = DSParameterNotation[context];
 publicAPI = DSPublicAPI[];
 
-(* cycle line pack 为 {b,n1,n2}；bridge pack 只有 {n1,n2}。 *)
+(* cycle/fixed full line 都保留双端点三槽；fixed line 以短字符串 "F" 标记无 b 指标。 *)
 integral = J[
    {0, 0, 0},
-   {{0, 0, 0}, {0, 0, 0}, {0, 0}},
+   {{0, 0, 0}, {0, 0, 0}, {"F", 0, 0}},
    {}
    ];
 
@@ -122,7 +122,7 @@ customDerivativeVariables = Lookup[Lookup[customContext, "derivatives", <||>], "
    当前参数化选择 |k1|=E0-sE2 的物理支，因此应用区域应满足 E0>sE2>0。 *)
 boundEnergyInput = Join[
    caseInput,
-   <|"name" -> "016BubbleTreeBoundEnergy", "vertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E0|>|>
+   <|"name" -> "017BubbleTreeBoundEnergy", "vertexEnergies" -> <|v1 -> E1, v2 -> E2, v3 -> E0|>|>
    ];
 boundEnergyContext0 = DSInit[
    boundEnergyInput,
@@ -155,7 +155,7 @@ boundEnergyVariables = Lookup[
 singleLegInput = Join[
    caseInput,
    <|
-    "name" -> "016BubbleTreeSingleEffectiveLeg",
+    "name" -> "017BubbleTreeSingleEffectiveLeg",
     "extLegs" -> {
       {bubbleLeg, v1, k1 + k2},
       {treeLeg0, v3, p0}
@@ -235,6 +235,7 @@ defaultDerivativeVariables = Lookup[
    "operators",
    {}
    ][[All, "userVariable"]];
+linePackTypes = Lookup[Lookup[topology, "lines", {}], "packType", {}];
 
 DSMessagesOff[];
 messagesDisabledQ = ! DSMessagesQ[];
@@ -247,6 +248,7 @@ summary = <|
    "loopExternalMomenta" -> Lookup[notation, "loopExternalMomenta", {}],
    "independentExternalMomenta" -> Lookup[notation, "independentExternalMomenta", {}],
    "notationVariables" -> Lookup[notation, "selectedUserVariables", {}],
+   "linePackTypes" -> linePackTypes,
    "requiredMagnitudeCoverage" -> coverage,
    "defaultDerivativeVariables" -> defaultDerivativeVariables,
    "customVariables" -> Lookup[customNotation, "selectedUserVariables", {}],
@@ -259,7 +261,7 @@ summary = <|
    "redefinitionUsesOriginalSP" -> StringContainsQ[Lookup[Lookup[notation, "parameterRedefinitionGuide", <||>], "commandExample", ""], "sp[k1 + k2, k1 + k2]"],
    "bridgePackHasNoB" -> And @@ (FreeQ[#, _b | _bS] & /@ bridgePacks),
    "timeSeedUsesBridgeMagnitude" -> ! FreeQ[timeSeed, ss11],
-   "momentumSeedsLeaveBridgePack" -> And @@ (Length[#] == 2 & /@ Cases[{loopLoopSeed, loopExternalSeed}, J[_, packs_, _] :> packs[[3]], Infinity]),
+   "momentumSeedsLeaveBridgePack" -> And @@ (SameQ[#, {"F", 0, 0}] & /@ Cases[{loopLoopSeed, loopExternalSeed}, J[_, packs_, _] :> packs[[3]], Infinity]),
    "totalDerivativeIncludesCoefficientTerm" -> ! FreeQ[totalDerivative, integral],
    "coordinateRoundTrip" -> Together[outerCoordinate - ss11^2] === 0,
    "integrandUsesFixedBridgeMagnitude" -> ! FreeQ[integrandForm, ss11] && FreeQ[integrandForm, xi[3]],
@@ -287,6 +289,7 @@ If[! And[
     summary["loopExternalMomenta"] === {k1 + k2},
     summary["independentExternalMomenta"] === {k1, k2},
     summary["notationVariables"] === {ss11, sE1, sE2},
+    summary["linePackTypes"] === {"massiveFull", "masslessFull", "masslessFull"},
     summary["defaultDerivativeVariables"] === {ss11, sE1, sE2, E1, E2, E3},
     summary["customVariables"] === {loopScale, legScale1, legScale2},
     summary["customDerivativeVariables"] === {

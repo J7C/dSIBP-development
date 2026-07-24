@@ -319,22 +319,47 @@ dsTreeTaggedSingleStep[
    ];
 
 
+dsTreeTokenDistanceData[token : dsTreeToken[sectorKey_String, int_J], end_, familyContext_Association] := Module[
+   {family, endpoints},
+   family = dsTreeFamilyBySector[sectorKey, familyContext];
+   If[Head[family] === Missing || ! treeIntegralQ[int, family] ||
+     ! And @@ (IntegerQ /@ First[int][[All, 1]]), Return[$Failed]];
+   endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, familyContext], family];
+   If[endpoints === $Failed, Return[$Failed]];
+   <|"token" -> token, "sectorKey" -> sectorKey, "endpoints" -> endpoints,
+    "remainingThetaLines" -> Length[thetaFullLineIndices[family["topology"]]],
+    "distance" -> treeEndpointDistance[int, endpoints],
+    "progressKey" -> {Length[thetaFullLineIndices[family["topology"]]], treeEndpointDistance[int, endpoints]}|>
+   ];
+
+
+(* tagged linearData 允许递推跨 contact sector；每条跨 sector 依赖仍须严格降低各自 endpoint 距离。 *)
+dsTreeTaggedStepProgress[source_dsTreeToken, replacement_, end_, familyContext_Association] := Module[
+   {sourceData, targets, targetData, invalidTargets},
+   sourceData = dsTreeTokenDistanceData[source, end, familyContext];
+   targets = DeleteDuplicates[Cases[replacement, token : dsTreeToken[_String, _J] :> token, {0, Infinity}]];
+   targetData = dsTreeTokenDistanceData[#, end, familyContext] & /@ targets;
+   invalidTargets = Pick[targets, (# === $Failed & /@ targetData)];
+   <|
+    "passQ" -> TrueQ[sourceData =!= $Failed && invalidTargets === {} &&
+       And @@ (treeProgressKeyLessQ[Lookup[#, "progressKey", {Infinity, Infinity}], sourceData["progressKey"]] & /@ targetData)],
+    "source" -> sourceData,
+    "targets" -> targetData,
+    "invalidTargets" -> invalidTargets
+    |>
+   ];
+
+
 Options[dsRepIterativeTreeLinearData] = Options[repIterativeData];
 
 
 dsRepIterativeTreeLinearData[data_Association, end_: Automatic, context_Association, OptionsPattern[]] := Module[
-   {familyContext, result, maxSteps, steps = 0, tokens, token, sectorKey, int, family, endpoints, vertexIndex, reducedTerms},
+   {familyContext, result, steps = 0, tokens, token, sectorKey, int, family, endpoints, vertexIndex,
+    reducedTerms, replacement, progressData, seenStates = <||>, stateHash},
    If[! dsTreeLinearDataQ[data], Return[<|"status" -> "error", "reason" -> "invalidTreeLinearData"|>]];
    familyContext = dsTreeFamilyContext[context];
    result = Expand[dsTreeTokenExpression[data]];
-   maxSteps = OptionValue[MaxIterations];
-   If[maxSteps === Automatic,
-    maxSteps = 10 (1 + Total[Abs[Cases[result, dsTreeToken[_, item_J] :> First[item][[All, 1]], Infinity] // Flatten]] + Length[familyContext["families"]])
-    ];
-   If[! IntegerQ[maxSteps] || maxSteps < 0,
-    Message[repIterativeData::maxsteps, maxSteps];
-    Return[<|"status" -> "error", "reason" -> "invalidMaxIterations", "steps" -> steps|>]
-    ];
+   AssociateTo[seenStates, treeRecurrenceStateHash[result] -> True];
    While[True,
     tokens = DeleteDuplicates[Cases[result, token : dsTreeToken[_String, _J] :> token, {0, Infinity}]];
     token = SelectFirst[
@@ -362,13 +387,23 @@ dsRepIterativeTreeLinearData[data_Association, end_: Automatic, context_Associat
      ];
     endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, familyContext], family];
     If[endpoints === $Failed, Return[<|"status" -> "error", "reason" -> "invalidEndpoint", "steps" -> steps|>]];
-    If[steps >= maxSteps,
-     Message[repIterativeData::maxsteps, maxSteps];
-     Return[<|"status" -> "maxSteps", "reason" -> "iterationLimit", "steps" -> steps|>]
-     ];
     vertexIndex = SelectFirst[Range[Length[endpoints]], First[int][[#, 1]] =!= endpoints[[#]] &];
-    result = Expand[result /. token -> dsTreeTaggedSingleStep[token, vertexIndex, endpoints[[vertexIndex]], family, familyContext]];
-    If[! FreeQ[result, $Failed], Return[<|"status" -> "error", "reason" -> "taggedStepFailed", "steps" -> steps|>]];
+    replacement = dsTreeTaggedSingleStep[token, vertexIndex, endpoints[[vertexIndex]], family, familyContext];
+    If[replacement === $Failed, Return[<|"status" -> "error", "reason" -> "taggedStepFailed", "steps" -> steps|>]];
+    progressData = dsTreeTaggedStepProgress[token, replacement, end, familyContext];
+    If[! TrueQ[progressData["passQ"]],
+     Message[repIterativeData::noprogress, progressData];
+     Return[<|"status" -> "error", "reason" -> "nonDecreasingRecurrence", "steps" -> steps,
+       "progressData" -> progressData|>]
+     ];
+    result = Expand[result /. token -> replacement];
+    stateHash = treeRecurrenceStateHash[result];
+    If[KeyExistsQ[seenStates, stateHash],
+     Message[repIterativeData::cycle, stateHash];
+     Return[<|"status" -> "error", "reason" -> "recurrenceCycle", "steps" -> steps,
+       "stateHash" -> stateHash|>]
+     ];
+    AssociateTo[seenStates, stateHash -> True];
     steps++;
     ];
    reducedTerms = dsTreeTokenTerms[result];
@@ -427,7 +462,7 @@ dsTreeMasterFamilyRecords[masters_List, familyContext_Association] := Map[
 
 
 dsTreeNaiveSeedRecords[masterFamilyRecords_List, familyContext_Association, progress_] := Flatten@dsProgressMap[
-    "正在生成 naive tree time-IBP",
+    "正在生成 naive tree time-IBP / Building naive-tree time-IBP relations",
     masterFamilyRecords,
     Function[item,
      With[{master = item["master"], family = item["family"]},

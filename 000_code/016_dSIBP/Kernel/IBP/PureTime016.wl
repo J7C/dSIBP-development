@@ -302,11 +302,6 @@ dsDirectTreeSeedRecord[
 
 Options[makePureTimeSeedBatch] = Options[makeTimeIBPSeedBatch];
 
-makePureTimeSeedBatch::toomany =
-   "拓扑 `1` 的 pure-time tree seed 方程数为 `2`，超过上限 `3`；未展开方程。";
-makePureTimeSeedBatch::toomanystates =
-   "sector `1` 的 massive h 离散态数为 `2`，超过上限 `3`；未展开方程。";
-
 
 (* 每条 generator 继续复用统一 a-range/generator override 解析；tree 表示只消费顶点 a，
    不把 loop 表示中的 b/ISP 变量带入 pure-time 积分。 *)
@@ -315,9 +310,7 @@ dsPureTimeGeneratorSeedData[family_Association, vertexId_, opts : OptionsPattern
    generatorLabel = {"time", vertexId};
    continuousData = makeGeneratorContinuousSeedRules[
      topo,
-     generatorLabel,
-     UseSampleOnly -> OptionValue[UseSampleOnly],
-     MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
+     generatorLabel
      ];
    If[Lookup[continuousData, "status", "missing"] =!= "generated", Return[continuousData]];
    aVariables = a /@ family["vertexOrder"];
@@ -342,8 +335,8 @@ dsPureTimeGeneratorSeedData[family_Association, vertexId_, opts : OptionsPattern
 (* DSSeeds 的 timeOnly 生产路径：sector tag 保存在 record/linear terms 中，裸积分始终是 J[vertexPacks]。 *)
 makePureTimeSeedBatch[context_Association, opts : OptionsPattern[]] /; dsContextQ[context] := Module[
    {familyContext, families, rootTopo = context["topology"], generatorData, stateCounts,
-    maxDiscreteCount, equationCount, maxEquationCount, records, numericRules, applyNumericRules,
-    sectorMetadataList, badFamilies},
+     equationCount, records, numericRules, applyNumericRules,
+     sectorMetadataList, badFamilies},
    familyContext = dsTreeFamilyContext[context];
    If[familyContext === $Failed,
     Return[<|"status" -> "failed", "reason" -> "treeFamilyInitializationFailed", "equations" -> {}|>]
@@ -365,16 +358,6 @@ makePureTimeSeedBatch[context_Association, opts : OptionsPattern[]] /; dsContext
       family["sector"] -> 2^Total[Lookup[family["vertices"], "p", 0]],
       {family, families}
       ];
-   maxDiscreteCount = resolveSeedOption[
-     rootTopo, "MaxDiscreteRuleCount", OptionValue[MaxDiscreteRuleCount], 64
-     ];
-   If[AnyTrue[Values[stateCounts], # > maxDiscreteCount &],
-    With[{sector = SelectFirst[Keys[stateCounts], stateCounts[#] > maxDiscreteCount &]},
-     Message[makePureTimeSeedBatch::toomanystates, sector, stateCounts[sector], maxDiscreteCount];
-     Return[<|"status" -> "tooManyDiscreteStates", "sectorStateCounts" -> stateCounts,
-       "maxDiscreteStateCount" -> maxDiscreteCount, "equations" -> {}|>]
-     ]
-    ];
    generatorData = Flatten@Table[
       dsPureTimeGeneratorSeedData[family, vertexId, opts],
       {family, families}, {vertexId, family["vertexOrder"]}
@@ -386,13 +369,6 @@ makePureTimeSeedBatch[context_Association, opts : OptionsPattern[]] /; dsContext
    equationCount = Total[
      Lookup[#, "ruleCount", 0] stateCounts[Lookup[#, "sectorKey", "top"]] & /@ generatorData
      ];
-   maxEquationCount = resolveSeedOption[rootTopo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
-   If[equationCount > maxEquationCount,
-    Message[makePureTimeSeedBatch::toomany, rootTopo["name"], equationCount, maxEquationCount];
-    Return[<|"status" -> "tooManyEquations", "equationCount" -> equationCount,
-      "maxEquationCount" -> maxEquationCount, "generatorSeedData" -> generatorData,
-      "equations" -> {}|>]
-    ];
    records = Flatten@Table[
       With[{family = families[[familyIndex]]},
        Flatten@Table[

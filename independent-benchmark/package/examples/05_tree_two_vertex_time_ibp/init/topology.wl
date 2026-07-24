@@ -1,4 +1,4 @@
-<|"name" -> "016TreeTwoVertexPlusPlus", "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2},
+<|"name" -> "017TreeTwoVertexPlusPlus", "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2},
  "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+"|>,
  "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p12, "treeEnergy" -> k12, "nu" -> nu12,
     "bbType" -> "h", "massType" -> "massive", "skType" -> "++", "state" -> "full",
@@ -44,8 +44,8 @@
      "extraQuadraticRows" -> {}|>, "capabilities" -> <|"initializationUsableQ" -> True, "timeIBPUsableQ" -> True,
      "momentumIBPUsableQ" -> False, "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>,
    "issues" -> {}|>, "capabilities" -> <|"initializationUsableQ" -> True, "timeIBPUsableQ" -> True,
-   "momentumIBPUsableQ" -> False, "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>,
- "cycleLineIndices" -> {}, "bridgeLineIndices" -> {1}, "loopExternalMomenta" -> {},
+   "momentumIBPUsableQ" -> False, "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True,
+   "parityUsableQ" -> True|>, "cycleLineIndices" -> {}, "bridgeLineIndices" -> {1}, "loopExternalMomenta" -> {},
  "effectiveLoopExternalMomenta" -> {}, "independentExternalMomenta" -> {p12}, "momentumDecompositionBasis" -> {p12},
  "fixedExternalVectorAtoms" -> {p12}, "externalMomenta" -> {}, "externalLegMomenta" -> {p12},
  "rawExternalInvariantRules" -> {}, "externalInvariantRules" -> {},
@@ -72,31 +72,40 @@
    "message" -> "动力学变量完备，且当前简单坐标规则可反向转换。"|>, "ispData" -> {}, "nV" -> 2,
  "nE" -> 1, "nL" -> 0, "nK" -> 0, "bMatrix" -> {{1}, {-1}}, "vertexLines" -> {{{1, 1}}, {{1, -1}}},
  "loopCoeffMatrix" -> {{}}, "externalCoeffMatrix" -> {{}}, "externalPartList" -> {p12}, "rawNumericRules" -> {},
- "numericRules" -> {}, "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck",
- "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {},
- "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-   "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
- "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
- "shrinkPrefactorRules" -> {E^(Pi*Im[nu12]) -> eta12}, "symmetryRules" -> {}, "thetaBoundarySignOffset" -> Automatic,
- "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2|>,
- "sectorMetadata" -> <|"caseName" -> "016TreeTwoVertexPlusPlus", "sectorShrunkLines" -> {}, "sectorKey" -> "top",
-   "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2|>,
-   "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2|>, "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 2|>,
-   "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1, "aSymbol" -> a[v1],
-      "activeQ" -> True, "fixedValue" -> None, "compactASlot" -> 1|>, <|"slot" -> 2, "vertexId" -> v2,
-      "representativeVertexId" -> v2, "aSymbol" -> a[v2], "activeQ" -> True, "fixedValue" -> None,
-      "compactASlot" -> 2|>}, "compactASlots" -> {<|"compactSlot" -> 1, "representativeVertexId" -> v1,
-      "originalVertexIds" -> {v1}, "originalSlots" -> {1}, "aSymbol" -> a[v1]|>,
-     <|"compactSlot" -> 2, "representativeVertexId" -> v2, "originalVertexIds" -> {v2}, "originalSlots" -> {2},
-      "aSymbol" -> a[v2]|>}, "activeASlots" -> {1, 2},
+ "numericRules" -> {}, "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+ "generatorSeedRanges" -> {}, "unknownSeedPreset" -> None,
+ "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
+ "rootZeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
+ "shrinkPrefactorRules" -> {E^(Pi*Im[nu12]) -> eta12}, "symmetryRules" -> {}, "parityConstraints" -> {},
+ "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
+  <|v1 -> v1, v2 -> v2|>, "sectorMetadata" -> <|"caseName" -> "017TreeTwoVertexPlusPlus", "sectorShrunkLines" -> {},
+   "sectorKey" -> "top", "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" ->
+    <|v1 -> v1, v2 -> v2|>, "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2|>,
+   "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 2|>, "vertexSlots" ->
+    {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1, "aSymbol" -> a[v1], "activeQ" -> True,
+      "fixedValue" -> None, "compactASlot" -> 1|>, <|"slot" -> 2, "vertexId" -> v2, "representativeVertexId" -> v2,
+      "aSymbol" -> a[v2], "activeQ" -> True, "fixedValue" -> None, "compactASlot" -> 2|>},
+   "compactASlots" -> {<|"compactSlot" -> 1, "representativeVertexId" -> v1, "originalVertexIds" -> {v1},
+      "originalSlots" -> {1}, "aSymbol" -> a[v1]|>, <|"compactSlot" -> 2, "representativeVertexId" -> v2,
+      "originalVertexIds" -> {v2}, "originalSlots" -> {2}, "aSymbol" -> a[v2]|>}, "activeASlots" -> {1, 2},
    "lineSlots" -> {<|"slot" -> 1, "lineId" -> 1, "packType" -> "massiveFull", "massType" -> "massive",
       "state" -> "full", "endpoints" -> {v1, v2}, "originalEndpoints" -> {v1, v2},
       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
        Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
       "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-      "nPositions" -> {1, 2}, "packTemplate" -> {n[1, 1], n[1, 2]}|>}, "lineIdToSlot" -> <|1 -> 1|>,
-   "bSymbolToLineSlot" -> <||>, "ispSlots" -> {}|>, "sectorMetadataList" ->
-  {<|"caseName" -> "016TreeTwoVertexPlusPlus", "sectorShrunkLines" -> {}, "sectorKey" -> "top",
+      "nPositions" -> {2, 3}, "packTemplate" -> {"F", n[1, 1], n[1, 2]}, "rootLinePosition" -> 1,
+      "powerSlotKind" -> "fixed", "shrunkQ" -> False|>}, "lineIdToSlot" -> <|1 -> 1|>, "bSymbolToLineSlot" -> <||>,
+   "ispSlots" -> {}, "sectorPattern" -> {<|"powerKind" -> "fixed", "state" -> "full"|>},
+   "sectorPrefactorData" -> <|"lineIndices" -> {1}, "parameterKeys" -> {"fixedLine:1"}, "parameterList" -> {sE1},
+     "powerList" -> {-beta12}, "powerParts" -> {<|"lineIndex" -> 1, "lineId" -> 1, "parameterKey" -> "fixedLine:1",
+        "parameter" -> sE1, "state" -> "full", "sourceZeroPoint" -> beta12, "targetZeroPoint" -> beta12,
+        "derivedTargetZeroPoint" -> beta12, "zeroPointOverrideSource" -> "sourceSector", "integerShift" -> 0,
+        "compiledIntegerShift" -> 0, "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+        "normalizedResidualPower" -> 0, "prefactorPower" -> -beta12|>}, "constantPrefactor" -> 1,
+     "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" -> {},
+   "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+     "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>,
+ "sectorMetadataList" -> {<|"caseName" -> "017TreeTwoVertexPlusPlus", "sectorShrunkLines" -> {}, "sectorKey" -> "top",
     "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2|>,
     "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2|>, "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 2|>,
     "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1, "aSymbol" -> a[v1],
@@ -111,22 +120,44 @@
        "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
         Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
        "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-       "nPositions" -> {1, 2}, "packTemplate" -> {n[1, 1], n[1, 2]}|>}, "lineIdToSlot" -> <|1 -> 1|>,
-    "bSymbolToLineSlot" -> <||>, "ispSlots" -> {}|>, <|"caseName" -> "016TreeTwoVertexPlusPlus_sector_e1",
-    "sectorShrunkLines" -> {1}, "sectorKey" -> "e1", "aSlotMode" -> "compactActiveSlots",
-    "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v1|>, "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2|>,
-    "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 1|>, "vertexSlots" ->
-     {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1, "aSymbol" -> a[v1], "activeQ" -> True,
-       "fixedValue" -> None, "compactASlot" -> 1|>, <|"slot" -> 2, "vertexId" -> v2, "representativeVertexId" -> v1,
-       "aSymbol" -> a[v2], "activeQ" -> False, "fixedValue" -> 0, "compactASlot" -> 1|>},
-    "compactASlots" -> {<|"compactSlot" -> 1, "representativeVertexId" -> v1, "originalVertexIds" -> {v1, v2},
-       "originalSlots" -> {1, 2}, "aSymbol" -> a[v1]|>}, "activeASlots" -> {1},
+       "nPositions" -> {2, 3}, "packTemplate" -> {"F", n[1, 1], n[1, 2]}, "rootLinePosition" -> 1,
+       "powerSlotKind" -> "fixed", "shrunkQ" -> False|>}, "lineIdToSlot" -> <|1 -> 1|>, "bSymbolToLineSlot" -> <||>,
+    "ispSlots" -> {}, "sectorPattern" -> {<|"powerKind" -> "fixed", "state" -> "full"|>},
+    "sectorPrefactorData" -> <|"lineIndices" -> {1}, "parameterKeys" -> {"fixedLine:1"}, "parameterList" -> {sE1},
+      "powerList" -> {-beta12}, "powerParts" -> {<|"lineIndex" -> 1, "lineId" -> 1, "parameterKey" -> "fixedLine:1",
+         "parameter" -> sE1, "state" -> "full", "sourceZeroPoint" -> beta12, "targetZeroPoint" -> beta12,
+         "derivedTargetZeroPoint" -> beta12, "zeroPointOverrideSource" -> "sourceSector", "integerShift" -> 0,
+         "compiledIntegerShift" -> 0, "zeroPointShift" -> 0, "compiledZeroPointShift" -> 0, "targetMinusSource" -> 0,
+         "normalizedResidualPower" -> 0, "prefactorPower" -> -beta12|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" -> {},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>,
+   <|"caseName" -> "017TreeTwoVertexPlusPlus_sector_e1", "sectorShrunkLines" -> {1}, "sectorKey" -> "e1",
+    "aSlotMode" -> "compactActiveSlots", "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v1|>,
+    "vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2|>, "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 1|>,
+    "vertexSlots" -> {<|"slot" -> 1, "vertexId" -> v1, "representativeVertexId" -> v1, "aSymbol" -> a[v1],
+       "activeQ" -> True, "fixedValue" -> None, "compactASlot" -> 1|>, <|"slot" -> 2, "vertexId" -> v2,
+       "representativeVertexId" -> v1, "aSymbol" -> a[v2], "activeQ" -> False, "fixedValue" -> 0,
+       "compactASlot" -> 1|>}, "compactASlots" -> {<|"compactSlot" -> 1, "representativeVertexId" -> v1,
+       "originalVertexIds" -> {v1, v2}, "originalSlots" -> {1, 2}, "aSymbol" -> a[v1]|>}, "activeASlots" -> {1},
     "lineSlots" -> {<|"slot" -> 1, "lineId" -> 1, "packType" -> "shrunk", "massType" -> "massive", "state" -> "shrunk",
        "endpoints" -> {v1, v1}, "originalEndpoints" -> {v1, v2}, "masslessN1ReferenceEndpoint" ->
         Missing["NotApplicable"], "masslessN1OppositeEndpoint" -> Missing["NotApplicable"],
        "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 1}, "linePowerMode" -> "fixedCoefficient",
-       "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None, "nPositions" -> {}, "packTemplate" -> {}|>},
-    "lineIdToSlot" -> <|1 -> 1|>, "bSymbolToLineSlot" -> <||>, "ispSlots" -> {}|>},
+       "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None, "nPositions" -> {}, "packTemplate" -> {"F"},
+       "rootLinePosition" -> 1, "powerSlotKind" -> "fixed", "shrunkQ" -> True|>}, "lineIdToSlot" -> <|1 -> 1|>,
+    "bSymbolToLineSlot" -> <||>, "ispSlots" -> {}, "sectorPattern" ->
+     {<|"powerKind" -> "fixed", "state" -> "shrunk"|>}, "sectorPrefactorData" ->
+     <|"lineIndices" -> {1}, "parameterKeys" -> {"fixedLine:1"}, "parameterList" -> {sE1},
+      "powerList" -> {-beta12 - 2*nu12}, "powerParts" -> {<|"lineIndex" -> 1, "lineId" -> 1,
+         "parameterKey" -> "fixedLine:1", "parameter" -> sE1, "state" -> "shrunk", "sourceZeroPoint" -> beta12,
+         "targetZeroPoint" -> beta12 + 2*nu12, "derivedTargetZeroPoint" -> beta12 + 2*nu12,
+         "zeroPointOverrideSource" -> "compiledDefault", "integerShift" -> 1, "compiledIntegerShift" -> 1,
+         "zeroPointShift" -> 2*nu12, "compiledZeroPointShift" -> 2*nu12, "targetMinusSource" -> 2*nu12,
+         "normalizedResidualPower" -> 1, "prefactorPower" -> -beta12 - 2*nu12|>}, "constantPrefactor" -> 1,
+      "normalizationConvention" -> "zeroPointOnly"|>, "builtInRelationData" -> {},
+    "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
+      "constraints" -> {}|>, "representation" -> "J[aList,linePacks,ispList]"|>},
  "indexMaps" -> <|"vertexIdToOriginalASlot" -> <|v1 -> 1, v2 -> 2|>, "vertexIdToCompactASlot" -> <|v1 -> 1, v2 -> 2|>,
    "lineIdToSlot" -> <|1 -> 1|>, "bSymbolToLineSlot" -> <||>,
    "compactASlots" -> {<|"compactSlot" -> 1, "representativeVertexId" -> v1, "originalVertexIds" -> {v1},
@@ -137,16 +168,17 @@
       "masslessN1ReferenceEndpoint" -> Missing["NotApplicable"], "masslessN1OppositeEndpoint" ->
        Missing["NotApplicable"], "endpointOriginalASlots" -> {1, 2}, "endpointCompactASlots" -> {1, 2},
       "linePowerMode" -> "fixedCoefficient", "bPosition" -> Missing["FixedLinePower"], "bSymbol" -> None,
-      "nPositions" -> {1, 2}, "packTemplate" -> {n[1, 1], n[1, 2]}|>}, "ispSlots" -> {}|>,
+      "nPositions" -> {2, 3}, "packTemplate" -> {"F", n[1, 1], n[1, 2]}, "rootLinePosition" -> 1,
+      "powerSlotKind" -> "fixed", "shrunkQ" -> False|>}, "ispSlots" -> {}|>,
  "seedSummary" -> <|"continuousVariables" -> {a[v1], a[v2]}, "discreteVariables" -> {n[1, 1], n[1, 2]},
    "discreteStateCount" -> 4, "momentumGeneratorCount" -> 0, "timeGeneratorCount" -> 2,
-   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>, "numericRules" -> {},
+   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>, "numericRules" -> {},
    "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {}, "internalProvidedNumericVariables" -> {},
      "requiredExternalInvariants" -> {}, "internalRequiredExternalInvariants" -> {},
      "externalInvariantNamingReport" -> <|"externalMomenta" -> {}, "externalInvariantRules" -> {},
        "internalExternalInvariantRules" -> {}, "coordinateData" -> {}, "defaultNamingConvention" ->
         "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order", "message" -> "loopExternalMomenta \
-是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "externalLegInvariantNamingReport" -> <|"externalLegMomenta" -> {p12}, "appearingMagnitudeMomenta" -> {p12},
        "independentMagnitudeMomenta" -> {p12}, "dependentMagnitudeBindings" -> {},
        "externalLegInvariantRules" -> {sp[p12, p12] -> sE1^2}, "coordinateData" ->
@@ -177,7 +209,7 @@ explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2|>, "internal
             "coordinateType" -> "externalLegSquareRoot", "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,\
 ... follow the first-occurrence independent basis of no-loop momentum magnitudes in lineData, vertexEnergies and \
 extLegs", "automaticCrossProducts" -> False, "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>,
-       "message" -> "vertexEnergies 可使用 loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 \
+       "message" -> "vertexEnergies 可使用 loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 \
 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"|>,
      "requiredVertexEnergies" -> {E1, E2}, "internalRequiredVertexEnergies" -> {E1, E2},
      "requiredLineParameters" -> {nu12}, "requiredNumericVariables" -> {E1, E2, nu12},
@@ -190,7 +222,7 @@ extLegs", "automaticCrossProducts" -> False, "entersLoopIBPGenerators" -> False,
      "coordinateData" -> {}, "defaultNamingConvention" ->
       "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order",
      "message" ->
-      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "vertexEnergyNamingReport" -> <|"convention" -> "loop external roots use ssij; the independent basis of actually \
 appearing no-loop momentum magnitudes uses sEe variables and dependent magnitudes keep explicit bindings; unrelated \
 scalar phase parameters remain explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2|>,
@@ -212,15 +244,14 @@ scalar phase parameters remain explicit user symbols", "rawVertexEnergies" -> <|
           "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,... follow the first-occurrence independent \
 basis of no-loop momentum magnitudes in lineData, vertexEnergies and extLegs", "automaticCrossProducts" -> False,
        "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>, "message" -> "vertexEnergies 可使用 \
-loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
-|>, "sampleDiscreteRules" -> {}|>, "validationReport" -> <|"status" -> "ok", "errorCount" -> 0, "warningCount" -> 3,
-   "pendingCount" -> 0, "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {},
-     "internalProvidedNumericVariables" -> {}, "requiredExternalInvariants" -> {},
-     "internalRequiredExternalInvariants" -> {}, "externalInvariantNamingReport" ->
-      <|"externalMomenta" -> {}, "externalInvariantRules" -> {}, "internalExternalInvariantRules" -> {},
-       "coordinateData" -> {}, "defaultNamingConvention" ->
+loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
+|>|>, "validationReport" -> <|"status" -> "ok", "errorCount" -> 0, "warningCount" -> 2, "pendingCount" -> 0,
+   "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {}, "internalProvidedNumericVariables" -> {},
+     "requiredExternalInvariants" -> {}, "internalRequiredExternalInvariants" -> {},
+     "externalInvariantNamingReport" -> <|"externalMomenta" -> {}, "externalInvariantRules" -> {},
+       "internalExternalInvariantRules" -> {}, "coordinateData" -> {}, "defaultNamingConvention" ->
         "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order", "message" -> "loopExternalMomenta \
-是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "externalLegInvariantNamingReport" -> <|"externalLegMomenta" -> {p12}, "appearingMagnitudeMomenta" -> {p12},
        "independentMagnitudeMomenta" -> {p12}, "dependentMagnitudeBindings" -> {},
        "externalLegInvariantRules" -> {sp[p12, p12] -> sE1^2}, "coordinateData" ->
@@ -251,7 +282,7 @@ explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2|>, "internal
             "coordinateType" -> "externalLegSquareRoot", "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,\
 ... follow the first-occurrence independent basis of no-loop momentum magnitudes in lineData, vertexEnergies and \
 extLegs", "automaticCrossProducts" -> False, "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>,
-       "message" -> "vertexEnergies 可使用 loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 \
+       "message" -> "vertexEnergies 可使用 loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 \
 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"|>,
      "requiredVertexEnergies" -> {E1, E2}, "internalRequiredVertexEnergies" -> {E1, E2},
      "requiredLineParameters" -> {nu12}, "requiredNumericVariables" -> {E1, E2, nu12},
@@ -261,22 +292,18 @@ extLegs", "automaticCrossProducts" -> False, "entersLoopIBPGenerators" -> False,
      "missingNumericVariables" -> {E1, E2, nu12}, "internalMissingNumericVariables" -> {E1, E2, nu12},
      "completeStaticNumericRulesQ" -> False|>, "pendingFeatures" -> {},
    "issues" -> {<|"severity" -> "warning", "code" -> "numericRulesMissingVertexEnergies",
-      "missingVertexEnergies" -> {E1, E2}, "numericRules" -> {},
-      "comment" ->
-       "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"|>,
+      "missingVertexEnergies" -> {E1, E2}, "numericRules" -> {}, "comment" -> "only LinearSystemMode->numeric requires \
+these values; symbolic Kira/DE must keep requested vertex-energy derivatives symbolic"|>,
      <|"severity" -> "warning", "code" -> "numericRulesMissingLineParameters", "missingLineParameters" -> {nu12},
       "numericRules" -> {}, "comment" ->
-       "analytic seed can still be generated; numeric linear/Kira stages need massive line parameter rules"|>,
-     <|"severity" -> "warning", "code" -> "sampleDiscreteRulesMissingForDiscreteVariables",
-      "missingVariables" -> {n[1, 1], n[1, 2]}, "comment" ->
-       "sample seed mode needs complete n=0/1 rules; DiscreteMode -> all can enumerate them automatically"|>}|>,
+       "massive parameters may remain symbolic; only an explicitly fully numeric linear system requires values"|>}|>,
  "numericRuleRequirementReport" -> <|"providedNumericVariables" -> {}, "internalProvidedNumericVariables" -> {},
    "requiredExternalInvariants" -> {}, "internalRequiredExternalInvariants" -> {},
    "externalInvariantNamingReport" -> <|"externalMomenta" -> {}, "externalInvariantRules" -> {},
      "internalExternalInvariantRules" -> {}, "coordinateData" -> {}, "defaultNamingConvention" ->
       "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order",
      "message" ->
-      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，016 公开缺省坐标为 ssij。"\
+      "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，017 公开缺省坐标为 ssij。"\
 |>, "externalLegInvariantNamingReport" -> <|"externalLegMomenta" -> {p12}, "appearingMagnitudeMomenta" -> {p12},
      "independentMagnitudeMomenta" -> {p12}, "dependentMagnitudeBindings" -> {},
      "externalLegInvariantRules" -> {sp[p12, p12] -> sE1^2}, "coordinateData" ->
@@ -308,7 +335,7 @@ explicit user symbols", "rawVertexEnergies" -> <|v1 -> E1, v2 -> E2|>, "internal
           "userJacobian" -> 1|>}, "defaultNamingConvention" -> "sE1,sE2,... follow the first-occurrence independent \
 basis of no-loop momentum magnitudes in lineData, vertexEnergies and extLegs", "automaticCrossProducts" -> False,
        "entersLoopIBPGenerators" -> False, "entersISPClosure" -> False|>, "message" -> "vertexEnergies 可使用 \
-loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；016 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
+loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；017 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"\
 |>, "requiredVertexEnergies" -> {E1, E2}, "internalRequiredVertexEnergies" -> {E1, E2},
    "requiredLineParameters" -> {nu12}, "requiredNumericVariables" -> {E1, E2, nu12},
    "internalRequiredNumericVariables" -> {E1, E2, nu12}, "missingExternalInvariants" -> {},
@@ -320,7 +347,7 @@ loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；
  "tadpoleSymmetryData" -> <|"status" -> "generated", "loopReversalData" -> {}, "massiveFullLineIndices" -> {},
    "masslessFullLineIndices" -> {}, "automaticRuleCount" -> 1,
    "automaticRules" -> {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[
-         <|"name" -> "016TreeTwoVertexPlusPlus", "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2},
+         <|"name" -> "017TreeTwoVertexPlusPlus", "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2},
           "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+"|>, "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2},
              "momentum" -> p12, "treeEnergy" -> k12, "nu" -> nu12, "bbType" -> "h", "massType" -> "massive",
              "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta", "packType" -> "massiveFull",
@@ -394,16 +421,15 @@ loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；
             "message" -> "动力学变量完备，且当前简单坐标规则可反向转换。"|>, "ispData" -> {},
           "nV" -> 2, "nE" -> 1, "nL" -> 0, "nK" -> 0, "bMatrix" -> {{1}, {-1}}, "vertexLines" -> {{{1, 1}}, {{1, -1}}},
           "loopCoeffMatrix" -> {{}}, "externalCoeffMatrix" -> {{}}, "externalPartList" -> {p12},
-          "rawNumericRules" -> {}, "numericRules" -> {}, "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck",
-          "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {},
-          "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-            "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
+          "rawNumericRules" -> {}, "numericRules" -> {}, "seedPreset" -> "quickCheck",
+          "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>, "generatorSeedRanges" -> {},
           "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
-          "shrinkPrefactorRules" -> {E^(Pi*Im[nu12]) -> eta12}, "symmetryRules" -> {}, "thetaBoundarySignOffset" ->
-           Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2|>|>,
-         dSIBP`Private`int$]] :> 0}, "userRuleCount" -> 0, "effectiveRuleCount" -> 1|>,
+          "rootZeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
+          "shrinkPrefactorRules" -> {E^(Pi*Im[nu12]) -> eta12}, "symmetryRules" -> {}, "parityConstraints" -> {},
+          "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
+           <|v1 -> v1, v2 -> v2|>|>, dSIBP`Private`int$]] :> 0}, "userRuleCount" -> 0, "effectiveRuleCount" -> 1|>,
  "effectiveSymmetryRules" ->
-  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "016TreeTwoVertexPlusPlus",
+  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "017TreeTwoVertexPlusPlus",
         "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2}, "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+"|>,
         "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p12, "treeEnergy" -> k12, "nu" -> nu12,
            "bbType" -> "h", "massType" -> "massive", "skType" -> "++", "state" -> "full",
@@ -479,13 +505,12 @@ loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；
            "动力学变量完备，且当前简单坐标规则可反向转换。"|>, "ispData" -> {}, "nV" -> 2,
         "nE" -> 1, "nL" -> 0, "nK" -> 0, "bMatrix" -> {{1}, {-1}}, "vertexLines" -> {{{1, 1}}, {{1, -1}}},
         "loopCoeffMatrix" -> {{}}, "externalCoeffMatrix" -> {{}}, "externalPartList" -> {p12}, "rawNumericRules" -> {},
-        "numericRules" -> {}, "sampleDiscreteRules" -> {}, "seedPreset" -> "quickCheck",
-        "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>, "generatorSeedRanges" -> {},
-        "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64,
-          "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
-        "unknownSeedPreset" -> None, "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
-        "shrinkPrefactorRules" -> {E^(Pi*Im[nu12]) -> eta12}, "symmetryRules" -> {},
-        "thetaBoundarySignOffset" -> Automatic, "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" ->
-         <|v1 -> v1, v2 -> v2|>|>, dSIBP`Private`int$]] :> 0}, "masslessBundleCandidates" -> {},
- "masslessEndpointConventions" -> {}, "precomputedShrinkSectorSummary" ->
-  <|"status" -> "generated", "completeCoverageQ" -> True|>, "precomputedShrinkSectorKeys" -> {"top", "e1"}|>
+        "numericRules" -> {}, "seedPreset" -> "quickCheck", "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
+        "generatorSeedRanges" -> {}, "unknownSeedPreset" -> None, "zeroPointRules" ->
+         {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12}, "rootZeroPointRules" ->
+         {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12}, "shrinkPrefactorRules" -> {E^(Pi*Im[nu12]) -> eta12},
+        "symmetryRules" -> {}, "parityConstraints" -> {}, "thetaBoundarySignOffset" -> Automatic,
+        "kiraOrdering" -> <||>, "sectorVertexRepresentativeMap" -> <|v1 -> v1, v2 -> v2|>|>, dSIBP`Private`int$]] :>
+    0}, "masslessBundleCandidates" -> {}, "masslessEndpointConventions" -> {},
+ "precomputedShrinkSectorSummary" -> <|"status" -> "generated", "completeCoverageQ" -> True|>,
+ "precomputedShrinkSectorKeys" -> {"top", "e1"}|>

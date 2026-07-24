@@ -84,8 +84,8 @@ optionalCaseInputKeys[] := {
    "externalLegMomenta", "externalLegInvariantRules", "rawExternalLegInvariantRules",
    "kinematicRules",
    "ispData", "vertexEnergies", "activeVertexIds",
-   "fixedAVertexValues", "numericRules", "rawNumericRules", "sampleDiscreteRules", "seedPreset", "seedRanges",
-   "generatorSeedRanges", "seedOptions", "zeroPointRules", "shrinkPrefactorRules", "symmetryRules", "thetaBoundarySignOffset", "kiraOrdering"
+   "fixedAVertexValues", "numericRules", "rawNumericRules", "seedPreset", "seedRanges",
+   "generatorSeedRanges", "zeroPointRules", "shrinkPrefactorRules", "symmetryRules", "thetaBoundarySignOffset", "kiraOrdering"
    };
 
 
@@ -152,60 +152,14 @@ generatorSeedRangesShapeIssues[data_] := If[
    ];
 
 
-validNonNegativeIntegerQ[value_] := IntegerQ[value] && value >= 0;
-
-
-allowedSeedOptionKeys[] := {
-   "DiscreteMode", "MaxSeedRuleCount", "MaxDiscreteRuleCount", "MaxEquationCount",
-   "MaxShrinkSectorDepth", "MaxShrinkSectorCount"
-   };
-
-
-validSeedOptionValueQ["DiscreteMode", value_] := MemberQ[{"sample", "all", "none"}, value];
-validSeedOptionValueQ["MaxShrinkSectorDepth", value_] := value === Automatic || validNonNegativeIntegerQ[value];
-validSeedOptionValueQ[key_, value_] /; MemberQ[{"MaxSeedRuleCount", "MaxDiscreteRuleCount", "MaxEquationCount", "MaxShrinkSectorCount"}, key] := validNonNegativeIntegerQ[value];
-validSeedOptionValueQ[_, _] := False;
-
-
 validDiscreteReplacementRuleQ[rule_] := MatchQ[Unevaluated[rule], _Rule | _RuleDelayed];
-
-
-sampleDiscreteRuleSetShapeIssue[ruleSet_, index_] := Module[{badRulePositions},
-   If[! ListQ[ruleSet],
-    Return[<|"ruleSetIndex" -> index, "reason" -> "each sample entry must be a list of replacement rules", "entry" -> ruleSet|>]
-    ];
-   badRulePositions = Flatten @ Position[ruleSet, rule_ /; ! validDiscreteReplacementRuleQ[rule], {1}, Heads -> False];
-   If[badRulePositions === {},
-    Nothing,
-    <|"ruleSetIndex" -> index, "badRulePositions" -> badRulePositions, "entry" -> ruleSet|>
-    ]
-   ];
-
-
-sampleDiscreteRulesShapeIssues[rules_] := Module[{badEntries},
-   If[! ListQ[rules],
-    Return[{<|"reason" -> "sampleDiscreteRules must be a list of replacement-rule lists", "value" -> rules|>}]
-    ];
-   badEntries = DeleteCases[
-     MapIndexed[sampleDiscreteRuleSetShapeIssue[#1, First[#2]] &, rules],
-     Nothing
-     ];
-   badEntries
-   ];
-
-
-sampleDiscreteRulePairs[rules_] := Cases[
-   rules,
-   (Verbatim[Rule] | Verbatim[RuleDelayed])[lhs_, rhs_] :> {lhs, rhs},
-   {0, Infinity}
-   ];
 
 
 caseInputMalformedIssues[case_Association] := Module[
    {issues = {}, vertexData, lineData, loopMomenta, externalMomenta, loopExternalMomenta,
-    independentExternalMomenta, ispData, seedRanges, generatorSeedRanges, seedOptions, badVertexPositions,
+    independentExternalMomenta, ispData, seedRanges, generatorSeedRanges, badVertexPositions,
     badLineShapePositions, lineMissingKeyData, badEndpointData, badISPShapePositions, ispMissingKeyData,
-    sampleDiscreteRules, sampleRuleShapeIssues, generatorRangeShapeIssues, symmetryRules, badSymmetryRulePositions},
+    generatorRangeShapeIssues, symmetryRules, badSymmetryRulePositions},
    If[KeyExistsQ[case, "vertexData"],
     vertexData = case["vertexData"];
     If[! ListQ[vertexData],
@@ -292,12 +246,6 @@ caseInputMalformedIssues[case_Association] := Module[
      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedGeneratorSeedRanges", "issues" -> generatorRangeShapeIssues|>]
      ]
     ];
-   If[KeyExistsQ[case, "seedOptions"],
-    seedOptions = case["seedOptions"];
-    If[! AssociationQ[seedOptions],
-     AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSeedOptions", "reason" -> "seedOptions must be an Association"|>]
-     ]
-    ];
    If[KeyExistsQ[case, "symmetryRules"],
     symmetryRules = case["symmetryRules"];
     If[! ListQ[symmetryRules],
@@ -335,13 +283,6 @@ caseInputMalformedIssues[case_Association] := Module[
       AppendTo[issues, <|"severity" -> "error", "code" -> "ispDataMissingRequiredKeys", "isps" -> ispMissingKeyData|>]
       ]
      ]
-     ];
-    If[KeyExistsQ[case, "sampleDiscreteRules"],
-     sampleDiscreteRules = case["sampleDiscreteRules"];
-     sampleRuleShapeIssues = sampleDiscreteRulesShapeIssues[sampleDiscreteRules];
-     If[sampleRuleShapeIssues =!= {},
-      AppendTo[issues, <|"severity" -> "error", "code" -> "malformedSampleDiscreteRules", "issues" -> sampleRuleShapeIssues|>]
-      ]
      ];
     issues
     ];
@@ -391,37 +332,31 @@ caseInputPreflightErrorQ[case_Association] := ! TrueQ[caseInputRequirementReport
 seedPresetAssociation[preset_] := Switch[preset,
    "quickCheck" | Automatic | Missing["NotSet"],
    <|
-    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>
     |>,
    "fullDiscrete",
    <|
-    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>
     |>,
    "bounded",
    <|
-    "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}, "sampleOnly" -> False|>,
-    "seedOptions" -> <|"DiscreteMode" -> "all", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 200, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>
+    "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}|>
     |>,
    _,
    <|
-    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}, "sampleOnly" -> True|>,
-    "seedOptions" -> <|"DiscreteMode" -> "sample", "MaxSeedRuleCount" -> 200, "MaxDiscreteRuleCount" -> 64, "MaxEquationCount" -> 80, "MaxShrinkSectorDepth" -> Automatic, "MaxShrinkSectorCount" -> 16|>,
+    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0}|>,
     "unknownPreset" -> preset
     |>
    ];
 
 
 normalizeSeedConfig[case_Association] := Module[
-   {preset = Lookup[case, "seedPreset", "quickCheck"], presetData, seedRanges, seedOptions},
+   {preset = Lookup[case, "seedPreset", "quickCheck"], presetData, seedRanges},
    presetData = seedPresetAssociation[preset];
    seedRanges = Join[Lookup[presetData, "seedRanges", <||>], Lookup[case, "seedRanges", <||>]];
-   seedOptions = Join[Lookup[presetData, "seedOptions", <||>], Lookup[case, "seedOptions", <||>]];
    <|
     "seedPreset" -> preset,
     "seedRanges" -> seedRanges,
-    "seedOptions" -> seedOptions,
     "unknownSeedPreset" -> Lookup[presetData, "unknownPreset", None]
     |>
    ];
@@ -910,11 +845,9 @@ parseTopology[case_Association] := Module[
     "externalPartList" -> externalPartList,
     "rawNumericRules" -> Lookup[case, "rawNumericRules", Lookup[case, "numericRules", {}]],
     "numericRules" -> normalizeNumericRulesForTopology[Lookup[case, "rawNumericRules", Lookup[case, "numericRules", {}]], topoContext],
-    "sampleDiscreteRules" -> Lookup[case, "sampleDiscreteRules", {}],
     "seedPreset" -> seedConfig["seedPreset"],
     "seedRanges" -> seedConfig["seedRanges"],
     "generatorSeedRanges" -> Lookup[case, "generatorSeedRanges", {}],
-    "seedOptions" -> seedConfig["seedOptions"],
     "unknownSeedPreset" -> seedConfig["unknownSeedPreset"],
     "zeroPointRules" -> Lookup[case, "zeroPointRules", {}],
     "shrinkPrefactorRules" -> Lookup[case, "shrinkPrefactorRules", {}],
@@ -1326,7 +1259,7 @@ enumerateDiscreteStates[expr_, topo_Association] := Module[
    ];
 
 
-(* 大拓扑下不要为了 summary 展开所有离散态；计数只用逐线状态数相乘。 *)
+(* 离散态计数只用于完整性证书；实际 seed 仍由 enumerateDiscreteStates 全量展开。 *)
 discreteStateCountForLine[line_Association] := Switch[line["packType"],
    "massiveFull", 4,
    "massiveCross", 4,
@@ -1336,37 +1269,6 @@ discreteStateCountForLine[line_Association] := Switch[line["packType"],
 
 
 discreteStateCount[topo_Association] := Times @@ (discreteStateCountForLine /@ topo["lines"]);
-
-
-(* 验证只看手选样本；若 case 未给 sampleDiscreteRules，则只保留未替换模板。 *)
-sampleDiscreteIntegrals[expr_, topo_Association] := Module[{rules = topo["sampleDiscreteRules"]},
-   If[Length[rules] == 0,
-    {expr},
-    expr /. # & /@ rules
-    ]
-   ];
-
-
-(* sample 模式必须给出完整 n=0/1 替换；否则 seed 中会残留符号 n，无法保证即时 EOM。 *)
-sampleDiscreteRuleCoverageIssues[topo_Association, rules_List] := Module[
-   {vars = Flatten[discreteVarsForLine /@ topo["lines"]]},
-   If[vars === {}, Return[{}]];
-    DeleteCases[
-     MapIndexed[
-      Module[{pairs, ruleVars, missing},
-        pairs = sampleDiscreteRulePairs[#1];
-        ruleVars = If[pairs === {}, {}, DeleteDuplicates[pairs[[All, 1]]]];
-        missing = Complement[vars, ruleVars];
-        If[missing === {},
-         Nothing,
-         <|"ruleIndex" -> First[#2], "missingVariables" -> missing, "rule" -> #1|>
-        ]
-       ] &,
-     rules
-     ],
-    Nothing
-    ]
-   ];
 
 
 (* ::Chapter:: *)
@@ -2837,7 +2739,7 @@ applyMomentumGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
 (*轻量 time IBP core seed*)
 
 (* 本章接入 time-IBP 的通用 core 项：顶点幂次、外部能量、massive building-block 端点导数、massless 端点翻转项和 massive/massless theta 边界缩并项。
-   单独 time batch 会把进一步 shrink-sector 生成标为 pending；canonical batch 会在保护阈值内自动补齐这些 sectors。 *)
+   单独 time batch 会把进一步 shrink-sector 生成标为 pending；canonical batch 完整补齐全部 contact-reachable sectors。 *)
 
 rawVertexExternalEnergy[topo_Association, vertexId_] := Module[
    {vertexEnergies = Lookup[topo, "vertexEnergies", Missing["NotSet"]]},
@@ -3249,32 +3151,19 @@ applyTimeGeneratorSeed[topo_Association, int_J, gen_Association] := Module[
    ];
 
 
-Options[makeTimeIBPSeedBatch] = {
-   UseSampleOnly -> Automatic,
-   MaxSeedRuleCount -> Automatic,
-   DiscreteMode -> Automatic,
-   MaxDiscreteRuleCount -> Automatic,
-   MaxEquationCount -> Automatic,
-   ApplyNumericRules -> False
-   };
-makeTimeIBPSeedBatch::toomany =
-   "拓扑 `1` 的 time seed 方程数为 `2`，超过上限 `3`；未展开方程。";
+Options[makeTimeIBPSeedBatch] = {ApplyNumericRules -> False};
 
 
 makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousDataByGenerator, continuousCounts, commonContinuousQ, legacyContinuousCount,
     legacyContinuousRules, discreteData, timeGenerators, equationCount,
-    maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
+     genTemplates, equations, pendingFeatures, topologyReport},
    topologyReport = topologyValidationReport[topo];
    If[topologyValidationErrorQ[topologyReport],
     Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]
     ];
    baseIntegral = makeBaseIntegral[topo];
-   discreteData = selectedDiscreteSeedRules[
-     topo,
-     DiscreteMode -> OptionValue[DiscreteMode],
-     MaxDiscreteRuleCount -> OptionValue[MaxDiscreteRuleCount]
-     ];
+   discreteData = selectedDiscreteSeedRules[topo];
    If[discreteData["status"] =!= "generated",
     Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
    ];
@@ -3283,12 +3172,7 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      With[{label = timeGeneratorLabel[generator]},
       Join[
        <|"generator" -> label|>,
-       makeGeneratorContinuousSeedRules[
-        topo,
-        label,
-        UseSampleOnly -> OptionValue[UseSampleOnly],
-        MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
-        ]
+       makeGeneratorContinuousSeedRules[topo, label]
        ]
       ],
      {generator, timeGenerators}
@@ -3302,21 +3186,6 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    legacyContinuousCount = If[Length[continuousCounts] == 0, 0, If[commonContinuousQ, First[continuousCounts], Total[continuousCounts]]];
    legacyContinuousRules = If[Length[continuousDataByGenerator] > 0 && commonContinuousQ, First[Lookup[continuousDataByGenerator, "rules"]], {}];
    equationCount = Total[continuousCounts] discreteData["ruleCount"];
-   maxEquationCount = resolveSeedOption[topo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
-   If[equationCount > maxEquationCount,
-    Message[makeTimeIBPSeedBatch::toomany, topo["name"], equationCount, maxEquationCount];
-    Return[<|
-      "status" -> "tooMany",
-      "caseName" -> topo["name"],
-      "topologyValidationReport" -> topologyReport,
-      "continuousSeedRuleCount" -> legacyContinuousCount,
-      "generatorContinuousSeedData" -> (KeyDrop[#, "rules"] & /@ continuousDataByGenerator),
-      "discreteRuleCount" -> discreteData["ruleCount"],
-      "timeGeneratorCount" -> Length[timeGenerators],
-      "equationCount" -> equationCount,
-      "equations" -> {}
-      |>]
-   ];
    genTemplates = MapThread[
      <|"generatorData" -> #1, "generator" -> timeGeneratorLabel[#1],
        "template" -> applyTimeGeneratorSeed[topo, baseIntegral, #1], "continuousData" -> #2|> &,
@@ -3371,8 +3240,8 @@ makeTimeIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
 (* ::Chapter:: *)
 (*seed 范围与批量 momentum seed*)
 
-(* 本章把用户给出的 seedRanges 转成受保护的替换规则，并生成小批 momentum seed。
-   默认尊重 sampleOnly，只使用基准连续指标和手选离散态，避免无意中展开整个 family。 *)
+(* 本章把用户给出的 seedRanges 转成受保护的替换规则。每个有限范围都完整展开，
+   generatorSeedRanges 只覆盖明确指定的生成元/指标，不做抽样、截断或数量估算。 *)
 
 rangeValuesFromSpec[spec_] := Which[
    Head[spec] === Missing, {0},
@@ -3395,22 +3264,19 @@ continuousIndexVariables[J[aList_, linePacks_, ispList_]] := Select[
    ];
 
 
-continuousIndexValueLists[topo_Association, J[aList_, linePacks_, ispList_], useSampleOnly_] := Module[
+continuousIndexValueLists[topo_Association, J[aList_, linePacks_, ispList_]] := Module[
    {aValues, bValues, ispValues, globalISPRangeQ, globalISPValues},
-   aValues = ConstantArray[If[TrueQ[useSampleOnly], {0}, seedRangeValues[topo, "a"]], Count[aList, _?indexVariableQ]];
+   aValues = ConstantArray[seedRangeValues[topo, "a"], Count[aList, _?indexVariableQ]];
    bValues = ConstantArray[
-     If[TrueQ[useSampleOnly], {0}, seedRangeValues[topo, "b"]],
+     seedRangeValues[topo, "b"],
      Count[Cases[Flatten[linePacks], _b | _bS], _?indexVariableQ]
      ];
    globalISPRangeQ = KeyExistsQ[topo["seedRanges"], "isp"];
    globalISPValues = seedRangeValues[topo, "isp"];
    ispValues = Table[
-     If[TrueQ[useSampleOnly],
-      {0},
-      If[globalISPRangeQ,
-       globalISPValues,
-       rangeValuesFromSpec[Lookup[topo["ispData"][[j]], "range", Missing["NotSet"]]]
-       ]
+     If[globalISPRangeQ,
+      globalISPValues,
+      rangeValuesFromSpec[Lookup[topo["ispData"][[j]], "range", Missing["NotSet"]]]
       ],
      {j, Length[ispList]}
      ];
@@ -3418,49 +3284,14 @@ continuousIndexValueLists[topo_Association, J[aList_, linePacks_, ispList_], use
    ];
 
 
-resolveUseSampleOnly[topo_Association, value_] := If[value === Automatic,
-   TrueQ[Lookup[topo["seedRanges"], "sampleOnly", False]],
-   TrueQ[value]
-   ];
-
-
-resolveDiscreteMode[topo_Association, value_] := If[value === Automatic,
-   Lookup[Lookup[topo, "seedOptions", <||>], "DiscreteMode", "sample"],
-   value
-   ];
-
-
-resolveSeedOption[topo_Association, key_String, value_, default_] := If[value === Automatic,
-   Lookup[Lookup[topo, "seedOptions", <||>], key, default],
-   value
-   ];
-
-
-Options[makeContinuousSeedRules] = {UseSampleOnly -> Automatic, MaxSeedRuleCount -> Automatic};
-makeContinuousSeedRules::toomany =
-   "拓扑 `1` 的连续 seed 规则数为 `2`，超过上限 `3`；未生成规则。";
+Options[makeContinuousSeedRules] = {};
 
 
 makeContinuousSeedRules[topo_Association, OptionsPattern[]] := Module[
-   {baseIntegral, useSampleOnly, vars, valueLists, ruleCount, maxCount, rules},
+   {baseIntegral, vars, valueLists, rules},
    baseIntegral = makeBaseIntegral[topo];
-   useSampleOnly = resolveUseSampleOnly[topo, OptionValue[UseSampleOnly]];
    vars = continuousIndexVariables[baseIntegral];
-   valueLists = continuousIndexValueLists[topo, baseIntegral, useSampleOnly];
-   ruleCount = Times @@ (Length /@ valueLists);
-   maxCount = resolveSeedOption[topo, "MaxSeedRuleCount", OptionValue[MaxSeedRuleCount], 200];
-   If[ruleCount > maxCount,
-    Message[makeContinuousSeedRules::toomany, topo["name"], ruleCount, maxCount];
-    Return[<|
-      "status" -> "tooMany",
-      "caseName" -> topo["name"],
-      "useSampleOnly" -> useSampleOnly,
-      "variables" -> vars,
-      "valueLists" -> valueLists,
-      "ruleCount" -> ruleCount,
-      "rules" -> {}
-      |>]
-    ];
+   valueLists = continuousIndexValueLists[topo, baseIntegral];
    rules = If[Length[vars] == 0,
      {{}},
      Thread[vars -> #] & /@ Tuples[valueLists]
@@ -3468,7 +3299,6 @@ makeContinuousSeedRules[topo_Association, OptionsPattern[]] := Module[
    <|
     "status" -> "generated",
     "caseName" -> topo["name"],
-    "useSampleOnly" -> useSampleOnly,
     "variables" -> vars,
     "valueLists" -> valueLists,
     "ruleCount" -> Length[rules],
@@ -3488,19 +3318,14 @@ generatorSeedRangeMatches[topo_Association, generatorLabel_List] := Select[
 
 Options[makeGeneratorContinuousSeedRules] = Options[makeContinuousSeedRules];
 makeGeneratorContinuousSeedRules[topo_Association, generatorLabel_List, OptionsPattern[]] := Module[
-   {matches, baseData, useSampleOnly, baseIntegral, vars, baseValueLists, configuredRules,
-    configuredVars, duplicateVars, unknownVars, valueLists, ruleCount, maxCount, rules, sectorKey},
+   {matches, baseData, baseIntegral, vars, baseValueLists, configuredRules,
+    configuredVars, duplicateVars, unknownVars, valueLists, rules, sectorKey},
    sectorKey = sectorKeyFromShrunkLines[Lookup[topo, "sectorShrunkLines", {}]];
-   useSampleOnly = resolveUseSampleOnly[topo, OptionValue[UseSampleOnly]];
    matches = generatorSeedRangeMatches[topo, generatorLabel];
-   If[useSampleOnly || matches === {},
-    baseData = makeContinuousSeedRules[
-      topo,
-      UseSampleOnly -> OptionValue[UseSampleOnly],
-      MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
-      ];
+   If[matches === {},
+    baseData = makeContinuousSeedRules[topo];
     Return[Join[baseData, <|"sectorKey" -> sectorKey, "rangeSource" -> "uniform",
-       "configuredRanges" -> {}, "generatorOverrideIgnoredBySampleOnlyQ" -> TrueQ[useSampleOnly && matches =!= {}]|>]]
+       "configuredRanges" -> {}|>]]
     ];
    If[Length[matches] =!= 1,
     Return[<|"status" -> "duplicateGeneratorRangeEntries", "caseName" -> topo["name"],
@@ -3508,7 +3333,7 @@ makeGeneratorContinuousSeedRules[topo_Association, generatorLabel_List, OptionsP
     ];
    baseIntegral = makeBaseIntegral[topo];
    vars = continuousIndexVariables[baseIntegral];
-   baseValueLists = continuousIndexValueLists[topo, baseIntegral, False];
+   baseValueLists = continuousIndexValueLists[topo, baseIntegral];
    configuredRules = matches[[1]]["ranges"];
    configuredVars = First /@ configuredRules;
    duplicateVars = Cases[Tally[configuredVars], {var_, count_} /; count > 1 :> var];
@@ -3526,56 +3351,20 @@ makeGeneratorContinuousSeedRules[topo_Association, generatorLabel_List, OptionsP
       ],
      {vars, baseValueLists}
      ];
-   ruleCount = Times @@ (Length /@ valueLists);
-   maxCount = resolveSeedOption[topo, "MaxSeedRuleCount", OptionValue[MaxSeedRuleCount], 200];
-   If[ruleCount > maxCount,
-    Message[makeContinuousSeedRules::toomany, topo["name"] <> "/" <> ToString[generatorLabel, InputForm], ruleCount, maxCount];
-    Return[<|"status" -> "tooMany", "caseName" -> topo["name"], "sectorKey" -> sectorKey,
-      "generator" -> generatorLabel, "rangeSource" -> "generatorOverride", "useSampleOnly" -> False,
-      "variables" -> vars, "valueLists" -> valueLists, "configuredRanges" -> configuredRules,
-      "ruleCount" -> ruleCount, "rules" -> {}|>]
-    ];
    rules = If[vars === {}, {{}}, Thread[vars -> #] & /@ Tuples[valueLists]];
    <|"status" -> "generated", "caseName" -> topo["name"], "sectorKey" -> sectorKey,
-    "generator" -> generatorLabel, "rangeSource" -> "generatorOverride", "useSampleOnly" -> False,
+    "generator" -> generatorLabel, "rangeSource" -> "generatorOverride",
     "variables" -> vars, "valueLists" -> valueLists, "configuredRanges" -> configuredRules,
     "ruleCount" -> Length[rules], "rules" -> rules|>
    ];
 
 
-Options[selectedDiscreteSeedRules] = {DiscreteMode -> Automatic, MaxDiscreteRuleCount -> Automatic};
-selectedDiscreteSeedRules::toomany =
-   "拓扑 `1` 的离散态数为 `2`，超过上限 `3`；未生成 all 离散规则。";
+Options[selectedDiscreteSeedRules] = {};
 
 
 selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
-   {mode, maxCount, rules, count, coverageIssues, shapeIssues},
-   mode = resolveDiscreteMode[topo, OptionValue[DiscreteMode]];
-   maxCount = resolveSeedOption[topo, "MaxDiscreteRuleCount", OptionValue[MaxDiscreteRuleCount], 64];
-   Switch[mode,
-    "none",
-    rules = {{}},
-     "sample",
-     rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}];
-     shapeIssues = sampleDiscreteRulesShapeIssues[rules];
-     If[shapeIssues =!= {},
-      Return[<|"status" -> "malformedSampleDiscreteRules", "mode" -> mode, "ruleCount" -> 0, "shapeIssues" -> shapeIssues, "rules" -> {}|>]
-      ];
-     coverageIssues = sampleDiscreteRuleCoverageIssues[topo, rules];
-    If[coverageIssues =!= {},
-     Return[<|"status" -> "incompleteSampleDiscreteRules", "mode" -> mode, "ruleCount" -> Length[rules], "coverageIssues" -> coverageIssues, "rules" -> {}|>]
-     ],
-    "all",
-    count = discreteStateCount[topo];
-    If[count > maxCount,
-     Message[selectedDiscreteSeedRules::toomany, topo["name"], count, maxCount];
-     Return[<|"status" -> "tooMany", "mode" -> mode, "ruleCount" -> count, "rules" -> {}|>]
-     ];
-    rules = enumerateDiscreteStates[makeBaseIntegral[topo], topo]["rules"],
-    _,
-    rules = If[Length[topo["sampleDiscreteRules"]] > 0, topo["sampleDiscreteRules"], {{}}]
-    ];
-   <|"status" -> "generated", "mode" -> mode, "ruleCount" -> Length[rules], "rules" -> rules|>
+   {rules = enumerateDiscreteStates[makeBaseIntegral[topo], topo]["rules"]},
+   <|"status" -> "generated", "mode" -> "all", "ruleCount" -> Length[rules], "rules" -> rules|>
    ];
 
 
@@ -3980,32 +3769,19 @@ makeIndependentVariableDerivativeSeedBatch[topo_Association, int_J, opts : Optio
    ];
 
 
-Options[makeMomentumIBPSeedBatch] = {
-   UseSampleOnly -> Automatic,
-   MaxSeedRuleCount -> Automatic,
-   DiscreteMode -> Automatic,
-   MaxDiscreteRuleCount -> Automatic,
-   MaxEquationCount -> Automatic,
-   ApplyNumericRules -> False
-   };
-makeMomentumIBPSeedBatch::toomany =
-   "拓扑 `1` 的 momentum seed 方程数为 `2`，超过上限 `3`；未展开方程。";
+Options[makeMomentumIBPSeedBatch] = {ApplyNumericRules -> False};
 
 
 makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    {baseIntegral, continuousDataByGenerator, continuousCounts, commonContinuousQ, legacyContinuousCount,
     legacyContinuousRules, discreteData, momentumGenerators, equationCount,
-    maxEquationCount, genTemplates, equations, pendingFeatures, topologyReport},
+     genTemplates, equations, pendingFeatures, topologyReport},
    topologyReport = topologyValidationReport[topo];
    If[topologyValidationErrorQ[topologyReport],
     Return[<|"status" -> "invalidTopology", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]
     ];
    baseIntegral = makeBaseIntegral[topo];
-   discreteData = selectedDiscreteSeedRules[
-     topo,
-     DiscreteMode -> OptionValue[DiscreteMode],
-     MaxDiscreteRuleCount -> OptionValue[MaxDiscreteRuleCount]
-     ];
+   discreteData = selectedDiscreteSeedRules[topo];
    If[discreteData["status"] =!= "generated",
     Return[Join[discreteData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "equations" -> {}|>]]
    ];
@@ -4014,12 +3790,7 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
      With[{label = momentumGeneratorLabel[generator]},
       Join[
        <|"generator" -> label|>,
-       makeGeneratorContinuousSeedRules[
-        topo,
-        label,
-        UseSampleOnly -> OptionValue[UseSampleOnly],
-        MaxSeedRuleCount -> OptionValue[MaxSeedRuleCount]
-        ]
+       makeGeneratorContinuousSeedRules[topo, label]
        ]
       ],
      {generator, momentumGenerators}
@@ -4033,21 +3804,6 @@ makeMomentumIBPSeedBatch[topo_Association, OptionsPattern[]] := Module[
    legacyContinuousCount = If[Length[continuousCounts] == 0, 0, If[commonContinuousQ, First[continuousCounts], Total[continuousCounts]]];
    legacyContinuousRules = If[Length[continuousDataByGenerator] > 0 && commonContinuousQ, First[Lookup[continuousDataByGenerator, "rules"]], {}];
    equationCount = Total[continuousCounts] discreteData["ruleCount"];
-   maxEquationCount = resolveSeedOption[topo, "MaxEquationCount", OptionValue[MaxEquationCount], 80];
-   If[equationCount > maxEquationCount,
-    Message[makeMomentumIBPSeedBatch::toomany, topo["name"], equationCount, maxEquationCount];
-    Return[<|
-      "status" -> "tooMany",
-      "caseName" -> topo["name"],
-      "topologyValidationReport" -> topologyReport,
-      "continuousSeedRuleCount" -> legacyContinuousCount,
-      "generatorContinuousSeedData" -> (KeyDrop[#, "rules"] & /@ continuousDataByGenerator),
-      "discreteRuleCount" -> discreteData["ruleCount"],
-      "momentumGeneratorCount" -> Length[momentumGenerators],
-      "equationCount" -> equationCount,
-      "equations" -> {}
-      |>]
-   ];
    genTemplates = MapThread[
      <|"generatorData" -> #1, "generator" -> momentumGeneratorLabel[#1],
        "template" -> applyMomentumGeneratorSeed[topo, baseIntegral, #1], "continuousData" -> #2|> &,
@@ -4149,17 +3905,6 @@ remapVertexEnergiesToRepresentatives[vertexEnergies_, repMap_Association] := Mod
    ];
 
 
-filterRulesToVariables[rules_List, vars_List] := Module[{varSet = DeleteDuplicates[vars]},
-   Select[rules, MemberQ[varSet, First[#]] &]
-   ];
-
-
-filterSampleDiscreteRulesForTopology[rules_List, topo_Association] := Module[
-   {vars = Flatten[discreteVarsForLine /@ topo["lines"]]},
-   If[rules === {}, {}, filterRulesToVariables[#, vars] & /@ rules]
-   ];
-
-
 shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
    {pairs, repMap, activeVertices, fixedA, newLines, newExtLegs, newZeroPointRules, newCase, sectorTopo},
    pairs = topo["lines"][[#, "endpoints"]] & /@ shrunkLines;
@@ -4198,7 +3943,6 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
      "ispData" -> topo["ispData"],
      "rawNumericRules" -> Lookup[topo, "rawNumericRules", userNumericRules[topo]],
      "numericRules" -> userNumericRules[topo],
-     "sampleDiscreteRules" -> topo["sampleDiscreteRules"],
      "seedRanges" -> topo["seedRanges"],
      "generatorSeedRanges" -> Lookup[topo, "generatorSeedRanges", {}],
      "zeroPointRules" -> newZeroPointRules,
@@ -4228,8 +3972,7 @@ shrinkSectorTopology[topo_Association, shrunkLines_List] := Module[
    Join[sectorTopo, <|
     "sectorMetadata" -> makeSectorMetadata[sectorTopo],
     "tadpoleSymmetryData" -> tadpoleSymmetryData[sectorTopo],
-    "effectiveSymmetryRules" -> effectiveSymmetryRules0[sectorTopo],
-    "sampleDiscreteRules" -> filterSampleDiscreteRulesForTopology[topo["sampleDiscreteRules"], sectorTopo]
+    "effectiveSymmetryRules" -> effectiveSymmetryRules0[sectorTopo]
     |>]
    ];
 
@@ -4279,23 +4022,15 @@ contactReachableShrinkSubsets[topo_Association] := Module[
    ];
 
 
-shrinkSectorSubsets[topo_Association, maxDepthSpec_, maxCount_Integer] := Module[
-   {lines = thetaFullLineIndices[topo], maxDepth, allSubsets, subsets},
+shrinkSectorSubsets[topo_Association] := Module[
+   {lines = thetaFullLineIndices[topo], subsets},
    If[lines === {}, Return[<|"status" -> "generated", "subsets" -> {}, "completeCoverageQ" -> True|>]];
-   maxDepth = If[maxDepthSpec === Automatic || maxDepthSpec === All || maxDepthSpec === Infinity,
-     Length[lines],
-     Min[Length[lines], maxDepthSpec]
-     ];
-   allSubsets = contactReachableShrinkSubsets[topo];
-   subsets = Select[allSubsets, Length[#] <= maxDepth &];
-   If[Length[subsets] > maxCount,
-    Return[<|"status" -> "tooMany", "subsets" -> {}, "requestedSubsetCount" -> Length[subsets], "maxCount" -> maxCount, "completeCoverageQ" -> False|>]
-    ];
-   <|"status" -> "generated", "subsets" -> subsets, "completeCoverageQ" -> TrueQ[Length[subsets] === Length[allSubsets]]|>
+   subsets = contactReachableShrinkSubsets[topo];
+   <|"status" -> "generated", "subsets" -> subsets, "completeCoverageQ" -> True|>
    ];
 
 
-Options[makeTopologyData] = {PrecomputeShrinkSectorMetadata -> False, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic};
+Options[makeTopologyData] = {PrecomputeShrinkSectorMetadata -> False};
 
 
 makeTopologyIndexMaps[topo_Association, metadata_Association] := <|
@@ -4319,9 +4054,8 @@ makeTopologySeedSummary[topo_Association] := <|
    "numericRules" -> topo["numericRules"],
    "numericRuleRequirementReport" -> numericRuleRequirementReport[topo],
    "externalInvariantNamingReport" -> externalInvariantNamingReport[topo],
-   "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo],
-   "sampleDiscreteRules" -> topo["sampleDiscreteRules"]
-   |>;
+    "vertexEnergyNamingReport" -> vertexEnergyNamingReport[topo]
+    |>;
 
 
 vertexPairBundleKey[line_Association] := Sort[Lookup[line, "originalEndpoints", line["endpoints"]]];
@@ -4372,14 +4106,13 @@ topologyValidationReport[topo_Association] := Module[
      loopExternalMomentumOverlap, externalLegMomentumOverlap,
      vertexSigns, activeVertexIds, fixedAVertexIds, badVertexSigns, badActiveVertexIds, badFixedAVertexIds,
     extLegs, badExtLegShapePositions, badExtLegVertexData, vertexEnergies, vertexEnergyKeys, badVertexEnergyKeys,
-    ispNames, seedRangeData, badSeedRangeData, badSeedSampleOnlyQ, badISPRangeData, seedOptions,
-     unknownSeedOptionKeys, badSeedOptionData, kiraOrderingReport, numericRuleValidationReport,
+    ispNames, seedRangeData, badSeedRangeData, badISPRangeData,
+     kiraOrderingReport, numericRuleValidationReport,
      zeroPointRuleValidationReport, shrinkPrefactorRuleValidationReport,
     badMassTypeLines, badSKTypeLines, badStateLines,
     badEndpointLines, lineMomentumVars, declaredMomentumVars, undeclaredMomentumVars,
     nonLinearLineMomentumData, nonLinearScalarProductArgumentData, vertexEnergyMomentumDependenceData,
-    spData, discreteVars, sampleRuleShapeIssues, sampleRulePairs, unknownDiscreteRules, badDiscreteValues,
-    missingDiscreteRuleIssues, missingExternalInvariants, missingVertexEnergies,
+    spData, missingExternalInvariants, missingVertexEnergies,
      missingLineParameters, numericRequirementReport, pendingFeatures, ruleData, kinematicAudit,
       topologyMomentumAudit, momentumIBPRequiredQ},
    appendIssue[severity_, code_, data_: <||>] := AppendTo[issues, Join[<|"severity" -> severity, "code" -> code|>, data]];
@@ -4400,7 +4133,7 @@ topologyValidationReport[topo_Association] := Module[
     Lookup[topologyMomentumAudit, "issues", {}]
     ];
    ispNames = Lookup[topo["ispData"], "name", {}];
-   seedRangeData = KeyDrop[topo["seedRanges"], {"sampleOnly"}];
+   seedRangeData = topo["seedRanges"];
    If[Lookup[kinematicAudit, "status", "complete"] === "incomplete",
     appendIssue["error", "incompleteKinematicCoordinates", <|
       "coordinateRank" -> Lookup[kinematicAudit, "coordinateRank", Missing["rank"]],
@@ -4418,7 +4151,6 @@ topologyValidationReport[topo_Association] := Module[
       "comment" -> "IBP generation may continue, but inverse conversion and ds in the redundant coordinates are disabled until the family definition supplies the constraints."
       |>]
     ];
-   seedOptions = Lookup[topo, "seedOptions", <||>];
    lineIds = Lookup[topo["lines"], "id"];
    packTypes = Lookup[topo["lines"], "packType"];
    allowedPackTypes = {"massiveFull", "massiveCross", "masslessFull", "masslessCross", "shrunk"};
@@ -4461,10 +4193,6 @@ topologyValidationReport[topo_Association] := Module[
    If[badSeedRangeData =!= {},
     appendIssue["error", "malformedSeedRangeSpecs", <|"ranges" -> badSeedRangeData, "allowed" -> "integer or nonempty integer list"|>]
     ];
-   badSeedSampleOnlyQ = KeyExistsQ[topo["seedRanges"], "sampleOnly"] && ! BooleanQ[topo["seedRanges", "sampleOnly"]];
-   If[TrueQ[badSeedSampleOnlyQ],
-    appendIssue["error", "malformedSeedSampleOnly", <|"sampleOnly" -> topo["seedRanges", "sampleOnly"], "allowed" -> {True, False}|>]
-    ];
    badISPRangeData = DeleteCases[
      MapIndexed[
       If[KeyExistsQ[#1, "range"] && ! validIndexRangeSpecQ[#1["range"]],
@@ -4477,20 +4205,6 @@ topologyValidationReport[topo_Association] := Module[
      ];
    If[badISPRangeData =!= {},
     appendIssue["error", "malformedISPRangeSpecs", <|"isps" -> badISPRangeData, "allowed" -> "integer or nonempty integer list"|>]
-    ];
-   unknownSeedOptionKeys = Complement[Keys[seedOptions], allowedSeedOptionKeys[]];
-   If[unknownSeedOptionKeys =!= {},
-    appendIssue["error", "unknownSeedOptionKeys", <|"keys" -> unknownSeedOptionKeys, "allowedKeys" -> allowedSeedOptionKeys[]|>]
-    ];
-   badSeedOptionData = KeyValueMap[
-     If[MemberQ[allowedSeedOptionKeys[], #1] && ! validSeedOptionValueQ[#1, #2],
-       <|"optionKey" -> #1, "optionValue" -> #2|>,
-       Nothing
-       ] &,
-     seedOptions
-     ];
-   If[badSeedOptionData =!= {},
-    appendIssue["error", "malformedSeedOptionValues", <|"options" -> badSeedOptionData|>]
     ];
    kiraOrderingReport = validateKiraOrderingSpec[Lookup[topo, "kiraOrdering", <||>]];
    If[Lookup[kiraOrderingReport, "status", "ok"] =!= "ok",
@@ -4643,7 +4357,7 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingExternalInvariants", <|
       "missingExternalInvariants" -> missingExternalInvariants,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need values for the selected ssij/sEi or exact custom output parameters"
+       "comment" -> "only LinearSystemMode->numeric requires these values; symbolic Kira/DE must keep every requested derivative variable symbolic"
       |>]
     ];
    missingVertexEnergies = numericRequirementReport["missingVertexEnergies"];
@@ -4651,7 +4365,7 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingVertexEnergies", <|
       "missingVertexEnergies" -> missingVertexEnergies,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need vertex energy rules from time IBP"
+       "comment" -> "only LinearSystemMode->numeric requires these values; symbolic Kira/DE must keep requested vertex-energy derivatives symbolic"
       |>]
     ];
    missingLineParameters = numericRequirementReport["missingLineParameters"];
@@ -4659,31 +4373,8 @@ topologyValidationReport[topo_Association] := Module[
     appendIssue["warning", "numericRulesMissingLineParameters", <|
       "missingLineParameters" -> missingLineParameters,
       "numericRules" -> userNumericRules[topo],
-      "comment" -> "analytic seed can still be generated; numeric linear/Kira stages need massive line parameter rules"
+       "comment" -> "massive parameters may remain symbolic; only an explicitly fully numeric linear system requires values"
       |>]
-    ];
-   discreteVars = Flatten[discreteVarsForLine /@ topo["lines"]];
-   sampleRuleShapeIssues = sampleDiscreteRulesShapeIssues[topo["sampleDiscreteRules"]];
-   If[sampleRuleShapeIssues =!= {},
-    appendIssue["error", "malformedSampleDiscreteRules", <|"issues" -> sampleRuleShapeIssues|>],
-    sampleRulePairs = sampleDiscreteRulePairs[topo["sampleDiscreteRules"]];
-    unknownDiscreteRules = Select[sampleRulePairs, ! MemberQ[discreteVars, #[[1]]] &];
-    If[unknownDiscreteRules =!= {},
-     appendIssue["warning", "sampleDiscreteRulesContainUnknownVariables", <|"rules" -> (Rule @@@ unknownDiscreteRules), "allowedDiscreteVariables" -> discreteVars|>]
-     ];
-    badDiscreteValues = Select[sampleRulePairs, MemberQ[discreteVars, #[[1]]] && ! MemberQ[{0, 1}, #[[2]]] &];
-    If[badDiscreteValues =!= {},
-     appendIssue["warning", "sampleDiscreteRulesContainNonBinaryValues", <|"rules" -> (Rule @@@ badDiscreteValues)|>]
-     ];
-    If[discreteVars =!= {} && topo["sampleDiscreteRules"] === {},
-     appendIssue["warning", "sampleDiscreteRulesMissingForDiscreteVariables", <|"missingVariables" -> discreteVars, "comment" -> "sample seed mode needs complete n=0/1 rules; DiscreteMode -> all can enumerate them automatically"|>]
-     ];
-    If[topo["sampleDiscreteRules"] =!= {},
-     missingDiscreteRuleIssues = sampleDiscreteRuleCoverageIssues[topo, topo["sampleDiscreteRules"]];
-     If[missingDiscreteRuleIssues =!= {},
-      appendIssue["error", "sampleDiscreteRulesMissingVariables", <|"issues" -> missingDiscreteRuleIssues, "allowedDiscreteVariables" -> discreteVars|>]
-      ]
-     ]
     ];
    pendingFeatures = unsupportedSeedFeaturesForTopology[topo];
    If[pendingFeatures =!= {},
@@ -4706,7 +4397,7 @@ topologyValidationErrorQ[_] := False;
 
 
 makeTopologyData[case_Association, OptionsPattern[]] := Module[
-   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, maxShrinkDepth, maxShrinkCount, inputReport, validationReport},
+   {topo, topMetadata, subsetData, sectorTopos, sectorMetadataList, inputReport, validationReport},
    If[caseInputPreflightErrorQ[case],
     inputReport = caseInputRequirementReport[case];
     validationReport = caseInputErrorReport[case];
@@ -4727,10 +4418,8 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
     ];
    topo = parseTopology[case];
    topMetadata = makeSectorMetadata[topo];
-   maxShrinkDepth = resolveSeedOption[topo, "MaxShrinkSectorDepth", OptionValue[MaxShrinkSectorDepth], Automatic];
-   maxShrinkCount = resolveSeedOption[topo, "MaxShrinkSectorCount", OptionValue[MaxShrinkSectorCount], 16];
    subsetData = If[TrueQ[OptionValue[PrecomputeShrinkSectorMetadata]],
-     shrinkSectorSubsets[topo, maxShrinkDepth, maxShrinkCount],
+     shrinkSectorSubsets[topo],
      <|"status" -> "skipped", "subsets" -> {}, "completeCoverageQ" -> False|>
      ];
    sectorTopos = If[Lookup[subsetData, "status", "skipped"] === "generated",
@@ -4755,11 +4444,7 @@ makeTopologyData[case_Association, OptionsPattern[]] := Module[
      |>]
    ];
 
-Options[makeShrinkSectorSeedBatch] = Join[
-   Options[makeMomentumIBPSeedBatch],
-   {MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic}
-   ];
-makeShrinkSectorSeedBatch::toomany = "拓扑 `1` 的 shrink sector 数为 `2`，超过上限 `3`；未展开 shrink sectors。";
+Options[makeShrinkSectorSeedBatch] = Options[makeMomentumIBPSeedBatch];
 
 
 (* shrink sector 的摘要要保留各自的生成元列表；coverage report 依赖它判断每个子 sector 是否同时生成完整 q/t seed。 *)
@@ -4775,15 +4460,9 @@ shrinkSectorBatchSummary[batch_Association] := Module[
 
 
 makeShrinkSectorSeedBatch[topo_Association, OptionsPattern[]] := Module[
-   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport, maxShrinkDepth, maxShrinkCount},
+   {subsetData, subsets, seedOpts, sectorTopos, sectorBatches, bad, equations, pendingFeatures, completeQ, topologyReport},
    topologyReport = topologyValidationReport[topo];
-   maxShrinkDepth = resolveSeedOption[topo, "MaxShrinkSectorDepth", OptionValue[MaxShrinkSectorDepth], Automatic];
-   maxShrinkCount = resolveSeedOption[topo, "MaxShrinkSectorCount", OptionValue[MaxShrinkSectorCount], 16];
-   subsetData = shrinkSectorSubsets[topo, maxShrinkDepth, maxShrinkCount];
-   If[subsetData["status"] === "tooMany",
-    Message[makeShrinkSectorSeedBatch::toomany, topo["name"], subsetData["requestedSubsetCount"], subsetData["maxCount"]];
-    Return[Join[subsetData, <|"caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorMetadataList" -> {}, "equations" -> {}, "pendingFeatures" -> {"shrinkSectorSeedGeneration"}|>]]
-    ];
+   subsetData = shrinkSectorSubsets[topo];
    subsets = subsetData["subsets"];
    If[subsets === {},
     Return[<|"status" -> "generated", "caseName" -> topo["name"], "topologyValidationReport" -> topologyReport, "sectorCount" -> 0, "sectorMetadataList" -> {}, "equationCount" -> 0, "eomCanonicalQ" -> True, "forbiddenNData" -> {}, "pendingFeatures" -> {}, "completeShrinkSectorGenerationQ" -> True, "sectorSummaries" -> {}, "equations" -> {}|>]
@@ -4853,7 +4532,7 @@ canonicalPendingFeatures[momentumBatch_Association, timeBatch_Association] := De
 
 Options[makeCanonicalSeedBatch] = Join[
    Options[makeMomentumIBPSeedBatch],
-   {GenerateShrinkSectors -> True, MaxShrinkSectorDepth -> Automatic, MaxShrinkSectorCount -> Automatic}
+   {GenerateShrinkSectors -> True}
    ];
 
 
@@ -6345,10 +6024,10 @@ publicExternalIndex[topo_Association, item_] := Which[
 
 publicApplyIBPGenerator[expr_, topo_Association, gen_Association] := Module[{result},
    If[gen["type"] === "time" && ! dsTopologyCapabilityQ[topo, "timeIBPUsableQ"],
-    dsErrorPrint["当前 topology 未通过 time-IBP capability gate。"]; Return[$Failed]
+    dsErrorPrint["当前 topology 未通过 time-IBP capability gate。 The current topology failed the time-IBP capability gate."]; Return[$Failed]
     ];
    If[gen["type"] === "momentum" && ! dsTopologyCapabilityQ[topo, "momentumIBPUsableQ"],
-    dsErrorPrint["当前 topology 未通过 momentum-IBP capability gate。"]; Return[$Failed]
+    dsErrorPrint["当前 topology 未通过 momentum-IBP capability gate。 The current topology failed the momentum-IBP capability gate."]; Return[$Failed]
     ];
    If[! validatePublicExpression[expr, topo, True], Return[$Failed]];
    result = Expand[expr /. int_J :> If[
@@ -6516,7 +6195,7 @@ ds[expr_, userVariable_, topoSpec_Association] := Module[
    topo = resolvePublicTopologyContext[topoSpec];
    If[topo === $Failed, Return[$Failed]];
    If[! dsTopologyCapabilityQ[topo, "derivativeUsableQ"],
-    dsErrorPrint["当前参数声明不支持唯一 ds 微分算符。"]; Return[$Failed]
+    dsErrorPrint["当前参数声明不支持唯一 ds 微分算符。 The current parameter declaration does not define a unique ds operator."]; Return[$Failed]
     ];
    If[
     TrueQ[Lookup[Lookup[topo, "kinematicCoordinateAudit", <||>], "overcompleteQ", False]] &&
@@ -6670,12 +6349,7 @@ bubbleMasslessCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5},
-   "sampleDiscreteRules" -> {
-     {n[1] -> 0, n[2] -> 0},
-     {n[1] -> 1, n[2] -> 0},
-     {n[1] -> 0, n[2] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -6691,8 +6365,7 @@ masslessCrossBubbleCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5},
-   "sampleDiscreteRules" -> {{}},
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -6708,11 +6381,7 @@ mixedBubbleCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2, p1 -> 7, p2 -> 11},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -6728,11 +6397,7 @@ massiveCrossBubbleCase = <|
    "externalMomenta" -> {k},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -6749,12 +6414,7 @@ mixedTriangleCase = <|
    "externalMomenta" -> {k1, k2},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, kk[1, 2] -> -1, kk[2, 2] -> 7, nuM -> 2},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 0, n[3] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2, 1] -> 0, n[2, 2] -> 0, n[3] -> 1},
-     {n[1, 1] -> 0, n[1, 2] -> 1, n[2, 1] -> 1, n[2, 2] -> 0, n[3] -> 0}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -6772,12 +6432,7 @@ masslessBoxCase = <|
    "externalMomenta" -> {k1, k2, k3},
    "ispData" -> {},
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, kk[1, 2] -> -1, kk[1, 3] -> 2, kk[2, 2] -> 7, kk[2, 3] -> -3, kk[3, 3] -> 11, p1 -> 7, p2 -> 11, p3 -> 13, p4 -> 17},
-   "sampleDiscreteRules" -> {
-     {n[1] -> 0, n[2] -> 0, n[3] -> 0, n[4] -> 0},
-     {n[1] -> 1, n[2] -> 0, n[3] -> 1, n[4] -> 0},
-     {n[1] -> 0, n[2] -> 1, n[3] -> 0, n[4] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "sampleOnly" -> True|>
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}|>
    |>;
 
 
@@ -6798,12 +6453,7 @@ mixedSunriseCase = <|
      {ispQ2K, sp[q2, k], {0, 1}}
      },
    "numericRules" -> {dim -> 3, kk[1, 1] -> 5, nuM -> 2},
-   "sampleDiscreteRules" -> {
-     {n[1, 1] -> 0, n[1, 2] -> 0, n[2] -> 0, n[3] -> 0},
-     {n[1, 1] -> 1, n[1, 2] -> 0, n[2] -> 1, n[3] -> 0},
-     {n[1, 1] -> 0, n[1, 2] -> 1, n[2] -> 0, n[3] -> 1}
-     },
-   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}, "sampleOnly" -> True|>,
+   "seedRanges" -> <|"a" -> {-1, 1}, "b" -> {-2, 2}, "isp" -> {0, 1}|>,
    "masslessBundleMode" -> "perLinePacksCommonThetaContacts"
    |>;
 
@@ -6826,12 +6476,11 @@ twoLoopISPCase = <|
 
 
 summarizeCase[case_Association] := Module[
-   {topo, baseIntegral, sampleIntegrals, spData, gens, momentumGenCount,
+   {topo, baseIntegral, spData, gens, momentumGenCount,
     discreteCount, seedTemplateCount},
    topo = parseTopology[case];
    baseIntegral = makeBaseIntegral[topo];
    discreteCount = discreteStateCount[topo];
-   sampleIntegrals = sampleDiscreteIntegrals[baseIntegral, topo];
    spData = makeScalarProductData[topo];
    gens = makeIBPGenerators[topo];
    momentumGenCount = Count[Lookup[gens, "type"], "momentum"];
@@ -6846,10 +6495,7 @@ summarizeCase[case_Association] := Module[
     "linePacks" -> makeLinePacks[topo],
     "baseIntegral" -> baseIntegral,
     "discreteStateCount" -> discreteCount,
-    "sampleDiscreteRules" -> topo["sampleDiscreteRules"],
-    "sampleIntegrals" -> sampleIntegrals,
     "seedTemplateCount" -> seedTemplateCount,
-    "maxExpandedSeedCount" -> discreteCount seedTemplateCount,
     "generatorCount" -> Length[gens],
     "generatorList" -> gens,
     "momentumGeneratorCount" -> momentumGenCount,
@@ -7262,33 +6908,76 @@ treeReducibleIntegrals[expr_, endpoints_List, data_Association] := Select[
    ];
 
 
+treeEndpointDistance[int_J, endpoints_List] := Total[Abs[First[int][[All, 1]] - endpoints]];
+
+
+treeProgressKeyLessQ[target : {_, _}, source : {_, _}] :=
+  target[[1]] < source[[1]] || (target[[1]] === source[[1]] && target[[2]] < source[[2]]);
+
+
+treeRecurrenceStateHash[expr_] := IntegerString[Hash[HoldComplete[expr], "SHA256"], 16, 64];
+
+
+(* 每条递推边都必须严格降低到指定 endpoint 的整数 L1 距离。该局部序保证递推 DAG
+   不依赖任意迭代次数；完整表达式哈希另用于诊断实现错误造成的状态循环。 *)
+treeSingleFamilyStepProgress[source_J, replacement_, endpoints_List, data_Association] := Module[
+   {sourceDistance, targets, invalidTargets, targetDistances},
+   sourceDistance = treeEndpointDistance[source, endpoints];
+   targets = DeleteDuplicates[Cases[replacement, int_J, {0, Infinity}]];
+   invalidTargets = Select[
+     targets,
+     ! treeIntegralQ[#, data] || ! And @@ (IntegerQ /@ First[#][[All, 1]]) &
+     ];
+   targetDistances = treeEndpointDistance[#, endpoints] & /@ Complement[targets, invalidTargets];
+   <|
+    "passQ" -> TrueQ[invalidTargets === {} && And @@ (# < sourceDistance & /@ targetDistances)],
+    "source" -> source,
+    "sourceDistance" -> sourceDistance,
+    "targetIntegrals" -> targets,
+    "targetDistances" -> targetDistances,
+    "invalidTargets" -> invalidTargets
+    |>
+   ];
+
+
 repIterativeData::badindex = "tree a 指标必须是可判定整数：`1`。";
-repIterativeData::maxsteps = "tree 迭代超过最大步数 `1`。";
 repIterativeData::nosector = "tree 积分无法唯一匹配 sector family：`1`。";
+repIterativeData::noprogress = "tree 递推没有严格趋近指定终点：`1`。 Tree recurrence did not strictly approach the requested endpoint: `1`.";
+repIterativeData::cycle = "tree 递推检测到重复 canonical 状态：`1`。 Tree recurrence encountered a repeated canonical state: `1`.";
 
 
-Options[repIterativeData] = {MaxIterations -> Automatic};
+Options[repIterativeData] = {};
 
 
 repIterativeData[expr_, end_: Automatic, data_Association, OptionsPattern[]] := Module[
-   {endpoints, result = Expand[expr], integrals, allA, maxSteps, steps = 0, firstInt, packs, vertexIndex},
+   {endpoints, result = Expand[expr], integrals, allA, steps = 0, firstInt, packs, vertexIndex,
+    replacement, progressData, seenStates = <||>, stateHash},
    endpoints = normalizeTreeEndpoints[end, data];
    If[endpoints === $Failed, Return[<|"status" -> "error", "result" -> $Failed, "steps" -> 0|>]];
    integrals = Select[DeleteDuplicates[Cases[result, int_J /; treeIntegralQ[int, data], {0, Infinity}]], True &];
    allA = Flatten[First[#][[All, 1]] & /@ integrals];
    If[! And @@ (IntegerQ /@ allA), Message[repIterativeData::badindex, Select[allA, ! IntegerQ[#] &]]; Return[<|"status" -> "error", "result" -> $Failed, "steps" -> 0|>]];
-   maxSteps = OptionValue[MaxIterations];
-   If[maxSteps === Automatic,
-    maxSteps = If[integrals === {}, 0, Max[Total[Abs[First[#][[All, 1]] - endpoints]] & /@ integrals]]
-    ];
+   AssociateTo[seenStates, treeRecurrenceStateHash[result] -> True];
    While[(integrals = treeReducibleIntegrals[result, endpoints, data]) =!= {},
-    If[steps >= maxSteps, Message[repIterativeData::maxsteps, maxSteps]; Return[<|"status" -> "maxSteps", "result" -> $Failed, "steps" -> steps|>]];
     firstInt = First[integrals];
     packs = First[firstInt];
     vertexIndex = SelectFirst[Range[Length[endpoints]], packs[[#, 1]] =!= endpoints[[#]] &];
-    result = Expand[result /. int_J /; treeIntegralQ[int, data] && First[int][[vertexIndex, 1]] === packs[[vertexIndex, 1]] :>
-        treeSingleStepIntegral[int, vertexIndex, endpoints[[vertexIndex]], data]];
-    If[! FreeQ[result, $Failed], Return[<|"status" -> "singular", "result" -> $Failed, "steps" -> steps|>]];
+    replacement = treeSingleStepIntegral[firstInt, vertexIndex, endpoints[[vertexIndex]], data];
+    If[replacement === $Failed, Return[<|"status" -> "singular", "result" -> $Failed, "steps" -> steps|>]];
+    progressData = treeSingleFamilyStepProgress[firstInt, replacement, endpoints, data];
+    If[! TrueQ[progressData["passQ"]],
+     Message[repIterativeData::noprogress, progressData];
+     Return[<|"status" -> "error", "reason" -> "nonDecreasingRecurrence", "result" -> $Failed,
+       "steps" -> steps, "progressData" -> progressData|>]
+     ];
+    result = Expand[result /. firstInt -> replacement];
+    stateHash = treeRecurrenceStateHash[result];
+    If[KeyExistsQ[seenStates, stateHash],
+     Message[repIterativeData::cycle, stateHash];
+     Return[<|"status" -> "error", "reason" -> "recurrenceCycle", "result" -> $Failed,
+       "steps" -> steps, "stateHash" -> stateHash|>]
+     ];
+    AssociateTo[seenStates, stateHash -> True];
     steps++;
     ];
    <|"status" -> "reduced", "result" -> result, "steps" -> steps, "endpoints" -> endpoints|>
@@ -7326,9 +7015,9 @@ Options[repIterative] = Options[repIterativeData];
 
 repIterative[expr_, end_: Automatic, OptionsPattern[]] := If[
    AssociationQ[$dSIBPTreeFamilyContext],
-   If[KeyExistsQ[$dSIBPTreeFamilyContext, "families"],
-    repIterativeSectorData[expr, end, $dSIBPTreeFamilyContext, MaxIterations -> OptionValue[MaxIterations]]["result"],
-    repIterativeData[expr, end, $dSIBPTreeFamilyContext, MaxIterations -> OptionValue[MaxIterations]]["result"]
+    If[KeyExistsQ[$dSIBPTreeFamilyContext, "families"],
+     repIterativeSectorData[expr, end, $dSIBPTreeFamilyContext]["result"],
+     repIterativeData[expr, end, $dSIBPTreeFamilyContext]["result"]
     ],
    Message[makeTreeFamilyData::badinput, {<|"code" -> "treeContextNotSet"|>}];
    $Failed
@@ -7339,9 +7028,7 @@ repIterative[expr_, end_, data_Association, OptionsPattern[]] /;
    KeyExistsQ[data, "vertices"] && ! KeyExistsQ[data, "families"] := Module[{activeData},
    (* 显式 family 调用同时刷新公开原始规则，保证随后可直接使用 repIterative0。 *)
    activeData = setTreeFamilyContext[data];
-   repIterativeData[
-     expr, end, activeData, MaxIterations -> OptionValue[MaxIterations]
-     ]["result"]
+   repIterativeData[expr, end, activeData]["result"]
    ];
 
 
@@ -7691,19 +7378,41 @@ treeSectorEndpoints[end_, family_Association, context_Association] := Which[
    ];
 
 
+treeSectorIntegralDistanceData[int_J, end_, context_Association] := Module[{family, endpoints},
+   family = treeFamilyForIntegral[int, context];
+   If[Head[family] === Missing, Return[$Failed]];
+   endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, context], family];
+   If[endpoints === $Failed || ! And @@ (IntegerQ /@ First[int][[All, 1]]), Return[$Failed]];
+   <|"integral" -> int, "sector" -> family["sector"], "endpoints" -> endpoints,
+    "remainingThetaLines" -> Length[thetaFullLineIndices[family["topology"]]],
+    "distance" -> treeEndpointDistance[int, endpoints],
+    "progressKey" -> {Length[thetaFullLineIndices[family["topology"]]], treeEndpointDistance[int, endpoints]}|>
+   ];
+
+
+treeSectorStepProgress[source_J, replacement_, end_, context_Association] := Module[
+   {sourceData, targets, targetData, invalidTargets},
+   sourceData = treeSectorIntegralDistanceData[source, end, context];
+   targets = DeleteDuplicates[Cases[replacement, int_J /; integralKind[int] === "Tree", {0, Infinity}]];
+   targetData = treeSectorIntegralDistanceData[#, end, context] & /@ targets;
+   invalidTargets = Pick[targets, Head[#] === Symbol && # === $Failed & /@ targetData];
+   <|
+    "passQ" -> TrueQ[sourceData =!= $Failed && invalidTargets === {} &&
+       And @@ (treeProgressKeyLessQ[Lookup[#, "progressKey", {Infinity, Infinity}], sourceData["progressKey"]] & /@ targetData)],
+    "source" -> sourceData,
+    "targets" -> targetData,
+    "invalidTargets" -> invalidTargets
+    |>
+   ];
+
+
 Options[repIterativeSectorData] = Options[repIterativeData];
 
 
 repIterativeSectorData[expr_, end_: Automatic, context_Association, OptionsPattern[]] := Module[
-   {result = Expand[expr], maxSteps, steps = 0, integrals, item, family, endpoints, packs, vertexIndex, unresolved, scanFailure},
-   maxSteps = OptionValue[MaxIterations];
-   If[maxSteps === Automatic,
-    maxSteps = 10 (1 + Total[Abs[Flatten[First[#][[All, 1]] & /@ DeleteDuplicates[Cases[result, _J, {0, Infinity}]]]]] + Length[context["families"]])
-    ];
-   If[! IntegerQ[maxSteps] || maxSteps < 0,
-    Message[repIterativeData::maxsteps, maxSteps];
-    Return[<|"status" -> "error", "result" -> $Failed, "steps" -> steps|>]
-    ];
+   {result = Expand[expr], steps = 0, integrals, item, family, endpoints, packs, vertexIndex, unresolved,
+    scanFailure, replacement, progressData, seenStates = <||>, stateHash},
+   AssociateTo[seenStates, treeRecurrenceStateHash[result] -> True];
    While[True,
     integrals = DeleteDuplicates[Cases[result, int_J /; integralKind[int] === "Tree", {0, Infinity}]];
     unresolved = {};
@@ -7730,15 +7439,28 @@ repIterativeSectorData[expr_, end_: Automatic, context_Association, OptionsPatte
      ];
     If[AssociationQ[scanFailure], Return[scanFailure]];
     If[unresolved === {}, Break[]];
-    If[steps >= maxSteps, Message[repIterativeData::maxsteps, maxSteps]; Return[<|"status" -> "maxSteps", "result" -> $Failed, "steps" -> steps|>]];
     item = First[unresolved];
     family = treeFamilyForIntegral[item, context];
     endpoints = normalizeTreeEndpoints[treeSectorEndpoints[end, family, context], family];
     If[endpoints === $Failed, Return[<|"status" -> "error", "result" -> $Failed, "steps" -> steps|>]];
     packs = First[item];
     vertexIndex = SelectFirst[Range[Length[endpoints]], packs[[#, 1]] =!= endpoints[[#]] &];
-    result = Expand[result /. item -> treeSingleStepIntegral[item, vertexIndex, endpoints[[vertexIndex]], family]];
-    If[! FreeQ[result, $Failed], Return[<|"status" -> "error", "result" -> $Failed, "steps" -> steps|>]];
+    replacement = treeSingleStepIntegral[item, vertexIndex, endpoints[[vertexIndex]], family];
+    If[replacement === $Failed, Return[<|"status" -> "error", "reason" -> "recurrenceSingular", "result" -> $Failed, "steps" -> steps|>]];
+    progressData = treeSectorStepProgress[item, replacement, end, context];
+    If[! TrueQ[progressData["passQ"]],
+     Message[repIterativeData::noprogress, progressData];
+     Return[<|"status" -> "error", "reason" -> "nonDecreasingRecurrence", "result" -> $Failed,
+       "steps" -> steps, "progressData" -> progressData|>]
+     ];
+    result = Expand[result /. item -> replacement];
+    stateHash = treeRecurrenceStateHash[result];
+    If[KeyExistsQ[seenStates, stateHash],
+     Message[repIterativeData::cycle, stateHash];
+     Return[<|"status" -> "error", "reason" -> "recurrenceCycle", "result" -> $Failed,
+       "steps" -> steps, "stateHash" -> stateHash|>]
+     ];
+    AssociateTo[seenStates, stateHash -> True];
     steps++;
     ];
    <|"status" -> "reduced", "result" -> result, "steps" -> steps|>
@@ -7748,9 +7470,7 @@ repIterativeSectorData[expr_, end_: Automatic, context_Association, OptionsPatte
 repIterative[expr_, end_, context_Association, OptionsPattern[]] /; KeyExistsQ[context, "families"] := Module[{activeContext},
    (* 多 sector context 保留既有唯一分派门禁，同时同步本轮可直接替换的单步规则。 *)
    activeContext = setTreeFamilyContext[context];
-   repIterativeSectorData[
-     expr, end, activeContext, MaxIterations -> OptionValue[MaxIterations]
-     ]["result"]
+   repIterativeSectorData[expr, end, activeContext]["result"]
    ];
 
 

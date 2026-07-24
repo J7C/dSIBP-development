@@ -151,7 +151,7 @@ dsTreeContactRows[family_Association, masters_List, context_Association] := Modu
           "coefficientConvention" -> "complete physical powers: a+a0 and b+b0 or bS+bS0"|>;
         reducedSource = If[terms === {},
           Join[sourceData, <|"status" -> "reduced"|>],
-          dsRepIterativeTreeLinearData[sourceData, Automatic, context, MaxIterations -> Automatic]
+          dsRepIterativeTreeLinearData[sourceData, Automatic, context]
           ];
         If[Lookup[reducedSource, "status", "error"] =!= "reduced",
          Return[<|"status" -> "error", "reason" -> "contactSourceReductionFailed",
