@@ -1,7 +1,8 @@
 (* ::Package:: *)
-(* pure massive bubble 的 21 个参考 dlog 候选关系。公式来自 codebubble/001 的实际输出，
+(* pure massive bubble 的 21 个 reference-readable dlog 候选关系。公式来自 codebubble/001 的实际输出，
    先保留 reference merged energy P1+P2 的可读形式；闭环中按 P_ref=-P_pkg 取 P1=P2=-P0。
-   前 19 个是 002 bubble_de.m 固定使用的 active basis。 *)
+   前 19 个是 002 bubble_de.m 固定使用的 active basis。formal plan 应加载同目录
+   active_basis_19.wl，不能直接把本文件的旧平方坐标表达式当作 physical ks basis。 *)
 
 (* ::Chapter:: *)
 (*Reference 临时记号到统一 J*)

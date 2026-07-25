@@ -1,5 +1,6 @@
 (* ::Package:: *)
-(* 017 pure massive bubble：固定 -- branch/parity，从 topology 到 Kira 取回、DE 与标度检查。 *)
+(* 018 pure massive bubble：固定 -- branch/parity，从 topology 到 formal Kira 输入。
+   package 只生成和序列化关系，不启动 reduction；已有结果的检查由 post_kira_check.wl 独立执行。 *)
 
 (* ::Chapter:: *)
 (*标准 package 加载*)
@@ -7,6 +8,7 @@
 exampleDir = DirectoryName[$InputFileName];
 Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
+Get[FileNameJoin[{exampleDir, "active_basis_19.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 
 (* 固定随机种子只记录参数点的来源；规则本身冻结，Kira 与回读端必须逐项复用。 *)
@@ -18,10 +20,10 @@ parameterProbeRules = {dim -> 37/11, nu -> 7/13, etaNu -> 23/17};
 
 (* 两个顶点均在 - branch；这与 reference 的 Vpm=0 convention 对齐。 *)
 (* 两条 massive h 内线依次取 q 与 q-k；externalMomenta 只含实际进入线动量的独立向量 k。 *)
-(* s11=k.k 与 P0 是 ds 的独立变量；P_pkg=P0=+I k0，reference P1=P2=-P0=-I k0。 *)
+(* ss11=Sqrt[k.k]=ks 与 P0 是 ds 的独立变量；P_pkg=P0，reference P1=P2=-P0。 *)
 (* J 只保存整数指标；a0=2 nu、b0=-2 nu 留在 metadata，并在 shrink/tree 投影时进入完整物理幂次。 *)
 caseInput = <|
-   "name" -> "017PureMassiveBubbleClosedLoopMinusMinus",
+   "name" -> "018PureMassiveBubbleClosedLoopMinusMinus",
    "vertexData" -> {{v1, "-"}, {v2, "-"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
@@ -33,7 +35,6 @@ caseInput = <|
    "loopExternalMomenta" -> {k},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "externalInvariantRules" -> {sp[k, k] -> s11},
    "vertexEnergies" -> <|v1 -> P0, v2 -> P0|>,
    "ispData" -> {},
    "numericRules" -> parameterProbeRules,
@@ -68,21 +69,12 @@ linearOptions = {
    };
 
 (* 缺省：OutputDirectory->None；KiraJobOptions->Automatic；package 只写文件，不运行 Kira。 *)
-kiraOptions = {
-   OutputDirectory -> FileNameJoin[{exampleDir, "kira"}],
-   KiraActiveBasis -> <|
-     "names" -> referenceDlogNames,
-     "expressions" -> (referenceDlogCandidates /. {P1 -> -P0, P2 -> -P0} /. parameterProbeRules),
-     "activeIndices" -> referenceDlogActiveIndices,
-     "derivativeVariables" -> {s11, P0}
-     |>,
-   KiraJobOptions -> <|
+kiraJobOptions = <|
      "RunInitiate" -> True,
      "RunFirefly" -> True,
      "WriteKira2MathJob" -> True,
      "WriteRunScript" -> False
-     |>
-   };
+     |>;
 
 (* ::Chapter:: *)
 (*初始化、IBP 与 Kira 输入*)
@@ -95,10 +87,25 @@ allSeeds = DSAllSeeds[seedData];
 seedGroups = DSSeedGroups[seedData];
 seedGroupMetadata = DSSeedGroupMetadata[seedData];
 seedRangeMetadata = DSMetaSeedRange[seedGroups, referenceSeedIndices];
+seedRangeMetadataAlias = metaSeedRange[seedGroups, referenceSeedIndices];
+If[seedRangeMetadataAlias =!= seedRangeMetadata, Abort[]];
 (* 输入描述 top 目标积分包络；程序逐组反推 seed 点域、先筛 parity，再代入数值点。 *)
 generatedIBP = DSGenerateIBP[allSeeds, Sequence @@ referenceTopTargetEnvelope];
 linearData = DSLinear[generatedIBP, context, Sequence @@ linearOptions];
-kiraExport = DSKiraExport[linearData, Sequence @@ kiraOptions];
+activeBasis = pureMassiveBubbleActiveBasis018[parameterProbeRules];
+formalPlan = DSKiraPlan[
+   linearData,
+   <|
+    "stage" -> "formal",
+    "preferredIntegrals" -> activeBasis["expressions"][[activeBasis["activeIndices"]]],
+    "activeBasis" -> activeBasis,
+    "numericStage" -> "symbolic",
+    "coefficientRules" -> {},
+    "outputDirectory" -> FileNameJoin[{exampleDir, "kira"}],
+    "jobOptions" -> kiraJobOptions
+    |>
+   ];
+kiraExport = DSKiraExport[formalPlan];
 exportSyntaxReport = Lookup[
    kiraExport,
    "backendCoefficientSyntaxReport",
@@ -126,16 +133,16 @@ closedLoopResult = If[
    reductionData = DSKiraImport[kiraDir, context];
    deData = DSDE[
      reductionData,
-     {s11, P0},
+     {ss11, P0},
      OutputDirectory -> FileNameJoin[{exampleDir, "results", "dlogDE"}]
      ];
    scaleData = DSScaleCheck[
      deData,
      <|
       "relation" -> "PureMassiveBubble",
-      "variables" -> {s11, P0},
-      (* ks d/dks = 2 s11 d/ds11。 *)
-      "weights" -> {2, 1}
+      "variables" -> {ss11, P0},
+      "weights" -> {1, 1},
+      "degrees" -> activeBasis["scalingDegrees"]
       |>
      ];
    <|"status" -> scaleData["status"], "reduction" -> reductionData, "de" -> deData, "scaling" -> scaleData|>,
@@ -170,7 +177,7 @@ closedLoopSummary = If[
     "requiredFiles" -> requiredKiraResults
     |>
    ];
-Print["017 pure massive bubble closed-loop summary: ", closedLoopSummary];
+Print["018 pure massive bubble closed-loop summary: ", closedLoopSummary];
 
 If[! exportReadyQ, Exit[1]];
 

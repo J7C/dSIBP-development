@@ -6,7 +6,8 @@
 
 - 当前任务、真实完成状态和交接顺序：`研究计划与研究进度.md`
 - 用户手册：`000_note/01_dS_ibp_package/dS_ibp_package.tex`，PDF 同目录
-- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；当前交付目录只保留 `package_016.wl/pdf`，015 源码基线在 `000_code/015_dSIBP/` 冻结不动
+- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；当前正式程序/手册为 `package_018.wl/pdf`
+- 三个长期典型 examples：`03_single_massive_sunrise/`、`04_pure_massive_bubble_closed_loop/`、`06_mix_bubble_tree/`；分别覆盖 `{kL,kE}` 两标度 single-massive sunrise/ISP/symmetry、dlog/reference/scaling 闭环和 `kL/kE` 加 cycle/bridge contraction
 - 长期总体架构：`000_note/dS_IBP_package_plan.md`
 - 设计约定：`000_note/dS_IBP_package_design_note.md`
 - 技术公式：`000_note/dS_IBP_package_tech_note.tex`
@@ -14,17 +15,19 @@
 
 每次收到新任务，先更新 `研究计划与研究进度.md`；不要把逐任务 todolist 写进总体 plan。
 
+维护侧最小功能检查放在根目录 `check-smoke/` 的明确命名子目录。根目录 `check/` 只供新独立会话按完整任务书从空工作区执行，旧内容不得复用。
+
 ## 当前主线
 
-- `000_code/016_dSIBP/`：当前模块化主线，标准入口为 `Needs["dSIBP`"]`。
-- `independent-benchmark/package/package_016.wl`：016 的冻结单文件兼容入口；模块源码目录中不另放重复单文件。
+- `000_code/018_dSIBP/`：当前开发主线，标准入口为 `Needs["dSIBP`"]`。
+- `independent-benchmark/package/package_018.wl`：当前正式冻结单文件兼容入口；`010`--`017` 为只读基线/历史版本。
 - `000_code/015_dSIBP/`、`000_code/015_dS_ibp_general.wl`：冻结的 015 基线，不回写。
 - `000_code/014_dSIBP/`、`000_code/014_dS_ibp_general.wl`：冻结的 014 基线。
 - `000_code/013_dS_ibp_general.wl`：已通过独立验收的稳定版本，新增 pure time-IBP/tree 模块。
 - `000_code/012_dS_ibp_general.wl`：013 的只读核心基线。
 - `000_code/011_dS_ibp_general.wl`、`000_code/010_dS_ibp_general.wl`：只读历史版本。001--009 及其专用检查不再保留。
 
-016 不再自动猜外动量角色。用户必须分别给出 `loopExternalMomenta` 与 `independentExternalMomenta`；符号可以叫 `sah/bob/alice`，名字没有语义。前者是进入 loop scalar-product/ISP/momentum-IBP 的独立外向量基，后者是 topology 中实际出现的无圈动量模长列表。旧字段 `externalMomenta/externalLegMomenta` 只作兼容别名，不参与自动角色推断。
+018 不自动猜外动量角色。用户必须分别给出 `loopExternalMomenta` 与 `independentExternalMomenta`；符号可以叫 `sah/bob/alice`，名字没有语义。前者是进入 loop scalar-product/ISP/momentum-IBP 的独立外向量基，后者是 topology 中实际出现的无圈动量模长列表。旧字段 `externalMomenta/externalLegMomenta` 只作兼容别名，不参与自动角色推断。
 
 公开 loop 坐标是 `loopExternalMomenta` 的完整 `ssij=Sqrt[sp[p_i,p_j]]` Gram 基；`independentExternalMomenta` 只生成逐项模长 `sE1,sE2,...`，不主动生成彼此点积。任一类别总数达到 10 时按总数位宽补零，例如 `ss0101`、`ss0110`、`sE01`；达到 100 时使用三位。内部 loop 部分继续复用平方 `kk[i,j]` 原子导数，并通过 Jacobian 得到根号变量导数。
 
@@ -144,7 +147,7 @@ massive building block 的动力学量导数与 qIBP、tIBP 自动读取同一�
 ## 运行示例
 
 ```powershell
-wolframscript -file 'independent-benchmark\package\examples\06_root_kinematic_coordinates\main.wl'
+wolframscript -file 'independent-benchmark\package\examples\06_mix_bubble_tree\main.wl'
 ```
 
 所有 WolframScript 检查应显式输出结果；不要用 `Quiet` 掩盖消息。

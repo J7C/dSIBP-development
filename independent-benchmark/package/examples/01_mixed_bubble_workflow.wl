@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* Mixed massive/massless 示例：用 017 统一三参数公开入口完成离散模板、连续撒点和 linearData。 *)
+(* Mixed massive/massless 示例：用 018 统一三参数公开入口完成离散模板、连续撒点和 linearData。 *)
 
 (* ::Chapter:: *)
 (*加载标准 package*)

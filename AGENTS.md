@@ -20,15 +20,17 @@
 
 ## 程序与目录
 
-- 当前主线版本由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/016_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 016 的冻结单文件兼容入口是 `independent-benchmark/package/package_016.wl`；`000_code/010_dS_ibp_general.wl` 至 `015_dS_ibp_general.wl` 及其模块目录是只读基线/历史版本，不在新任务中回写。
-- 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录，例如下一版 `000_code/017_dSIBP/`。同一整数版本内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `017.1`、`017.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。017 尚未完成候选晋升前，当前主线与正式交付仍是 016。
-- 根目录 `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；可复用轻量脚本留在目录根部，运行产物只放 `check-smoke/results_test/` 并在任务结束后清理。
+- 当前开发主线由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/018_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
+- 当前正式单文件兼容入口是 `independent-benchmark/package/package_018.wl`；`000_code/010_dS_ibp_general.wl` 至 `017_dSIBP/` 是只读基线/历史开发版本，不在 018 任务中回写。
+- 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。018 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `018.1`、`018.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
+- 根目录 `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；每项可复用检查放入名称直接说明功能的独立子目录，禁止重新堆叠全 family、全 sign/parity、连续指标撒点或完整 reduction 工作树。运行产物只放对应子目录的 `results_test/` 并在任务结束后清理。
 - `000_code/check/` 与 `000_code/test/` 是已清空的历史目录，不再写入新的日常 smoke/check/test 资产。
 - `check-smoke/` 不属于独立检验工作区。内部或外部独立执行者均不得读取、复制、写入或引用其中的脚本、结果与结论。
+- 根目录 `check/` 专供内部独立会话按完整任务书执行；每轮开始前必须清空旧工作树并从头建立，不得复用上一轮 expected、撒点、reduction 或结果。该目录整体忽略，不作为长期项目资产。
 - `independent-benchmark/package/` 只保留当前版本化程序 `package_<version>.wl`、同版本正式用户手册 `package_<version>.pdf` 和少量应用 examples；更新版本时覆盖当前交付并删除旧版本或无版本名副本。
 - `independent-benchmark/package/` 不得放 expected、验证脚本、开发文档、报告或 reduction 输出。
 - 每个发布版本必须维护 `independent-benchmark/package/examples/coverage_manifest.wl`：列出全部需要用户掌握的公开函数及其成品 example；正式检查必须与 package 的 `DSPublicAPI[]` 比较并验证源码调用覆盖，缺项不得发布。
+- 三个典型成品 example 长期保留且不得由全 family 变体取代：`03_single_massive_sunrise/` 是唯一 sunrise example，固定三平行边、单 massive line 和 ISP；`04_pure_massive_bubble_closed_loop/` 保留 dlog basis、既有 reference 对照及从初始化到 19-master DE/scaling 的完整闭环；`06_mix_bubble_tree/` 固定一条 massive cycle line，其余 cycle/bridge lines massless，覆盖 `kL/kE`、无圈参量、massless convention 与 cycle/bridge contraction。清理 smoke/check 时不得删除、降格或移出 examples。
 - `000-report/` 是本项目唯一的独立检验报告归档目录；除目录说明 `README.md` 外，不在其它项目目录散放报告。
 
 新建、移动、清理程序目录时遵守 `program-directory-layout` skill：正式可复用结果进 `results/`，临时测试进 `test/results_test/`，可重跑中间产物进 `results_temp/`；不得误删用户未提交改动。
@@ -40,7 +42,7 @@
 ### 内部检验
 
 - 由本 agent 在本项目文件夹中新开独立会话执行。
-- 独立工作区使用 `codex-independent-benchmark/`；不得读取主线 expected 或旧检验结果来生成新的 expected。
+- 独立工作区使用根目录 `check/`；开始新一轮前删除其中全部旧内容，不得读取主线 expected 或旧检验结果来生成新的 expected。
 - 内部独立执行者不得读取或使用根目录 `check-smoke/`；该目录只服务主线维护者的非独立轻量检查。
 - 最终报告直接写入 `000-report/`，不得留在工作区或 `independent-benchmark/package/`。
 
@@ -61,6 +63,8 @@
 
 以下是实现约束，不在此复述公式；具体定义与证明见 plan/design/tech note 和共同-theta TODO。
 
+- package 运行时门禁只放在真实信任边界：用户新输入、尚未推导的数学公式、递推终止、外部 artifact 身份与 reduction/DE 闭合。由同一 producer 生成并带同源状态的 sealed 数据，consumer 缺省只读取状态、计数和 digest 字段，不得重复全量 canonical、parity、coverage、representation、residual 或内容 hash 自证；这些开发证书只在显式 `AuditLevel -> "full"`、`check-smoke/`、独立检验或发布阶段执行。没有实际失败证据或新信任边界时，不得向 package 默认路径追加门禁。
+- 数值交叉检查缺省只使用一个固定、非奇异、精确有理点。`P0`、`ip0`、`ks` 等同一点在不同变量 convention 或导数方向下的矩阵表示不计作多个数值点；除用户明确要求或原点落在奇异面外，不得通过增加数值点堆叠验收。
 - 所有 sector 统一使用 Head `J`，sector 由线状态区分；不得恢复按 sector 复制的 `G/R1/R2` 主实现。
 - 共同-theta bundle、compiled `WT -> shrinkTerms`、simultaneous contact shift 累加、coincident canonical 和 contact-reachable sector 必须作为一个整体通过专项验收。
 - h/H 模式、质量参数、缩并 prefactor、zero-point 和 H EOM 必须使用当前 tech note 与 preset；不得从历史版本重新引入旧递推。

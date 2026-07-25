@@ -1,5 +1,91 @@
 # 013 pure time-IBP/tree 与 014 工程化闭环
 
+# 018 未完成工作闭环与工程交付（2026-07-24）
+
+## 2026-07-25 三个长期 example 与 tadpole 圈数
+
+- [x] 核对并修正 topology loop count 对 self-loop tadpole、普通单边、平行边和多连通分量的处理，增加最小回归。
+- [x] 保留 pure massive bubble 的 dlog/reference 完整闭环；新增或整理限定的 mix bubble+tree 与 single-massive sunrise 成品 examples。
+- [x] sunrise 使用共同外腿能量 `kE` 与独立圈外模长 `kL` 的两标度配置，并用 symmetry 模块实现顶点交换、两条 massless 平行线及其 ISP 指数同步交换；不复制 massive bubble 专属 parity/R1/R2。
+- [x] 在 plan/design 记录三个案例的选择理由；用户手册只记录使用方法，不写内部选型理由。
+- [x] 更新 coverage manifest、项目规则、README 和进度，并完成受影响的轻量检查；不运行 reduction。
+- [x] 修复零 contact 进入 normalization 与无参数重定义时 `None` 被拼入提示文本的问题；同步 tech note。
+- [x] sunrise 的 `DSSeeds` 正常构造可达 sector general 模板，随后仅选一个 top-sector `qIBP` 模板、按其 shift bounds 展开一个 seed 点的最小关系并移除 `DSKiraPlan`；mix bubble+tree 用 bridge `n=1` 展示收缩，同时检查 `n=0` 不含 `$Failed`。
+- [x] 明确 massive bubble 的 reference 对照已应用顶点/平行线交换、`R2 -> R1` 与固定 parity；sunrise 只复用公开 symmetry 数据流。
+
+## 2026-07-25 check 清理与长期 example 边界
+
+- [x] 清空根目录 `check/` 的两套过时独立 full-audit 工作树；该目录只留给新独立会话按完整任务书从头执行。
+- [x] 删除 `check-smoke/` 中 016/017、过度扩张 018、全 family/大包络/撒点、reference producer/adapter、Kira/reduction/post 和全部运行产物。
+- [x] 将维护侧检查收缩为五个明确功能子目录：general seeds、参量微分与 sector prefactor、单点 scaling、massless endpoint/contact、Kira energy convention。
+- [x] 固定 `04_pure_massive_bubble_closed_loop/` 为长期完整 package example，保留可直接加载的 19-master basis 以及从初始化、外部 reduction 回读、DE 到 scaling relation 的全流程。
+- [x] 完成路径/范围/Markdown/Git 静态检查：`check/` 为空，五个保留 WLS 不含重型流程调用，旧名称无残留，括号/fence 与 `git diff --check` 通过；本轮未运行 Wolfram、Kira 或 reduction。
+
+## 2026-07-25 018 候选、正式验收与发布
+
+- [x] 校正当前文档中的过时状态，不重复 expanded-envelope、reference 资产和已关闭 E018 缺陷。
+- [x] 在 `000_code/test/results_test/` 构建 018 候选 package/manual；最终程序/PDF SHA-256 分别为 `E137F7...EA06`、`FCF95B...0EBA`，PDF 32 页并完成受影响页渲染检查。
+- [x] 候选路径完成受影响回归、API/example/coverage、单固定点 DE/scaling/reference 和 PDF 目视检查。
+- [x] 同字节晋升 `independent-benchmark/package/`，删除旧 016 交付并做正式路径复验。
+- [x] 收缩独立任务书：Phase 1 只冻结点名范围内未撒点的 general IBP seeds/operators；Phase 2 只对 pure massive bubble `--`/even 与 mix bubble+tree `+++`/no parity 运行 full flow；删除 expanded-envelope、全-family ledger 和额外 tree DE，并新增功能覆盖索引。
+- [ ] 后续从空工作区按收缩后的任务书完成 018 source-isolated 独立验收并归档正式报告；本轮不执行。
+- [x] 清理本轮误执行的 untracked `codex-independent-benchmark/`；删除前确认 8,650 个文件均未跟踪且无本项目 Wolfram/Kira 进程。
+- [ ] 清理其它已确认的可再生产物；随后检查远端分歧、提交并推送。
+
+## 2026-07-25 报告门禁、massless 与独立交付
+
+- [x] 审阅最新报告全部发现并建立“已修复/本轮修复/继续 fail-closed”矩阵。
+- [x] 修复报告确认的正确性门禁和可闭合 massless lower-sector/fixed-line 问题，增加 fresh 018 smoke。
+- [x] 更新独立 benchmark 任务书、README 和 reference bundle，增加可直接加载的 19-master massive-bubble 选择及映射。
+- [x] 编写原始 massive-bubble reference code/result README，固定复用路线与禁止事项。
+- [x] 构建 018 候选 package/用户手册，完成候选与正式路径同字节复验。
+- [ ] 检查远端分歧、提交并推送；不提交 ignored 运行产物或已作废的独立 expected/results。
+
+- [x] 将 017 开发检查点提交并推送到 GitHub；提交 `8032ce7`，不冒充正式交付。
+- [x] 从 017 建立只写的 `000_code/018_dSIBP/`，更新版本 token、loader 与构建输出名。
+- [x] 精确验证 massive tree 的 `DSTreeNaiveIBP -> DSTreeNaiveDE`，并与同 basis 的 `DSTreeDLogDE` 逐项比较（`12/12`，三个 `5 x 5` 矩阵逐项差值为零）。
+- [x] 统一单积分/批量 pure-time seed provenance，并检查公开输出只含三参数 `J`（`15/15`）。
+- [x] 全源码扫描并删除遗留数量/规模/任意最大步数限制；018 未发现资源数量门禁。
+- [x] P0：优化 `DSGenerateIBP` sector canonical/坐标投影热路径；massless 保持 `13232` 方程、`2726` 积分、零泄漏，generate `108.0 s -> 47.28 s`。
+- [x] 修复 raw-expression parity fallback 与完整 sector metadata 汇总；bubble+tree top/e3 代表检查 `12/12`。
+- [x] 拆分超时 full-workflow smoke并逐阶段记录；massless 完整通过，bubble+tree 全量五分钟未完成且不计通过。
+- [x] 重跑 sector、contact、parity、meta seed range、empty range、tree 和 load 回归；017 contact/parity 的 29 个现行断言通过，要求 `bS0` override 不改变 tree formula 的旧断言按 018 normalized-`J` 合同排除。
+- [x] 更新 examples、coverage manifest、tech note 和独立 benchmark 任务书；用户手册随 018 候选构建收口。
+- [x] 构建 018 候选 package/PDF，候选路径复验后同字节晋升正式交付。
+- [x] 完成 pure massive bubble 代表 family 的 package fresh Kira/DE/scaling 闭环；reference 侧只复制并哈希核验已有解析结果，不重新生成或约化。
+- [x] P0：完成 `DSGenerateIBP` 模板级 sector canonical 优化；`[-1,1]` 新旧路径 `18908/18908` 逐条相等、差异 0，`[-2,2]` 完整得到 `397592` 条关系与 `65252` 个积分，23 组非空且 linear/parity/参数闭合通过；未引入资源门禁。
+- [x] P0：解析构造 master 一阶导数和最小 targets 后，把 Kira reduction 的全部参数（含 `nu_i`、维数、零点、normalization 与外部动力学量）代入确定性非特殊有理分数；实际 Kira 文本无符号 coefficient parameter 残留，并在同一点验证 DE/scaling。
+- [x] P0：撤回把 sector prefactor 当成外部 master normalization 的误诊和全部 post-hoc basis adapter。
+- [x] P0：每个 sector 的 `sectorPrefactorData` 保存传播子收缩自动产生的完整 `N_s`；`J_s=N_s I_s` 隐含该因子，外部不重复相乘。
+- [x] P0：按 `independentExternalMomenta` 声明顺序冻结稳定 kE 编号；`N_s` 保存 `kEpower[be1,be2,...]`，当前 `kEParameterExpressions` 独立保存且可为复合表达式。`DSRedefineParameters` 只更新后者。
+- [x] P0：所有 contact 关系统一使用 `c_raw N_source/N_target J_target`；已覆盖 massive Wronskian、fixed/non-loop 幂次和 simultaneous contact 乘积。
+- [x] P0：`ds[J_s,x]` 加入 `D[Log[N_s],x]J_s`，`ds[c(x)J_s,x]` 同时保留显式系数导数；`DSDE` 复用该实现。
+- [x] P0：`rep2Integrand` 把结构化 `N_s` 完整乘回具体被积函数；缺省与复合参数重定义专项 smoke `16/16`。
+- [x] P0：局部裸积分展开已作开发 smoke；最终仍用完整 scaling relation 统一检查，不增加新的用户阻断条件。
+- [x] P0：关系修复后废弃旧 Kira reduction，fresh 重跑 export/reduce/import/DE；新纯有理 reduction 为 19 masters、215 targets、0 unreduced，import 与两个 `19 x 19` DE 无残留。scaling/reference 仍失败，转入 E018-18。
+- [x] P0：复审所谓“全数值 Kira”输入，确认 `dsii/ccc` 触发 2,142 个函数、149 probes 与 142.93 秒 FireFly 重构；在错误日志中重新归因为 exporter/validation 缺陷。
+- [x] P0：验证 Gaussian-rational 方程存在全局一致的逐积分 `I` 相位规范；14,091 条方程、82,252 个约束、2,987 个 ID、1 个连通分量、冲突 0。
+- [x] P0：在 exporter 中把该相位规范转换为纯有理系数 Kira 系统，manifest 保存可逆 phase gauge；importer 在 ID 映射前恢复物理 `J` reduction，合成 round-trip 及冲突/混合轴负例 `16/16`，无 `dsii` 泄漏。
+- [x] P0：纯有理路线不追加 `ccc` 自由变量；Kira 2.3 零变量 FireFly 会报 `No variables?`，故改走官方 `run_triangular+run_back_substitution` 常系数路线。prepare 同时检查前端/后端变量、dummy 与实际 Kira 文本，fresh Kira 为 `14091` 方程、`2795` 独立关系、19 masters、215 targets、0 unreduced，`12.86 s`。
+- [x] P0（E018-18）：从原始 `DEP0.m`、`DEks.m`、`MIdlogNote.m` 证明 reference 19-master basis 的实际 normalization，与结构化 `N_s` 的 package basis 做有来源的同基比较；禁止由差矩阵反解 adapter。
+- [x] P0（E018-18）：按用户指定测试 `G/R1 == normalized J_s`；19 个 master 定义比例逐项均为 1，不加入额外 `C`、符号或 `ks` normalization。
+- [x] P0（E018-18）：在同一非奇异精确点使 scaling、physical `P0`、backend `ip0`、physical `ks` 完整比较通过；三套 `19x19` 矩阵各 `361/361`、非零差值 0。
+- [x] P0（E018-18）：确认原始物理 dlog basis 是 `MIdlogNote`；第 15--18 项各含一个显式 `ks`，stored `MIdlogKira/DEP0/DEks` 经 `ks->1` 丢失该显式求导。维护侧恢复为 `T' T^-1+T A_ks T^-1` 后 scaling matrix/source residual 全零，原先额外四个 `ks` 差值消失。
+- [x] P0（E018-18）：在既有解析 reference 上直接代入 `P_ref=-P_pkg=29 I/13`，对 `P_pkg` 导数乘 `-1`，并恢复第 15--18 项显式 `ks`；19 个 master 定义比例均为 1，physical `P0` 与 `ks` 各 `361/361`。
+- [x] P0（E018-18）：把原始 dlog basis、能量/导数方向及 check 输出合同写入独立 benchmark 任务书；独立执行者在自己的 `codex-independent-benchmark/check_.../` 中重写检查，禁止读取或复制维护侧 `check-smoke/`。
+- [x] P0（E018-19）：从初始化的 phase-energy 结构数据生成 `physicalEnergy -> -I backendEnergy`，backend symbol 为物理原子名前加单个 `i`；禁止按字符串名猜测能量，禁止替换不进入顶点相位的纯空间坐标。
+- [x] P0（E018-19）：在 Kira exporter 应用 energy map 并写入 manifest；importer 反向恢复，固定一般 coefficient、energy map、Gaussian integral phase gauge 的逆序恢复合同。
+- [x] P0（E018-19）：把物理撒点 `k -> r` 转成 backend 的 `ik -> r`（`r` 必须为精确实有理数），同时保存物理 DE 截面 `k -> -I r`；普通导数按 `D_k=I D_ik` 对接，Euler/scaling 按 `k D_k=ik D_ik` 保持不变。
+- [x] P0（E018-19）：多能量/复合/复用、非相位坐标、命名冲突、非原子、数值负例和 round-trip smoke `19/19`；package actual 为 19 masters、215 targets、0 unreduced，物理 scaling 通过。reference 五份既有解析结果复制哈希 5/5，通过 homogeneity、显式 `ks`、能量方向与 `D_P0=I D_ip0` 变换后，物理 `P0`、backend `ip0`、`ks` 各 `361/361`、差值 0。
+- [x] P0（E018-18）：expanded envelope fresh reduction 保持 19 masters、215 targets、0 unreduced，post `20/20`；preferred master 不再被当作充分性证明。
+- [x] P0（E018-18）：51 页 tech note 已用 pdfLaTeX 构建，第 35--36 页经 Poppler 目视检查无裁切、重叠、黑块或乱码，并以同一候选字节覆盖正式技术说明 PDF（SHA-256 `BEEE84BE65D054C95863C33E5DCB68CD1D200398E7DBF0C161202AA8CFC0145D`）。scoped `git diff --check` 已通过；三个 fresh-kernel `.wls` 已正常加载 018。
+- [ ] 清理七个已盘点且 ignored/untracked 的可再生临时目录；清理前重新确认路径、Git 状态和活动进程。
+- [ ] P1（不是最高优先级）：实现有序 `userMI[i]` 线性组合 basis，并持久化 `J <-> userMI <-> Kira ID <-> RT variable` 双向映射。
+- [ ] P1：删除 Kira/RT serializer 的二次暗排序，严格消费用户已经排序的 `integralList`；手册说明缺省排序和显式重排方法。
+- [ ] P2：重新推导含 massless tree line 的 quotient-basis iterative reduction 与 dlog DE。
+
+阶段记录：早期 018 候选 SHA-256 `8ECCD0B66171362E1671F83B9B68BAF0BEF13B047400B1FAD425FBB362AEC830` 与前序正式候选 `CDA2302295F961274488CFC1109B9041476A18782E17AB683F56E86D27BAF7BE` 均已被本轮边界修复取代；最终候选及正式程序为 `E137F7259B429D2F181E1A8BA101C36A42CEFE2145975F1900A24FDFE8B3EA06`，正式手册为 `FCF95B34B7F0ADCE037E5CB3029F239A78DA8AA50793F21AEEDD8A488BBC0EBA`。Kira/DE/scaling/reference 与 expanded envelope 是前序候选的既有验收，本轮没有重跑；最终字节只执行受影响 example/topology/massless/API 检查。atomic massless formula tree 保持 P2 fail-closed。剩余发布项仅为 source-isolated 独立验收、临时产物清理和 Git 提交/推送。
+
 # 017 统一三槽、sector parity 与 subsector 导数（2026-07-24）
 
 - [x] 核对 016 的 cycle/fixed full/shrunk pack、zero-point 所有权、massless time-only fallback 和 lower-sector `ds` shape gate。
@@ -31,12 +117,12 @@
 - [x] 017 暂不修改 massless quotient 上的公式型 `repIterative`/dlogDE；massless 体内线返回 `PendingRederivation`，并登记 quotient basis、递推和 dlog 公式重新推导任务。
 - [x] 在 `check-smoke/` 完成 017 定向轻量检查，最终计数为 `4/4`、`21/21`、`14/14`、`30/30`。
 - [x] 扫描并修正用户手册、plan/design/tech note 中残留的 016 massless 单 `n`/二槽和 fixed 空 pack convention；examples 的旧 `init/` 必须由 017 候选重新生成。
-- [ ] 为公开 `DSTreeNaiveIBP` data 增加可逆的 tagged reduction 适配，再调用 Private `DSTreeNaiveDE` 内核；检查 `E1/E2/k12` 无 shape 消息、无 residual，并逐项等于同 basis dlog DE。
-- [ ] 让公开单积分 `DSTreeSeeds` 与批量 `DSSeeds` 共用 direct pure-time 原子生成器，并验证 `generationRoute`、sector tag 与统一三参数 `J` 输出。
-- [ ] 将 `DSGenerateIBP` 的 Cartesian product 下沉到逐 template 自身指标，保留 exact-cover 与 parity-before-generation 门禁，并检查无重复关系、结果集合不变。
-- [ ] 增加 `DSGenerateIBP[allSeeds,routes]` 的逐 sector/generator exact-cover 路由；example 04 原样使用 reference 的七类范围并验证导出 ready。
+- [x] 018 已为公开 `DSTreeNaiveIBP` data 增加可逆 tagged reduction 适配；massive-only `DSTreeNaiveDE` 无 shape/residual，并与同 basis dlog DE 逐项相等，`12/12`。
+- [x] 018 已让公开单积分 `DSTreeSeeds` 与批量 `DSSeeds` 共用 direct pure-time 原子生成器；provenance 与统一三参数 `J` 为 `15/15`。
+- [x] 018 已将撒点域按每个 template 的实际连续指标和反推包络生成，保留 exact-cover 与 parity-before-generation；`[-1,1]` 新旧关系 `18908/18908` 逐条相等。
+- [x] 旧“用户手工逐 sector/generator routes”方案已由 `DSMetaSeedRange`、`seedGroups` 和共同最终关系包络反推合同取代；不再要求用户照抄 reference 的七类人工范围。
 - [ ] 更新 tech note、用户手册、examples、独立 benchmark 任务书与 README，完成公开 API/example coverage 检查。
-- [ ] 构建 017 候选 package/manual，记录哈希并用候选路径复验；同字节晋升正式交付后再复验并清理候选产物。
+- [x] 017 只作为已推送检查点保留，候选晋升任务已由 018 取代；不得再构建或晋升 017。
 
 # 016 独立续审数值化改造（2026-07-24）
 
@@ -291,3 +377,16 @@
 - [x] 对 `min>max` 明确解释目标包络、shift 跨度、空 IBP 撒点和不完整约化系统之间的因果关系，并关闭相应 complete capability。
 - [x] 增加 custom grouping 空组专项并通过 `10/10`；同步 plan、design note、tech note 和用户手册。
 - [ ] 完成 017 全量 core/examples 回归与候选晋升；当前 `check_017_full_workflow.wls` 的全量 `DSLinear` 路线仍需拆分或优化后完成。
+# 2026-07-25 018 report gate 与 massless 收口
+
+- [x] 实现 sealed complete / sealed subset / unsealed raw artifact 合同；formal reduction 只接受 `completeSystemQ=True`。
+- [x] 让 `DSLinear` 复用 producer digest/摘要，formal Kira plan/export 复用同一 prepared active-basis payload。
+- [x] export/import 加入实际内容和文件 SHA-256 identity；`DSInit` 可选写文件失败不关闭内存 context。
+- [x] fresh 验收门禁 `17/17`、massless `11/11`；atomic contact `-2/sE1^beta1`，pure bubble top `3/3`、lower `6/6`，非法 shape 与 formula quotient 继续 fail closed。
+- [ ] 更新独立 benchmark、massive-bubble active basis、reference README、018 package/manual/examples 后完成候选和正式路径复验。
+# 2026-07-25 018 runtime gate 精简
+
+- [x] 对照 `000-report/2026-07-24-2244-018-内部.md` 复核当前 018 默认路径中的全部剩余重复门禁。
+- [x] 固化保留、删除、仅 full audit 三类清单并修改 package。
+- [x] 更新 `AGENTS.md` 的门禁最小化与单固定点规则。
+- [x] 运行针对性结构回归与一个固定点的现有矩阵比对，不扩大验证范围。

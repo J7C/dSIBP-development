@@ -1,31 +1,39 @@
 # Pure massive bubble 最终对照
 
-本目录只提供 `pure_massive_bubble_reference` 在固定精确有理点的轻量最终对照。它不是独立手推 expected，不是 Kira reduction，也不能替代 fresh export/reduction/import、符号 DE 或 scaling 检查。
+本目录只提供 `pure_massive_bubble_reference` 在固定精确 Gaussian-rational 点的轻量最终对照。它不是独立手推 expected，不是 Kira reduction，也不能替代 package 侧 fresh export/reduction/import、`DSDE` 或 scaling 检查。
 
-## 读取时序
+## 读取顺序
 
-1. Phase 1 禁止读取本目录。先按任务书独立推导并冻结全部 expected。
-2. Phase 2 先用当前最新 package 完成 fresh Kira、`DSKiraImport -> DSDE`、符号 scaling、19 维 basis 顺序和 convention adapter 审计。
-3. 上述检查全部通过后，才可 `Get["reference_probe.wl"]` 做固定点最终比较。不得用该文件反推 master、补造 reduction 或修订冻结 expected。
+1. Phase 1 禁止读取本目录，先按任务书独立推导并冻结 expected。
+2. Phase 2 先用当前 package 完成 fresh Kira、`DSKiraImport -> DSDE`、scaling、19 维 basis 顺序和 convention 审计。
+3. 上述检查通过后，才可读取 `reference_probe.wl` 做固定点最终比较。不得用它反推 master、补造 reduction 或修改 Phase 1 expected。
 
-## 文件内容
+## 数据与 convention
 
-`reference_probe.wl` 返回一个 Association，主要字段为：
+`reference_probe.wl` 返回 Association，主要字段为：
 
-- `"masterBasisNative"`：reference 的 19 个有序 active masters；行列顺序均按此列表。
-- `"deP0"`、`"deKs"`：固定有理点的两套精确 `19x19` DE 矩阵。
-- `"scalingDiagonal"`：同序 master 的 Euler/scaling 对角矩阵。
-- `"probeRulesReference"`：`{ks->43/17,P0->29/13}`。
-- `"probeRulesPackage"`：`{ss11->43/17,P0->29/13}`。
-- `"masterDegrees"`、`"checks"`：逐项 scaling degree 与提取时的精确门禁。
+- `"masterBasisNative"`：reference 的 19 个有序 active masters。
+- `"deP0"`、`"deIp0"`、`"deKs"`：physical `P0`、backend `ip0`、physical `ks` 的三套精确 `19x19` DE 矩阵。
+- `"scalingDiagonal"`：同序 physical master degrees 的 Euler/scaling 对角矩阵。
+- `"probeRulesReference"`：`{ks->43/17,P0->29 I/13}`。
+- `"probeRulesPackage"`：`{ss11->43/17,P0->-29 I/13}`。
+- `"backendRules"`：`{ip0->29/13}`。
+- `"masterDegrees"`、`"physicalDlogExplicitKsDegrees"`、`"physicalMasterDegrees"`：stored basis、显式 `ks` 与 physical basis 的 degree 数据。
+- `"checks"`：复制来源、矩阵维数、分母、参数残留、Gaussian-rational 和 scaling 门禁。
 
-convention adapter 固定为：reference `Vpm=0` 对应 package `--`；`P_pkg=-P_ref`，且 reference `P1=P2=-P0`；`ks=ss11=Sqrt[sp[k,k]]`，旧平方变量为 `s11=ks^2`。跨不同 scaling degree 的矩阵元已按逐行/逐列 degree 差恢复，不能再统一乘除一个 `ks`。
+固定 convention 为 `P_pkg=-P_ref`、`P0_pkg=-I ip0`、`ks=ss11=Sqrt[sp[k,k]]`。因此
 
-最终比较必须在同序同 normalization basis 中得到：`deP0` 为 `361/361` 精确相等，`deKs` 为 `361/361` 精确相等，且 Euler 组合等于 `scalingDiagonal`。比较前必须检查全部矩阵元分母在 probe 上非零。
+```text
+D/D P_pkg = -D/D P_ref
+D/D P0_pkg = I D/D ip0
+P0_pkg D/D P0_pkg = ip0 D/D ip0
+```
+
+既有解析矩阵先按 stored master degrees 做 `N A N^-1` 的 homogeneity lift，不加入 `N' N^-1`。随后恢复原始 `MIdlogNote` 第 15--18 项的显式 `ks`：`A_P0=T A_P0 T^-1`，`A_ks=T' T^-1+T A_ks T^-1`。这是源码定义的 physical dlog basis 恢复，不是 package normalization adapter。19 个 reference/package master 定义比例逐项均为 1。
 
 ## 来源与完整性
 
-该 bundle 于 2026-07-24 从只读目录 `dSibp/codebubble/kira_bubble/result/` 的既有解析结果提取；没有加载 dSIBP package，也没有运行 reduction。原始大表不复制到本目录。
+bundle 于 2026-07-25 从 `F:\Agent-projects-nut\dSibp\codebubble\kira_bubble\result\` 的既有解析结果复制并变换；没有重新生成 reference IBP，也没有运行 reference Kira。原始大矩阵不复制到本目录，只在 ignored 维护工作区中按下列 SHA-256 校验：
 
 | source | SHA-256 |
 | --- | --- |
@@ -34,6 +42,6 @@ convention adapter 固定为：reference `Vpm=0` 对应 package `--`；`P_pkg=-P
 | `DEscaleCheck.m` | `5B1754A5DD285BDABB47068996E726624E137ABD1F298D2756C6EC038D66D573` |
 | `MIdlogNote.m` | `5EF8F2E52A52FBFC06DC06054329E5573622875E6AC71ECB39C798BDF70F3A37` |
 | `derivative_rules_bubble.m` | `00428810E74588A37291B55DBC23A8384927FA61EAE4D90BDC417F1707019FF6` |
-| `reference_probe.wl` | `51A141F8086A8904D4670AE9B9D3C90A7866156534648C33E94450F4E3E599AC` |
+| `reference_probe.wl` | `411D0F4766FF63A43406239C300714531F016115EFE12E2110568508F8B4DE05` |
 
-提取门禁为：矩阵维数正确、全部实虚部为精确 Gaussian 有理数、Euler/scaling `361/361`、source scaling diagonal 一致；当前四项均为字面 `True`。
+维护 check 的最终结果为：来源/副本哈希 5/5，分母全非零，无残留参数，reference scaling 精确成立；与 package 比较时 physical `P0`、backend `ip0`、physical `ks` 均为 `361/361` 精确相等、差值 0。

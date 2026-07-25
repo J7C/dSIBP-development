@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 017 pure-time 示例：公开积分始终使用三参数 J。两顶点 massive-only family 演示
+(* 018 pure-time 示例：公开积分始终使用三参数 J。两顶点 massive-only family 演示
    Private 论文公式适配；atomic massless family 演示 quotient canonical 与公式路线的明确边界。 *)
 
 (* ::Chapter:: *)
@@ -16,7 +16,7 @@ Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
    p12 是 lineData 中实际出现的独立无圈动量；程序只为其模长建立 sE1。
    treeEnergy=k12 是 time-IBP/dlog 公式使用的物理线能量。 *)
 treeCaseInput = <|
-   "name" -> "017TreeTwoVertexPlusPlus",
+   "name" -> "018TreeTwoVertexPlusPlus",
    "vertexData" -> {{v1, "+"}, {v2, "+"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p12,
@@ -37,7 +37,7 @@ treeCaseInput = <|
 (* masslessFull 保留两个有序端点槽，并在 relation 层约到二维物理基。
    DSSeeds 与 tree 结果都使用同一个三参数 J，不需要私有状态选项。 *)
 atomicMasslessInput = <|
-   "name" -> "017AtomicMasslessTimeOnly",
+   "name" -> "018AtomicMasslessTimeOnly",
    "vertexData" -> {{u1, "+"}, {u2, "+"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {u1, u2}, "momentum" -> pM,

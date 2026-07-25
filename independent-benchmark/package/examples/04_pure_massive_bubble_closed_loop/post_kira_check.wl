@@ -8,6 +8,7 @@
 exampleDir = DirectoryName[$InputFileName];
 Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
+Get[FileNameJoin[{exampleDir, "active_basis_19.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 
 (* 与 export 端共享冻结的精确参数点，不在后处理阶段重新抽取或改值。 *)
@@ -20,7 +21,7 @@ parameterProbeRules = {dim -> 37/11, nu -> 7/13, etaNu -> 23/17};
 
 (* 顶点交换 symmetry 只在 reference P1=P2=-P0 时成立；独立 P1/P2 family 不得复用本配置。 *)
 caseInput = <|
-   "name" -> "017PureMassiveBubbleClosedLoopMinusMinus",
+   "name" -> "018PureMassiveBubbleClosedLoopMinusMinus",
    "vertexData" -> {{v1, "-"}, {v2, "-"}},
    "lineData" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
@@ -32,7 +33,6 @@ caseInput = <|
    "loopExternalMomenta" -> {k},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "externalInvariantRules" -> {sp[k, k] -> s11},
    "vertexEnergies" -> <|v1 -> P0, v2 -> P0|>,
    "ispData" -> {},
    "numericRules" -> parameterProbeRules,
@@ -60,7 +60,7 @@ context = DSInit[
 kiraDir = FileNameJoin[{exampleDir, "kira"}];
 deDir = FileNameJoin[{exampleDir, "results", "dlogDE"}];
 savedDEFile = FileNameJoin[{deDir, "manifest.wl"}];
-buildDESource = FileNameJoin[{packageDir, "Kernel", "dSIBP.wl"}];
+packageSourcePath = currentPackagePath;
 summaryFile = FileNameJoin[{exampleDir, "results", "post_kira_summary.wl"}];
 
 reductionData = DSKiraImport[kiraDir, context];
@@ -68,17 +68,17 @@ reductionData = DSKiraImport[kiraDir, context];
 deData = If[
    FileExistsQ[savedDEFile] &&
     FileDate[savedDEFile] >= FileDate[FileNameJoin[{kiraDir, "results", "Tuserweight", "kira_list.m"}]] &&
-    FileDate[savedDEFile] >= FileDate[buildDESource],
+    FileDate[savedDEFile] >= FileDate[packageSourcePath],
    Join[Get[savedDEFile], <|"context" -> context|>],
-   DSDE[reductionData, {s11, P0}, OutputDirectory -> deDir]
+   DSDE[reductionData, {ss11, P0}, OutputDirectory -> deDir]
    ];
 scaleData = DSScaleCheck[
    deData,
    <|
     "relation" -> "PureMassiveBubble",
-    "variables" -> {s11, P0},
-    (* ks d/dks = 2 s11 d/ds11，P0 与 k0 具有相同标度权重。 *)
-    "weights" -> {2, 1}
+    "variables" -> {ss11, P0},
+    "weights" -> {1, 1},
+    "degrees" -> (pureMassiveBubbleScalingDegrees /. parameterProbeRules)
     |>
    ];
 
@@ -86,7 +86,8 @@ scaleData = DSScaleCheck[
 (* ::Chapter:: *)
 (*闭环验收*)
 
-expectedMasters = (referenceDlogCandidates[[referenceDlogActiveIndices]] /. {P1 -> -P0, P2 -> -P0} /. parameterProbeRules);
+activeBasis = pureMassiveBubbleActiveBasis018[parameterProbeRules];
+expectedMasters = activeBasis["expressions"][[activeBasis["activeIndices"]]];
 expectedMasterIDs = Range[19];
 expectedMasterTokens = Tuserweight /@ expectedMasterIDs;
 sourceManifest = Lookup[reductionData, "sourceManifest", <||>];
@@ -123,7 +124,7 @@ checks = <|
    "rhsContainsOnlyMasters" -> TrueQ[Lookup[validationChecks, "rhsContainsOnlyMasters", False]],
    "deStatus" -> (Lookup[deData, "status", "missing"] === "generated"),
    "deMasterOrder" -> (Lookup[deData, "masters", {}] === expectedMasters),
-   "deVariables" -> (Lookup[deData, "variables", {}] === {s11, P0}),
+   "deVariables" -> (Lookup[deData, "variables", {}] === {ss11, P0}),
    "deDimensions" -> (And @@ (Dimensions[#] === {19, 19} & /@ Values[Lookup[deData, "matrices", <||>]])),
    "noResidualJ" -> FreeQ[Lookup[deData, "residualIntegrals", <||>], _J],
    "noResidualBackendTokens" -> FreeQ[Lookup[deData, "residualBackendTokens", <||>], Tuserweight[_Integer]],

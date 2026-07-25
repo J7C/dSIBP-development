@@ -1,31 +1,29 @@
 # independent-benchmark 文件夹用途
 
-本文件夹用于交付独立推导任务和推导冻结后使用的程序。它不是本项目现有 expected、check 或运行结果的输出目录。
+本目录交付独立推导任务书、Phase 2 所需的正式 package/用户手册，以及任务书点名的轻量 reference 对照。它不是 expected、check、reduction 或运行结果目录。
 
-- 本 `README.md` 只说明目录边界；权威任务文件是 `independent-benchmark.md`。
-- `independent-benchmark.md` 本身就是交给其它 AI 的完整任务说明书，不是等待补充手推答案的结果文件。
-- 根目录 `check-smoke/` 只供 package 维护者做轻量 smoke/check/test；独立执行者禁止读取、复制、写入或引用该目录，不得把其中内容作为 expected、比较器、先验结论或失败归因依据。
-- `package/` 只保留当前最新的一对 `package_<三位版本>.wl/pdf` 与 `examples/` 下少量典型应用文件；当前交付目标为 017。不含旧版本副本、无版本名副本、expected、验证脚本、plan、design、技术笔记或 reduction 输出。
-- `reference-results/` 只保存任务书点名、带来源哈希的轻量最终对照。Phase 1 禁止读取；Phase 2 也必须先完成 fresh Kira、符号 DE/scaling、basis 与 convention 对齐，才可读取。它不是手推 expected、旧 reduction 或 package 检查结果。
-- 每轮独立审计必须完整执行任务书第 2--17 节：从头建立第 9 节八个 graph-valid loop family、两个 atomic `timeOnly` family、第 14 节两个 pure-time/tree family、全面物理工程/Kira 闭环、根号坐标层，以及显式双动量列表、多重图/routing、cycle/fixed 三槽 pack、结构化 sector prefactor、参数重定义、mixed massive/massless bubble+tree 六变量和全 family 参数闭合。017 的公开积分只有 `J[aList,linePacks,ispList]`；论文 vertex basis 只是 massive-only Private adapter，含 massless full line 的五个公式型 tree 接口必须明确返回 `PendingRederivation`。章节顺序只表示功能依赖层级，不允许跳过前序范围或沿用旧 expected/报告。全部 expected 冻结后，按任务书的动态解析规则只加载 `package/` 中唯一提供的最新版本 package 做全量单向比较，不得写死版本号或改从仓库源码目录加载。
-- 第 17.3--17.4 节的“自定义变量成功”要求同时通过逐变量 `ds`、全部 seed/`linearData`、重新生成的 bubble+tree loop `DSDE`，以及独立 tree family 的 naive/dlog DE；只看到 metadata 中的变量名改变不算通过。计算结果禁止残留被替换旧坐标，旧规则只可保留在明确的 provenance/audit 字段。full-loop 与 tree 没有显式 projection/basis map 时不得直接比较。
-- ISP 输入使用当前最新 package 的公开 `<|"name"->rho,"expr"->sp[...],"range"->{...}|>` schema；任务书、手推槽位和第二阶段 package 调用之间不设置字段名 adapter。
-- 所有含 massive line 的 family 都对直接 h 做独立手推与 package 验证。裸 H 只选 `atomic_massive_line` 和 `pure_massive_bubble_reference` 两个 family；二者还必须比较裸 H `T=I`、H 经独立推导的 `T_Htoh` 变到 h，以及变换后结果与直接 h 的一致性。
-- H/h 的微分方程、Wronskian、导数递推和具体 shrink 公式是独立 benchmark 的待推导答案，不在输入目录中提供；外部 AI 也不得从 package note 补读这些结论。
-- 第一阶段只读任务书，不得读取 `package/`、`000_code/`、现有 check、expected 或运行结果。唯一例外是任务书第 13.2 节的 reference bubble 求导对照，可额外读取其中逐路径点名的六份 `codebubble` source/Omega/MI 输入；不得读取该目录已有 Kira `result/results`、package example 转录或旧 reduction 产物。手推结果与推导记录冻结后，第二阶段才可打开 `package/`，按正式手册学习调用并自行比较。
-- 第二阶段的 loop 关系与 Kira 输入必须走当前手册的公开链：`DSInit -> DSSeeds -> DSAllSeeds -> DSGenerateIBP -> DSLinear -> DSKiraPlan -> DSKiraExport`。`preReduction` 只冻结预约化候选 targets；外部确认 master 后另建 `formal` plan，先冻结 active-basis 解析一阶导数和最小 target closure，才允许可选的 `postDerivative` 系数数值化。两阶段使用不同输出目录，失败状态不得继续传给 serializer；禁止调用私有 helper、`DSSeedPlan` 或从旧 manifest 推断缺失输入。
-- 本项目自己的手推关系、程序 expected 和测试输出禁止放在本文件夹。
-- 外部 AI 的推导结果也应输出到它自己的独立目录，再由维护者人工审查后决定是否导入项目 check。
+## 两阶段边界
 
-## 独立检验位置与报告回收
+- 权威任务书是 `independent-benchmark.md`。Phase 1 由新的独立 subagent 在新工作区执行，只读取任务书与公开文献；不得读取 `package/`、`reference-results/`、`000_code/`、根目录 `check-smoke/`、旧 expected、旧报告或旧运行结果。
+- Phase 1 只推导任务书固定 family/branch/parity/sector/generator 下、连续指标未取点的 general IBP seed identities 与 general 参量微分算符。有限 `n_i in {0,1}` 是离散基底类，不是连续撒点。禁止 `DSGenerateIBP`、`DSLinear`、Kira/reduction、DE、scaling 和数值 probe。
+- 两类 Phase 1 expected 与推导来源冻结并记录 hash 后，Phase 2 才动态解析 `package/` 中唯一的 `package_<三位版本>.wl/pdf`，并要求 `$dSIBPVersion` 与文件 token 相同。不得从 `000_code/` 或历史单文件旁路加载。
+- Phase 2 先比较 general seeds/operators；随后只执行任务书点名的 package 路线。外部 reduction 仅有两套：pure massive bubble `--`/even/default root coordinates，以及 mix bubble+tree `+++`/no parity/exact custom coordinates。不得增加 branch/parity、expanded envelope、全 family 参数 ledger 或其它 fresh reduction。
+- Tree package 交叉验证只在两顶点 `++` massive case 比较 naive/dlog；三顶点 `++-` 只验证 cross/contact guard。massless full-line 的公式型 tree 路线保持 `PendingRederivation`。
+- 每套 full flow 只使用一个确定性精确数值点；必须先构造符号导数、最小 target closure 和符号 scaling relation。Package 只生成/序列化 Kira 输入，不自行运行 reduction。
 
-独立检验分为两条路线：
+## Convention 边界
 
-- **内部检验**：由本项目 agent 在当前项目文件夹中新开独立会话，工作区使用 `codex-independent-benchmark/`。最终报告不留在该工作区，统一写入根目录 `000-report/`。
-- **外部检验**：由外部 agent 在本项目以外的独立文件夹完成。维护者查阅并确认报告的来源隔离、程序版本和证据后，把原报告复制到本项目 `000-report/` 备份；项目内不得只保留外部路径引用。
+- 公开积分统一为 `J[aList,linePacks,ispList]`，并按 `J_s=N_s I_s` 定义。stable kE 编号、`kEpower[...]` 与 `kEParameterExpressions` 分离保存；contact 使用 `c_raw N_source/N_target J_target`，`ds/DSDE` 含 `D[Log[N_s]]`，`rep2Integrand` 把同一 `N_s` 乘回。
+- Root 坐标满足 `ssij=Sqrt[sp[k_i,k_j]]` 与 `partial_ssij=2 ssij partial_sp`；标量积坐标对称，但 `D_ij=k_i.partial_{k_j}` 有序，raw basis 固定 `{D_ij|i<=j}`。不使用 `PowerExpand`。
+- Kira-only 能量映射只作用于初始化识别出的相位能量原子：`k->-I ik`，其中 `ik` 是单个实 backend 变量；普通导数 `D_k=I D_ik`，Euler 算符不变。纯空间坐标不替换。
+- Bubble reference 只在 Phase 2 复制并核验既有解析结果，不重新生成 reference IBP 或运行 reference Kira。必须对齐 `P_pkg=-P_ref`、`P0=-I ip0`、原始 `MIdlogNote` basis 和第 15--18 项显式 `ks` 的 `D[T,ks]T^-1`。
 
-两类报告统一命名为 `{时间}-{currentVersion}-{内部/外部}.md`，其中时间格式为 `YYYY-MM-DD-HHmm`，`currentVersion` 是任务书在 Phase 2 动态解析出的三位程序版本 token。附件放在同名并追加 `-附件` 的目录。旧报告、`report-of-report`、针对报告的 battle 或临时争论稿不作为正式交付物保留。
+## 目录与报告
 
-既有内部冻结 expected、单向比较脚本、运行结果和工作区已清理，正式归档报告及附件继续保留。后续内部检验必须重新建立空的独立工作区，并把新报告归档到 `000-report/`；新的外部推导结果只有在完成来源隔离、逐式人工审查和当前最新 package 对照后，才可按当前版本规则导入，不得写回 `independent-benchmark/` 交付目录。
+- `package/` 只保留当前正式 `package_018.wl`、`package_018.pdf` 与少量成品 examples；不得放 expected、验证脚本、报告或 reduction 输出。
+- 成品 examples 中长期固定三个典型入口：`03_single_massive_sunrise/main.wl`、`04_pure_massive_bubble_closed_loop/main.wl` 和 `06_mix_bubble_tree/main.wl`。只有 pure massive bubble 携带 dlog/reference/scaling 闭环；另外两个不复制 reference producer。
+- `reference-results/` 只保存任务书点名、带来源哈希的轻量 Phase 2 对照；它不能用于 Phase 1 或 master 选择。
+- 内部独立工作区使用根目录 `check/`，每轮开始前清空旧内容并从头建立；外部执行者在项目外新建工作区。两者都不得读取、复制、写入或引用维护侧 `check-smoke/`。
+- 正式报告统一写入 `000-report/YYYY-MM-DD-HHmm-{currentVersion}-{内部/外部}.md`，附件放同名 `-附件/`。执行范围按任务书第 18 节总结，并用第 19 节覆盖索引确认功能、family、branch/parity 和排除边界。
 
-已有报告不构成本轮证据。只有本轮第 2--17 节新的冻结手推、单向比较、两次规定的 fresh reduction 闭环和以 `currentVersion` 命名的正式报告全部完成，才能宣称 source-isolated 全量审计通过；两次 reduction 仅限 reference bubble 与 mixed bubble+tree exact custom context，全部微分变量从 seed 到 DE 必须保持符号。任何未执行章节必须明确报告为未完成。
+已有报告、维护 smoke 和误执行工作区都不构成本轮独立证据。任何未执行项必须在报告中明确标为未完成，不能用正式 package 自检替代 source-isolated 结论。

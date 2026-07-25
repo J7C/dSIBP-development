@@ -561,7 +561,7 @@ $\longrightarrow$
  \right].
  \label{bundleFinalJIndexForm}
 \end{equation}
-式~\eqref{bundleMergedAShift}--\eqref{bundleFinalJIndexForm} 中，所有选中线只触发一次顶点合并，但其整数与 zero-point shift 分别求和；各 shrunk line 的 $bS/bS0$ 仍逐线记录。未选中的 full lines 在合并后成为 coincident：massless odd endpoint state 立即置零，massiveFull 应用 $\{b,1,0\}\to\{b,0,1\}$；它们不再产生 theta boundary。sector 由这些非零 contact 事件做 BFS 得到，不能用 full-line 幂集代替。
+式~\eqref{bundleMergedAShift}--\eqref{bundleFinalJIndexForm} 中，所有选中线只触发一次顶点合并，但其整数与 zero-point shift 分别求和；各 shrunk line 的 $bS/bS0$ 仍逐线记录。未选中的 full lines 在合并后成为 coincident：massless odd endpoint state 立即置零，massiveFull 应用 $\{b,1,0\}\to\{b,0,1\}$；它们不再产生 theta boundary。sector 由这些非零 contact 事件做 BFS 得到，不能用 full-line 幂集代替。对某个离散端点态，若 atomic contact 的系数在结构上精确为零，必须在构造 Cartesian product 之前删除该 atomic choice；若所选线因此没有任何非零 choice，则该 odd subset 的贡献就是零。不得先构造 $0\,J$ 再送入 sector normalization，否则零项会触发不存在的 target-sector 归一化并把 \texttt{\$Failed} 污染到公开 \texttt{dtau}。
 
 单传播子的对称等时值取 $\theta(0)=1/2$，对应式~\eqref{bundleJDDefinition} 的 $\mathsf J_e$。这只定义单线等时平均，不定义 $\delta\theta^m$；后者必须使用式~\eqref{bundleUniqueBoundary}，或附录~\ref{app:gaussianDerivation} 的统一正则化。
 \section{维度参数约定}
@@ -834,6 +834,14 @@ ispData = {
 这一步验证用户初始化给出的 \texttt{z/ISP} 坐标系是否闭合。程序不把 dS 图默认理解为 overcomplete propagator family，也不自动从传播子中选择独立子集；若输入中存在重复/退化传播子、ISP 不足或特殊数值外动量导致不可反解，应由用户修正 family 输入。
 验证通过后，才进入 IBP 生成步骤。
 
+用户确认的离散图对称性通过 \texttt{symmetryRules} 输入，并由 \texttt{symmetry}/\texttt{repSymmetry0} 在 EOM 后的 seed canonicalization 中消费。对 single-massive sunrise，两个顶点的外腿能量都取 \texttt{kE}，圈外动量模长为 \texttt{kL}；顶点交换反转每条 full line 的两个 endpoint slots。两条 massless 平行线交换还必须同步交换 line 2/3 的 pack 和 ISP 1/2 的指数。为使后一步是严格置换，ISP 可选为
+\begin{equation}
+ \rho_2=k_{321}\!\cdot l_3,\qquad
+ \rho_3=(l_3-k_{321}-k_L)\!\cdot l_3,
+\end{equation}
+其中顶点交换、line 2/3 交换及 ISP 1/2 指数交换必须由同一个用户对称性模块作用于统一三参数 \texttt{J[aList,linePacks,ispList]}，不能另建 sunrise 专用积分 Head。该 example 的 \texttt{DSSeeds} 仍按正式接口构造全部 contact-reachable sector 的 general 模板；示例随后只选择一个 top-sector \texttt{qIBP} 模板，并按该模板的 shift bounds 展开一个 seed 点。这一选择限制的是 example 的连续指标展开范围，不改变 seed producer 的 sector 完备语义。
+它们在 $k_{321}\leftrightarrow l_3-k_{321}-k_L$ 下互换。只交换 line pack 而保留旧 ISP 指数不是该图的对称性，不得写入 canonical rule。
+
 \subsection{Seed shift metadata 与目标包络反推}
 
 017 把 ``general seed 中有哪些指标移位'' 与 ``用户最终要生成多大的整数域'' 分成两个步骤。首先调用
@@ -882,6 +890,16 @@ DSGenerateIBP[allSeeds,{a1,La1,Ua1},{b1,Lb1,Ub1},...]
 
 实际生成顺序固定为：按式~\eqref{seedEnvelopeInverse017} 构造候选整数点，\emph{在生成元作用前}按当前 sector 的 parity 筛点，再把数值点代入 general seed，随后执行 EOM/symmetry/canonical 与用户坐标投影。生成后的 parity certificate 只检查关系，不删除关系中的积分，也不把不满足 parity 的积分替换为零。\texttt{candidatePointCount}、\texttt{parityAcceptedPointCount}、逐组 shift/range 和空域状态均写入返回数据。用户包络唯一决定规模；package 不设置 seed 数、离散态数或方程数上限。
 
+018 不改变上述代数顺序，但把连续撒点热路径实现为两层复用。一次 \texttt{DSGenerateIBP} 先由初始化的完整 sector metadata 构造
+\begin{equation}
+ \texttt{sectorKey}\longmapsto\{\texttt{sectorMetadata},\texttt{sectorTopology}\}
+\end{equation}
+缓存；每个数值积分仍由 root-ordered line-pack pattern 导出 sector key，并再次通过该 metadata 的 shape 匹配，故缓存不能绕过 sector gate。每条 general template 只在枚举前投影一次当前公开坐标；数值代入和 sector canonical 后，只有结果确实重新含有 \texttt{qq/qk/kk/z/xi/rho} 或无圈模长内部原子时才再次投影。该优化不缓存 canonical 结果，也不改变 EOM、symmetry、parity 或系数。
+
+密封的 \texttt{DSSeeds} Association 模板保存 source integral、sector、generator、逐模板 \texttt{templateHash} 和全集 hash，因而继续在代入 general seed 前执行 parity 筛点。完整列表与合法子集分别标记为 \texttt{sealedComplete} 和 \texttt{sealedSubset}；子集不能继承全集的 complete 能力。缺省 \texttt{standard} 路线只核对 producer 写入的 set hash、计数和 ordinal metadata，不逐条重算模板 hash；显式 \texttt{full} audit 才重新计算逐模板与完整集合内容 hash。公开接口也允许直接给出只含 \texttt{J} 的 raw expression 列表；这类输入没有足够 provenance 来判断 source-seed parity，程序不得猜测，故保留用户点域并执行完整 consumer 审计。三条路线都可生成 backend-neutral partial linear data，但只有完整密封路线具有 \texttt{completeSystemQ=True}。
+
+\texttt{DSGenerateIBP} 把 \texttt{sealedQ/sourceDigest/completeSystemQ/subsetQ/auditLevel/capabilities} 写入 \texttt{artifactContract}。缺省 \texttt{AuditLevel->"standard"} 依赖同一 producer 已完成的 parity 预筛与 sector canonical；\texttt{"full"} 用于 release/audit，重跑关系级 parity certificate。\texttt{DSLinear} 的 \texttt{standard} 路线只核对 sealed 状态、方程计数和 producer 的 \texttt{sourceDigest} 字段，不重新 hash 全部关系，不再次对全部关系执行 symmetry 或 coverage classifier；\texttt{full} 才重算 source digest 与 coverage，unsealed/raw 输入仍走完整 consumer 扫描。linearization 本身产生的方程、映射和 targets 在 Kira export 边界由 artifact content digest 覆盖，不另加重复的内部 \texttt{linearDigest}。partial 结果显式保持 \texttt{completeSystemQ=False}，不能通过 formal reduction 门禁。
+
 在枚举前，\texttt{DSGenerateIBP} 逐输入组用中英双语打印反推范围，显示为
 \begin{verbatim}
 编号 1（来源）：{a1,min,max}, {b1,min,max}, ...
@@ -925,11 +943,43 @@ canonical seed 先由 \texttt{makeLinearSystemData} 转成后端中立的 \textt
   \item \texttt{integralList} 与 \texttt{integralRules}：全 sector 统一排序的积分表及映射；
   \item \texttt{sectorMetadataList}：每个 sector 的 compact $a$ 槽、line pack、缩并和原拓扑对应；
   \item coefficient、ordering、coverage 与 readiness reports。
+  \item \texttt{artifactContract}：producer source digest、linear digest、complete/subset 状态和 serializer/formal-reduction capability。
 \end{itemize}
 
 serializer 只把 \texttt{linearData} 转换为目标后端要求的语法、编号和文件布局，并执行后端特有的输入检查；它不重新生成 IBP seed，不重新应用 EOM，也不改变 sector convention。当前 Kira serializer 生成 \texttt{userSystem/ibp.kira}、\texttt{list}、\texttt{jobs.yaml}、积分映射和 metadata。未来若接 Rational Tracer，应新增独立 serializer，但 canonical seed 和 linear-system 主线无需重写。
 
-本 package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机 Kira/Fermat 路径。017 的 importer 可读取并验证用户在 package 外生成的完整 reduction 与 master-integral 结果；缺失完成标记、映射或来源 manifest 时必须拒绝继续。
+\texttt{DSKiraPlan} 的 \texttt{preReduction} 阶段允许 partial system，并把它明确保留为不完整预分析；\texttt{formal} 阶段要求 \texttt{completeSystemQ=True}。formal plan 只构造一次 active-basis 一阶导数 closure，把完整结果保存为 \texttt{preparedLinearData}，并用 \texttt{analyticDerivativeCertificate} 固定其 hash；plan 驱动 export 必须校验证书并直接消费这份 payload，不得从原始 \texttt{linearData} 重建第二次。
+
+export manifest 的 \texttt{artifactIdentity} 同时固定 linear source/linear digest、实际 linear equations、积分映射、targets、coefficient rules、active-basis payload，以及写出的 \texttt{ibp.kira/list/jobs.yaml/maps/metadata} 文件 SHA-256。importer 逐项复算表达式与磁盘文件 digest；任一 map、target、rule、active payload 或导出文件变化均拒绝。package patch 版本字符串只作诊断，不再代替内容身份；同源性仍要求 context input hash、zero point、symmetry、tadpole 与 loop--tree convention 相同。
+
+全参数固定到精确有理点后，time-IBP 的相位 convention 仍可能使系数属于 Gaussian 有理数域。018 不把虚数单位导出成自由变量。对每个非零系数写成
+\begin{equation}
+  c_{ri}=q_{ri} I^{\sigma_{ri}},\qquad
+  q_{ri}\in\mathbb{Q}\setminus\{0\},\quad \sigma_{ri}\in\{0,1\}.
+\end{equation}
+exporter 在完整积分 ID 图上求二元列相位 $p_i$，使同一方程内
+\begin{equation}
+  \sigma_{ri}+p_i=\rho_r\pmod 2.
+\end{equation}
+随后定义物理积分与 backend 积分的关系
+\begin{equation}
+  J_i=I^{p_i}K_i
+\end{equation}
+并把第 $r$ 行整体乘以 $I^{-\rho_r}$。所得 Kira 系数严格属于 $\mathbb{Q}$。相位约束冲突、系数同时含非零实部和虚部、machine real 或其它非精确数值都必须在写文件前拒绝，不能用任意有理 probe 代替 $I$。
+
+\texttt{gaussianPhaseGauge} manifest 保存全部 ID 的 $p_i$、逐行 $\rho_r$、约束数、连通分量、冲突数和 convention。若 Kira 返回
+\begin{equation}
+  K_a=\sum_b R_{ab}K_b,
+\end{equation}
+importer 必须先恢复
+\begin{equation}
+  J_a=\sum_b I^{p_a-p_b}R_{ab}J_b,
+\end{equation}
+再应用 ID 到 \texttt{J} 的映射。manifest 缺项、相位不是 $0/1$ 或 ID 未完整覆盖时拒绝导入。
+
+Kira~2.3 的 FireFly 路线要求至少一个 coefficient symbol；零变量系统会报 \texttt{No variables?}。因此纯有理 user-system 不追加 \texttt{ccc} dummy，也不写 \texttt{dsii}，而使用 Kira 官方的 \texttt{run\_triangular:true} 与 \texttt{run\_back\_substitution:true} 常系数路线，并关闭 \texttt{run\_firefly}。prepare 必须同时检查前端 coefficient variables、backend variables、dummy 状态和磁盘上的实际 \texttt{ibp.kira} 文本。
+
+本 package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机 Kira/Fermat 路径。018 的 importer 可读取并验证用户在 package 外生成的完整 reduction 与 master-integral 结果。实际方程/文件内容 identity、双向积分映射、targets、master 顺序、Gaussian phase/energy convention、系数域及 reduction closure 是硬边界；\texttt{kira.log} 的完成标记只作为诊断 warning，因为日志措辞或缺失不能推翻已经通过的结构化闭合证据。
 
 % ============================================================
 \section{标量积变量与 $z=\xi^2$ 线性变换}
@@ -1346,6 +1396,43 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线按
 
 017 继续保持 ``package 不运行 reduction'' 的边界，但允许读回用户已经运行完成的 Kira 全套输出。导出端的 \texttt{linearData}、积分编号映射和 convention manifest 必须与读回结果同源；否则 reduction rule 即使语法可读，也不能用于微分方程。
 
+\subsection{Kira 内部的实能量变量}
+
+公开物理层仍使用用户初始化的相位能量 $k$。仅在 Kira serializer 内部，对初始化 phase-energy dependency data 中实际进入顶点相位的每个独立原子引入一个实后端符号 $ik$，并取
+\begin{equation}
+ k=-i\,ik,\qquad ik=i\,k.
+ \label{eq:kira-real-energy-map}
+\end{equation}
+这里的字符 \texttt{ik} 是单个小写 backend symbol，不是 Mathematica 的乘积 \texttt{I*k}。复合顶点能量先依照初始化保存的依赖结构拆成独立原子；同一原子在多个顶点复用时只生成一个 backend symbol，并合并来源顶点和角色。没有进入任何顶点相位的 Gram/根号空间坐标不作此替换。实现不得按符号名称猜测能量；非原子、保留名、大小写折叠重名和与已有 coefficient symbol 的碰撞均令 export fail closed。
+
+普通导数由链式法则给出
+\begin{equation}
+ {\partial\over\partial k}=i{\partial\over\partial ik},
+ \qquad
+ {\partial\over\partial ik}=-i{\partial\over\partial k},
+ \label{eq:kira-real-energy-jacobian}
+\end{equation}
+而 Euler 算符严格不变：
+\begin{equation}
+ k{\partial\over\partial k}=ik{\partial\over\partial ik}.
+ \label{eq:kira-real-energy-euler}
+\end{equation}
+因此 Kira 内部可以全程以实 \texttt{ik} 做 reduction 和 scaling；取回普通 DE 时必须按式~\eqref{eq:kira-real-energy-jacobian} 恢复虚系数。若 $A_k$ 与 $A_{ik}$ 分别表示物理和后端导数矩阵，则
+\begin{equation}
+ A_{ik}=-iA_k,\qquad A_k=iA_{ik}.
+\end{equation}
+
+在 \texttt{postDerivative} 路线中，程序先冻结物理 active basis 的解析一阶导数和最小 target closure，再处理数值规则。物理规则 $k\to r$ 被写成 backend 截面 $ik\to r$，其中 $r\in\mathbb Q$ 且为实数；manifest 同时保存物理求值截面 $k\to-ir$。例如 \texttt{P0->29/13} 生成 \texttt{ip0->29/13} 与 \texttt{P0->-29 I/13}。export 的顺序是物理能量映射、backend 有理数值代入、剩余 Gaussian integral phase gauge；importer 依次恢复一般 coefficient map、backend energy map 和积分 phase gauge。Gaussian gauge 只允许作为残余相位的后备，并保存全部可逆相位数据；不能代替式~\eqref{eq:kira-real-energy-map}。
+
+reference bubble 的数值对照不重新生成 reference IBP 或运行 reference Kira，而是复制并按固定 SHA-256 核验原始 reference 已导出的解析矩阵 \texttt{DEP0.m}、\texttt{DEks.m}、\texttt{DEscaleCheck.m}、\texttt{MIdlogNote.m} 与 \texttt{derivative\_rules\_bubble.m}。设 package 与 reference 的物理能量分别为 $P_{\rm pkg}$、$P_{\rm ref}$，当前 branch 的结构映射为
+\begin{equation}
+ P_{\rm pkg}=-P_{\rm ref},\qquad
+ \frac{\partial}{\partial P_{\rm pkg}}=-\frac{\partial}{\partial P_{\rm ref}}.
+\end{equation}
+因此 package 点 $P_{\rm pkg}=-29i/13$ 对应 reference 解析矩阵中的 $P_{\rm ref}=29i/13$。解析 stored matrix 先用齐次 degree 做 $N A N^{-1}$，不加入 $N'N^{-1}$；再以 $T=\operatorname{diag}(1^{14},k_s^4,1)$ 恢复 \texttt{MIdlogNote} 第 15--18 项的显式 $k_s$，其中 $A_{k_s}$ 必须加入 $T'T^{-1}$。最后由 $A_{ip0}=-iA_{P0}$ 得到 backend view。19 个 master 定义逐项比例均为 $1$，physical $P_0$、backend $ip0$ 与 physical $k_s$ 三套 $19\times19$ 矩阵均有 $361/361$ 个矩阵元精确相等。
+
+为检验这 19 个 master 不是有限撒点边界留下的假 master，package 侧还必须在不触碰 reference producer 的条件下扩大目标包络。018 验收把两项 $a$ 从 $[-1,4]$ 扩为 $[-2,5]$，两项 $b$ 从 $[-2,5]$ 扩为 $[-3,6]$。fresh 系统含 197232 条生成关系、7850 个 linear 积分、48699 个 Kira 方程和 7871 个导出积分；formal active basis 仍为 19 项。215 个 Kira targets 的精确构成为 19 个 active-basis token 加 196 个 derivative $J$，旧系统的 196 个 derivative 对象在扩张系统中缺失数为零。Kira 2.3 仍选出 backend IDs $1,\ldots,19$，全部 215 targets 约化且 unreduced 为零；回读后的 scaling matrix/source residual 为零，上述三套矩阵再次各通过 $361/361$。
+
 设完全同序的主积分列向量为 $\bm I=(I_1,\ldots,I_N)^T$。对外部独立变量 $x$，公开总导数 \texttt{ds[expr,x]} 同时作用于显式系数和积分：
 \begin{equation}
  \frac{d}{dx}\sum_i c_i(x)I_i(x)
@@ -1389,6 +1476,14 @@ residual/tadpole sector 使用该文 Eq.~(64)
  \quad B=\sum_a w_a x_aA_a.
 \end{equation}
 因此依赖动力学变量的 normalization 不能只做共轭；对 $M_i=N_iJ_i$，次数还必须包含 ${\cal E}[N_i]/N_i$。检查对象是上述全符号矩阵和 source 残差；数值点只能定位失败，不能取代式~\eqref{eq:loop-top-scaling}、\eqref{eq:loop-residual-scaling} 及一般 Euler 恒等式的符号检验。
+
+reference bubble 还有一个检查侧边界。原始 \texttt{MIdlogNote.m} 的第 15--18 个 dlog 基元显式含 $k_s$，但 \texttt{002 bubble\_de.m} 构造 \texttt{MIdlogSym} 时经 \texttt{reppara2N} 取 $k_s\to1$。因此由 \texttt{DEP0.m/DEks.m} 提取的 stored matrix 即使按齐次次数恢复到一般 $k_s$，仍不是含显式 $k_s$ 的 physical dlog basis。最终对照必须令
+\[
+ T=\operatorname{diag}(1^{14},k_s^4,1),\qquad
+ A^{\rm phys}_{P_0}=T A^{\rm stored}_{P_0}T^{-1},\qquad
+ A^{\rm phys}_{k_s}=(\partial_{k_s}T)T^{-1}+T A^{\rm stored}_{k_s}T^{-1}.
+\]
+相应四个 master 的 Euler degree 各增加一。这个步骤只恢复 reference 源码中原本存在的 $k_s$，不改变 package 的 normalized-$J$ 定义，也不允许从最终差矩阵反解其它 basis adapter。
 
 闭环 example 固定选 pure massive bubble reference 的 $--$ branch，并使用与 reference code 相同的 parity-closed subsystem：top sector 中 $n_1+n_2+b_1$ 与 $n_3+n_4+b_2$ 均为偶数；$R_1$ 中 $b_1$ 与 $n_3+n_4+b_2$ 均为偶数。交换对称性、$R_2\to R_1$ 与 parity 必须在前端统一 canonical 中应用，不能在 Kira importer 或 DE 层临时补入。
 
@@ -1516,11 +1611,11 @@ repIterative[expr_, end_:Automatic]
  \partial_k J[a,n=0]&=-J[a+1,n=1],\label{eq:tree-naive-dk0}\\
  \partial_k J[a,n=1]&=J[a+1,n=0]-\frac{2\nu+1}{k}J[a,n=1].\label{eq:tree-naive-dk1}
 \end{align}
-每个 endpoint leg 分别应用式~\eqref{eq:tree-naive-dk0}--\eqref{eq:tree-naive-dk1}，并乘 $\partial k/\partial x$。若同序全局 master 为 $F_s=N_sJ_s$，则
+每个 endpoint leg 分别应用式~\eqref{eq:tree-naive-dk0}--\eqref{eq:tree-naive-dk1}，并乘 $\partial k/\partial x$。这里 $J_s=N_sI_s$ 已隐含 sector prefactor，故
 \begin{equation}
- \partial_xF_s=(\partial_xN_s)J_s+N_s\partial_xJ_s,
+ \partial_xJ_s=(\partial_x\log N_s)J_s+N_s\partial_xI_s,
 \end{equation}
-所以 Wronskian/zero-point normalization 的显式系数导数不可遗漏。\texttt{DSTreeNaiveDE} 最后只使用上述 raw derivative 与 naive 线性规则，输出的逐变量矩阵应与 $\partial_x\Omega$ 在完全相同的 ordered normalized basis 下逐项相等。
+所以 Wronskian/zero-point prefactor 的导数不可遗漏，也不得在 $J_s$ 外再次乘 $N_s$。\texttt{DSTreeNaiveDE} 最后只使用上述 raw derivative 与 naive 线性规则，输出的逐变量矩阵应与 $\partial_x\Omega$ 在完全相同的 ordered normalized basis 下逐项相等。
 
 每个顶点的 $+/-$ branch 决定其相位能量 $k_{0;e}$ 的符号。h 的 EOM、二进制 basis 和式~\eqref{eq:tree-m10} 的矩阵结构不因 branch 改变。内部线的 SK 类型由两个端点的 branch 唯一决定：同号端点只能给 $G^{++}$ 或 $G^{--}$，异号端点只能给 $G^{+-}$ 或 $G^{-+}$，不存在同一传播子在一次计算中同时具有两种类型的情形。
 
@@ -1528,7 +1623,7 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
 
 设 sector $s$ 的 binary master vector 为 $\bm f_s^{(0)}$。非对角块需要约化求导产生的 $\bm f_s^{(1)}$，所以 contact selector 必须从 $R^{(1)}$ 取得：对 $\bm f_s^{(0)}$ 的每个 binary state，只把当前求导顶点的整数时间指标改成 $a=1$ 后调用 loop time-IBP。$a=0$ seed 给出的是 $R^{(0)}$；其 lower-sector 指标一般为 $a=-1$，先把它迭代到零会引入合并顶点能量，不能替代 Eq.~(3.68) 的 selector。
 
-为使显式 Wronskian 与 zero-point 能量幂不残留在所谓常数矩阵中，对每个 sector 选择共同 normalization $\mathcal N_s$，并定义全局 master $\bm F_s=\mathcal N_s\bm f_s^{(0)}$。取 $\mathcal N_{\rm top}=1$；若第一条由 $s$ 到 $t$ 的非零 tagged source coefficient 是 $c_*$，则取 $\mathcal N_t=\mathcal N_s c_*$. 所有其它入边的 $\mathcal N_s c/\mathcal N_t$ 必须与顶点能量和 massive-line 能量无关。于是
+每个 sector 的 binary master 已按 $\bm J_s=N_s\bm I_s$ 定义；$N_s$ 来自传播子收缩并保存在 sector metadata 中，不再引入第二层 master normalization。于是对角与非对角块都使用同一份 $N_s$：
 \begin{align}
  \Omega_{ss}^{\rm global}&=\Omega_s+\log(\mathcal N_s)\,\mathbb I_s,\\
  \Omega_{st}^{\rm global}&=-i\sum_{v\in s}
@@ -1536,9 +1631,9 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
  C_{st}^{(v)},\qquad t\prec s,
  \label{eq:tree-sector-offdiagonal}
 \end{align}
-其中 $C_{st}^{(v)}$ 由当前 loop \texttt{dtau} 的 tagged $R^{(1)}$ source 抽取并除去 $\mathcal N_t/\mathcal N_s$。该写法逐项实现 Eq.~(3.68)，且共同-theta多传播子 source 会自然给直接跨多层 sector 的块。$\log(\mathcal N_s)$ 作为整体 letter 保存；不把一般复幂拆开，也不使用 \texttt{PowerExpand}。
+其中 $C_{st}^{(v)}$ 由当前 loop \texttt{dtau} 的 tagged $R^{(1)}$ raw source 乘 $N_s/N_t$ 得到。该写法逐项实现 Eq.~(3.68)，且共同-theta多传播子 source 会自然给直接跨多层 sector 的块。$\log(N_s)$ 作为整体 letter 保存；不把一般复幂拆开，也不使用 \texttt{PowerExpand}。
 
-\texttt{DSTreeDLogDE[context]} 返回同序的 \texttt{masters}、\texttt{omega}、\texttt{letters/letterMatrices}，并附带 \texttt{sectorNormalizations}、\texttt{normalizationAudits}、\texttt{contactMaps}、\texttt{omegaBlocks} 和严格重构检查 \texttt{dlogResidual/dlogQ}。矩阵按 contact DAG 排序；从 lower sector 回到 parent 的块及同层 sibling 块必须严格为零。
+\texttt{DSTreeDLogDE[context]} 返回同序的 \texttt{masters}、\texttt{omega}、\texttt{letters/letterMatrices}，并附带 \texttt{sectorNormalizations}、\texttt{normalizationAudits}、\texttt{contactMaps} 与 \texttt{omegaBlocks}。缺省 \texttt{standard} 路线信任同一 producer 的统一公开表示 stamp，不再全对象扫描 legacy/private token，也不构造 \texttt{dlogResidual}；显式 \texttt{AuditLevel->"full"} 才运行公开表示、\texttt{LinearSolve} residual 与 dlog 严格重构证书。矩阵按 contact DAG 排序；从 lower sector 回到 parent 的块及同层 sibling 块必须严格为零。
 
 % ============================================================
 \section{013 pure time-IBP 交叉验证定义}
@@ -1761,6 +1856,8 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
 \end{equation}
 平行边分别计入 $E$，自环各增加一圈，外腿不属于内部边。删除边 $e$ 后若连通分量增加，则 $e$ 是 bridge；否则是 cycle line。式~\eqref{graphBettiLoopCount} 只给拓扑圈数，不能证明用户 routing 正确；还必须检查 loop-coefficient matrix 的秩及其 incidence-cycle support。
 
+三个最小图可直接区分端点 convention：两顶点间一条普通边有 $(E,V,C)=(1,2,1)$，故 $L=0$ 且该边是 bridge；tadpole 必须写成自环 \texttt{endpoints->\{v,v\}}，有 $(1,1,1)$，故 $L=1$、incidence 列为零且该边是 cycle；两顶点三条平行边有 $(3,2,1)$，故 $L=2$ 且三条边都不是 bridge。初始化后的 topology 顶层同时保存 \texttt{graphLoopCount}、\texttt{cycleLineIndices}、\texttt{bridgeLineIndices} 与 \texttt{selfLoopLineIndices}，完整审计仍保存在 \texttt{graphTopologyAudit}。
+
 所有 contact-reachable sector 继承 root topology 的 $L$、loop basis、cycle/bridge 分类和 line-power schema。sector 只改变 full/shrunk 状态、端点代表、zero-point 与 symmetry。特别地，即使一个 contact sector 中所有 cycle lines 都已 shrink，也不得重新按剩余图计算较小的 $L$；否则 triple contact 会丢失原来的 loop-scalar-product 空间和 $b_S$ 指标。
 
 \subsection{cycle pack、fixed pack 与显式幂系数}
@@ -1861,26 +1958,29 @@ full massive/massless 线使用第一种三槽，masslessCross 使用固定零�
 
 \subsection{结构化 sector prefactor 与求导}
 
-fixed line 的模长幂不进入式~\eqref{v017FixedThreeSlotSchema} 的第一槽，而属于每个 sector 的 normalization。初始化按稳定 fixed-line 顺序保存
+fixed line 的模长幂不进入式~\eqref{v017FixedThreeSlotSchema} 的第一槽，而属于每个 sector 的 normalization。初始化首先按用户声明的 \texttt{independentExternalMomenta} 顺序冻结稳定编号
 \begin{equation}
- \{e_i\},\qquad \{\kappa_i\},\qquad \{p_i\},\qquad
- \{u_i\},\qquad \{(u_i^{\rm int},u_i^{0})\},\qquad c_s,
+ \{kE_i\},\qquad \boldsymbol\beta_s=(\beta_{s,1},\ldots,\beta_{s,m}),
+ \qquad \mathcal K=(K_1,\ldots,K_m),
  \label{v017SectorPrefactorLists}
 \end{equation}
-分别对应 line indices、稳定内部 parameter keys、当前输出坐标的 parameter list、总 power list、整数/zero-point 分解及常数因子。metadata 不保存已经乘开的 $p_i^{u_i}$；唯一 materializer 在需要时构造
+其中 metadata 以 \texttt{kEpower[$\beta_{s,1}$,$\ldots$,$\beta_{s,m}$]} 保存稳定幂向量，以 \texttt{kEParameterExpressions} 保存当前参数表达式 $\mathcal K$。每个 $K_i$ 可以是复合表达式；例如参数重定义可给出 $\mathcal K=(u+v,u)$。无法直接归入 kE 槽的 fixed 模长另以结构化 residual power part 保存。每条已收缩 massive line 的 Wronskian normalization 以 line-indexed contraction part 保存，simultaneous contact 中同一条线只累计一次。metadata 不保存已经乘开的乘积；唯一 materializer 在需要时构造
 \begin{equation}
- N_s=c_s\prod_i p_i^{u_i},\qquad J_s=N_s I_s.
+ N_s=c_s\prod_{i=1}^{m}K_i^{\beta_{s,i}}\prod_r R_r^{\gamma_{s,r}},
+ \qquad J_s=N_s I_s.
  \label{v017SectorNormalization}
 \end{equation}
-变量重定义只更新式~\eqref{v017SectorPrefactorLists} 的当前 parameter list，并保留 $e_i\leftrightarrow\kappa_i$ 映射。由此
+\texttt{DSRedefineParameters} 只更新式~\eqref{v017SectorPrefactorLists} 的 $\mathcal K$ 与 residual current-expression mapping，不改 kE 编号或 \texttt{kEpower}。求导、contact 和反变换在消费点才物化 $N_s$。由此
 \begin{equation}
  \partial_xJ_s=(\partial_x\log N_s)J_s
- +\sum_t c_{st}{N_s\over N_t}J_t,
+ +\sum_t c^{\rm raw}_{st}{N_s\over N_t}J_t,
  \qquad
  \partial_xI_s=\sum_t c_{st}I_t.
  \label{v017NormalizedDerivative}
 \end{equation}
-所以 prefactor 虽然逻辑上属于 $J_s$，其导数和跨 sector 比值仍必须由 \texttt{ds/DSDE} 调取。atomic massless lower sector 若 $N_t$ 已含 $s_E^{-\beta}$，contact 项不得再次外乘同一因子。
+所以 prefactor 虽然逻辑上属于 $J_s$，其导数和跨 sector 比值仍必须由 \texttt{ds/DSDE} 调取。\texttt{rep2Integrand} 则先构造不含 sector prefactor 的裸 integrand，再把物化后的完整 $N_s$ 乘回；不得依赖 line renderer 偶然重复某一 fixed zero-point 幂。atomic massless lower sector 若 $N_t$ 已含 $s_E^{-\beta}$，contact 项不得再次外乘同一因子。
+
+018 的 E018-15 修复已把 metadata、contact、\texttt{ds/DSDE} 与 \texttt{rep2Integrand} 接到同一 normalized-$J$ 数据流。局部裸积分展开只用于开发定位；最终统一正确性仍由 fresh reduction 后的完整 scaling relation 检查，不增加新的用户阻断条件。
 
 \subsection{fixed-line shrink normalization convention}
 
@@ -1889,15 +1989,15 @@ fixed/non-loop line 没有 $b/b_S$ 指标，其 contact 模长幂只由 source/t
  -W_{T,e}=\mathcal C_e r_e^{-s_e-z_e}(-\tau)^{-s_e-z_e},
  \qquad s_e\in\mathbb Z,
 \end{equation}
-且 source/target sector 中该线的 prefactor 分母指数分别为 $B_{s,e}$、$B_{t,e}$，则 normalized target 的模长系数唯一为
+且 source/target sector 中该线的 prefactor 分母指数分别为 $B_{s,e}$、$B_{t,e}$。target 的 $N_t$ 同时吸收该线选定的 Wronskian normalization $g_e$；因此裸系数 $c_e r_e^{-s_e-z_e}$ 统一变为
 \begin{equation}
  c^{\rm norm}_{s\to t}
- =\mathcal C_e r_e^{-\left[s_e+z_e-(B_{t,e}-B_{s,e})\right]}.
+ ={c_e\over g_e}r_e^{-\left[s_e+z_e-(B_{t,e}-B_{s,e})\right]}.
  \label{v017FixedShrinkCoefficient}
 \end{equation}
 共同-theta 系数、端点符号及 $2^{1-|S|}$ 不包含在这里，按原 contact 公式另乘。
 
-017 沿用的缺省 sector zero-point 传播为 $B_{t,e}-B_{s,e}=z_e$，所以式~\eqref{v017FixedShrinkCoefficient} 化为 $\mathcal C_e r_e^{-s_e}$：只通过 zero point 本身吸收 $z_e$，不额外吸收整数 $s_e$。用户若合法改写 source 或 target zero point，式~\eqref{v017FixedShrinkCoefficient} 自动改变 reduction/DE coefficient。package 不提供 \texttt{fixedShrinkConvention}、\texttt{fullContactPower} 或其它平行吸收状态；若需进一步吸收剩余显式模长幂，由用户后续选择 master/basis 处理。
+缺省 h/H preset 取 $g_e=c_e=\mathcal C_e$，且 sector zero-point 传播为 $B_{t,e}-B_{s,e}=z_e$，所以式~\eqref{v017FixedShrinkCoefficient} 化为 $r_e^{-s_e}$：Wronskian 常数由 target $J_t$ 吸收，zero point 吸收 $z_e$，只留下整数幂。一般多项式 Wronskian 以稳定的首个非零 compiled coefficient 作为 $g_e$，其它 monomial 保留可复核的 $c_e/g_e$。用户若合法改写 source 或 target zero point，式~\eqref{v017FixedShrinkCoefficient} 自动改变 reduction/DE coefficient。package 不提供 \texttt{fixedShrinkConvention}、\texttt{fullContactPower} 或其它平行吸收状态。
 
 zero-point convention 不改变时间幂映射：始终为 $a_t=a_u+a_v-s_e$、$a_{0,t}=a_{0,u}+a_{0,v}-z_e$。现行 preset 配合缺省 $B_t-B_s=z$ 的结果为
 \begin{center}
@@ -1909,7 +2009,7 @@ zero-point convention 不改变时间幂映射：始终为 $a_t=a_u+a_v-s_e$、$
  massless & $(0,0)$ & $B_{s,e}$ & $1$
 \end{tabular}
 \end{center}
-h/H 另有 $\mathcal C_e=(4i/\pi)e^{\pi\operatorname{Im}\nu_e}$；massless 没有 Wronskian prefactor，端点 contact 的 $-2/+2$ 仍单独保留。初始化 metadata 对每个 fixed transition 保存 $B_s$、$B_t$、zero-point override 来源、compiled $(s,z)$ 与剩余 exponent $s+z-(B_t-B_s)$，从而可由 $N_s/N_t$ 唯一重建约化系数。
+h/H 的 $\mathcal C_e=(4i/\pi)e^{\pi\operatorname{Im}\nu_e}$ 进入 target sector 的 contraction part；massless 没有 Wronskian prefactor，端点 contact 的 $-2/+2$ 仍单独保留。初始化 metadata 对每个 fixed transition 保存 $B_s$、$B_t$、zero-point override 来源、compiled $(s,z)$ 与剩余 exponent $s+z-(B_t-B_s)$，从而可由裸系数和 $N_s/N_t$ 唯一重建 normalized 系数。
 
 对 cycle line，现行 preset 进入实际 child 指标与 zero point 的完整映射为
 \begin{center}

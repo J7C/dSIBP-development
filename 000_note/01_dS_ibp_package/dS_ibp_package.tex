@@ -40,7 +40,7 @@
 \author[a]{Su Yingze}
 \affiliation[a]{Institute not specified}
 \emailAdd{yingze.su@outlook.com}
-\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前主线为 017：所有公开积分统一写成 \texttt{J[aList,linePacks,ispList]}；用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。前者使用完整 \texttt{ssij} 根号 Gram 坐标，后者只为用户声明的实际无圈模长生成 \texttt{sE1,sE2,...}。package 只生成、序列化和验证关系，不运行 reduction。}
+\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前主线为 018：所有公开积分统一写成 \texttt{J[aList,linePacks,ispList]}；用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。前者使用完整 \texttt{ssij} 根号 Gram 坐标，后者只为用户声明的实际无圈模长生成 \texttt{sE1,sE2,...}。package 只生成、序列化和验证关系，不运行 reduction。}
 
 \begin{document}
 \sloppy
@@ -50,21 +50,21 @@
 
 \section{快速开始与当前边界}
 
-本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定主线为模块化 017，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和冻结单文件兼容入口分别为
+本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定主线为模块化 018，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和冻结单文件兼容入口分别为
 \begin{verbatim}
-000_code/017_dSIBP/
-independent-benchmark/package/package_017.wl
+000_code/018_dSIBP/
+independent-benchmark/package/package_018.wl
 \end{verbatim}
-010--016 是只读历史/基线版本。017 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、Kira serializer/importer 以及 DE/scaling 检查，并把 massive/massless 统一为双端点三槽 line pack，加入 sector-aware prefactor、compact subsector 求导、h/H parity transport 及唯一公开 tree 表示。
+010--017 是只读历史/基线版本。018 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、Kira serializer/importer 以及 DE/scaling 检查，并把 massive/massless 统一为双端点三槽 line pack，加入完整结构化 sector normalization、compact subsector 求导、h/H parity transport 及唯一公开 tree 表示。
 
 仓库内标准加载与独立 benchmark 单文件加载是两个等价入口，应在新 kernel 中任选其一：
 \begin{verbatim}
-packageDir = FileNameJoin[{Directory[],"000_code","017_dSIBP"}];
+packageDir = FileNameJoin[{Directory[],"000_code","018_dSIBP"}];
 If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
 Needs["dSIBP`"];
 
 (* 独立 benchmark 的自包含单文件入口： *)
-Get["independent-benchmark/package/package_017.wl"];
+Get["independent-benchmark/package/package_018.wl"];
 \end{verbatim}
 两者都提供 \texttt{dSIBP`} 公开 context；独立交付文件不依赖主线模块路径。不要在同一 kernel 重复加载两个入口。
 
@@ -98,16 +98,16 @@ linearData = DSLinear[seeds,context];
 
 独立 benchmark 的 \texttt{package/examples/} 提供六个应用例子：
 \begin{verbatim}
-06_root_kinematic_coordinates/main.wl
 01_mixed_bubble_workflow.wl
 02_function_system_hankel.wl
-03_two_loop_isp.wl
+03_single_massive_sunrise/main.wl
 04_pure_massive_bubble_closed_loop/main.wl
 05_tree_two_vertex_time_ibp/main.wl
+06_mix_bubble_tree/main.wl
 \end{verbatim}
-建议先运行第一行的 bubble+tree 经典例子；它展示 017 的显式动量角色、\texttt{ssij/sEe} 初始化、参数重定义、总导数与错误输入门禁。其余例子依次展示 mixed massive/massless 工作流、一般 \texttt{P,Q,T,W} 函数系统、两圈 ISP、pure massive bubble 的外部 Kira 闭环，以及两顶点 tree pure-time/dlog 路线。examples 不含独立 expected；Kira example 只写输入并取回已有结果，不启动 reduction。
+建议先运行 \texttt{06\_mix\_bubble\_tree/main.wl}；它展示 018 的显式动量角色、\texttt{ssij/sEe} 初始化、参数重定义、总导数和 cycle/fixed line 数据。\texttt{03\_single\_massive\_sunrise/main.wl} 使用共同外腿能量 \texttt{kE}、独立圈外模长 \texttt{kL}、两个在 massless-line 交换下互换的 ISP，以及顶点/平行线 \texttt{symmetryRules}；\texttt{DSSeeds} 正常构造可达 sector 的 general 模板，随后只选一个 top-sector \texttt{qIBP} 模板展开一个 seed 点的最小关系。\texttt{04\_pure\_massive\_bubble\_closed\_loop/main.wl} 展示外部 Kira 回读、DE 与 scaling；其余例子展示 mixed bubble、一般 \texttt{P,Q,T,W} 函数系统和两顶点 tree pure-time/dlog。examples 不含独立 expected；Kira example 只写输入并取回已有结果，不启动 reduction。
 
-\section{第一个完整例子：bubble+tree}
+\section{完整例子：mix bubble+tree}
 
 \subsection{先按独立相位能量走通基准流程}
 
@@ -126,7 +126,7 @@ line 2 是 massless exponential cycle line，line 3 是 massless exponential bri
 完整核心输入为
 \begin{verbatim}
 case = <|
-  "name" -> "017BubbleTreeK1K2",
+  "name" -> "018BubbleTreeK1K2",
   "vertexData" -> {{v1,"+"},{v2,"+"},{v3,"+"}},
   "lineData" -> {
     <|"id"->1,"endpoints"->{v1,v2},"momentum"->l1,
@@ -241,7 +241,7 @@ $E_0>s_E2>0$；若需要别的分支，必须显式更换参数化。
 标记有效外腿三动量，用 \texttt{E0} 标记其模长和顶点相位：
 \begin{verbatim}
 singleLegCase = Join[case,<|
-  "name" -> "017BubbleTreeSingleEffectiveLeg",
+  "name" -> "018BubbleTreeSingleEffectiveLeg",
   "extLegs" -> {
     {bubbleLeg,v1,k1+k2},
     {treeLeg0,v3,p0}
@@ -402,11 +402,11 @@ massive full/cross 的两个端点态均取 $n_{e,r}=0,1$。time 导数先产生
   +\nu_e^2J_H[a_r-2,b_e+2,n_{e,r}=0].
  \label{bareHEOM}
 \end{equation}
-另一端点指标不变。最后一项就是 $\nu_e^2/x^2$ 二次 pole；loop-momentum 导数若产生 $n=2$，同样在 seed 层立即使用对应 EOM。当前 017 由统一函数系统编译这些递推；旧版内置公式只作为历史基线。
+另一端点指标不变。最后一项就是 $\nu_e^2/x^2$ 二次 pole；loop-momentum 导数若产生 $n=2$，同样在 seed 层立即使用对应 EOM。当前 018 由统一函数系统编译这些递推；旧版内置公式只作为历史基线。
 
 \subsection{通用 $2\times2$ 函数系统输入}
 
-当前 017 对每条 massive line 输入
+当前 018 对每条 massive line 输入
 \begin{equation}
  f''+P(x)f'+Q(x)f=0,
  \qquad \mathbf F=T(x)(f,f')^T,
@@ -425,7 +425,7 @@ IBP 的 time/radial 导数只调用由 $A_T$ 编译的移位数据，theta shrin
  \mathbf h=x^{-\nu}\begin{pmatrix}1&0\\-\nu/x&1\end{pmatrix}\mathbf H,
  \qquad W_h=x^{-2\nu}W_H.
 \end{equation}
-该编译接口已在当前 017 实现；显式 $W_T$ 只作 $W_T=\det(T)W$ 的一致性校验。缺省 h、裸 H、一般 $T$ 和非法输入由函数系统专项检查覆盖，h/H 另有独立物理 benchmark。Wronskian 的标准推导见技术笔记专门 subsection。
+该编译接口已在当前 018 实现；显式 $W_T$ 只作 $W_T=\det(T)W$ 的一致性校验。缺省 h、裸 H、一般 $T$ 和非法输入由函数系统专项检查覆盖，h/H 另有独立物理 benchmark。Wronskian 的标准推导见技术笔记专门 subsection。
 
 用户输入一般函数系统时，在对应 massive line 中加入
 \begin{verbatim}
@@ -506,7 +506,7 @@ H & $(1,0)$ & $a_u+a_v-1$ & $a0_u+a0_v$ & $b_e+1$ & $b0_e$\\
       +\theta(-\Delta)e^{+i\sigma q\Delta}.
  \label{masslessM01}
 \end{align}
-第一端点定义 $M_1$ 的方向。交换端点时 $M_0$ 不变、$M_1$ 变号。017 的公开双端点态记为 $F_{n_1n_2}$，并用
+第一端点定义 $M_1$ 的方向。交换端点时 $M_0$ 不变、$M_1$ 变号。018 的公开双端点态记为 $F_{n_1n_2}$，并用
 \begin{equation}
  F_{00}=M_0,\qquad F_{10}=M_1,\qquad
  F_{01}=-F_{10},\qquad F_{11}=-F_{00}
@@ -567,14 +567,18 @@ massless shrink 没有 Hankel Wronskian prefactor，也没有 $2\nu$ shift：
  \label{masslessShrink}
 \end{equation}
 
-这里缺省 compiled shift 是 $(s,z)=(0,0)$。“没有 shift”的准确含义是 shrink 不新增任何整数幂或 zero-point 幂吸收。对 cycle line，式~\eqref{masslessShrink} 直接保留 $bS_e=b_e$、$bS0_e=b0_e$；对 fixed/non-loop line，source/target 的结构化 prefactor exponent 相同，即 $B_t-B_s=0$、$N_s/N_t=1$。原有 fixed-line 模长因子仍属于 target sector 的 normalization，不能删除，也不能在 contact coefficient 外再次乘一份；normalized contact coefficient 的模长部分为 1，只保留式~\eqref{masslessDeltaSigns} 的 $-2/+2$ 与共同-theta系数。
+这里缺省 compiled shift 是 $(s,z)=(0,0)$。“没有 shift”的准确含义是 shrink 不新增任何整数幂或 zero-point 幂吸收。对 cycle line，式~\eqref{masslessShrink} 直接保留 $bS_e=b_e$、$bS0_e=b0_e$。对 fixed/non-loop line，source sector 已有的模长幂必须保存在完整 $N_s$；target 收缩后按其自身 $N_t$ 归一化。contact 一律先生成裸核系数 $c_{\rm raw}$，再写成
+\begin{equation}
+ c_{\rm raw}\,\frac{N_s}{N_t}\,J_t.
+\end{equation}
+因此 atomic fixed massless $++$ 的 contact 系数精确为 $-2/sE1^{\beta_1}$，不是 $-2$。同一 \texttt{sectorPrefactorData} 同时服务 contact、\texttt{ds/DSDE} 与反向被积函数恢复，禁止在任一 consumer 另猜一次模长幂。
 
-massless 的 subsector parity 不保持原 offset。017 双端点表示中 contact 支持满足 $n_1+n_2=1$，而 $bS=b$，所以若 parent 使用 $b+n_1+n_2$ 分级，
+massless 的 subsector parity 不保持原 offset。018 双端点表示中 contact 支持满足 $n_1+n_2=1$，而 $bS=b$，所以若 parent 使用 $b+n_1+n_2$ 分级，
 \begin{equation}
  b+n_1+n_2=b+1=bS+1\pmod 2.
  \label{manualMasslessContactParity}
 \end{equation}
-因此 cycle massless contact 使 child-sector parity offset 相对 parent 翻转 1；fixed/non-loop massless line 不参与 parity，没有这次翻转。多线 simultaneous contact 按被 shrink 的 massless cycle line 数模 2 累加。017 不自动给 pure massless family 启用 parity；mixed h/H 系统一旦使用已认证 root parity，massless cycle transition 必须携带上述 affine offset，不能套用 h/H 的“缺省不变”。
+因此 cycle massless contact 使 child-sector parity offset 相对 parent 翻转 1；fixed/non-loop massless line 不参与 parity，没有这次翻转。多线 simultaneous contact 按被 shrink 的 massless cycle line 数模 2 累加。018 不自动给 pure massless family 启用 parity；mixed h/H 系统一旦使用已认证 root parity，massless cycle transition 必须携带上述 affine offset，不能套用 h/H 的“缺省不变”。
 
 缩并后，剩余传播子的两个原端点可能映到同一个 active vertex。此时：
 \begin{enumerate}
@@ -674,7 +678,7 @@ SetAttributes[sp, Orderless];
 \end{verbatim}
 实现 $\mathrm{sp}(p,r)=\mathrm{sp}(r,p)$。这只是标量积交换性，不是图或积分族对称性。
 
-用户可给圈动量和外动量任意符号名，例如 \texttt{sah,bob,alice}。017 不从符号字符串猜测角色，也不再从一个统一列表自动分类；输入必须显式声明
+用户可给圈动量和外动量任意符号名，例如 \texttt{sah,bob,alice}。018 不从符号字符串猜测角色，也不再从一个统一列表自动分类；输入必须显式声明
 \begin{verbatim}
 loopMomenta
 loopExternalMomenta
@@ -696,7 +700,7 @@ independentExternalMomenta
 \end{equation}
 因此 \texttt{\{q+k1,q+k1+k2\}} 实际只要求方向 \texttt{k2}；加减号始终保留精确系数。这个计算只用于审计用户列表是否完备，不用于自动改写用户选定的动量基。
 
-017 内部保留用户给定 loop-external 基的平方 Gram 原子，公开缺省为根号坐标：
+018 内部保留用户给定 loop-external 基的平方 Gram 原子，公开缺省为根号坐标：
 \begin{verbatim}
 kk[i,j] = sp[ki,kj]
 ssij = Sqrt[sp[ki,kj]]
@@ -744,14 +748,22 @@ sE1 = Sqrt[sp[PE1,PE1]], sE2 = Sqrt[sp[PE2,PE2]], ...
 \end{verbatim}
 无圈模长只把整体反号 $P\leftrightarrow-P$ 视为同一对象；$|\texttt{alice+bob}|$ 与 $|\texttt{alice-bob}|$ 必须分别声明，不能合并。
 
-坐标名只由两个用户列表各自的稳定顺序决定，与符号名无关。每套列表的总数为 1--9 时使用 \texttt{ss11/sE1}；10--99 时使用两位补零，例如 \texttt{ss0101,ss0110,sE01}；100 起按该列表总数位数自然扩展。若显式给出旧平方坐标规则，仍以单位 Jacobian 工作，但它不再是 017 缺省：
+坐标名只由两个用户列表各自的稳定顺序决定，与符号名无关。每套列表的总数为 1--9 时使用 \texttt{ss11/sE1}；10--99 时使用两位补零，例如 \texttt{ss0101,ss0110,sE01}；100 起按该列表总数位数自然扩展。若显式给出旧平方坐标规则，仍以单位 Jacobian 工作，但它不再是 018 缺省：
 \begin{verbatim}
 "externalInvariantRules" -> {sp[k1,k1]->s11,...}
 \end{verbatim}
 
 特别地，若 topology 实际分别出现 $|k_{E1}|$、$|k_{E1}+k_{E2}|$、$|k_{E2}|$，用户就应在 \texttt{independentExternal\allowbreak Momenta} 中给出这三个表达式，缺省得到 \texttt{sE1,sE2,sE3}；程序既不输出 \texttt{sp[kE1,kE2]}，也不用余弦定理消去中间变量。若再声明 $2k_{E1}$，它是过完备项并触发 warning。
 
-017 的 \texttt{linePacks} 始终按 root \texttt{lineOrder} 保留每条传播子的位置。cycle/fixed full pack 分别为 \texttt{\{b,n1,n2\}} 与 \texttt{\{"F",n1,n2\}}；收缩后分别为 \texttt{\{bS\}} 与 \texttt{\{"F"\}}。因此 fixed line 没有 \texttt{b/bS}，但其端点离散态不会被删除；模长幂属于该 sector 的结构化 prefactor。\texttt{timeOnly} 也使用同一三参数公开表示，只令 \texttt{ispList=\{\}} 并把所有线按 fixed schema 保存。完整 pack pattern 唯一编码 shrink set；不得删除收缩槽位或用 compact \texttt{aList} 猜 sector。
+018 的 \texttt{linePacks} 始终按 root \texttt{lineOrder} 保留每条传播子的位置。cycle/fixed full pack 分别为 \texttt{\{b,n1,n2\}} 与 \texttt{\{"F",n1,n2\}}；收缩后分别为 \texttt{\{bS\}} 与 \texttt{\{"F"\}}。因此 fixed line 没有 \texttt{b/bS}，但其端点离散态不会被删除；模长幂属于该 sector 的结构化 prefactor。\texttt{timeOnly} 也使用同一三参数公开表示，只令 \texttt{ispList=\{\}} 并把所有线按 fixed schema 保存。完整 pack pattern 唯一编码 shrink set；不得删除收缩槽位或用 compact \texttt{aList} 猜 sector。
+
+每个 sector 的完整 normalization 写为结构化 $N_s$。无圈模长部分按初始化时
+\texttt{independentExternalMomenta} 的稳定编号保存为
+\texttt{kEpower[be1,be2,...]}；当前参数表达式单独保存在
+\texttt{kEParameterExpressions}。例如用户重新定义参数后，一个编号模长可以映成若干新变量的组合，
+但幂向量和 line/sector 身份不变；\texttt{ds} 根据表达式映射做链式法则，不能把
+\texttt{kEpower} 当成符号名猜测或只取一个单项式。已收缩 massive line 的 Wronskian normalization
+按 line index 保存于 \texttt{contractionParts}，simultaneous contact 对每条线只累计一次。
 
 初始化采用不阻塞脚本的两阶段接口：
 \begin{verbatim}
@@ -787,7 +799,7 @@ newContext = DSRedefineParameters[context, {
 
 \subsection{独立变量与微分方程求导}
 
-当前 017 提供 seed 层和表达式层的独立变量求导接口。变量分三类：
+当前 018 提供 seed 层和表达式层的独立变量求导接口。变量分三类：
 \begin{itemize}
   \item \textbf{圈线相关外动量模长}，缺省为 \texttt{ssij}，通过外动量矢量导数组合实现。
   \item \textbf{实际无圈动量模长独立基}，缺省为 \texttt{sE1,sE2,...}；从属模长先写成这些变量与 \texttt{ssij} 的 binding。若它对应一条传播子，导数按 binding Jacobian 同时作用于该线的分母和 massive/massless building block。
@@ -848,7 +860,7 @@ ds[expr, ssij]
 \end{equation}
 程序先将 $J_r$ 替换为惰性 token 求显式系数导数，再补上每个积分的指标导数，合并后统一执行 EOM、symmetry 与 canonical。它接受单个 $J$ 和任意线性组合，拒绝 $J_iJ_j$ 等非线性输入。
 
-令 $x_{ij}=\operatorname{sp}(k_i,k_j)=\texttt{ssij}^2$。017 不重写平方 Gram 导数，而是使用 $\partial_{\texttt{ssij}}=2\,\texttt{ssij}\,\partial_{x_{ij}}$ 调用原子层。显式系数与 sector prefactor 仍执行完整乘积与链式法则；程序不使用 \texttt{PowerExpand}。
+令 $x_{ij}=\operatorname{sp}(k_i,k_j)=\texttt{ssij}^2$。018 不重写平方 Gram 导数，而是使用 $\partial_{\texttt{ssij}}=2\,\texttt{ssij}\,\partial_{x_{ij}}$ 调用原子层。显式系数与 sector prefactor 仍执行完整乘积与链式法则；程序不使用 \texttt{PowerExpand}。
 
 对无圈 massive 线 $e$，记 $B_e=b_e+b0_e$。径向导数包含 $-B_eJ[b_e\to b_e+1]$；若 $A_T$ 的某个 Laurent 项为 $c\,x^p$ 并把端点态 $\alpha$ 送到 $\beta$，则另有
 \begin{equation}
@@ -887,7 +899,7 @@ symmetry[expr_,topo_]
 
 \subsection{公开原子 API}
 
-017 保留以下原子接口。推荐显式传入 \texttt{DSInit} context 或 parsed topology；若先调用 \texttt{setIBPTopologyContext[topo]}，也可使用短签名：
+018 保留以下原子接口。推荐显式传入 \texttt{DSInit} context 或 parsed topology；若先调用 \texttt{setIBPTopologyContext[topo]}，也可使用短签名：
 \begin{verbatim}
 dtau[i,expr,context]       or dtau[i,expr]
 dqq[i,j,expr,context]      or dqq[i,j,expr]
@@ -996,6 +1008,8 @@ IBP 撒点为空，最终关系集合缺组，不能作为完整约化系统。�
 \texttt{emptySeedRangeGroups}，相应 complete capability 为 \texttt{False}。
 删除、改写或重排任何密封模板都会令 \texttt{templateIntegrityAudit} 失败；仅改变外层
 \texttt{Table} 嵌套而保持 flatten 后的同序模板不影响结果。
+\texttt{metaSeedRange} 是 \texttt{DSMetaSeedRange} 的公开兼容别名；两者返回同一 metadata，
+后一次合法调用覆盖最近一次逐组范围状态。
 
 所有运行时 info、progress、Warning 与 Error 按句先中文、后英文；
 \texttt{DSMessagesOff[]} 只关闭可选提醒，fatal Error 始终保留。
@@ -1019,7 +1033,7 @@ context = DSInit[case, RegisterAsCurrent->False];
 seeds = DSSeeds[context];
 linear = DSLinear[seeds, context];
 \end{verbatim}
-其中 top sector 的状态集合为 $(n_1,n_2)\in\{0,1\}^2$，先在 relation 层应用 massless 额外关系和 canonical 化；同分支可达 sector 为 \texttt{\{"top","e1"\}}，异分支只有 \texttt{\{"top"\}}。两个顶点各自的 time generator 作用于 top 状态；同分支 shrink sector 另有合并顶点的 time seed。成功时 \texttt{DSSeeds} 与 \texttt{DSLinear} 都返回 \texttt{status -> "generated"}。含 massless full line 的 \texttt{DSTreeSeeds/repIterative/DSTreeNaiveIBP/DSTreeNaiveDE/DSTreeDLogDE} 当前返回 \texttt{PendingRederivation}；它们不会退回旧单 $n$ 或单参数 $J$ 公式。
+其中 top sector 的状态集合为 $(n_1,n_2)\in\{0,1\}^2$，先在 relation 层应用 massless 额外关系和 canonical 化；同分支可达 sector 为 \texttt{\{"top","e1"\}}，异分支只有 \texttt{\{"top"\}}。两个顶点各自的 time generator 作用于 top 状态；同分支 shrink sector 另有合并顶点的 time seed。成功时 \texttt{DSSeeds} 与 \texttt{DSLinear} 都返回 \texttt{status -> "generated"}。含 massless full line 的 \texttt{DSTreeSeeds/repIterative/DSTreeNaiveIBP/DSTreeNaiveDE/DSTreeDLogDE} 当前返回 \texttt{PendingRederivation} 与 \texttt{masslessQuotientFormulaNotCertified}；它们不会退回旧单 $n$ 或单参数 $J$ 公式。
 
 \texttt{linearData} 是后端中立的 Mathematica Association，不是 reduction 结果。核心字段为：
 \begin{verbatim}
@@ -1042,9 +1056,14 @@ linearData = DSLinear[ibpData, context,
   LinearSystemMode -> "symbolic"
 ];
 \end{verbatim}
-普通 batch 与 \texttt{allSeeds} 都完整遍历离散态。seed 或裸模板不能直接
-交给 serializer；必须先得到成功的 backend-neutral \texttt{linearData}。准备构造 DE 时必须
-保留全部微分变量的符号系数域；numeric 模式只适用于不再对被固定变量求导的独立任务。
+普通 batch 与 \texttt{allSeeds} 都完整遍历离散态。\texttt{DSSeeds} 的每条模板保存独立
+\texttt{templateHash}；\texttt{DSGenerateIBP} 的产物合同包含
+\texttt{sealedQ/sourceDigest/completeSystemQ/subsetQ/auditLevel/capabilities}。密封完整系统可直接
+进入 formal 后端流程；密封子集和 raw 输入可用于局部线性检查，但 \texttt{completeSystemQ=False}，
+缺省 \texttt{DSKiraExport} 与 formal \texttt{DSKiraPlan} 必须拒绝。seed 或裸模板不能直接交给
+serializer；必须先得到成功的 backend-neutral \texttt{linearData}。
+
+缺省 \texttt{AuditLevel->"standard"} 只消费同源 sealed producer 的状态、计数、摘要和 digest 字段，不重算模板/关系内容 hash，也不重复 canonical、parity、coverage 或 tree residual 扫描。需要开发、独立检验或发布证书时显式使用 \texttt{AuditLevel->"full"}。这不会放宽用户输入、未推导公式、递推终止、外部 artifact 身份或 reduction/DE closure 边界。
 
 \subsection{Kira 两阶段计划}
 
@@ -1104,7 +1123,10 @@ targetIntegralIDsPreview, minimalTargetsQ -> True
 \end{verbatim}
 \texttt{numericStage} 缺省为 \texttt{"symbolic"}。
 若显式选择 \texttt{"postDerivative"}，数值规则也只能在解析导数及 closure 已冻结后作用；
-formal export manifest 会保留该证书和数值规则审计。两个阶段必须使用不同输出目录，不能让
+formal plan 会冻结并实际复用同一份 \texttt{preparedLinearData}，不得在 plan 与 export 之间重建另一份
+线性系统。export manifest 会保留解析证书、数值规则审计，以及 equations/map/targets/rules/active
+payload 和实际导出文件的 SHA-256 \texttt{artifactIdentity}；\texttt{DSKiraImport} 按内容身份复核，不能用相同版本字符串
+替代 artifact identity。两个阶段必须使用不同输出目录，不能让
 预约化 manifest、targets 或 reduction 覆盖正式结果。
 
 稳定失败原因如下；任何失败计划都不能传给 \texttt{DSKiraExport}：
@@ -1117,13 +1139,13 @@ activeBasisClosureFailed, invalidNumericStage
 微分变量数值化的全部 serializer 门禁；成功只表示输入已写好或内存数据已就绪，不表示
 external reduction 已运行。
 
-\section{017 标准 package 与初始化}
+\section{018 标准 package 与初始化}
 
-一个 017 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。所有路径相对于 example 的 \texttt{main.wl}：
+一个 018 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。所有路径相对于 example 的 \texttt{main.wl}：
 \begin{verbatim}
 exampleDir = DirectoryName[$InputFileName];
 packageDir = FileNameJoin[{
-  exampleDir,"..","..","..","000_code","017_dSIBP"
+  exampleDir,"..","..","..","000_code","018_dSIBP"
 }];
 If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
 Needs["dSIBP`"];
@@ -1156,9 +1178,9 @@ DSPublicAPI[]
 按工作流分组的全部公开函数和高层函数的实际 \texttt{Options}；它是本附录汇总表与成品
 example coverage manifest 的共同核对入口。用户代码不应调用手册未列入该清单的私有 helper。
 
-\section{017 运行消息与进度}
+\section{018 运行消息与进度}
 
-017 使用一个集中消息层，所有耗时模块只上报结构化事件，不在内部循环散落 \texttt{Print}：
+018 使用一个集中消息层，所有耗时模块只上报结构化事件，不在内部循环散落 \texttt{Print}：
 \begin{verbatim}
 DSMessagesOn[]
 DSMessagesOff[]
@@ -1170,7 +1192,7 @@ sector 初始化、偏导算符生成、seed、linearization、Kira 导出/导�
 
 Notebook 前端使用 \texttt{Monitor} 配合 \texttt{ProgressIndicator[n,\{0,m\}]}，或用单个 \texttt{PrintTemporary} 配合 \texttt{Dynamic}，在原位显示 \texttt{n/m}。没有 FrontEnd 时只打印开始、结束及大约每 $10\%$ 的稀疏里程碑，禁止每处理一项增加一行。总数不能预先可靠获得的阶段只报告阶段状态，不伪造 \texttt{n/m}。
 
-\section{017 Kira 结果取回到微分方程}
+\section{018 Kira 结果取回到微分方程}
 
 package 只生成 Kira 输入，不运行 reduction。完整闭环为：
 \begin{verbatim}
@@ -1201,19 +1223,24 @@ scale = DSScaleCheck[de,<|
 |>];
 \end{verbatim}
 
-\texttt{DSKiraImport} 检查 export manifest、双向积分映射、master list 和完整 reduction rules。任何缺失或 convention/parity 不一致都会阻止 DE。根号代数系数可在 Kira 侧映射为小写原子，manifest 保存可逆映射；导入后恢复原表达式。\texttt{DSDE} 对同序 master list 调用 \texttt{ds}，因此动力学量系数的导数自动包含在内；约化后的内部 \texttt{kk/ISP} 系数还会统一转回初始化声明的根号坐标。未约回 master 的对象必须在结果中显式列出。
+\texttt{DSKiraImport} 检查 export manifest 的内容身份、双向积分映射、master list、targets、系数域和完整 reduction rules。任何结构化必需文件缺失、内容篡改或 convention/parity 不一致都会阻止 DE；\texttt{kira.log} 的完成标记只作 warning 诊断，不单独否定已经闭合的结构化结果。根号代数系数可在 Kira 侧映射为小写原子，manifest 保存可逆映射；导入后恢复原表达式。\texttt{DSDE} 对同序 master list 调用 \texttt{ds}，因此动力学量系数和完整 sector normalization $N_s$ 的导数都自动包含在内：
+\begin{equation}
+ \partial_x J_s=\left(\partial_x I_s\right)N_s+\partial_x\log N_s\,J_s.
+\end{equation}
+实现中后一项按同一 metadata 计算为 \texttt{D[Log[N\_s],x] J\_s}，不能只微分裸积分核。
+约化后的内部 \texttt{kk/ISP} 系数还会统一转回初始化声明的根号坐标。\texttt{rep2Integrand} 从同一 metadata 把 $N_s$ 乘回具体被积函数；未约回 master 的对象必须在结果中显式列出。
 
-Kira 数值化只用于固定不参与微分的系数参数。若本次 DE variables 是 $\{x_a\}$，则从
-\texttt{DSSeeds}、\texttt{DSLinear}、\texttt{DSKiraExport}、外部 reduction、\texttt{DSKiraImport}
-直到 \texttt{DSDE} 完成，所有 $x_a$、对应内部平方原子及含它们的表达式都必须保持符号。
-export 前应显式验证 numeric-rule 左端与 DE variables 交集为空，右端也不含 DE variables。
-例如 \texttt{kk[1,1]->ss11\string^2} 是符号坐标映射，不是数值规则。最终有理 probe 只能在
-DE 已构造后代入，并须先检查全部分母非零。
-交付的 pure-massive-bubble closed-loop example 为了与已有 reference 资产对接，仍演示旧平方坐标
-\texttt{sp[k,k]->s11}。若要验证 017 缺省 root-coordinate DE，应复用该 example 的 topology、basis 与 seed range，
-但删去这条兼容规则，重新初始化为 \texttt{sp[k,k]->ss11\string^2}，并用
-\texttt{derivativeVariables->\{ss11,P0\}}重新导出、外部约化和取回。不能将旧 \texttt{s11} reduction
-作字符串改名后充当新坐标的 fresh 结果。
+\texttt{numericStage->"symbolic"} 时，参与微分的变量直到 \texttt{DSDE} 完成前都保持符号。
+\texttt{numericStage->"postDerivative"} 则先冻结解析导数和完整 target closure，再把同一固定有理点代入
+待约化系数；它只证明该点的 reduction 与 DE，不得写成全变量矩阵证明。最终有理 probe 必须先检查
+全部分母非零。交付的 pure-massive-bubble closed-loop example 使用 018 缺省 root coordinate
+\texttt{ss11=Sqrt[sp[k,k]]} 和 \texttt{derivativeVariables->\{ss11,P0\}}，不能把旧 \texttt{s11}
+reduction 作字符串改名后充当新坐标的 fresh 结果。
+
+Kira-only 能量 convention 只作用于 serializer/importer。初始化从 phase-energy dependency metadata
+识别相位空间中的无质量动量原子，并在进入 Kira 前做 \texttt{k->-I ik}；复合方向按结构拆分，不按
+符号名字猜角色。数值规则只给 \texttt{ik} 精确实有理值。manifest 同时保存物理截面、双向映射、
+\texttt{D\_k=I D\_ik} 和 Euler 算符不变性；公开物理 API、IBP 与 scaling convention 不改变。
 
 \texttt{DSScaleCheck} 验证的是符号 Euler 恒等式。写
 \begin{equation}
@@ -1237,7 +1264,16 @@ DE 已构造后代入，并须先检查全部分母非零。
 $\mathcal E[N_i]/N_i$。reference bubble 中 \texttt{ks*DEksO+P0*DEP0O} 正是权重
 $\{1,1\}$ 的 Euler matrix；应检查非对角元为零、对角元等于同序 master degrees，且结果不依赖整体尺度。
 
-首个闭环 example 固定使用 pure massive bubble reference 的 $--$ branch 和 even-parity closed subsystem，不生成全 parity 大系统。reference 的顶点交换 symmetry 只在 $P_1=P_2$ 成立。reference 的 $V_{\pm}=0$ 与 package 的 $--$ 分支使用相反的能量参数号，因此 package 取 $P_0=+i k_0$，reference basis 映射为 $P_1=P_2=-P_0=-i k_0$；独立 $P_1/P_2$ family 不得复用该 symmetry。fresh Kira 2.3 运行得到 33581 条方程、6555 条独立关系和 19 个 active masters，1814 个目标全部约化。\texttt{post\_kira\_check.wl} 对导入、master 顺序、辅助 ID、DE closure、固定参数残留和 Eq.~(51)/(64) 的符号 Euler residual 共检查 22 项，全部通过。DE matrix 与完全同序的 master list 一起写入 \texttt{results/dlogDE/}。
+首个闭环 example 固定使用 pure massive bubble reference 的 $--$ branch 和 even-parity closed subsystem，不生成全 parity 大系统。reference 的顶点交换 symmetry 只在 $P_1=P_2$ 成立。reference 的 $V_{\pm}=0$ 与 package 的 $--$ 分支使用相反的能量参数号，因此 $P_{\rm pkg}=-P_{\rm ref}$；Kira-only 截面再取 $P_{0,\rm pkg}=-i\,ip0$。独立 $P_1/P_2$ family 不得复用该 symmetry。
+
+同目录 \texttt{active\_basis\_19.wl} 提供可直接交给 formal \texttt{DSKiraPlan} 的 21 个有序候选、
+\texttt{activeIndices=Range[19]}、physical \texttt{ks=ss11}、导数变量和 scaling degrees；
+\texttt{dlog\_basis.wl} 只保留 reference-readable 记号。当前 package fresh Kira 2.3 在固定精确点导出
+14091 个方程块，得到 2795 条独立关系、19 个 active masters、215 个 targets 和 0 unreduced。
+恢复 reference 原始 dlog basis 第 15--18 项的显式 $k_s$ 后，physical $P_0$、backend \texttt{ip0}
+与 physical $k_s$ 三套 $19\times19$ 矩阵均为 $361/361$ 精确相等、非零差值 0。reference 侧只复制并
+校验既有 \texttt{DEP0.m/DEks.m/DEscaleCheck.m/MIdlogNote.m/derivative\_rules\_bubble.m}，禁止重新生成
+reference IBP 或运行 reference Kira。
 
 \section{Tree vertex family}
 
@@ -1263,7 +1299,7 @@ omegaBlocks, dlogQ
 \end{verbatim}
 \texttt{masters} 中每项的 \texttt{coefficient} 正是对应 sector normalization；矩阵、letters 与该 master 顺序完全一致。
 
-017 还提供不使用上述直接 dlog/递推矩阵的交叉路线：
+018 还提供不使用上述直接 dlog/递推矩阵的交叉路线：
 \begin{verbatim}
 ibp = DSTreeNaiveIBP[context, treeDLog["masters"]];
 de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
@@ -1294,7 +1330,7 @@ de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
   \item seed 直接导出 Kira：错误；先构造 \texttt{linearData}。
 \end{itemize}
 
-当前未实现：一般图 automorphism/参数对称性的自动发现、scaleless 全自动前端、自动选择 propagator basis、streaming/chunked 高圈 seed、massless 三槽 quotient basis 上的公式型 tree 递推/dlog，以及实际运行 reduction。017 已实现标准 context、动力学变量审计、h/H parity、交互消息、Kira 结果取回和 loop/tree DE/scaling；package 仍只验证并导入用户在外部生成的完整 reduction。
+当前未实现：一般图 automorphism/参数对称性的自动发现、scaleless 全自动前端、自动选择 propagator basis、streaming/chunked 高圈 seed、massless 三槽 quotient basis 上的公式型 tree 递推/dlog，以及实际运行 reduction。018 已实现标准 context、动力学变量审计、h/H parity、交互消息、Kira 结果取回和 loop/tree DE/scaling；package 仍只验证并导入用户在外部生成的完整 reduction。
 
 \appendix
 \section{公开函数汇总}
@@ -1340,6 +1376,6 @@ de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
 \end{tabularx}
 \endgroup
 
-表中的原子、tree 与 \texttt{DS*} 高层接口均由 017 当前主线提供。各函数的精确可用 options 以 \texttt{Options[函数]} 为准；massless 公式型 tree 接口以结构化 \texttt{PendingRederivation} 明确失败，不得静默回退到历史表示或不完整结果。
+表中的原子、tree 与 \texttt{DS*} 高层接口均由 018 当前主线提供。各函数的精确可用 options 以 \texttt{Options[函数]} 为准；massless 公式型 tree 接口以结构化 \texttt{PendingRederivation} 明确失败，不得静默回退到历史表示或不完整结果。
 
 \end{document}

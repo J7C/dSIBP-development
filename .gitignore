@@ -27,6 +27,8 @@ ibp_equations*.m
 000_code/**/results_test/
 check-smoke/results_test/
 check-smoke/results_temp/
+check-smoke/**/results_test/
+check-smoke/**/results_temp/
 000_code/results/
 000_code/results_temp/
 000_code/results_ignore/

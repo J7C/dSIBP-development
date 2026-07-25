@@ -10,23 +10,25 @@
 - EOM 不是后处理选项，而是 seed 生成的一部分；任何 Hankel 二阶导数一旦产生 `n=2`，必须立刻用 EOM 递推消去。
 - time-IBP 与 momentum-IBP 同属必需 seed 来源；缺少 time-IBP 时，不允许声称已经得到完整 IBP 系统。
 - Kira 导出只消费 `makeLinearSystemData` 产生的 linear-system 数据，不直接消费 seed batch。`makeCanonicalSeedBatch` 自动派生并联立全部 contact-reachable shrink sectors，不设置 sector 数量上限；若仍有 `n=2`、sector coverage 不完整或其它 pending feature，则不能进入 linear/Kira 阶段。当前 `makeKiraExportData` 已能写 user-defined system 文件。独立 numeric linear workflow 可先完成数值规则/撒点选择；准备生成 DE 时，所有 derivative variables 及其内部平方原子必须保持符号，只能固定不参与微分的系数参数。
-- 当前 017 以冻结的 016 模块化 package 为只读基线，统一公开三参数 `J`、cycle/fixed 三槽与单槽 shrink schema、sector prefactor、compact lower 导数和 h/H parity transport；用户继续显式声明两类外动量。common-theta contact、可达 sector 和完整 coincidence canonical 是全部入口共用的正确性门禁。
+- 当前 018 以冻结的 017 模块化 package 为只读基线，统一公开三参数 `J`、cycle/fixed 三槽与单槽 shrink schema、sector prefactor、compact lower 导数和 h/H parity transport；用户继续显式声明两类外动量。common-theta contact、可达 sector 和完整 coincidence canonical 是全部入口共用的正确性门禁。
 
 ### P0 seed 模板与显式撒点边界
 
-017 将 seed 的“离散状态/EOM 构造”和“连续指标撒点”拆成两个原子步骤。`DSSeeds` 生成各 contact-reachable sector 的全部 time/momentum generator 模板，并在模板阶段完整枚举每个离散 `n_i` 的 `0,1` 状态，立即应用 EOM、共同-theta/contact canonical、可判定 symmetry 与 parity。它额外返回一维列表 `allSeeds`；该列表由所有内部 `Table` 结果用 `Flatten[...,Infinity]` 磨平，连续指标仍为符号。
+018 沿用并加固 seed 的“离散状态/EOM 构造”和“连续指标撒点”两个原子步骤。`DSSeeds` 生成各 contact-reachable sector 的全部 time/momentum generator 模板，并在模板阶段完整枚举每个离散 `n_i` 的 `0,1` 状态，立即应用 EOM、共同-theta/contact canonical、可判定 symmetry 与 parity。它额外返回一维列表 `allSeeds`；该列表由所有内部 `Table` 结果用 `Flatten[...,Infinity]` 磨平，连续指标仍为符号。
 
 EOM/canonical 可能把某个完整离散态模板化为精确零。密封 `allSeeds` 中的这种 `equation->0` 是应保留的合法恒等式，仍参与模板计数、哈希和离散态完整性审计；只有缺失 equation，或非零且完全不含 `J` 的伪模板才由 `DSGenerateIBP` 拒绝。
 
 `DSGenerateIBP[seeds,{min,max}]` 对模板中全部真实连续指标使用同一整数闭区间。`DSGenerateIBP[seeds,{x1,min1,max1},...]` 允许逐指标范围，但要求用户规则与模板中连续指标 exact cover：未知、遗漏、重复、非整数边界或 `min>max` 均为 fatal input error。`n_i` 不属于连续指标；若 range specification 包含 `n_i`，或模板中仍残留符号 `n_i`/forbidden `n`，接口拒绝生成。兼容入口 `generateIBP` 与 `DSGenerateIBP` 完全同义。
 
-撒点结果必须携带扁平模板、稳定变量顺序、范围规则、展开规则数、canonical equations、输入 SHA-256、离散态完整性和 EOM/canonical 证书。`DSLinear` 只消费通过该门禁的撒点结果或旧的完整 canonical seed batch。Kira target planning 不再尝试通过整数优化猜测“最大安全 Cartesian box”；它消费用户显式给出的撒点包络并检查 derivative target closure 是否包含在 linear system 中。
+撒点结果必须携带扁平模板、稳定变量顺序、范围规则、展开规则数、canonical equations、逐模板/输入 SHA-256、离散态完整性和 EOM/canonical 摘要。`artifactContract` 明确区分 sealed complete、sealed subset 与 unsealed raw；三者均可进入 backend-neutral 线性化，但只有 sealed complete 具有 formal reduction capability。`DSLinear` 对 sealed producer 只复算 source digest 并消费摘要，raw 输入才重跑完整 consumer 扫描。Kira target planning 不再尝试通过整数优化猜测“最大安全 Cartesian box”；它消费用户显式给出的撒点包络并检查 derivative target closure 是否包含在 linear system 中。
+
+018 的连续撒点实现为一次调用内的 sector-topology cache 与条件坐标投影：cache key 只来自 root-ordered line-pack pattern，命中后仍执行 sector metadata shape 检查；general template 先投影一次公开坐标，数值 canonical 只有重新引入内部原子时才再投影。密封模板继续使用 provenance 做 parity 预筛；raw expression 没有 source provenance 时不得猜 parity，保留点域、标记 `unsealed` 并依赖生成后 certificate。raw 子集不自动获得完整 reduction capability。
 
 所有公开调用的 info、progress、warning 与 error 逐句双语输出，固定先中文、后英文。全局消息开关只关闭可选 info/progress/warning，fatal error 始终显示；notebook 中 warning/error 继续用红字。
 
 ### P0 动力学坐标边界
 
-017 的用户输入显式区分两类外部动量对象。下文统一简称前者为 `kL`（`kL1,kL2,...`），后者为 `kE`（`kE1,kE2,...`）；这些简称表示列表角色和位置，不要求用户真的采用这些符号名：
+018 的用户输入显式区分两类外部动量对象。下文统一简称前者为 `kL`（`kL1,kL2,...`），后者为 `kE`（`kE1,kE2,...`）；这些简称表示列表角色和位置，不要求用户真的采用这些符号名：
 
 - `loopExternalMomenta={kL1,...}` 是用户确认的圈外动量独立基，决定完整 Gram、ISP 闭合与 `dqk` 生成元。第 `i` 项进入内部 `qk[*,i]`、`kk[i,j]`，公开缺省为 `ssij`。程序只审计，不替用户命名或猜选。
 - `independentExternalMomenta={kE1,...}` 是实际无圈动量模长列表，只生成 `sp[kEe,kEe]->sEe^2`；坐标/Jacobian 内部槽为 `externalLegSquaredCoordinate[e]`，不生成 `sp[kEe,kEf]`。整体反号视为同一模长，`alice+bob` 与 `alice-bob` 不合并。
@@ -741,9 +743,9 @@ symmetryRules = {
 
 ## 7. 当前主线与工作流
 
-当前权威实现是模块化 `000_code/017_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。冻结单文件兼容入口是 `independent-benchmark/package/package_017.wl`；010--016 的单文件和模块目录均为只读历史/基线。
+当前权威实现是模块化 `000_code/018_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。018 候选通过后，冻结单文件兼容入口是 `independent-benchmark/package/package_018.wl`；010--017 的单文件和模块目录均为只读历史/基线。
 
-独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_017.wl/pdf` 和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
+独立 benchmark 的程序交付位于 `independent-benchmark/package/`；018 晋升后只保留 `package_018.wl/pdf` 和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
 
 正式交付采用候选先行门禁：构建器通过 `DSIBP_BUILD_OUTPUT` 把候选单文件写入 `000_code/test/results_test/`，正式检查通过 `DSIBP_PACKAGE_FILE`（phase 2 另用 `DSIBP_PDF_FILE`）显式加载候选。只有候选专项、独立单文件检查和受影响 phase 全部通过后，才用同一候选字节覆盖 `independent-benchmark/package/`，随后在正式路径复验并清理候选。未设置这些环境变量时保留原有正式构建/模块检查合同。
 
@@ -782,7 +784,7 @@ symmetryRules = {
 
 serializer 不重新推导 IBP，也不重新应用 EOM。它只负责把 `linearData` 转为某个后端的语法、编号和文件布局，并做该后端特有的输入校验。当前已有 Kira serializer，可写 `userSystem/ibp.kira`、`list`、`jobs.yaml`、积分映射和 metadata。未来若接 Rational Tracer，需要新增相应 serializer，但 seed 与 linear-system 主线无需重写。
 
-package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机可执行文件路径。017 可通过 `DSKiraImport` 导入并验证用户在 package 外生成的完整 reduction/master 结果，再交给 `DSDE` 和 `DSScaleCheck`；缺文件、context capability、输入哈希或来源映射不一致时拒绝继续。
+package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本机可执行文件路径。018 可通过 `DSKiraImport` 导入并验证用户在 package 外生成的完整 reduction/master 结果，再交给 `DSDE` 和 `DSScaleCheck`；缺文件、context capability、artifact identity 或来源映射不一致时拒绝继续。
 
 ## 8. 当前未实现与下一步
 本节只保留长期能力缺口，不表示当前执行顺序。当前正在做什么、哪些检查尚未通过以及下一位接手者的第一步，以根目录 `研究计划与研究进度.md` 为准。
@@ -816,7 +818,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 | 项目 | 当前约定 |
 |------|----------|
-| 主线脚本 | 模块化 `000_code/017_dSIBP/`；冻结单文件 `independent-benchmark/package/package_017.wl` |
+| 主线脚本 | 模块化 `000_code/018_dSIBP/`；冻结单文件 `independent-benchmark/package/package_018.wl` |
 | 积分 Head | `J[aList, linePacks, ispList]` |
 | cycle line pack | full massive/massless 均为 `{b_e,n_{e1},n_{e2}}`，shrunk 为 `{bS_e}`；root line 位置永久保留 |
 | bridge/fixed line pack | full 为 `{"F",n_{e1},n_{e2}}`，shrunk 为 `{"F"}`；物理幂属于结构化 sector prefactor |
@@ -829,7 +831,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 ## 11. 原子化公开接口
 
-017 在 `dSIBP`` context 中公开以下公式级接口，并由 `DSInit` 建立 family context。公开积分始终为三参数 `J[aList,linePacks,ispList]`；底层调用可显式传入 `topo`，也可使用当前已注册 context 的短签名。
+018 在 `dSIBP`` context 中公开以下公式级接口，并由 `DSInit` 建立 family context。公开积分始终为三参数 `J[aList,linePacks,ispList]`；底层调用可显式传入 `topo`，也可使用当前已注册 context 的短签名。
 
 ### 11.1 指定生成元作用
 
@@ -965,7 +967,15 @@ independent-benchmark/package/examples/<case>/
 
 初始化写文件缺省为 `False`；开启时缺省目录是当前 example 的 `init/`。导数算符 metadata 缺省不写，避免多外动量 family 初始化膨胀；用户显式打开后才生成。
 
-除完整闭环例子外，其余例子以 independent benchmark 已冻结 family 为主：atomic massless、atomic massive、pure massless bubble、mixed bubble、mixed triangle、mixed sunrise、two-loop ISP、parallel massless bundle、vertex-energy signs 和 tadpole symmetry。每个 family 只使用 benchmark 已固定的一组同号 branch 和一组混合 branch，不在运行时随机抽样。
+### 13.1 三个长期典型 example
+
+正式 examples 不追求把 benchmark 的所有 family 各复制一份，而固定三个结构互补、可长期维护的典型案例：
+
+1. `04_pure_massive_bubble_closed_loop/` 是唯一带既有解析 reference 与原始 dlog basis 的闭环案例。它把初始化、parity-closed relations、Kira export/import、19-master DE、显式 `ks` basis 恢复和 scaling relation 放在同一条可对照链上，因此负责验证 normalization、basis order、能量 convention 和 DE/scaling，而不是承担复杂 topology 覆盖。
+2. `06_mix_bubble_tree/` 固定一条 massive h cycle line、一条 massless exponential cycle line和一条 massless exponential bridge。这个最小复合图同时区分 `loopExternalMomenta` 的 `kL` 与 `independentExternalMomenta` 的 `kE`，包含独立顶点相位和无圈模长参数，并让 massless 新三槽 convention、cycle contraction 与 fixed/bridge contraction 在同一 context 中出现。再增加 massive line 只会叠加 function-system/EOM 复杂度，不增加上述结构边界，因此不作为缺省 example。
+3. `03_single_massive_sunrise/` 是唯一 sunrise example。两个顶点由三条平行边连接，故 `L=3-2+1=2`；只保留一条 massive h line，其余两条 massless，并用两个显式 ISP 补齐五维 loop scalar-product 空间。若只保留圈外模长 `kL`，无标度化后只剩一个尺度，DE 会退化；因此两个顶点的外腿能量固定为同一个 `kE`，与 `kL` 形成两标度输入。顶点交换与两条同类 massless 平行线交换由 `symmetryRules` canonicalize；两个 ISP 特意选成在线交换下互换的一对，避免 line pack 已交换而 ISP 仍停在旧定义。它负责验证多重边圈数、两圈 routing、完整 `L(L+K)` 生成元、ISP 闭合、离散 symmetry 与 mixed massive/massless serializer，不再另设 all-massless 或 multi-massive sunrise example。
+
+这三项是长期接口与物理 convention 的代表案例，不是全 family 验收的替代品。新增 family 优先进入独立 benchmark；只有当它覆盖三者均不具备的公开功能边界时，才讨论增加正式 example。
 
 ## 14. 014 Loop：Kira 到 DE 的闭环
 
@@ -978,7 +988,7 @@ topology -> canonical seeds -> linearData -> Kira files
          -> ds -> DE matrix -> scaling checks
 ```
 
-package 仍不启动 Kira，不管理 Kira/Fermat 路径。`DSKiraImport` 只读取用户指定目录中的完整输出，检查完成标记、master 列表、reduction rules、`repJ2kira`/`repkira2J` 和 export metadata 是否同源；缺文件、版本或积分映射不一致时必须拒绝构造 DE。
+package 仍不启动 Kira，不管理 Kira/Fermat 路径。`DSKiraImport` 只读取用户指定目录中的完整输出，以实际 export 文件内容 identity、master 列表、reduction rules、`repJ2kira`/`repkira2J`、targets 和系数域闭合作为硬边界；`kira.log` 完成标记只作诊断 warning。缺少结构化必需文件、内容身份或积分映射不一致时必须拒绝构造 DE。
 
 首个闭环例子固定使用 pure massive bubble reference 的 `--` branch 和论文/参考代码相同的 parity-closed subsystem：top sector 要求 `n1+n2+b1`、`n3+n4+b2` 均为偶数；residual `R1` 要求 `b1`、`n3+n4+b2` 均为偶数。reference code 使用的 vertex/line exchange、`R2 -> R1` 和 parity 必须通过本 package 的 symmetry/parity 模块应用，不在 importer 或 DE 模块私自重写。
 
@@ -1035,14 +1045,14 @@ dlog DE 的 sector 对角块直接采用 2401.00129 Eq. (3.54)--(3.55)，输出�
 
 非对角块采用该文 Eq. (3.66)--(3.68)。对 parent sector 的每个 `a=0` binary master 和每个活动顶点，先保持 binary state 不变、只把该顶点时间指标设为 `a=1`，再调用 loop `dtau`；由此得到的是 `f^(1)` 约化中的 `R^(1)` contact source。不能从 `a=0` seed 的 `R^(0)` 出发把 lower integral 的 `a=-1` 强制约到 0，否则会把合并顶点能量因子错误吸入 contact selector。source 仍须先经过完整物理幂投影；多线情形如产生非零 lower `a`，再由 sector-tagged `repIterative` 约到该 target sector 的 master order。
 
-每个 sector `s` 保存共同 normalization `N_s`，`N_top=1`。第一次到达 lower sector 的非零 source coefficient 固定 `N_t=N_s c_*`；所有其它入边除以 `N_t/N_s` 后必须不含任何 DE 能量变量，否则拒绝宣称 dlog。全局 master 是 `N_s J_s`，因此
+每个 sector `s` 的 `J_s` 已隐含由传播子收缩得到的 sector prefactor `N_s`，即 `J_s=N_s I_s`；不得再把全局 master 写成 `N_s J_s`。dlog 路线只能读取这一份初始化 metadata，并用同一 `N_s/N_t` 转换 contact source。
 
 ```text
 Omega_ss = Omega_s + Log[N_s] IdentityMatrix,
 Omega_st = Sum_v[-I Embed(T_v^-1 Omega0_v T_v) . C_st^(v)],  t lower than s.
 ```
 
-这里 `C_st^(v)` 是从 loop `dtau` tagged source 抽出的已归一化 selector。`Log[N_s]` 保持为整体 normalization letter，不对一般复幂使用 `PowerExpand`。最终必须返回 `sectorNormalizations`、`normalizationAudits`、`contactMaps`、`omegaBlocks`、`dlogResidual/dlogQ`，并验证所有反向 sector 块和同层 sibling 块为零。
+这里 `C_st^(v)` 是从 loop `dtau` tagged source 抽出的已归一化 selector。`Log[N_s]` 保持为整体 normalization letter，不对一般复幂使用 `PowerExpand`。生产结果必须返回 `sectorNormalizations`、`normalizationAudits`、`contactMaps` 和 `omegaBlocks`；`dlogResidual/dlogQ` 及反向 sector/同层 sibling 块的全矩阵证书只在显式 `AuditLevel->"full"`、独立检验或发布检查中构造。
 
 顶点 `+/-` 不改变 h 的二阶 EOM 和 `2^p` binary basis，但改变顶点相位中的 `k0` 符号及 `G++/G--` contact source 的符号。映射必须从 loop topology 的 `vertexData` 和 compiled `WT` 读取：
 
@@ -1070,7 +1080,7 @@ tree 项的显式归一化系数必须按物理幂次差构造为
 
 014 的 sector-tagged `treeLinearData` 对每个未合并贡献保存 target/reference 的 `aInteger/aZeroPoint/aPhysical`、`bInteger/bZeroPoint/bPhysical`，以及 `deltaTimePower`、逐线整数/零点/完整幂次差、`explicitEnergyPowers` 和由这些量重建的投影系数。合并到同一 `{sectorKey,J[...]}` 的贡献可以求和，但必须同时保留 `contributions` 与 `physicalPowerAudits`，不能用第一项的审计信息代表全部来源。多传播子 simultaneous contact 的显式系数按每条线的能量因子相乘，merged vertex 的 tree `nu0` 减去所有选中线的 zero-point shift 之和。
 
-014 的第二条 tree DE 路线由 `DSTreeNaiveIBP` 与 `DSTreeNaiveDE` 组成。前者以同序 sector-tagged masters 为固定列，对每个 sector/master/vertex 生成 `a_v=1` loop 代表元，只调用 `dtau` 后投影为 tree 方程，并直接用线性系统解出全部非 master 的一步升幂对象；不得调用 `repIterative`、`Aplus/Aminus` 或直接 dlog matrix。后者把顶点相位导数从 loop 原子层投影，但对 `treeEnergy` 使用 h 的 Eq. (21) 直接生成 tree 指标移位：`n=0 -> -{a+1,n=1}`，`n=1 -> {a+1,n=0}-(2nu+1){a,n=1}/k`。原因是 loop 适配器中的内部线动量属于积分变量，不等于 tree 的独立外部能量。最终对 normalized master `N_s J_s` 另加 `D[N_s] J_s`，再由 naive time-IBP 约化。
+014 的第二条 tree DE 路线由 `DSTreeNaiveIBP` 与 `DSTreeNaiveDE` 组成。前者以同序 sector-tagged masters 为固定列，对每个 sector/master/vertex 生成 `a_v=1` loop 代表元，只调用 `dtau` 后投影为 tree 方程，并直接用线性系统解出全部非 master 的一步升幂对象；不得调用 `repIterative`、`Aplus/Aminus` 或直接 dlog matrix。后者把顶点相位导数从 loop 原子层投影，但对 `treeEnergy` 使用 h 的 Eq. (21) 直接生成 tree 指标移位：`n=0 -> -{a+1,n=1}`，`n=1 -> {a+1,n=0}-(2nu+1){a,n=1}/k`。原因是 loop 适配器中的内部线动量属于积分变量，不等于 tree 的独立外部能量。最终直接对已经 normalized 的 `J_s=N_s I_s` 加入 `D[Log[N_s]] J_s`，再由 naive time-IBP 约化；不得额外构造 `N_s J_s`。
 
 两条路线的发布门禁固定为同一个 `{sectorKey,integral,coefficient}` master 列表。naive 的 equation/unknown 数、solve residual、DE source 和 residual objects 必须闭合；逐变量矩阵与 `D[DSTreeDLogDE[context]["omega"],variable]` 严格相等。至少覆盖两顶点 `++` 的 contact/lower normalization 和两顶点 `+-` 的无 theta/无 `WT` guard。
 
@@ -1170,6 +1180,28 @@ $$
 $$
 
 若裸积分导数或 contact 产生 target sector $t$，改写为 normalized basis 时还必须乘 $N_s/N_t$。`ds`、`DSDE`、scaling、time-only 转换和 loop-to-tree/sector 映射都从 source/target 的 `sectorPrefactorData` 调取该 normalization，不能因 prefactor 逻辑上藏在 `J` 中而漏掉导数或比值。
+
+018 已把上述三处收束为同一数据流：sector metadata 保存完整 `N_s`，contact 统一写成 `c_raw N_source/N_target J_target`，`ds/DSDE` 加入 `D[Log[N_s],x] J_s`，`rep2Integrand` 也从同一 metadata 把 `N_s` 乘回。无圈模长的幂次按初始化冻结的 `kEpower[...]` 保存，当前参数表达式另存于 `kEParameterExpressions`；参数重定义只更新后者，不改变稳定编号和幂向量。局部 `16/16` 已通过，但最终正确性仍由 fresh reduction 后的完整 scaling relation 和 reference 同基比较统一检查。
+
+### 19.1.1 Kira 内部实能量 convention
+
+018 的公开物理 convention 不变；`DSInit/DSSeeds/ds/DSDE` 继续使用用户给出的物理能量 `k`。只有 Kira serializer 在写后端文件前，对初始化 phase-energy dependency data 中实际进入顶点相位的独立原子建立
+
+```text
+k = -I ik,       ik = I k,
+D_k = I D_ik,    D_ik = -I D_k,
+k D_k = ik D_ik.
+```
+
+`ik` 是一个小写 backend symbol，命名为物理原子名前加单个 `i`；例如 `P0 -> ip0`。角色来源只允许读取初始化后的 vertex-phase 结构数据。复合能量先按该结构拆成独立原子，同一原子在多个顶点复用时合并来源 vertex/role；不进入顶点相位的 `ssij`、Gram 坐标和其它空间变量保持不变。非原子映射、保留名、大小写折叠重名或与现有系数变量碰撞均 fail closed。
+
+`postDerivative` 数值路线先冻结物理 active basis 的解析一阶导数和最小 target closure，再把物理规则 `k -> r` 转成 Kira 规则 `ik -> r`，其中 `r` 必须是精确实有理数；同一 manifest 另保存物理求值截面 `k -> -I r`。因此 Kira 内部始终只看到实有理变量值，而 `DSDE` 仍返回物理 `k` 导数矩阵，并额外保存 backend derivative view 的 Jacobian。scaling 直接在实 `ik` 坐标做也不改变 Euler 算符，因为 `k D_k=ik D_ik`。
+
+serializer 的固定顺序是：物理 phase-energy 映射、backend 实有理数值规则、剩余 Gaussian integral phase gauge。importer 反向执行：恢复一般 coefficient map、恢复 backend energy 到物理能量、再恢复逐积分 Gaussian phase。Gaussian gauge 只处理前两步后仍残留的整体积分相位；若 energy convention 已使系统纯有理，则其状态应为 `notRequired`。manifest 必须保存双向能量规则、来源角色、backend/physical 数值截面、两个普通导数 Jacobian、Euler 不变性、碰撞审计及 Gaussian fallback 状态。
+
+pure massive bubble 的 reference 验证不重新生成 reference IBP 或运行 reference Kira。维护路线从原始 reference 结果目录复制并按固定 SHA-256 核验既有解析 `DEP0.m`、`DEks.m`、`DEscaleCheck.m`、`MIdlogNote.m` 与 `derivative_rules_bubble.m`；随后在解析矩阵上取 `P_ref=-P_pkg=29 I/13`、`ks=43/17`，先做已独立确认的 homogeneity lift，再恢复原始 dlog basis 第 15--18 项显式 `ks` 及 `D[T,ks].Inverse[T]`，最后用 `D_P0=I D_ip0` 形成 backend view。该路线与 fresh package reduction 的 physical `P0`、backend `ip0`、physical `ks` 三套矩阵各通过 `361/361`，19 个 master 定义比例均为 1；不引入 basis adapter。
+
+018 晋升另要求 package-side expanded-envelope 稳定性：把 pure massive bubble 的 top 目标包络从 `a in [-1,4], b in [-2,5]` 扩为 `a in [-2,5], b in [-3,6]`，不改变 reference 侧任何 producer。当前 fresh 扩张系统有 197232 条生成关系、7850 个 linear 积分、48699 个 Kira 方程和 7871 个导出积分；215 个 targets 由 19 个 active token 与 196 个 derivative `J` 构成，旧 196 个 derivative 对象全部包含。Kira 2.3 仍得到 backend master IDs `1..19`、215 targets、0 unreduced；import/DE/scaling 通过，三套 reference 矩阵再次各 `361/361` 精确相等。该结果用于排除当前 finite-envelope 边界假 master，不替代完整独立 benchmark 的其它 family 验收。
 
 sector resolver 使用完整 `sectorMetadataList`，联合原始 line 位置、full/shrunk pack shape、`"F"`/index/state pattern、compact vertex representative map、ISP shape 和 `sectorKey` 唯一匹配。零匹配或多匹配均 fail closed；不得按列表顺序选择，也不得仅凭 `J` 的总槽数猜测。
 
