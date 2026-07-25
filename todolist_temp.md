@@ -84,7 +84,7 @@
 - [ ] P1：删除 Kira/RT serializer 的二次暗排序，严格消费用户已经排序的 `integralList`；手册说明缺省排序和显式重排方法。
 - [ ] P2：重新推导含 massless tree line 的 quotient-basis iterative reduction 与 dlog DE。
 
-阶段记录：早期 018 候选 SHA-256 `8ECCD0B66171362E1671F83B9B68BAF0BEF13B047400B1FAD425FBB362AEC830` 与前序正式候选 `CDA2302295F961274488CFC1109B9041476A18782E17AB683F56E86D27BAF7BE` 均已被本轮边界修复取代；最终候选及正式程序为 `E137F7259B429D2F181E1A8BA101C36A42CEFE2145975F1900A24FDFE8B3EA06`，正式手册为 `FCF95B34B7F0ADCE037E5CB3029F239A78DA8AA50793F21AEEDD8A488BBC0EBA`。Kira/DE/scaling/reference 与 expanded envelope 是前序候选的既有验收，本轮没有重跑；最终字节只执行受影响 example/topology/massless/API 检查。atomic massless formula tree 保持 P2 fail-closed。剩余发布项仅为 source-isolated 独立验收、临时产物清理和 Git 提交/推送。
+阶段记录：早期 018 候选 SHA-256 `8ECCD0B66171362E1671F83B9B68BAF0BEF13B047400B1FAD425FBB362AEC830` 与前序正式候选 `CDA2302295F961274488CFC1109B9041476A18782E17AB683F56E86D27BAF7BE` 均已被本轮边界修复取代；最终候选及正式程序为 `E137F7259B429D2F181E1A8BA101C36A42CEFE2145975F1900A24FDFE8B3EA06`，正式手册为 `FCF95B34B7F0ADCE037E5CB3029F239A78DA8AA50793F21AEEDD8A488BBC0EBA`。Kira/DE/scaling/reference 与 expanded envelope 是前序候选的既有验收，本轮没有重跑；最终字节只执行受影响 example/topology/massless/API 检查。atomic massless formula tree 保持 P2 fail-closed。候选/渲染产物已清理，正式资产由提交 `2937faf` 推送到 `origin/main`；剩余项仅为另开 source-isolated 会话执行独立验收。
 
 # 017 统一三槽、sector parity 与 subsector 导数（2026-07-24）
 
