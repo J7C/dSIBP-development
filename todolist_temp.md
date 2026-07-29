@@ -7,7 +7,7 @@
 - [x] 在根 README 统一说明 dSIBP 018.1、MadStree v0.3 与 FlintNDE 的职责、入口、依赖方向和验证状态。
 - [x] 在根 AGENTS 登记跨组件规则、子目录 authority、调用目录输出与 fail-closed 边界。
 - [x] 忽略 Python cache、`pyc` 和各组件开发 `test/results_test/`，保留 MadStree 独立验证的轻量 `results/summary.wl`。
-- [ ] 检查全部非忽略待提交资产、远端分歧和格式门禁，提交并推送当前项目状态。
+- [x] 检查全部非忽略待提交资产、远端分歧和格式门禁；主发布提交 `304e4ba` 已推送到 `origin/main`。
 
 ## P0 MadStree v0.3 T1/T3 与独立验证归档
 
