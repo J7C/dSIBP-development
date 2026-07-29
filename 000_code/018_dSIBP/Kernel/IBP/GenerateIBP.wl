@@ -95,7 +95,14 @@ dsLoopTemplatesForTopology[topo_Association] := Module[
         "sourceIntegral" -> (base /. discreteRule),
         "discreteVariables" -> discreteVariables,
         "discreteRules" -> discreteRule,
-        "discreteStateCountExpected" -> 2^Length[discreteVariables],
+        "discreteStateCountExpected" -> discreteData["ruleCount"],
+        "rawBinaryDiscreteStateCount" -> Lookup[
+          discreteData, "rawBinaryStateCount", 2^Length[discreteVariables]
+          ],
+        "discreteSeedMode" -> Lookup[discreteData, "mode", "allBinaryStates"],
+        "masslessCanonicalDirection" -> Lookup[
+          discreteData, "canonicalDirection", Missing["NotApplicable"]
+          ],
         "equation" -> Expand[expr],
         "forbiddenNData" -> forbiddenNData[topo, expr],
         "eomCanonicalQ" -> ! containsForbiddenNQ[topo, expr],
@@ -113,6 +120,16 @@ dsLoopTemplatesForTopology[topo_Association] := Module[
     "recordCount" -> Length[records],
     "discreteVariables" -> discreteVariables,
     "discreteStateCount" -> Length[discreteData["rules"]],
+    "rawBinaryDiscreteStateCount" -> Lookup[
+      discreteData, "rawBinaryStateCount", 2^Length[discreteVariables]
+      ],
+    "eliminatedAlgebraicStateCount" -> Lookup[
+      discreteData, "eliminatedAlgebraicStateCount", 0
+      ],
+    "discreteSeedMode" -> Lookup[discreteData, "mode", "allBinaryStates"],
+    "masslessCanonicalDirection" -> Lookup[
+      discreteData, "canonicalDirection", Missing["NotApplicable"]
+      ],
     "allSeeds" -> records
     |>
    ];
@@ -129,7 +146,12 @@ dsLoopSeedTemplateData[context_Association, seedData_Association] := Module[
    If[bad =!= {}, Return[<|"status" -> "failed", "reason" -> "sectorTemplateFailed", "failures" -> bad|>]];
    records = Flatten[Lookup[pieces, "allSeeds", {}], Infinity];
    <|"status" -> "generated", "allSeeds" -> records, "sectorCount" -> Length[pieces],
-     "templateCount" -> Length[records]|>
+     "templateCount" -> Length[records],
+     "discreteStateAudits" -> (KeyTake[#, {
+           "sectorKey", "discreteVariables", "discreteStateCount",
+           "rawBinaryDiscreteStateCount", "eliminatedAlgebraicStateCount",
+           "discreteSeedMode", "masslessCanonicalDirection"
+           }] & /@ pieces)|>
    ];
 
 
@@ -604,7 +626,7 @@ dsSeedIndexShifts[entry_, index_] := Module[{equation, values, shifts},
 (* 要求组内所有 shifted indices 都落在 [L,U]，故 seed 点域取各 shift 逆像的
    交集 [L-Min[Delta],U-Max[Delta]]；作用后所得关系的外包络刚好回到 [L,U]。 *)
 dsDerivedSeedRangeAudit[group_Association, targetRanges_Association] := Module[
-   {indices, missingTargets, shiftBounds, missingShifts, seedRules},
+   {indices, missingTargets, shiftBounds, missingShifts, rawSeedRules, seedRules},
    indices = Lookup[group, "continuousIndices", {}];
    missingTargets = Select[
      indices,
@@ -623,13 +645,17 @@ dsDerivedSeedRangeAudit[group_Association, targetRanges_Association] := Module[
       "indicesWithoutAffineShifts" -> missingShifts
       |>]
     ];
-   seedRules = Table[
+   rawSeedRules = Table[
      With[
       {target = targetRanges[dsRootEnvelopeIndex[index]], bounds = shiftBounds[index]},
       index -> {First[target] - First[bounds], Last[target] - Last[bounds]}
       ],
      {index, indices}
      ];
+   (* 自动反推不得把 ISP seed 下界降到用户 target 下界以下；用户显式给出的负下界
+      保持有效，package 只避免为了覆盖升幂项而自行再向更负方向扩张。 *)
+   seedRules = rawSeedRules /. HoldPattern[(index_ -> range_List)] /; MatchQ[index, _ispN] :>
+      index -> {Max[First[targetRanges[index]], First[range]], Last[range]};
    <|
     "status" -> "passed",
     "groupOrdinal" -> Lookup[group, "groupOrdinal", Missing["groupOrdinal"]],
@@ -640,6 +666,7 @@ dsDerivedSeedRangeAudit[group_Association, targetRanges_Association] := Module[
     "continuousIndices" -> indices,
     "shiftBounds" -> Normal[shiftBounds],
     "seedRangeOffsets" -> Lookup[group, "seedRangeOffsets", {}],
+    "unclippedSeedRangeRules" -> rawSeedRules,
     "seedRangeRules" -> seedRules,
     "emptySeedDomainQ" -> AnyTrue[Last /@ seedRules, First[#] > Last[#] &]
     |>
@@ -756,7 +783,9 @@ dsGeneratedIBPArtifactContract[
 dsGeneratedIBPBatch[records_List, templates_List, context_Association, rangeAudit_Association,
    integrityAudit_Association, derivedRangeAudits_List, metaState_Association] := Module[
    {topRecords, metadataList, forbidden, eomQ, representation, ibpMode, templateHash,
-    templateRecords, firstTemplate, emptyRangeAudits, emptyMomentumQ, emptyTimeQ},
+    templateRecords, firstTemplate, emptyRangeAudits, emptyMomentumQ, emptyTimeQ,
+    numericRulesAppliedBeforeSeeds, seedNumericRules, seedCoefficientVariables,
+    sampledCoefficientVariables},
    topRecords = Select[records, Lookup[#, "sectorKey", None] === "top" &];
    templateRecords = Select[templates, AssociationQ];
    firstTemplate = If[templateRecords === {}, Missing["RawExpressionTemplates"], First[templateRecords]];
@@ -779,6 +808,15 @@ dsGeneratedIBPBatch[records_List, templates_List, context_Association, rangeAudi
    emptyRangeAudits = Select[derivedRangeAudits, TrueQ[Lookup[#, "emptySeedDomainQ", False]] &];
    emptyMomentumQ = AnyTrue[emptyRangeAudits, MemberQ[Lookup[#, "ibpClasses", {}], "qIBP"] &];
    emptyTimeQ = AnyTrue[emptyRangeAudits, MemberQ[Lookup[#, "ibpClasses", {}], "tIBP"] &];
+   numericRulesAppliedBeforeSeeds = TrueQ[
+     templateRecords =!= {} && And @@ Lookup[templateRecords, "numericRulesAppliedBeforeSeeds", False]
+     ];
+   seedNumericRules = If[numericRulesAppliedBeforeSeeds,
+     Lookup[firstTemplate, "seedNumericRules", {}], {}];
+   seedCoefficientVariables = If[numericRulesAppliedBeforeSeeds,
+     DeleteDuplicates[Flatten[Lookup[templateRecords, "seedCoefficientVariables", {}]]], {}];
+   sampledCoefficientVariables = If[numericRulesAppliedBeforeSeeds,
+     DeleteDuplicates[Flatten[Lookup[records, "sampledCoefficientVariables", {}]]], {}];
    <|
     "status" -> "generated",
     "dSIBPStatus" -> "generated",
@@ -816,8 +854,10 @@ dsGeneratedIBPBatch[records_List, templates_List, context_Association, rangeAudi
     "parityAcceptedPointCount" -> Length[records],
     "equations" -> records,
     "dSIBPContextSummary" -> dsContextSummary[context],
-    "numericRulesAppliedBeforeSeeds" -> False,
-    "seedNumericRules" -> {}
+    "numericRulesAppliedBeforeSeeds" -> numericRulesAppliedBeforeSeeds,
+    "seedNumericRules" -> seedNumericRules,
+    "seedCoefficientVariables" -> seedCoefficientVariables,
+    "sampledCoefficientVariables" -> sampledCoefficientVariables
     |>
    ];
 
@@ -940,10 +980,12 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
       "正在展开连续 IBP 指标 / Expanding continuous IBP indices",
       MapThread[{#1, #2} &, {entries, entryGroupOrdinals}],
        Function[item,
-         Module[{entry = First[item], groupOrdinal = Last[item], entryRangeAudit,
-           pointRules, parityCacheKey, parityMetadata, paritySource, paritySignature,
-           entryPointRules, templateEquation, canonicalTemplateEquation,
-           templateForbiddenNData, templateEOMCanonicalQ, expression, updated},
+          Module[{entry = First[item], groupOrdinal = Last[item], entryRangeAudit,
+            pointRules, parityCacheKey, parityMetadata, paritySource, paritySignature,
+            entryPointRules, templateEquation, canonicalTemplateEquation,
+            templateForbiddenNData, templateEOMCanonicalQ, expression,
+            numericRulesAppliedBeforeSeeds, seedNumericRules,
+            sampledCoefficientVariables, updated},
         entryRangeAudit = Lookup[
           derivedRangeByGroup,
           groupOrdinal,
@@ -992,9 +1034,17 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
           context["topology"],
           canonicalTemplateEquation
           ];
-        templateEOMCanonicalQ = FreeQ[canonicalTemplateEquation, _n];
-        Table[
-         expression = canonicalTemplateEquation /. rules;
+         templateEOMCanonicalQ = FreeQ[canonicalTemplateEquation, _n];
+         numericRulesAppliedBeforeSeeds = TrueQ[
+           AssociationQ[entry] && Lookup[entry, "numericRulesAppliedBeforeSeeds", False]
+           ];
+         seedNumericRules = If[
+           numericRulesAppliedBeforeSeeds,
+           Lookup[entry, "seedNumericRules", {}],
+           {}
+           ];
+         Table[
+          expression = canonicalTemplateEquation /. rules;
          If[postSamplingCanonicalRequiredQ,
           (* general template 已完成 EOM 与 target-sector endpoint canonical；具体整数点
              只需补做可能依赖连续指标值的用户/tadpole symmetry。 *)
@@ -1008,15 +1058,27 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
             expression === $Failed || ! dsInternalCoordinatePresentQ018[expression],
             expression,
             dsLoopSeedExpressionToPublicCoordinates[expression, context["topology"]]
-            ]
-          ];
-         updated = If[AssociationQ[entry], Join[entry, <|
+             ]
+           ];
+          (* parity 先筛点，连续指标随后取值，用户给出的有序 symmetry 再把每项送到
+             唯一代表。最后重复应用同一精确数值规则并逐项约分，保证 symmetry 产生的
+             新系数也在进入 linearData 前完成实数/数值化。 *)
+          If[numericRulesAppliedBeforeSeeds,
+           expression = dsNumericSeedExpression018[expression, seedNumericRules]
+           ];
+          sampledCoefficientVariables = If[
+            numericRulesAppliedBeforeSeeds,
+            dsSeedCoefficientVariables018[expression],
+            {}
+            ];
+          updated = If[AssociationQ[entry], Join[entry, <|
               "continuousRules" -> rules,
               "seedRangeGroupOrdinal" -> groupOrdinal,
               "targetEnvelopeRules" -> audit["rangeRules"],
               "derivedSeedRangeRules" -> entryRangeAudit["seedRangeRules"],
-              "templateCandidatePointCount" -> Length[pointRules],
-              "equation" -> expression,
+               "templateCandidatePointCount" -> Length[pointRules],
+               "sampledCoefficientVariables" -> sampledCoefficientVariables,
+               "equation" -> expression,
               "forbiddenNData" -> If[postSamplingCanonicalRequiredQ,
                 forbiddenNData[context["topology"], expression], templateForbiddenNData],
               "eomCanonicalQ" -> If[postSamplingCanonicalRequiredQ,
@@ -1026,8 +1088,10 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
              "ibpClass" -> "unknownIBP", "continuousRules" -> rules,
              "seedRangeGroupOrdinal" -> groupOrdinal,
              "targetEnvelopeRules" -> audit["rangeRules"],
-             "derivedSeedRangeRules" -> entryRangeAudit["seedRangeRules"],
-             "templateCandidatePointCount" -> Length[pointRules], "equation" -> expression,
+              "derivedSeedRangeRules" -> entryRangeAudit["seedRangeRules"],
+              "templateCandidatePointCount" -> Length[pointRules],
+              "sampledCoefficientVariables" -> sampledCoefficientVariables,
+              "equation" -> expression,
              "forbiddenNData" -> If[postSamplingCanonicalRequiredQ,
                forbiddenNData[context["topology"], expression], templateForbiddenNData],
              "eomCanonicalQ" -> If[postSamplingCanonicalRequiredQ,

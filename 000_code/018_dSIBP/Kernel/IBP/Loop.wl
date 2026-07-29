@@ -118,8 +118,10 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
       "dSIBPStatus" -> "generated",
       "dSIBPContextSummary" -> dsContextSummary[resolved],
       "contextCapabilities" -> dsContextCapabilities[resolved],
-      "contextInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
-      "numericRulesAppliedBeforeSeeds" -> TrueQ[Lookup[seedData, "numericRulesAppliedBeforeSeeds", False]],
-     "seedNumericRules" -> Lookup[seedData, "seedNumericRules", {}]
-     |>]
+       "contextInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
+       "numericRulesAppliedBeforeSeeds" -> TrueQ[Lookup[seedData, "numericRulesAppliedBeforeSeeds", False]],
+      "seedNumericRules" -> Lookup[seedData, "seedNumericRules", {}],
+      "seedCoefficientVariables" -> Lookup[seedData, "seedCoefficientVariables", {}],
+      "sampledCoefficientVariables" -> Lookup[seedData, "sampledCoefficientVariables", {}]
+      |>]
    ];

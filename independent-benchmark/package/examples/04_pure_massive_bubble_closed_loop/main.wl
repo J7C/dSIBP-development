@@ -8,7 +8,7 @@
 exampleDir = DirectoryName[$InputFileName];
 Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
-Get[FileNameJoin[{exampleDir, "active_basis_19.wl"}]];
+Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 
 (* 固定随机种子只记录参数点的来源；规则本身冻结，Kira 与回读端必须逐项复用。 *)
@@ -92,13 +92,22 @@ If[seedRangeMetadataAlias =!= seedRangeMetadata, Abort[]];
 (* 输入描述 top 目标积分包络；程序逐组反推 seed 点域、先筛 parity，再代入数值点。 *)
 generatedIBP = DSGenerateIBP[allSeeds, Sequence @@ referenceTopTargetEnvelope];
 linearData = DSLinear[generatedIBP, context, Sequence @@ linearOptions];
-activeBasis = pureMassiveBubbleActiveBasis018[parameterProbeRules];
-formalPlan = DSKiraPlan[
+linearDataWithUserMI = DSUserMI[
    linearData,
+   pureMassiveBubbleUserMIExpressions /. parameterProbeRules,
+   <|
+    "names" -> pureMassiveBubbleUserMINames,
+    "activeIndices" -> pureMassiveBubbleUserMIActiveIndices,
+    "derivativeVariables" -> pureMassiveBubbleUserMIDerivativeVariables,
+    "scalingDegrees" -> (pureMassiveBubbleUserMIScalingDegrees /. parameterProbeRules)
+    |>
+   ];
+userMIData = DSUserMI[linearDataWithUserMI];
+formalPlan = DSKiraPlan[
+   linearDataWithUserMI,
    <|
     "stage" -> "formal",
-    "preferredIntegrals" -> activeBasis["expressions"][[activeBasis["activeIndices"]]],
-    "activeBasis" -> activeBasis,
+    "activeBasis" -> Automatic,
     "numericStage" -> "symbolic",
     "coefficientRules" -> {},
     "outputDirectory" -> FileNameJoin[{exampleDir, "kira"}],
@@ -142,7 +151,7 @@ closedLoopResult = If[
       "relation" -> "PureMassiveBubble",
       "variables" -> {ss11, P0},
       "weights" -> {1, 1},
-      "degrees" -> activeBasis["scalingDegrees"]
+      "degrees" -> (pureMassiveBubbleUserMIScalingDegrees /. parameterProbeRules)
       |>
      ];
    <|"status" -> scaleData["status"], "reduction" -> reductionData, "de" -> deData, "scaling" -> scaleData|>,

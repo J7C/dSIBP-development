@@ -1,24 +1,24 @@
 (* ::Package:: *)
-(* 018 成品 example 覆盖清单。键是相对于 examples/ 的文件路径，值是该文件实际演示的
+(* 018.1 成品 example 覆盖清单。键是相对于 examples/ 的文件路径，值是该文件实际演示的
    公开函数。正式检查会同时核对文件中的调用文本和 package 的 DSPublicAPI[]。 *)
 
 <|
- "version" -> "018",
+ "version" -> "018.1",
  "coverage" -> <|
    "01_mixed_bubble_workflow.wl" -> {
-     "DSInit", "DSSeeds", "DSAllSeeds", "DSGenerateIBP", "generateIBP", "DSLinear", "DSKiraPlan"
+     "DSInit", "DSSeeds", "DSAllSeeds", "DSGenerateIBP", "generateIBP", "DSLinear", "DSReorderIntegrals", "DSKiraPlan"
      },
    "02_function_system_hankel.wl" -> {
      "DSInit", "DSInfo", "DSSeeds"
      },
    "03_single_massive_sunrise/main.wl" -> {
-     "DSKinematics", "DSInit", "DSSeeds", "DSAllSeeds", "DSMetaSeedRange",
-     "DSGenerateIBP", "DSLinear", "symmetry", "repSymmetry0"
+     "DSKinematics", "DSInit", "DSSeeds", "DSAllSeeds", "ds",
+     "symmetry", "repSymmetry0"
      },
    "04_pure_massive_bubble_closed_loop/main.wl" -> {
      "DSInit", "DSInfo", "DSSeeds", "DSAllSeeds", "DSSeedGroups",
      "DSSeedGroupMetadata", "DSMetaSeedRange", "metaSeedRange",
-     "DSGenerateIBP", "DSLinear", "DSKiraPlan", "DSKiraExport",
+     "DSGenerateIBP", "DSLinear", "DSUserMI", "DSKiraPlan", "DSKiraExport",
      "DSKiraImport", "DSDE", "DSScaleCheck"
      },
    (* 同一成品展示统一三参数 J、massive-only 公式适配与 massless PendingRederivation。 *)

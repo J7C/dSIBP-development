@@ -240,9 +240,43 @@ dsKiraArtifactIdentityQ[
 
 dsKiraActiveBasisData[manifest_Association] := Lookup[manifest, "activeBasis", <|"status" -> "disabled", "count" -> 0|>];
 
+dsKiraUserMIDataQ[userData_Association, activeData_Association] := Module[
+   {count, expressions, activeIndices, tokens, activeTokens, backendIDs, backendTokens, payload},
+   count = Lookup[userData, "count", -1];
+   expressions = Lookup[userData, "expressions", {}];
+   activeIndices = Lookup[userData, "activeIndices", {}];
+   tokens = Lookup[userData, "tokens", {}];
+   activeTokens = Lookup[userData, "activeTokens", {}];
+   backendIDs = Lookup[userData, "backendIDs", {}];
+   backendTokens = Lookup[userData, "backendTokens", {}];
+   payload = KeyDrop[userData, {
+      "mappingDigest", "backendIDs", "backendTokens", "activeBackendIDs",
+      "activeBackendTokens", "userMIToBackendRules", "backendToUserMIRules"
+      }];
+   Lookup[userData, "status", "failed"] === "configured" &&
+    count === Lookup[activeData, "count", -2] &&
+    expressions === Lookup[activeData, "expressions", Missing["expressions"]] &&
+    activeIndices === Lookup[activeData, "activeIndices", Missing["activeIndices"]] &&
+    tokens === (userMI /@ Range[count]) && activeTokens === tokens[[activeIndices]] &&
+    backendIDs === Lookup[activeData, "ids", Missing["ids"]] &&
+    backendTokens === (Tuserweight /@ backendIDs) &&
+    Lookup[userData, "activeBackendIDs", {}] === Lookup[activeData, "activeIDs", Missing["activeIDs"]] &&
+    Lookup[userData, "activeBackendTokens", {}] === (Tuserweight /@ Lookup[activeData, "activeIDs", {}]) &&
+    Lookup[userData, "userMIToBackendRules", {}] === Thread[tokens -> backendTokens] &&
+    Lookup[userData, "backendToUserMIRules", {}] === Thread[backendTokens -> tokens] &&
+    TrueQ[Lookup[userData, "reversibleQ", False]] &&
+    Lookup[userData, "rank", -1] === count &&
+    Lookup[userData, "mappingDigest", Missing["mappingDigest"]] === dsKiraExpressionDigest[payload]
+   ];
+
+
+dsKiraUserMIDataQ[None, _Association] := True;
+dsKiraUserMIDataQ[_, _Association] := False;
+
+
 dsKiraActiveBasisDataQ[data_Association] := Module[
    {status, count, activeCount, names, expressions, ids, tokens, activeIndices, activeNames,
-    activeExpressions, activeIDs, activeTokens, auxiliaryIDs, variables, targetIDs},
+    activeExpressions, activeIDs, activeTokens, auxiliaryIDs, variables, targetIDs, userData},
    status = Lookup[data, "status", "disabled"];
    If[status === "disabled", Return[True]];
    count = Lookup[data, "count", -1];
@@ -259,6 +293,7 @@ dsKiraActiveBasisDataQ[data_Association] := Module[
    auxiliaryIDs = Lookup[data, "auxiliaryIDs", {}];
    variables = Lookup[data, "derivativeVariables", {}];
    targetIDs = Lookup[data, "targetIntegralIDs", {}];
+   userData = Lookup[data, "userMI", None];
    status === "configured" && IntegerQ[count] && count > 0 && IntegerQ[activeCount] && activeCount > 0 &&
     Length[names] === count && Length[expressions] === count && Length[ids] === count && Length[tokens] === count &&
     And @@ (StringQ[#] && # =!= "" & /@ names) && DuplicateFreeQ[names] &&
@@ -268,7 +303,8 @@ dsKiraActiveBasisDataQ[data_Association] := Module[
     activeIDs === ids[[activeIndices]] && activeNames === names[[activeIndices]] &&
     activeExpressions === expressions[[activeIndices]] && activeTokens === (Tuserweight /@ activeIDs) &&
     auxiliaryIDs === Complement[ids, activeIDs] && variables =!= {} &&
-    DuplicateFreeQ[targetIDs] && Complement[activeIDs, targetIDs] === {}
+    DuplicateFreeQ[targetIDs] && Complement[activeIDs, targetIDs] === {} &&
+    dsKiraUserMIDataQ[userData, data]
    ];
 
 dsKiraBackendMasterObject[id_Integer, activeIDs_List, idToJ_Association] := If[
@@ -284,7 +320,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     coefficientQ, coefficientVariableMap, backendImaginaryUnit, backendVariableNames, allowedBackendVariableNames,
     backendEnergyConvention, backendEnergyConventionQ,
     gaussianPhaseGauge, gaussianPhaseGaugeQ,
-    backendCoefficientQ, activeData, activeDataQ, activeQ, relationIDs, activeIDs, auxiliaryIDs, activeExpressions, activeTokens,
+    backendCoefficientQ, activeData, activeDataQ, activeQ, relationIDs, activeIDs, auxiliaryIDs, activeExpressions, activeTokens, activeUserMITokens,
     activeMasterOrderQ, auxiliaryNotMastersQ, recognizedIDs, backendMasters, boundaryMasterIDs, boundaryMasters,
      checks, diagnostics, issues, reductionRules, masters, masterTokens, returnedMasterIDs, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
@@ -364,6 +400,10 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
    auxiliaryIDs = If[activeQ, Lookup[activeData, "auxiliaryIDs", {}], {}];
    activeExpressions = If[activeQ, Lookup[activeData, "activeExpressions", {}], {}];
    activeTokens = If[activeQ, Lookup[activeData, "activeTokens", {}], {}];
+   activeUserMITokens = If[activeQ,
+     Lookup[Lookup[activeData, "userMI", <||>], "activeTokens", activeTokens],
+     {}
+     ];
    activeMasterOrderQ = ! activeQ || Select[masterIDs, MemberQ[activeIDs, #] &] === activeIDs;
    auxiliaryNotMastersQ = ! activeQ || Intersection[auxiliaryIDs, masterIDs] === {};
    recognizedIDs = Join[mapIDs, relationIDs];
@@ -411,7 +451,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
    boundaryMasterIDs = Complement[masterIDs, relationIDs];
    boundaryMasters = Lookup[idToJ, boundaryMasterIDs, {}];
    masters = If[activeQ, activeExpressions, backendMasters];
-   masterTokens = If[activeQ, activeTokens, masters];
+   masterTokens = If[activeQ, activeUserMITokens, masters];
    returnedMasterIDs = If[activeQ, activeIDs, masterIDs];
    reductionRules = reductionRulesRaw /. Normal[Association[repKira2J]];
    <|
@@ -422,6 +462,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     "backendReductionRules" -> reductionRulesBackend,
     "masters" -> masters,
     "masterTokens" -> masterTokens,
+    "backendMasterTokens" -> If[activeQ, activeTokens, backendMasters],
     "masterIDs" -> returnedMasterIDs,
     "backendMasters" -> backendMasters,
     "backendMasterIDs" -> masterIDs,

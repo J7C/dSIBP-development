@@ -1,11 +1,11 @@
 (* ::Package:: *)
 
-(* 本文件为 DSGenerateIBP 产生的 linearData 构造 reference-style 积分顺序、
-   预约化 targets 和解析 derivative closure。package 只生成计划与输入，不运行 Kira。 *)
+(* 本文件按 linearData 已冻结的积分顺序构造预约化 targets 和解析 derivative closure。
+   package 只生成计划与输入，不运行 Kira。 *)
 
 
 (* ::Chapter:: *)
-(*018 Kira 排序与两阶段 reduction 计划*)
+(*018 Kira 两阶段 reduction 计划*)
 
 DSKiraPlan::badlinear = "DSKiraPlan 需要 DSLinear 返回的 backend-neutral linearData。 DSKiraPlan requires backend-neutral linearData returned by DSLinear.";
 DSKiraPlan::badspec = "Kira 计划配置无效：`1`。 The Kira plan specification is invalid: `1`.";
@@ -18,44 +18,45 @@ Options[DSKiraPlan] = {ProgressReporting -> Automatic};
 
 
 (* ::Section::Closed:: *)
-(*Reference-style 积分顺序*)
+(*既定积分顺序与显式重排*)
+
+DSReorderIntegrals::badlinear = "DSReorderIntegrals 需要 DSLinear 返回的 backend-neutral linearData。";
+DSReorderIntegrals::badorder = "积分顺序必须是由现有 J 或积分 ID 组成的非空列表。";
+
+
+DSReorderIntegrals[linearData_Association, order_List] := Module[{result},
+   If[Lookup[linearData, "dSIBPStatus", "failed"] =!= "generated" ||
+     ! ListQ[Lookup[linearData, "integralList", Missing["integralList"]]],
+    Message[DSReorderIntegrals::badlinear];
+    Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
+    ];
+   If[Lookup[Lookup[linearData, "activeBasis", <||>], "status", "disabled"] === "configured",
+    Message[DSReorderIntegrals::badorder];
+    Return[<|"status" -> "failed", "reason" -> "reorderMustPrecedeUserMI"|>]
+    ];
+   If[order === {},
+    Message[DSReorderIntegrals::badorder];
+    Return[<|"status" -> "failed", "reason" -> "emptyIntegralOrder"|>]
+    ];
+   result = reorderLinearSystemIntegrals[linearData, order];
+   Join[result, <|
+     "integralOrderAuthority" -> "linearData.integralList",
+     "integralOrderDigest" -> dsKiraExpressionDigest[result["integralList"]]
+     |>]
+   ];
+
+
+DSReorderIntegrals[_, _] := (Message[DSReorderIntegrals::badorder]; <|"status" -> "failed", "reason" -> "invalidIntegralOrder"|>);
 
 dsKiraPlanIntegralFromItem[item_, linearData_Association] := Which[
    Head[item] === J && MemberQ[linearData["integralList"], item], item,
-   IntegerQ[item] && 1 <= item <= linearData["integralCount"], linearData["integralList"][[item]],
+   IntegerQ[item] && 1 <= item <= Length[linearData["integralList"]], linearData["integralList"][[item]],
    True, Missing["UnknownIntegral", item]
    ];
 
 
 dsKiraPlanIntegralList[items_List, linearData_Association] := DeleteDuplicates@DeleteMissing[
    dsKiraPlanIntegralFromItem[#, linearData] & /@ items
-   ];
-
-
-dsKiraPlanReferenceKey[int_J, preferred_List, metadata_List] := Module[
-   {allContinuous, aValues, bValues, ispValues, nValues, negativePenalty, preferredPosition,
-    sectorKey, sectorRank},
-   aValues = numericIndexValue /@ int[[1]];
-   bValues = numericIndexValue /@ Cases[Flatten[int[[2]]], _b | _bS];
-   ispValues = numericIndexValue /@ int[[3]];
-   nValues = numericIndexValue /@ Cases[Flatten[int[[2]]], _n];
-   allContinuous = Join[aValues, bValues, ispValues];
-   negativePenalty = If[AnyTrue[allContinuous, # < 0 &], 50, 0];
-   preferredPosition = FirstPosition[preferred, int, Missing["NotPreferred"], {1}, Heads -> False];
-   sectorKey = integralSectorKey[int, metadata];
-   sectorRank = If[sectorKey === "top", 1, 2 + FirstPosition[Lookup[metadata, "sectorKey", {}], sectorKey, {10^6}][[1]]];
-   {
-    If[Head[preferredPosition] === Missing, 1, 0],
-    If[Head[preferredPosition] === Missing, 10^9, First[preferredPosition]],
-    Total[Abs /@ allContinuous], negativePenalty, sectorRank,
-    Total[aValues], aValues, bValues, ispValues, nValues, ToString[int, InputForm]
-    }
-   ];
-
-
-dsKiraPlanReferenceOrder[linearData_Association, preferred_List] := SortBy[
-   linearData["integralList"],
-   dsKiraPlanReferenceKey[#, preferred, Lookup[linearData, "sectorMetadataList", {}]] &
    ];
 
 
@@ -97,8 +98,8 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
       "completeSystemQ" -> Lookup[linearData, "completeSystemQ", False]|>]
     ];
    preferred = dsKiraPlanIntegralList[Lookup[spec, "preferredIntegrals", {}], linearData];
-   order = dsKiraPlanReferenceOrder[linearData, preferred];
-   ordered = reorderLinearSystemIntegrals[linearData, order];
+   order = linearData["integralList"];
+   ordered = linearData;
    coefficientRules = Lookup[spec, "coefficientRules", {}];
    outputDirectory = Lookup[spec, "outputDirectory", None];
    jobOptions = Lookup[spec, "jobOptions", Automatic];
@@ -118,7 +119,7 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
       "status" -> "planned", "kiraPlanQ" -> True, "stage" -> stage,
       "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
       "linearData" -> linearData, "integralOrder" -> order,
-      "orderingConvention" -> "referenceActiveThenComplexityPenaltySectorIndices",
+      "orderingConvention" -> "linearDataIntegralList",
       "preferredIntegrals" -> preferred, "targetIntegrals" -> candidates,
       "targetCount" -> Length[candidates], "activeBasis" -> None,
       "numericStage" -> "symbolic", "coefficientRules" -> coefficientRules,
@@ -126,8 +127,11 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
       "phaseIsolation" -> <|"stage" -> stage, "requiresSeparateOutputDirectoryQ" -> True|>
       |>]
     ];
-   activeSetting = Lookup[spec, "activeBasis", Missing["activeBasis"]];
-   If[! AssociationQ[activeSetting],
+   activeSetting = Lookup[spec, "activeBasis", Automatic];
+   If[! AssociationQ[activeSetting] && ! (
+       activeSetting === Automatic &&
+        Lookup[Lookup[ordered, "activeBasis", <||>], "status", "disabled"] === "configured"
+       ),
     Message[DSKiraPlan::badbasis, "missing activeBasis Association"];
     Return[<|"status" -> "failed", "reason" -> "missingActiveBasis"|>]
     ];
@@ -153,7 +157,7 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
     "status" -> "planned", "kiraPlanQ" -> True, "stage" -> stage,
     "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
     "linearData" -> linearData, "integralOrder" -> order,
-    "orderingConvention" -> "referenceActiveThenComplexityPenaltySectorIndices",
+    "orderingConvention" -> "linearDataIntegralList",
     "preferredIntegrals" -> preferred, "activeBasis" -> activeSetting,
     "activeBasisPreview" -> activeData,
     "preparedLinearData" -> preview,
@@ -195,7 +199,6 @@ DSKiraExport[plan_Association] /; dsKiraPlanQ[plan] := Module[
    result = DSKiraExport[
      prepared,
      KiraActiveBasis -> If[Lookup[plan, "stage", "formal"] === "formal", Automatic, None],
-     KiraIntegralOrder -> Automatic,
      KiraTargetIntegrals -> Lookup[plan, "targetIntegrals", Automatic],
      KiraCoefficientRules -> plan["coefficientRules"],
      KiraJobOptions -> plan["jobOptions"],

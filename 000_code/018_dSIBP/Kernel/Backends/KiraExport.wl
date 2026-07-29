@@ -57,9 +57,9 @@ dsKiraAttachActiveBasis[linearData_Association, setting_] /; setting === None ||
 
 dsKiraAttachActiveBasis[linearData_Association, setting_Association] := Module[
    {expressions, count, names, activeIndices, activeCount, activeExpressions, activeNames, topo, variables, allowedVariables, badVariables, degrees,
-    oldCount, oldRules, idShift, shiftedRules, shiftedEquations, integralIndex,
-    basisEquations, badEquations, rawDerivatives, derivativeIntegrals, missingDerivativeIntegrals,
-    relationIDs, activeIDs, auxiliaryIDs, derivativeTargetIDs, targetIDs, activeData},
+     oldCount, oldRules, idShift, shiftedRules, shiftedEquations, integralIndex,
+     basisEquations, badEquations, rawDerivatives, derivativeIntegrals, missingDerivativeIntegrals,
+     relationIDs, activeIDs, auxiliaryIDs, derivativeTargetIDs, targetIDs, userMIData, activeData},
    If[Lookup[linearData, "representation", None] === "sectorTaggedJ[vertexPacks]",
     Return[<|"status" -> "invalidActiveBasis", "reason" -> "treeActiveBasisNotSupported",
       "comment" -> "tree Kira IDs already include sector identity; active-basis derivatives require a separate tagged closure."|>]
@@ -133,6 +133,17 @@ dsKiraAttachActiveBasis[linearData_Association, setting_Association] := Module[
     ];
    derivativeTargetIDs = Lookup[integralIndex, derivativeIntegrals, {}];
    targetIDs = DeleteDuplicates[Join[activeIDs, derivativeTargetIDs]];
+   userMIData = Lookup[setting, "userMIData", None];
+   If[AssociationQ[userMIData],
+    userMIData = Join[userMIData, <|
+       "backendIDs" -> relationIDs,
+       "backendTokens" -> (Tuserweight /@ relationIDs),
+       "activeBackendIDs" -> activeIDs,
+       "activeBackendTokens" -> (Tuserweight /@ activeIDs),
+       "userMIToBackendRules" -> Thread[(userMI /@ relationIDs) -> (Tuserweight /@ relationIDs)],
+       "backendToUserMIRules" -> Thread[(Tuserweight /@ relationIDs) -> (userMI /@ relationIDs)]
+       |>]
+    ];
    activeData = <|
      "status" -> "configured",
      "count" -> count,
@@ -155,7 +166,8 @@ dsKiraAttachActiveBasis[linearData_Association, setting_Association] := Module[
      "derivativeTargetIDs" -> derivativeTargetIDs,
      "targetIntegralIDs" -> targetIDs,
      "scalingDegrees" -> degrees,
-     "sourceIntegralCount" -> oldCount
+     "sourceIntegralCount" -> oldCount,
+     "userMI" -> userMIData
      |>;
    Join[linearData, <|
      "integralRules" -> shiftedRules,
@@ -350,9 +362,9 @@ dsKiraExportManifest[exportData_Association, linearData_Association] := <|
    |>;
 
 DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
-   {orderedLinearData, preparedLinearData, activeSetting = OptionValue[KiraActiveBasis], effectiveTargets,
-     makeOptions, exportData, manifest, deVariableRuleAudit, numericStage = OptionValue[KiraNumericStage], outputDirectory = OptionValue[OutputDirectory], manifestPath,
-    progress = OptionValue[ProgressReporting], integralOrder = OptionValue[KiraIntegralOrder]},
+   {preparedLinearData, activeSetting = OptionValue[KiraActiveBasis], effectiveTargets,
+      makeOptions, exportData, manifest, deVariableRuleAudit, numericStage = OptionValue[KiraNumericStage], outputDirectory = OptionValue[OutputDirectory], manifestPath,
+     progress = OptionValue[ProgressReporting]},
     If[! KeyExistsQ[linearData, "linearEquations"],
      Message[DSKiraExport::badlinear]; dsErrorPrint["输入缺少 linearEquations。 The input does not contain linearEquations."]; Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
      ];
@@ -367,11 +379,7 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
     Return[<|"status" -> "failed", "reason" -> "incompleteSystemForFormalReduction",
       "completeSystemQ" -> Lookup[linearData, "completeSystemQ", False]|>]
     ];
-   If[Lookup[validateKiraIntegralOrderSpec[integralOrder], "status", "invalid"] =!= "ok",
-    Message[DSKiraExport::badlinear]; Return[<|"status" -> "failed", "reason" -> "invalidKiraIntegralOrder"|>]
-    ];
-   orderedLinearData = If[ListQ[integralOrder], reorderLinearSystemIntegrals[linearData, integralOrder], linearData];
-   preparedLinearData = dsKiraAttachActiveBasis[orderedLinearData, activeSetting];
+   preparedLinearData = dsKiraAttachActiveBasis[linearData, activeSetting];
     If[Lookup[preparedLinearData, "status", "missing"] =!= "generated",
     Message[DSKiraExport::badbasis, Lookup[preparedLinearData, "reason", "unknown"]];
     dsErrorPrint["active basis 或其导数 target closure 未通过导出门禁。 The active basis or its derivative target closure failed the export gate."]; Return[preparedLinearData]
@@ -393,15 +401,14 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
     effectiveTargets = dsKiraEffectiveTargets[preparedLinearData, OptionValue[KiraTargetIntegrals]];
     makeOptions = DeleteCases[
       FilterRules[{opts}, Options[makeKiraExportData]],
-      HoldPattern[(KiraIntegralOrder | KiraTargetIntegrals | KiraNumericStage) -> _]
+       HoldPattern[(KiraTargetIntegrals | KiraNumericStage) -> _]
      ];
    exportData = dsStageRun[
      "序列化 Kira 基础输入 / Serializing basic Kira input",
      makeKiraExportData[
       preparedLinearData,
       Sequence @@ makeOptions,
-      KiraIntegralOrder -> Automatic,
-      KiraTargetIntegrals -> effectiveTargets
+       KiraTargetIntegrals -> effectiveTargets
       ],
      progress
      ];

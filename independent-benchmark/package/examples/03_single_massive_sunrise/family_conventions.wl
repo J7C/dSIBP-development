@@ -1,6 +1,17 @@
 (* ::Package:: *)
-(* Single-massive sunrise 的离散对称性约定。顶点交换反转每条 full line 的端点指标；
-   两条 massless 平行线交换时，同时交换对应 line pack 与成对 ISP 指标。 *)
+(* Single-massive sunrise 的离散对称性与 odd/odd parity convention。顶点交换
+   反转每条 full line 的端点指标；两条 massless 平行线交换时，同时交换对应 line
+   pack 与成对 ISP 指标。本例只构造 general seeds 和 general 参数微分算符。 *)
+
+
+(* ::Chapter:: *)
+(*Sunrise odd/odd parity*)
+
+sunriseParityConstraints0 = {
+   b[e1] + n[e1, 1] + n[e1, 2] -> 1,
+   b[e2] + n[e2, 1] + n[e2, 2] +
+     b[e3] + n[e3, 1] + n[e3, 2] -> 1
+   };
 
 
 (* ::Chapter:: *)
@@ -66,7 +77,8 @@ sunriseMasslessLineSwapNeededQ[
 sunriseMasslessLineSwapNeededQ[_] := False;
 
 
-(* general 连续指标保持符号时不强行排序；DSGenerateIBP 代入整数点后执行这两个独立交换。 *)
+(* general 连续指标保持符号时不强行排序；本例只用一个显式整数积分检查规则方向，
+   不展开连续 seed 点。 *)
 sunriseCanonical[int_J] := Module[{result = int},
    If[sunriseVertexSwapNeededQ[result], result = sunriseSwapVertices[result]];
    If[sunriseMasslessLineSwapNeededQ[result], result = sunriseSwapMasslessLines[result]];

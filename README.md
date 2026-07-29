@@ -1,16 +1,32 @@
 # dSIBP-development
 
-这是正式 `dSIBP` Mathematica 程序包的私有开发仓库；仓库名用于区分开发工程与正式发布包，package 名称和 context 仍为 `dSIBP``。项目面向 de Sitter 圈图生成通用 IBP seed，目标是支持任意圈数、任意拓扑以及 massive/massless 混合函数族，用统一 `J` 表示生成 time-IBP、loop-momentum IBP、独立变量微分方程 seed、即时 EOM/canonical seed，并转换为后端中立线性系统。Kira 只是可选 serializer；package 不负责运行 reduction。
+这是 de Sitter 积分计算的私有开发仓库。仓库同时维护 topology-driven `dSIBP`、公式直接计算包 MadStree，以及数值微分方程后端 FlintNDE；三者使用不同的输入和职责边界，不能互相替代。
+
+## 仓库组件
+
+| 组件 | 当前入口 | 职责与状态 |
+| --- | --- | --- |
+| `dSIBP` | `000_code/018_dSIBP/`；正式单文件 `independent-benchmark/package/package_018.1.wl` | 从任意圈数/拓扑及 massive/massless 混合输入生成 time/loop IBP、参数微分 seed 和 backend-neutral `linearData`，可序列化到 Kira，但不运行 reduction。原公式型 tree reduction/dlog 入口保持禁用。 |
+| MadStree | `package-MadStree/load_current.wl`；当前版本 `versions/MadStree-v0.3/` | 不生成一般 IBP 方程组，直接由张量公式构造 tree/time-only graph 的主积分、迭代约化和 block-triangular dlog DE；支持 massless quotient 二态与 `RedundantH` 四态。T1--T6 独立验证为 `20/20,12/12,18/18,15/15,17/17,16/16`，开发回归为 `115/115`。 |
+| FlintNDE | `000_FlintNDE/code/package/`，Python import 名 `flintnde` | 对给定矩阵 DE 和边界数据执行任意精度普通点/局部奇点展开、路径规划、refinement 输运和无名 `save` 点即时输出。当前回归为 `68/68`；一般代数扩域、ramification 和 Stokes matching 仍 fail closed。 |
+
+MadStree 在 Mathematica 内通过一个集中配置的仓库相对路径自动调用 FlintNDE。MadStree 负责 dS 主积分顺序、dlog 系统、Frobenius/sector-leading 边界和物理系数组合；FlintNDE 只负责检查局部奇点能力并进行数值展开与输运。`dSIBP` 当前不调用这条公式数值链。
+
+MadStree v0.3 的自动无穷远边界目前只认证单顶点 family 和两顶点单 massive `G++` family。其它 mixed/massless 多 sector 图的公式约化、dlog 与 boundary chart 可以生成，但通用 Frobenius producer 尚未认证，`MSBoundaryData`/`MSEvaluateTree` 对这些输入结构化 fail closed，不回退到有限点定义积分。
+
+MadStree/FlintNDE 的运行文件和保存点结果归调用脚本目录所有，不写入 package 源码目录。开发测试产物放各自 `test/results_test/` 或 `results_temp/`；独立验证只长期保存报告与轻量 `results/summary.wl`。
 
 ## 先看这里
 
 - 当前任务、真实完成状态和交接顺序：`研究计划与研究进度.md`
 - 用户手册：`000_note/01_dS_ibp_package/dS_ibp_package.tex`，PDF 同目录
-- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；当前正式程序/手册为 `package_018.wl/pdf`
-- 三个长期典型 examples：`03_single_massive_sunrise/`、`04_pure_massive_bubble_closed_loop/`、`06_mix_bubble_tree/`；分别覆盖 `{kL,kE}` 两标度 single-massive sunrise/ISP/symmetry、dlog/reference/scaling 闭环和 `kL/kE` 加 cycle/bridge contraction
+- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；当前正式程序/手册为 `package_018.1.wl/pdf`
+- 三个长期典型 examples：`03_single_massive_sunrise/`、`04_pure_massive_bubble_closed_loop/`、`06_mix_bubble_tree/`；分别覆盖 single-massive sunrise 的 general seeds/参数微分算符、dlog/reference/scaling 闭环和 `kL/kE` 加 cycle/bridge contraction。sunrise example 不撒点、不生成 `linearData`、不运行 Kira/DE/scaling
 - 长期总体架构：`000_note/dS_IBP_package_plan.md`
 - 设计约定：`000_note/dS_IBP_package_design_note.md`
 - 技术公式：`000_note/dS_IBP_package_tech_note.tex`
+- 独立直接公式与数值包：`package-MadStree/`；从根目录运行 `Get["package-MadStree/load_current.wl"]` 可加载当前工作版本。版本 README、`DEVELOPMENT_PLAN.md` 和 `Documentation/tree_formula.pdf` 说明共同-theta simultaneous contact、time-only 圈图、直接递推/dlog、自动边界证书及 FlintNDE 接口。
+- 数值 DE 后端：`000_FlintNDE/README.md`；安装/导入说明见 `000_FlintNDE/code/package/README.md`，算法与能力边界见 `000_FlintNDE/note/FlintNDE.pdf`。
 - 给其它 AI 的独立推导任务书：`independent-benchmark/independent-benchmark.md`
 
 每次收到新任务，先更新 `研究计划与研究进度.md`；不要把逐任务 todolist 写进总体 plan。
@@ -20,7 +36,7 @@
 ## 当前主线
 
 - `000_code/018_dSIBP/`：当前开发主线，标准入口为 `Needs["dSIBP`"]`。
-- `independent-benchmark/package/package_018.wl`：当前正式冻结单文件兼容入口；`010`--`017` 为只读基线/历史版本。
+- `independent-benchmark/package/package_018.1.wl`：当前正式冻结单文件兼容入口；`010`--`017` 为只读基线/历史版本。
 - `000_code/015_dSIBP/`、`000_code/015_dS_ibp_general.wl`：冻结的 015 基线，不回写。
 - `000_code/014_dSIBP/`、`000_code/014_dS_ibp_general.wl`：冻结的 014 基线。
 - `000_code/013_dS_ibp_general.wl`：已通过独立验收的稳定版本，新增 pure time-IBP/tree 模块。

@@ -8,7 +8,7 @@
 exampleDir = DirectoryName[$InputFileName];
 Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
-Get[FileNameJoin[{exampleDir, "active_basis_19.wl"}]];
+Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 
 (* 与 export 端共享冻结的精确参数点，不在后处理阶段重新抽取或改值。 *)
@@ -78,7 +78,7 @@ scaleData = DSScaleCheck[
     "relation" -> "PureMassiveBubble",
     "variables" -> {ss11, P0},
     "weights" -> {1, 1},
-    "degrees" -> (pureMassiveBubbleScalingDegrees /. parameterProbeRules)
+    "degrees" -> (pureMassiveBubbleUserMIScalingDegrees /. parameterProbeRules)
     |>
    ];
 
@@ -86,11 +86,12 @@ scaleData = DSScaleCheck[
 (* ::Chapter:: *)
 (*闭环验收*)
 
-activeBasis = pureMassiveBubbleActiveBasis018[parameterProbeRules];
-expectedMasters = activeBasis["expressions"][[activeBasis["activeIndices"]]];
+expectedMasters = (pureMassiveBubbleUserMIExpressions /. parameterProbeRules)[[pureMassiveBubbleUserMIActiveIndices]];
 expectedMasterIDs = Range[19];
-expectedMasterTokens = Tuserweight /@ expectedMasterIDs;
+expectedMasterTokens = userMI /@ expectedMasterIDs;
+expectedBackendMasterTokens = Tuserweight /@ expectedMasterIDs;
 sourceManifest = Lookup[reductionData, "sourceManifest", <||>];
+userMIData = DSUserMI[reductionData];
 probeSymbols = First /@ parameterProbeRules;
 dePublicData = HoldComplete[
    Lookup[deData, "masters", {}],
@@ -118,7 +119,9 @@ checks = <|
    "activeMasterCount" -> (Length[Lookup[reductionData, "masters", {}]] === 19),
    "activeMasterIDs" -> (Lookup[reductionData, "masterIDs", {}] === expectedMasterIDs),
    "activeMasterTokens" -> (Lookup[reductionData, "masterTokens", {}] === expectedMasterTokens),
+   "backendMasterTokens" -> (Lookup[reductionData, "backendMasterTokens", {}] === expectedBackendMasterTokens),
    "activeMasterOrder" -> (Lookup[reductionData, "masters", {}] === expectedMasters),
+   "userMIMapping" -> TrueQ[Lookup[userMIData, "reversibleQ", False]],
    "auxiliaryIDsNotMasters" -> (Intersection[{20, 21}, Lookup[reductionData, "backendMasterIDs", {}]] === {}),
    "completeTargetCoverage" -> TrueQ[Lookup[validationChecks, "completeTargetCoverage", False]],
    "rhsContainsOnlyMasters" -> TrueQ[Lookup[validationChecks, "rhsContainsOnlyMasters", False]],

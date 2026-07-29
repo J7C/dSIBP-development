@@ -807,13 +807,20 @@ lineFunctionPreset018[line_Association] := Lookup[
    ];
 
 
-parityFunctionSystemUsableQ018[topo_Association] := Module[{massiveLines, presets},
-   massiveLines = Select[
-     topo["lines"],
-     Lookup[#, "massType", "massive"] === "massive" &
-     ];
-   presets = lineFunctionPreset018 /@ massiveLines;
-   massiveLines =!= {} && And @@ (MemberQ[{"h", "H"}, #] & /@ presets)
+(* Parity transport only needs every line building block to have a proved GF(2)
+   closure. Massive h/H and massless exponential lines both satisfy this contract;
+   an unknown custom function system remains fail closed. *)
+parityLineFunctionSystemUsableQ018[line_Association] := Switch[
+   Lookup[line, "massType", "massive"],
+   "massive", MemberQ[{"h", "H"}, lineFunctionPreset018[line]],
+   "massless", Lookup[line, "bbType", Missing["NoMasslessPreset"]] === "exp",
+   _, False
+   ];
+
+
+parityFunctionSystemUsableQ018[topo_Association] := Module[{lines},
+   lines = Lookup[topo, "lines", {}];
+   lines =!= {} && And @@ (parityLineFunctionSystemUsableQ018 /@ lines)
    ];
 
 
@@ -874,7 +881,7 @@ parityMetadataForSector018[topo_Association] := Module[
       "parityUsableQ" -> usableFunctionQ, "constraints" -> {}|>]
     ];
    If[! usableFunctionQ,
-    Return[<|"status" -> "disabled", "reason" -> "nonHankelFunctionSystem",
+    Return[<|"status" -> "disabled", "reason" -> "unsupportedParityFunctionSystem",
       "parityUsableQ" -> False, "constraints" -> {}|>]
     ];
    normalized = normalizeParityConstraints018[raw];
@@ -998,9 +1005,54 @@ treeFormulaPendingRederivation018[operation_String, context_Association] := Modu
 (* ::Chapter:: *)
 (*018 template-only DSSeeds*)
 
+(* 数值规则在 general template 密封前逐线性项应用。J 的指标保持符号；这里只化简
+   coefficient，并把剩余变量作为 producer 诊断交给后续 full-numeric workflow 检查。 *)
+dsNumericSeedTerm018[term_, rules_List] := Module[{evaluated, integrals, integral, coefficient},
+   evaluated = term /. rules;
+   integrals = DeleteDuplicates[Cases[evaluated, _J, {0, Infinity}]];
+   Which[
+    Length[integrals] === 1,
+    integral = First[integrals];
+    coefficient = Cancel[Together[evaluated/integral]];
+    coefficient integral,
+    True,
+    Cancel[Together[evaluated]]
+    ]
+   ];
+
+
+dsNumericSeedExpression018[expr_, rules_List] :=
+  Total[dsNumericSeedTerm018[#, rules] & /@ linearTerms[Expand[expr]]];
+
+
+dsSeedCoefficientVariables018[expr_] := Module[{coefficients},
+   coefficients = Map[
+     Function[term,
+      With[{integrals = DeleteDuplicates[Cases[term, _J, {0, Infinity}]]},
+       If[Length[integrals] === 1, Cancel[Together[term/First[integrals]]], term]
+       ]
+      ],
+     linearTerms[Expand[expr]]
+     ];
+   DeleteDuplicates[Quiet@Check[Variables[coefficients], {}]]
+   ];
+
+
+dsApplyNumericRulesToSeedTemplate018[entry_Association, rules_List] := Module[{equation},
+   equation = dsNumericSeedExpression018[Lookup[entry, "equation", 0], rules];
+   Join[entry, <|
+     "equation" -> equation,
+     "numericRulesAppliedBeforeSeeds" -> True,
+     "seedNumericRules" -> rules,
+     "seedCoefficientVariables" -> dsSeedCoefficientVariables018[equation]
+     |>]
+   ];
+
 DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
    {resolved, seedSkeleton, templateData, sealedTemplates, seedGroups, seedGroupMetadata,
-    seedRangeMetadata, discoveredIndices, progress = OptionValue[ProgressReporting]},
+    seedRangeMetadata, discoveredIndices, applyNumericRules,
+    seedNumericRules, seedCoefficientVariables, seedContinuousCoefficientVariables,
+    seedResidualCoefficientVariables, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
     Message[DSSeeds::noinit];
@@ -1022,7 +1074,9 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
      |>;
    templateData = dsStageRun[
      "构造全部 reachable-sector 离散态 seed 模板 / Building all reachable-sector discrete-state seed templates",
-     If[Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly",
+     If[
+      Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly" &&
+       ! treeFormulaMasslessPendingQ018[resolved],
       dsPureTimeDirectTemplateData018[resolved],
       dsLoopSeedTemplateData[resolved, seedSkeleton]
       ],
@@ -1032,10 +1086,33 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
     Message[DSSeeds::failed, Lookup[templateData, "reason", "templateGenerationFailed"]];
     Return[Join[seedSkeleton, <|"status" -> "failed", "templateData" -> templateData|>]]
     ];
+   applyNumericRules = TrueQ[OptionValue[ApplyNumericRules]];
+   seedNumericRules = If[applyNumericRules, Lookup[resolved["topology"], "numericRules", {}], {}];
+   If[applyNumericRules,
+    templateData = Join[templateData, <|
+       "allSeeds" -> (dsApplyNumericRulesToSeedTemplate018[#, seedNumericRules] & /@
+          Lookup[templateData, "allSeeds", {}])
+       |>]
+    ];
    sealedTemplates = dsSealSeedTemplates[templateData["allSeeds"], resolved];
+   seedCoefficientVariables = If[
+     applyNumericRules,
+     DeleteDuplicates[Flatten[Lookup[sealedTemplates, "seedCoefficientVariables", {}]]],
+     {}
+     ];
    seedGroups = dsDefaultSeedGroups[sealedTemplates];
    seedGroupMetadata = dsSeedGroupMetadataFromGroups[seedGroups];
    discoveredIndices = DeleteDuplicates[Flatten[dsEntrySeedVariables /@ sealedTemplates]];
+   seedContinuousCoefficientVariables = If[
+     applyNumericRules,
+     Select[seedCoefficientVariables, MemberQ[discoveredIndices, #] &],
+     {}
+     ];
+   seedResidualCoefficientVariables = If[
+     applyNumericRules,
+     Select[seedCoefficientVariables, ! MemberQ[discoveredIndices, #] &],
+     {}
+     ];
    seedRangeMetadata = DSMetaSeedRange[seedGroups, discoveredIndices];
    $dSIBPLastSeedTemplates = sealedTemplates;
    $dSIBPLastSeedGroups = seedGroups;
@@ -1053,6 +1130,11 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
      "seedGroupMetadata" -> seedGroupMetadata,
      "seedRangeMetadata" -> seedRangeMetadata,
      "seedTemplateSummary" -> KeyDrop[templateData, "allSeeds"],
+     "numericRulesAppliedBeforeSeeds" -> applyNumericRules,
+     "seedNumericRules" -> seedNumericRules,
+     "seedCoefficientVariables" -> seedCoefficientVariables,
+     "seedContinuousCoefficientVariables" -> seedContinuousCoefficientVariables,
+     "seedResidualCoefficientVariables" -> seedResidualCoefficientVariables,
      "dSIBPStatus" -> "generated",
      "dSIBPContextSummary" -> dsContextSummary[resolved]
      |>]

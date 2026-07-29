@@ -5,7 +5,7 @@
 
 BeginPackage["dSIBP`"];
 
-$dSIBPVersion::usage = "$dSIBPVersion 给出当前加载的 dSIBP package 三位版本号。";
+$dSIBPVersion::usage = "$dSIBPVersion 给出当前加载的 dSIBP package 发布号。";
 AuditLevel::usage = "AuditLevel 控制同源数据是否重跑完整开发证书；\"standard\" 复用 sealed producer 状态，\"full\" 重算内容 hash、coverage、representation 或 residual 审计。";
 KiraRequireCompleteSystem::usage = "KiraRequireCompleteSystem 指定 Kira 导出是否要求 completeSystemQ；正式约化缺省为 True。";
 
@@ -18,7 +18,7 @@ a::usage = "a[v] 是 makeBaseIntegral 为顶点 v 建立的时间幂次整数指
 b::usage = "b[e] 是未缩并传播子 e 的分母幂次整数指标。";
 bS::usage = "bS[e] 是缩并传播子 e 的分母幂次整数指标。";
 n::usage = "n[e,...] 是 full-line 的二元离散态指标。";
-ispN::usage = "ispN[i] 是第 i 个 ISP 的整数幂次指标。";
+ispN::usage = "ispN[i] 是第 i 个 ISP 坐标的整数幂次指标，定义零点固定为 0；正值为 numerator 幂，用户显式给出的负值表示该坐标的额外 denominator，package 不阻断。";
 a0::usage = "a0[v] 是顶点时间幂次零点；物理幂次为 a+a0。";
 b0::usage = "b0[e] 是未缩并传播子分母幂次零点；物理分母幂次为 b+b0。";
 bS0::usage = "bS0[e] 是缩并传播子分母幂次零点；物理分母幂次为 bS+bS0。";
@@ -33,6 +33,7 @@ MassiveBlock::usage = "MassiveBlock[...] 是 massive line 的惰性 integrand bl
 MasslessBlock::usage = "MasslessBlock[...] 是同分支 massless line 的惰性 integrand block。";
 MasslessCrossBlock::usage = "MasslessCrossBlock[...] 是异分支 massless line 的惰性 integrand block。";
 Tuserweight::usage = "Tuserweight[id] 是 Kira user-defined system 结果中的积分编号 token。";
+userMI::usage = "userMI[i] 是用户定义主积分坐标的稳定公开 token；其物理内容始终由同源 J 线性组合给出。";
 
 dtau::usage = "dtau[vertex,expr] 生成指定顶点的时间 IBP；三参数形式接受 parsed topology 或 DSInit context。";
 dqq::usage = "dqq[dLoop,vectorLoop,expr] 生成圈动量沿圈动量方向的 IBP；四参数形式接受 parsed topology 或 DSInit context。";
@@ -61,10 +62,12 @@ DSSeedGroups::usage = "DSSeedGroups[seedData] 返回 DSSeeds 按 {sectorKey,ibpC
 DSSeedGroupMetadata::usage = "DSSeedGroupMetadata[seedData] 返回与 DSSeedGroups 同序的 sector、IBP 类型、生成元、模板 ordinal 和计数。无参数形式读取最近结果。";
 DSMetaSeedRange::usage = "DSMetaSeedRange[seeds,{indices...}] 按用户给定的 seeds 外层结构初始化逐组 seed shift metadata；flat seeds 作为一组，nested seeds 的每个顶层元素作为一组。积分参数先统一 Flatten，再由 Variables 审计实际指标。声明多余或遗漏只 warning，metadata 仍按实际完整集合建立；再次初始化覆盖旧状态。DSMetaSeedRange[] 返回当前状态。";
 metaSeedRange::usage = "metaSeedRange 是 DSMetaSeedRange 的同义入口。";
-DSGenerateIBP::usage = "DSGenerateIBP[seeds,{min,max}] 把统一目标积分指标包络按已初始化的逐输入组 shift metadata 反推成 seed 点域；DSGenerateIBP[seeds,{index,min,max},...] 要求 root 指标 exact cover。先筛 parity，再代入数值点生成 IBP；n_i 不得再次撒点。";
+DSGenerateIBP::usage = "DSGenerateIBP[seeds,{min,max}] 把统一目标积分指标包络按已初始化的逐输入组 shift metadata 反推成 seed 点域；DSGenerateIBP[seeds,{index,min,max},...] 要求 root 指标 exact cover。用户可显式给负 ISP 下界；自动反推不会把 ISP seed 下界降到用户 target 下界以下。先筛 parity，再代入数值点生成 IBP；n_i 不得再次撒点。";
 generateIBP::usage = "generateIBP 是 DSGenerateIBP 的同义入口；输入范围表示目标积分包络，不是直接 seed 范围。";
 DSLinear::usage = "DSLinear[seedData,context,opts] 把 canonical seeds 转换为 backend-neutral linearData。";
-DSKiraPlan::usage = "DSKiraPlan[linearData,spec] 生成 reference-style 积分顺序和 preReduction/formal 两阶段 Kira 计划；formal 计划先解析构造 active basis 一阶导数及最小 target closure。";
+DSReorderIntegrals::usage = "DSReorderIntegrals[linearData,order] 按用户给定的 J 或现有积分 ID 显式重排 linearData；其结果的 integralList 是后续 plan/export/import 的唯一积分顺序。";
+DSUserMI::usage = "DSUserMI[linearData,expressions,spec] 构造并附加有序 userMI basis；expressions 可为单个 J 或齐次 J 线性组合。DSUserMI[data] 或 DSUserMI[data,key] 查询同源可逆映射、秩和 backend ID。";
+DSKiraPlan::usage = "DSKiraPlan[linearData,spec] 按 linearData 的既定积分顺序生成 preReduction/formal 两阶段 Kira 计划；formal 计划先解析构造 active basis 一阶导数及最小 target closure。";
 DSKiraExport::usage = "DSKiraExport[linearData,opts] 或 DSKiraExport[kiraPlan] 序列化 Kira 基础输入和同源 manifest；不会启动 Kira。缺省禁止数值化微分变量，只有已冻结解析导数闭包的 formal plan 可显式选择 postDerivative 数值阶段。";
 DSKiraImport::usage = "DSKiraImport[path,context,opts] 导入并验证完整 Kira reduction、master 顺序和积分双向映射；完成日志只作诊断，实际 artifact identity 与结构闭合是硬边界。";
 DSDE::usage = "DSDE[reductionData,variables,opts] 用 ds 和 reduction rules 构造保持 master 顺序的微分方程矩阵。";
@@ -91,7 +94,7 @@ LinearSystemMode::usage = "LinearSystemMode 选择 DSLinear 的 \"symbolic\" 或
 ExportKira::usage = "ExportKira 是底层组合工作流的导出开关；DSKiraExport 本身不运行 Kira。";
 OutputDirectory::usage = "OutputDirectory 指定 serializer 输出目录；None 表示只返回内存数据。";
 KiraCoefficientRules::usage = "KiraCoefficientRules 指定 Kira 导出前的系数规则；配置 KiraActiveBasis 时规则不得触及其 derivativeVariables。";
-KiraIntegralOrder::usage = "KiraIntegralOrder 指定 Kira 导出的显式积分顺序。";
+KiraIntegralOrder::usage = "KiraIntegralOrder 是已停用的旧导出选项；需要改变编号时先调用 DSReorderIntegrals。";
 KiraTargetIntegrals::usage = "KiraTargetIntegrals 指定 Kira job 的目标积分。";
 KiraActiveBasis::usage = "KiraActiveBasis 为 DSKiraExport 指定有序 active basis 线性组合、名称和导数变量；缺省 None。";
 KiraNumericStage::usage = "KiraNumericStage 选择 \"symbolic\"（缺省，DE 变量不得数值化）或 \"postDerivative\"（只在 active basis 的解析一阶导数及 target closure 已构造后允许定点数值 reduction）。";
@@ -100,7 +103,7 @@ KiraReductionFile::usage = "KiraReductionFile 指定 DSKiraImport 读取的 redu
 KiraMasterFile::usage = "KiraMasterFile 指定 DSKiraImport 读取的有序 master 文件；缺省先查 results/Tuserweight/masters，再兼容 results/masters。";
 KiraCompletionFile::usage = "KiraCompletionFile 指定 DSKiraImport 检查的完成日志；缺省为 kira.log。";
 KiraCompletionPatterns::usage = "KiraCompletionPatterns 指定完成日志必须匹配的字符串或 RegularExpression 列表。";
-ScalingRelation::usage = "ScalingRelation 指定 DSScaleCheck 使用的 \"Custom\" 或 \"PureMassiveBubble\" 标度关系。";
+ScalingRelation::usage = "ScalingRelation 指定 DSScaleCheck 使用的 \"Custom\"、\"LoopTopology\" 或 \"PureMassiveBubble\" 标度关系。";
 ScalingVariables::usage = "ScalingVariables 指定 Euler 算符中的变量顺序。";
 ScalingWeights::usage = "ScalingWeights 指定 Euler 算符中各变量的系数；018 的 ssij 与独立无圈模长 sEi 都是动量一次量，缺省物理权重为 1。";
 ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数；PureMassiveBubble 可设 Automatic。";
@@ -111,7 +114,7 @@ ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数�
 Begin["`Private`"];
 
 $dSIBPPackageRoot = DirectoryName[DirectoryName[$InputFileName]];
-$dSIBPVersion = "018";
+$dSIBPVersion = "018.1";
 
 (* ::Chapter:: *)
 (*å»ç»åæä»¶ç§æå®ç°*)
@@ -751,12 +754,14 @@ normalizeLine[{id_, endpoints_, momentum_, nu_, bbType_}] := <|
    |>;
 
 
-(* ISP 可用 {name, expr, range} 或 Association。006 用户口 expr 写成 sp[p,r] 或其线性组合。 *)
-normalizeISP[isp_Association] := isp;
+(* ISP 可用 {name, expr, range} 或 Association。其坐标由不可约 numerator 标量积定义，
+   零点固定为 0；正幂是 numerator，用户显式选择的负幂作为额外 denominator 保留。 *)
+normalizeISP[isp_Association] := Join[isp, <|"zeroPoint" -> 0|>];
 normalizeISP[{name_, expr_, range_}] := <|
    "name" -> name,
    "expr" -> expr,
-   "range" -> range
+   "range" -> range,
+   "zeroPoint" -> 0
    |>;
 
 
@@ -1878,12 +1883,6 @@ normaliseIntegralOrder[order_List, integrals_List] := DeleteDuplicates @ DeleteM
 missingIntegralOrderItems[order_List, integrals_List] := Cases[
    integralOrderItemToIntegral[#, integrals] & /@ order,
    Missing["UnknownIntegralOrderItem", item_] :> item
-   ];
-
-
-validateKiraIntegralOrderSpec[orderSpec_] := If[orderSpec === Automatic || ListQ[orderSpec],
-   <|"status" -> "ok"|>,
-   <|"status" -> "invalidKiraIntegralOrder", "reason" -> "KiraIntegralOrder must be Automatic or a list of integral IDs/J objects", "kiraIntegralOrder" -> orderSpec|>
    ];
 
 
@@ -5599,11 +5598,10 @@ kiraBackendCoefficientRules[variableMap_List] := Join[
    ];
 
 
-(* Mathematica 将 -I 和一般有理复数保存为不可再向下匹配的 Complex 原子，
-   因此必须先把每个 Gaussian numeric atom 显式写成 a+b dsii，再替换其它系数原子。 *)
+(* Kira 不消费虚数。Complex 原子必须在 energy map 与积分 phase gauge 阶段消失；
+   这里只映射已经通过实数化门禁的实 coefficient variables。 *)
 kiraBackendCoefficientExpression[expr_, variableMap_List] :=
-   (expr /. value_Complex :> Re[value] + Im[value] kiraBackendSymbol["dsii"]) /.
-    kiraBackendCoefficientRules[variableMap];
+   expr /. kiraBackendCoefficientRules[variableMap];
 
 
 kiraCoefficientString[expr_, variableMap_List] := StringReplace[
@@ -5811,46 +5809,87 @@ kiraRestoreEnergyVariableIdentities[expressions_, convention_Association] := Mod
 kiraExactRationalQ[value_] := IntegerQ[value] || Head[value] === Rational;
 
 
-kiraGaussianAxisData[value_] := Module[{normalized = Cancel[value], real, imaginary},
+kiraGaussianPairMultiply[{leftReal_, leftImaginary_}, {rightReal_, rightImaginary_}] := {
+   leftReal rightReal - leftImaginary rightImaginary,
+   leftReal rightImaginary + leftImaginary rightReal
+   };
+
+
+kiraGaussianPairPower[pair_List, exponent_Integer] := Which[
+   exponent === 0, {1, 0},
+   exponent > 0, Nest[kiraGaussianPairMultiply[#, pair] &, {1, 0}, exponent],
+   exponent < 0,
+   With[{positive = kiraGaussianPairPower[pair, -exponent]},
+    {
+     positive[[1]]/(positive[[1]]^2 + positive[[2]]^2),
+     -positive[[2]]/(positive[[1]]^2 + positive[[2]]^2)
+     }
+    ]
+   ];
+
+
+(* Kira coefficient variables and algebraic generators are real by contract. Only actual
+   Complex atoms need pair propagation; this avoids expanding every large rational function. *)
+kiraGaussianRealImaginaryPair[expr_] := Which[
+   FreeQ[expr, _Complex], {expr, 0},
+   Head[expr] === Complex, {Re[expr], Im[expr]},
+   Head[expr] === Plus, Total[kiraGaussianRealImaginaryPair /@ List @@ expr],
+   Head[expr] === Times, Fold[kiraGaussianPairMultiply, {1, 0}, kiraGaussianRealImaginaryPair /@ List @@ expr],
+   MatchQ[expr, Power[_, _Integer]],
+   kiraGaussianPairPower[kiraGaussianRealImaginaryPair[First[expr]], Last[expr]],
+   True, $Failed
+   ];
+
+
+kiraGaussianAxisData[value_] := Module[
+   {normalized = Cancel[value], pair, real, imaginary, realZeroQ, imaginaryZeroQ},
+   pair = kiraGaussianRealImaginaryPair[normalized];
+   If[pair === $Failed,
+    Return[<|"status" -> "invalid", "coefficient" -> value,
+      "normalizedCoefficient" -> normalized, "reason" -> "unsupportedComplexCoefficientStructure"|>]
+    ];
+   real = Cancel[First[pair]];
+   imaginary = Cancel[Last[pair]];
+   realZeroQ = TrueQ[real === 0];
+   imaginaryZeroQ = TrueQ[imaginary === 0];
    Which[
-    kiraExactRationalQ[normalized],
-    <|"status" -> "valid", "axisPhase" -> 0, "rationalPart" -> normalized|>,
-    Head[normalized] === Complex,
-    real = Re[normalized];
-    imaginary = Im[normalized];
-    If[kiraExactRationalQ[real] && kiraExactRationalQ[imaginary] && Xor[TrueQ[real === 0], TrueQ[imaginary === 0]],
-     <|"status" -> "valid", "axisPhase" -> If[TrueQ[real === 0], 1, 0],
-       "rationalPart" -> If[TrueQ[real === 0], imaginary, real]|>,
-     <|"status" -> "invalid", "coefficient" -> value, "normalizedCoefficient" -> normalized|>
-     ],
+    Xor[realZeroQ, imaginaryZeroQ],
+    <|"status" -> "valid", "axisPhase" -> If[realZeroQ, 1, 0],
+      "rationalPart" -> If[realZeroQ, imaginary, real]|>,
     True,
-    <|"status" -> "invalid", "coefficient" -> value, "normalizedCoefficient" -> normalized|>
+    <|"status" -> "invalid", "coefficient" -> value, "normalizedCoefficient" -> normalized,
+      "realPart" -> real, "imaginaryPart" -> imaginary|>
     ]
    ];
 
 
 kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Module[
-   {equationData, invalidItems, constraints, edges, adjacency, participatingIDs, invalidIDs,
+   {equationData, invalidItems = {}, invalidItemCount = 0, buildAxisItem,
+    constraints, edges, adjacency, participatingIDs, invalidIDs,
     phaseByID = <||>, componentByID = <||>, conflicts = {}, componentCount = 0,
-    queue, current, neighbor, expected, transformedEquations, rowPhases, rationalCoefficients,
+    queue, current, neighbor, expected, transformedEquations, rowPhases,
+    invalidTransformed = {}, invalidTransformedCount = 0, rationalCoefficientCount,
     phaseRules, appliedQ},
+   buildAxisItem[rule_] := Module[{data = kiraGaussianAxisData[Last[rule]]},
+     If[Lookup[data, "status", "invalid"] =!= "valid",
+      invalidItemCount++;
+      If[Length[invalidItems] < 20,
+       AppendTo[invalidItems, Join[<|"id" -> First[rule], "coefficient" -> Last[rule]|>, data]]
+       ]
+      ];
+     {First[rule], Lookup[data, "axisPhase", Missing["axisPhase"]]}
+     ];
    equationData = Map[
      Function[equation,
-      Map[
-       Function[rule,
-        Join[<|"id" -> First[rule], "coefficient" -> Last[rule]|>, kiraGaussianAxisData[Last[rule]]]
-        ],
-       kiraNonzeroCoefficientRules[equation["coefficientRules"]]
-       ]
+      buildAxisItem /@ kiraNonzeroCoefficientRules[equation["coefficientRules"]]
       ],
      linearEquations
      ];
-   invalidItems = Cases[equationData, item_Association /; Lookup[item, "status", "invalid"] =!= "valid", Infinity];
-   If[invalidItems =!= {},
-    Return[<|"status" -> "notRationalizable", "reason" -> "coefficientsMustBeExactPureAxisGaussianRationals",
-      "invalidCoefficientCount" -> Length[invalidItems], "invalidCoefficients" -> Take[invalidItems, UpTo[20]]|>]
+   If[invalidItemCount > 0,
+    Return[<|"status" -> "notRationalizable", "reason" -> "coefficientsMustBePureAxisRealRationalFunctions",
+      "invalidCoefficientCount" -> invalidItemCount, "invalidCoefficients" -> invalidItems|>]
     ];
-   participatingIDs = Sort@DeleteDuplicates@Cases[equationData, item_Association :> Lookup[item, "id", Nothing], Infinity];
+   participatingIDs = Sort@DeleteDuplicates@Cases[equationData, {id_Integer, _Integer} :> id, Infinity];
    invalidIDs = Select[participatingIDs, ! IntegerQ[#] || # < 1 || # > integralCount &];
    If[invalidIDs =!= {},
     Return[<|"status" -> "notRationalizable", "reason" -> "integralIDOutsideDeclaredRange", "invalidIntegralIDs" -> invalidIDs|>]
@@ -5859,8 +5898,8 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
      Map[
       Function[items,
        If[Length[items] < 2, {},
-        ({Lookup[First[items], "id"], Lookup[#, "id"],
-            BitXor[Lookup[First[items], "axisPhase"], Lookup[#, "axisPhase"]]} &) /@ Rest[items]
+        ({First[First[items]], First[#],
+            BitXor[Last[First[items]], Last[#]]} &) /@ Rest[items]
         ]
        ],
       equationData
@@ -5912,7 +5951,7 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
    rowPhases = Map[
      Function[items,
       If[items === {}, 0,
-       Mod[Lookup[First[items], "axisPhase"] + phaseByID[Lookup[First[items], "id"]], 2]
+       Mod[Last[First[items]] + phaseByID[First[First[items]]], 2]
        ]
       ],
      equationData
@@ -5928,15 +5967,36 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
       ],
      {linearEquations, rowPhases}
      ];
-   rationalCoefficients = Last /@ Flatten[
-      kiraNonzeroCoefficientRules[# ["coefficientRules"]] & /@ transformedEquations
-      ];
-   If[! And @@ (kiraExactRationalQ /@ rationalCoefficients),
-    Return[<|"status" -> "notRationalizable", "reason" -> "phaseTransformDidNotProduceRationalCoefficients",
-      "nonrationalCoefficients" -> Select[rationalCoefficients, ! kiraExactRationalQ[#] &, UpTo[20]]|>]
+   transformedEquations = Map[
+     Function[equation,
+      Join[equation, <|"coefficientRules" -> Map[
+          Function[rule,
+           If[TrueQ[Last[rule] === 0], rule,
+            Module[{data = kiraGaussianAxisData[Last[rule]]},
+             If[Lookup[data, "status", "invalid"] === "valid" && Lookup[data, "axisPhase", 1] === 0,
+              First[rule] -> Lookup[data, "rationalPart"],
+              invalidTransformedCount++;
+              If[Length[invalidTransformed] < 20, AppendTo[invalidTransformed, data]];
+              rule
+              ]
+             ]
+            ]
+           ],
+          equation["coefficientRules"]
+          ]|>]
+     ],
+     transformedEquations
+     ];
+   If[invalidTransformedCount > 0,
+    Return[<|"status" -> "notRationalizable", "reason" -> "phaseTransformDidNotProduceRealRationalFunctions",
+      "invalidCoefficientCount" -> invalidTransformedCount,
+      "invalidCoefficients" -> invalidTransformed|>]
     ];
+   rationalCoefficientCount = Total[
+     Length[kiraNonzeroCoefficientRules[# ["coefficientRules"]]] & /@ transformedEquations
+     ];
    phaseRules = SortBy[Normal[phaseByID], First];
-   appliedQ = AnyTrue[Flatten[equationData], AssociationQ[#] && Lookup[#, "axisPhase", 0] === 1 &];
+   appliedQ = AnyTrue[Flatten[equationData, 1], MatchQ[#, {_, 1}] &];
    <|
     "status" -> If[appliedQ, "applied", "notRequired"],
     "passQ" -> True,
@@ -5948,7 +6008,8 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
     "participatingIntegralCount" -> Length[participatingIDs],
     "componentCount" -> componentCount,
     "conflictCount" -> 0,
-    "rationalCoefficientCount" -> Length[rationalCoefficients],
+    "rationalCoefficientCount" -> rationalCoefficientCount,
+    "coefficientDomain" -> "realRationalFunctions",
     "linearEquations" -> transformedEquations
     |>
    ];
@@ -6251,11 +6312,9 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
     ];
    normalizedJobOptions = normalizeKiraJobOptions[jobOptions];
    coefficientDiagnostics = linearCoefficientDiagnostics[exportedEquations];
-   gaussianPhaseGauge = If[
-     TrueQ[coefficientDiagnostics["numericCoefficientSystemQ"]] && coefficientDiagnostics["coefficientVariables"] === {},
-     kiraGaussianPhaseRationalize[exportedEquations, linearData["integralCount"]],
-     <|"status" -> "notApplicable", "passQ" -> True,
-       "reason" -> "coefficientSystemIsNotAnExactParameterFreeNumericSystem"|>
+   gaussianPhaseGauge = kiraGaussianPhaseRationalize[
+     exportedEquations,
+     linearData["integralCount"]
      ];
    If[MemberQ[{"notRationalizable"}, Lookup[gaussianPhaseGauge, "status", "notRationalizable"]],
     Return[Join[
@@ -6294,10 +6353,15 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
       Last /@ Flatten[kiraNonzeroCoefficientRules[#["coefficientRules"]] & /@ exportedEquations],
       _Complex
       ];
-   backendCoefficientVariables = Join[
-      Lookup[coefficientVariableMap, "backend", {}],
-      If[imaginaryUnitUsedQ, {"dsii"}, {}]
-      ];
+   If[imaginaryUnitUsedQ,
+    Return[<|
+      "status" -> "invalidRealBackendCoefficients",
+      "reason" -> "Kira coefficients must be real after massless momentum mapping and integral phase gauge",
+      "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
+      "topologyValidationReport" -> topologyReport
+      |>]
+    ];
+   backendCoefficientVariables = Lookup[coefficientVariableMap, "backend", {}];
    backendSyntaxReport = kiraBackendCoefficientSyntaxReport[exportedEquations, coefficientVariableMap];
    If[Lookup[backendSyntaxReport, "status", "invalid"] =!= "valid",
     Return[<|
@@ -6325,19 +6389,21 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
      If[appendNumericDummyQ, kiraDummyEquationBlock[numericDummyIntegralId, numericDummySymbol], ""];
    backendTextAudit = <|
      "status" -> If[
-       ! StringContainsQ[ibpText, "dsii"] && ! StringContainsQ[ibpText, numericDummySymbol] &&
+       ! StringContainsQ[ibpText, "dsii"] && ! StringContainsQ[ibpText, "Complex"] &&
+        ! StringContainsQ[ibpText, numericDummySymbol] &&
         If[pureRationalBackendQ, backendCoefficientVariables === {}, True],
        "passed",
        "failed"
        ],
      "pureRationalBackendQ" -> pureRationalBackendQ,
      "containsBackendImaginaryUnitQ" -> StringContainsQ[ibpText, "dsii"],
+     "containsComplexTokenQ" -> StringContainsQ[ibpText, "Complex"],
      "containsNumericDummySymbolQ" -> StringContainsQ[ibpText, numericDummySymbol],
      "backendCoefficientVariables" -> backendCoefficientVariables
      |>;
-   If[pureRationalBackendQ && Lookup[backendTextAudit, "status", "failed"] =!= "passed",
-    Return[<|"status" -> "invalidPureRationalBackendText",
-      "reason" -> "pure rational Kira text must not contain dsii, a numeric dummy, or backend coefficient variables",
+   If[Lookup[backendTextAudit, "status", "failed"] =!= "passed",
+    Return[<|"status" -> "invalidRealBackendText",
+      "reason" -> "Kira text must be real and must not contain dsii, Complex, or a numeric dummy",
       "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
       "backendTextAudit" -> backendTextAudit,
       "topologyValidationReport" -> topologyReport|>]
@@ -6365,7 +6431,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
           "backendExpressionVariables" -> coefficientDiagnostics["coefficientVariables"],
           "coefficientVariableMap" -> coefficientVariableMap,
          "backendCoefficientVariables" -> backendCoefficientVariables,
-          "backendImaginaryUnit" -> If[imaginaryUnitUsedQ, "dsii", None],
+          "backendImaginaryUnit" -> None,
           "backendCoefficientSyntaxReport" -> backendSyntaxReport,
            "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
            "backendEnergyConvention" -> energyConvention,
@@ -6406,7 +6472,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
      "backendExpressionVariables" -> coefficientDiagnostics["coefficientVariables"],
     "coefficientVariableMap" -> coefficientVariableMap,
     "backendCoefficientVariables" -> backendCoefficientVariables,
-     "backendImaginaryUnit" -> If[imaginaryUnitUsedQ, "dsii", None],
+     "backendImaginaryUnit" -> None,
      "backendCoefficientSyntaxReport" -> backendSyntaxReport,
       "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
       "backendEnergyConvention" -> energyConvention,
@@ -6461,7 +6527,6 @@ writeKiraInputFiles[outputDir_String, strings_Association] := Module[
 Options[makeKiraExportData] = {
    OutputDirectory -> None,
    KiraCoefficientRules -> {},
-   KiraIntegralOrder -> Automatic,
    KiraTargetIntegrals -> Automatic,
    KiraJobOptions -> Automatic
    };
@@ -6471,7 +6536,7 @@ makeKiraExportData::badlinear = "linear-system 不能导出 Kira：`1`。";
 
 
 makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
-   {linearForExport, strings, outputDir, outputDirReport, filesWritten, topologyReport, integralOrderReport},
+   {linearForExport, strings, outputDir, outputDirReport, filesWritten, topologyReport},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    outputDir = OptionValue[OutputDirectory];
    outputDirReport = validateKiraOutputDirectory[outputDir];
@@ -6493,11 +6558,8 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
       "reason" -> "Kira exporter expects linear-system data; save seed batch as MMA first, then call makeLinearSystemData after numeric/sampling choices"
       |>]
     ];
-   integralOrderReport = validateKiraIntegralOrderSpec[OptionValue[KiraIntegralOrder]];
-   If[Lookup[integralOrderReport, "status", "ok"] =!= "ok",
-    Return[<|"status" -> "notReady", "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalid KiraIntegralOrder", "linearSystem" -> linearData, "kiraInput" -> integralOrderReport|>]
-    ];
-   linearForExport = If[ListQ[OptionValue[KiraIntegralOrder]], reorderLinearSystemIntegrals[linearData, OptionValue[KiraIntegralOrder]], linearData];
+   (* serializer 只读取 linearData 的现有顺序；显式重排必须在此边界之前完成。 *)
+   linearForExport = linearData;
    strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions], OptionValue[KiraTargetIntegrals]];
    If[Lookup[strings, "status", "missing"] =!= "generated",
     If[! MemberQ[{"invalidKiraJobOptions", "invalidCoefficientRules"}, Lookup[strings, "status", Missing["status"]]],
@@ -6559,8 +6621,7 @@ Options[makeIBPWorkflowData] = Join[
     OutputDirectory -> None,
     ExportKira -> False,
     KiraCoefficientRules -> Automatic,
-    KiraIntegralOrder -> Automatic,
-    KiraTargetIntegrals -> Automatic,
+     KiraTargetIntegrals -> Automatic,
     KiraJobOptions -> Automatic
     }
    ];
@@ -6699,8 +6760,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
      {
       OutputDirectory -> OptionValue[OutputDirectory],
       KiraCoefficientRules -> kiraCoeffRules,
-      KiraIntegralOrder -> OptionValue[KiraIntegralOrder],
-      KiraTargetIntegrals -> OptionValue[KiraTargetIntegrals],
+       KiraTargetIntegrals -> OptionValue[KiraTargetIntegrals],
       KiraJobOptions -> OptionValue[KiraJobOptions]
       },
      Options[makeKiraExportData]
@@ -6899,6 +6959,14 @@ linearizeSeedEquation[entry_Association, integralIndex_Association] := Module[
    ];
 
 
+(* 来源 metadata 用于 producer coverage；去重键只包含后端真正消费的数学方程。 *)
+linearEquationMathematicalKey[entry_Association] := {
+   Lookup[entry, "coefficientRules", {}],
+   Lookup[entry, "constantTerm", 0],
+   Lookup[entry, "nonlinearTerms", {}]
+   };
+
+
 Options[makeLinearSystemData] = {KiraOrdering -> Automatic, AuditLevel -> "standard"};
 
 
@@ -7014,6 +7082,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     Return[<|"status" -> "notReady", "caseName" -> Lookup[batch, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalidSymmetryRules"|>]
     ];
    linearEquations = linearizeSeedEquation[#, integralIndex] & /@ equations;
+   linearEquations = DeleteDuplicatesBy[linearEquations, linearEquationMathematicalKey];
    coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    sourceDigest = If[
      trustedProducerQ,
@@ -7026,7 +7095,9 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
     "topology" -> topo,
     "integralCount" -> Length[integrals],
-    "equationCount" -> Length[equations],
+    "sourceEquationCount" -> Length[equations],
+    "equationCount" -> Length[linearEquations],
+    "duplicateEquationCount" -> Length[equations] - Length[linearEquations],
     "integralList" -> integrals,
     "integralRules" -> Normal[integralIndex],
     "kiraOrdering" -> orderingSpec,
@@ -8905,7 +8976,7 @@ dsPublicAPISections[] := <|
      "dtau", "dqq", "dqk", "ds", "rep2innerform", "rep2outform", "rep2Integrand",
      "symmetry", "repSymmetry0"
      },
-   "loopWorkflow" -> {"DSSeeds", "DSAllSeeds", "DSSeedGroups", "DSSeedGroupMetadata", "DSMetaSeedRange", "metaSeedRange", "DSGenerateIBP", "generateIBP", "DSLinear", "DSKiraPlan", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
+    "loopWorkflow" -> {"DSSeeds", "DSAllSeeds", "DSSeedGroups", "DSSeedGroupMetadata", "DSMetaSeedRange", "metaSeedRange", "DSGenerateIBP", "generateIBP", "DSLinear", "DSReorderIntegrals", "DSUserMI", "DSKiraPlan", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
    "pureTimeWorkflow" -> {
      "DSTreeSeeds", "repIterative", "DSTreeNaiveIBP", "DSTreeNaiveDE", "DSTreeDLogDE"
      },
@@ -9215,8 +9286,8 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     ];
    If[! parityRequestedQ && ! parityUsableQ,
     dsErrorPrint[
-     "当前函数族不是完整 h/H parity 域，parity 筛选已禁用；普通 IBP 仍可继续。 " <>
-      "The current family is not a complete h/H parity domain; parity filtering is disabled, while ordinary IBP remains available."
+     "当前函数系统没有已证明可运输的 parity 闭合，parity 筛选已禁用；普通 IBP 仍可继续。 " <>
+      "The current function system has no proved transportable parity closure; parity filtering is disabled, while ordinary IBP remains available."
      ]
     ];
    warnings = Select[
@@ -9425,10 +9496,12 @@ DSLinear[seedData_Association, context_: Automatic, opts : OptionsPattern[]] := 
       "dSIBPStatus" -> "generated",
       "dSIBPContextSummary" -> dsContextSummary[resolved],
       "contextCapabilities" -> dsContextCapabilities[resolved],
-      "contextInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
-      "numericRulesAppliedBeforeSeeds" -> TrueQ[Lookup[seedData, "numericRulesAppliedBeforeSeeds", False]],
-     "seedNumericRules" -> Lookup[seedData, "seedNumericRules", {}]
-     |>]
+       "contextInputHash" -> Lookup[resolved, "inputHash", Missing["inputHash"]],
+       "numericRulesAppliedBeforeSeeds" -> TrueQ[Lookup[seedData, "numericRulesAppliedBeforeSeeds", False]],
+      "seedNumericRules" -> Lookup[seedData, "seedNumericRules", {}],
+      "seedCoefficientVariables" -> Lookup[seedData, "seedCoefficientVariables", {}],
+      "sampledCoefficientVariables" -> Lookup[seedData, "sampledCoefficientVariables", {}]
+      |>]
    ];
 
 (* ::Package:: *)
@@ -10618,7 +10691,14 @@ dsLoopTemplatesForTopology[topo_Association] := Module[
         "sourceIntegral" -> (base /. discreteRule),
         "discreteVariables" -> discreteVariables,
         "discreteRules" -> discreteRule,
-        "discreteStateCountExpected" -> 2^Length[discreteVariables],
+        "discreteStateCountExpected" -> discreteData["ruleCount"],
+        "rawBinaryDiscreteStateCount" -> Lookup[
+          discreteData, "rawBinaryStateCount", 2^Length[discreteVariables]
+          ],
+        "discreteSeedMode" -> Lookup[discreteData, "mode", "allBinaryStates"],
+        "masslessCanonicalDirection" -> Lookup[
+          discreteData, "canonicalDirection", Missing["NotApplicable"]
+          ],
         "equation" -> Expand[expr],
         "forbiddenNData" -> forbiddenNData[topo, expr],
         "eomCanonicalQ" -> ! containsForbiddenNQ[topo, expr],
@@ -10636,6 +10716,16 @@ dsLoopTemplatesForTopology[topo_Association] := Module[
     "recordCount" -> Length[records],
     "discreteVariables" -> discreteVariables,
     "discreteStateCount" -> Length[discreteData["rules"]],
+    "rawBinaryDiscreteStateCount" -> Lookup[
+      discreteData, "rawBinaryStateCount", 2^Length[discreteVariables]
+      ],
+    "eliminatedAlgebraicStateCount" -> Lookup[
+      discreteData, "eliminatedAlgebraicStateCount", 0
+      ],
+    "discreteSeedMode" -> Lookup[discreteData, "mode", "allBinaryStates"],
+    "masslessCanonicalDirection" -> Lookup[
+      discreteData, "canonicalDirection", Missing["NotApplicable"]
+      ],
     "allSeeds" -> records
     |>
    ];
@@ -10652,7 +10742,12 @@ dsLoopSeedTemplateData[context_Association, seedData_Association] := Module[
    If[bad =!= {}, Return[<|"status" -> "failed", "reason" -> "sectorTemplateFailed", "failures" -> bad|>]];
    records = Flatten[Lookup[pieces, "allSeeds", {}], Infinity];
    <|"status" -> "generated", "allSeeds" -> records, "sectorCount" -> Length[pieces],
-     "templateCount" -> Length[records]|>
+     "templateCount" -> Length[records],
+     "discreteStateAudits" -> (KeyTake[#, {
+           "sectorKey", "discreteVariables", "discreteStateCount",
+           "rawBinaryDiscreteStateCount", "eliminatedAlgebraicStateCount",
+           "discreteSeedMode", "masslessCanonicalDirection"
+           }] & /@ pieces)|>
    ];
 
 
@@ -11127,7 +11222,7 @@ dsSeedIndexShifts[entry_, index_] := Module[{equation, values, shifts},
 (* 要求组内所有 shifted indices 都落在 [L,U]，故 seed 点域取各 shift 逆像的
    交集 [L-Min[Delta],U-Max[Delta]]；作用后所得关系的外包络刚好回到 [L,U]。 *)
 dsDerivedSeedRangeAudit[group_Association, targetRanges_Association] := Module[
-   {indices, missingTargets, shiftBounds, missingShifts, seedRules},
+   {indices, missingTargets, shiftBounds, missingShifts, rawSeedRules, seedRules},
    indices = Lookup[group, "continuousIndices", {}];
    missingTargets = Select[
      indices,
@@ -11146,13 +11241,17 @@ dsDerivedSeedRangeAudit[group_Association, targetRanges_Association] := Module[
       "indicesWithoutAffineShifts" -> missingShifts
       |>]
     ];
-   seedRules = Table[
+   rawSeedRules = Table[
      With[
       {target = targetRanges[dsRootEnvelopeIndex[index]], bounds = shiftBounds[index]},
       index -> {First[target] - First[bounds], Last[target] - Last[bounds]}
       ],
      {index, indices}
      ];
+   (* 自动反推不得把 ISP seed 下界降到用户 target 下界以下；用户显式给出的负下界
+      保持有效，package 只避免为了覆盖升幂项而自行再向更负方向扩张。 *)
+   seedRules = rawSeedRules /. HoldPattern[(index_ -> range_List)] /; MatchQ[index, _ispN] :>
+      index -> {Max[First[targetRanges[index]], First[range]], Last[range]};
    <|
     "status" -> "passed",
     "groupOrdinal" -> Lookup[group, "groupOrdinal", Missing["groupOrdinal"]],
@@ -11163,6 +11262,7 @@ dsDerivedSeedRangeAudit[group_Association, targetRanges_Association] := Module[
     "continuousIndices" -> indices,
     "shiftBounds" -> Normal[shiftBounds],
     "seedRangeOffsets" -> Lookup[group, "seedRangeOffsets", {}],
+    "unclippedSeedRangeRules" -> rawSeedRules,
     "seedRangeRules" -> seedRules,
     "emptySeedDomainQ" -> AnyTrue[Last /@ seedRules, First[#] > Last[#] &]
     |>
@@ -11279,7 +11379,9 @@ dsGeneratedIBPArtifactContract[
 dsGeneratedIBPBatch[records_List, templates_List, context_Association, rangeAudit_Association,
    integrityAudit_Association, derivedRangeAudits_List, metaState_Association] := Module[
    {topRecords, metadataList, forbidden, eomQ, representation, ibpMode, templateHash,
-    templateRecords, firstTemplate, emptyRangeAudits, emptyMomentumQ, emptyTimeQ},
+    templateRecords, firstTemplate, emptyRangeAudits, emptyMomentumQ, emptyTimeQ,
+    numericRulesAppliedBeforeSeeds, seedNumericRules, seedCoefficientVariables,
+    sampledCoefficientVariables},
    topRecords = Select[records, Lookup[#, "sectorKey", None] === "top" &];
    templateRecords = Select[templates, AssociationQ];
    firstTemplate = If[templateRecords === {}, Missing["RawExpressionTemplates"], First[templateRecords]];
@@ -11302,6 +11404,15 @@ dsGeneratedIBPBatch[records_List, templates_List, context_Association, rangeAudi
    emptyRangeAudits = Select[derivedRangeAudits, TrueQ[Lookup[#, "emptySeedDomainQ", False]] &];
    emptyMomentumQ = AnyTrue[emptyRangeAudits, MemberQ[Lookup[#, "ibpClasses", {}], "qIBP"] &];
    emptyTimeQ = AnyTrue[emptyRangeAudits, MemberQ[Lookup[#, "ibpClasses", {}], "tIBP"] &];
+   numericRulesAppliedBeforeSeeds = TrueQ[
+     templateRecords =!= {} && And @@ Lookup[templateRecords, "numericRulesAppliedBeforeSeeds", False]
+     ];
+   seedNumericRules = If[numericRulesAppliedBeforeSeeds,
+     Lookup[firstTemplate, "seedNumericRules", {}], {}];
+   seedCoefficientVariables = If[numericRulesAppliedBeforeSeeds,
+     DeleteDuplicates[Flatten[Lookup[templateRecords, "seedCoefficientVariables", {}]]], {}];
+   sampledCoefficientVariables = If[numericRulesAppliedBeforeSeeds,
+     DeleteDuplicates[Flatten[Lookup[records, "sampledCoefficientVariables", {}]]], {}];
    <|
     "status" -> "generated",
     "dSIBPStatus" -> "generated",
@@ -11339,8 +11450,10 @@ dsGeneratedIBPBatch[records_List, templates_List, context_Association, rangeAudi
     "parityAcceptedPointCount" -> Length[records],
     "equations" -> records,
     "dSIBPContextSummary" -> dsContextSummary[context],
-    "numericRulesAppliedBeforeSeeds" -> False,
-    "seedNumericRules" -> {}
+    "numericRulesAppliedBeforeSeeds" -> numericRulesAppliedBeforeSeeds,
+    "seedNumericRules" -> seedNumericRules,
+    "seedCoefficientVariables" -> seedCoefficientVariables,
+    "sampledCoefficientVariables" -> sampledCoefficientVariables
     |>
    ];
 
@@ -11463,10 +11576,12 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
       "正在展开连续 IBP 指标 / Expanding continuous IBP indices",
       MapThread[{#1, #2} &, {entries, entryGroupOrdinals}],
        Function[item,
-         Module[{entry = First[item], groupOrdinal = Last[item], entryRangeAudit,
-           pointRules, parityCacheKey, parityMetadata, paritySource, paritySignature,
-           entryPointRules, templateEquation, canonicalTemplateEquation,
-           templateForbiddenNData, templateEOMCanonicalQ, expression, updated},
+          Module[{entry = First[item], groupOrdinal = Last[item], entryRangeAudit,
+            pointRules, parityCacheKey, parityMetadata, paritySource, paritySignature,
+            entryPointRules, templateEquation, canonicalTemplateEquation,
+            templateForbiddenNData, templateEOMCanonicalQ, expression,
+            numericRulesAppliedBeforeSeeds, seedNumericRules,
+            sampledCoefficientVariables, updated},
         entryRangeAudit = Lookup[
           derivedRangeByGroup,
           groupOrdinal,
@@ -11515,9 +11630,17 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
           context["topology"],
           canonicalTemplateEquation
           ];
-        templateEOMCanonicalQ = FreeQ[canonicalTemplateEquation, _n];
-        Table[
-         expression = canonicalTemplateEquation /. rules;
+         templateEOMCanonicalQ = FreeQ[canonicalTemplateEquation, _n];
+         numericRulesAppliedBeforeSeeds = TrueQ[
+           AssociationQ[entry] && Lookup[entry, "numericRulesAppliedBeforeSeeds", False]
+           ];
+         seedNumericRules = If[
+           numericRulesAppliedBeforeSeeds,
+           Lookup[entry, "seedNumericRules", {}],
+           {}
+           ];
+         Table[
+          expression = canonicalTemplateEquation /. rules;
          If[postSamplingCanonicalRequiredQ,
           (* general template 已完成 EOM 与 target-sector endpoint canonical；具体整数点
              只需补做可能依赖连续指标值的用户/tadpole symmetry。 *)
@@ -11531,15 +11654,27 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
             expression === $Failed || ! dsInternalCoordinatePresentQ018[expression],
             expression,
             dsLoopSeedExpressionToPublicCoordinates[expression, context["topology"]]
-            ]
-          ];
-         updated = If[AssociationQ[entry], Join[entry, <|
+             ]
+           ];
+          (* parity 先筛点，连续指标随后取值，用户给出的有序 symmetry 再把每项送到
+             唯一代表。最后重复应用同一精确数值规则并逐项约分，保证 symmetry 产生的
+             新系数也在进入 linearData 前完成实数/数值化。 *)
+          If[numericRulesAppliedBeforeSeeds,
+           expression = dsNumericSeedExpression018[expression, seedNumericRules]
+           ];
+          sampledCoefficientVariables = If[
+            numericRulesAppliedBeforeSeeds,
+            dsSeedCoefficientVariables018[expression],
+            {}
+            ];
+          updated = If[AssociationQ[entry], Join[entry, <|
               "continuousRules" -> rules,
               "seedRangeGroupOrdinal" -> groupOrdinal,
               "targetEnvelopeRules" -> audit["rangeRules"],
               "derivedSeedRangeRules" -> entryRangeAudit["seedRangeRules"],
-              "templateCandidatePointCount" -> Length[pointRules],
-              "equation" -> expression,
+               "templateCandidatePointCount" -> Length[pointRules],
+               "sampledCoefficientVariables" -> sampledCoefficientVariables,
+               "equation" -> expression,
               "forbiddenNData" -> If[postSamplingCanonicalRequiredQ,
                 forbiddenNData[context["topology"], expression], templateForbiddenNData],
               "eomCanonicalQ" -> If[postSamplingCanonicalRequiredQ,
@@ -11549,8 +11684,10 @@ DSGenerateIBP[seeds_, specs__List, OptionsPattern[]] := Module[
              "ibpClass" -> "unknownIBP", "continuousRules" -> rules,
              "seedRangeGroupOrdinal" -> groupOrdinal,
              "targetEnvelopeRules" -> audit["rangeRules"],
-             "derivedSeedRangeRules" -> entryRangeAudit["seedRangeRules"],
-             "templateCandidatePointCount" -> Length[pointRules], "equation" -> expression,
+              "derivedSeedRangeRules" -> entryRangeAudit["seedRangeRules"],
+              "templateCandidatePointCount" -> Length[pointRules],
+              "sampledCoefficientVariables" -> sampledCoefficientVariables,
+              "equation" -> expression,
              "forbiddenNData" -> If[postSamplingCanonicalRequiredQ,
                forbiddenNData[context["topology"], expression], templateForbiddenNData],
              "eomCanonicalQ" -> If[postSamplingCanonicalRequiredQ,
@@ -11667,9 +11804,9 @@ dsKiraAttachActiveBasis[linearData_Association, setting_] /; setting === None ||
 
 dsKiraAttachActiveBasis[linearData_Association, setting_Association] := Module[
    {expressions, count, names, activeIndices, activeCount, activeExpressions, activeNames, topo, variables, allowedVariables, badVariables, degrees,
-    oldCount, oldRules, idShift, shiftedRules, shiftedEquations, integralIndex,
-    basisEquations, badEquations, rawDerivatives, derivativeIntegrals, missingDerivativeIntegrals,
-    relationIDs, activeIDs, auxiliaryIDs, derivativeTargetIDs, targetIDs, activeData},
+     oldCount, oldRules, idShift, shiftedRules, shiftedEquations, integralIndex,
+     basisEquations, badEquations, rawDerivatives, derivativeIntegrals, missingDerivativeIntegrals,
+     relationIDs, activeIDs, auxiliaryIDs, derivativeTargetIDs, targetIDs, userMIData, activeData},
    If[Lookup[linearData, "representation", None] === "sectorTaggedJ[vertexPacks]",
     Return[<|"status" -> "invalidActiveBasis", "reason" -> "treeActiveBasisNotSupported",
       "comment" -> "tree Kira IDs already include sector identity; active-basis derivatives require a separate tagged closure."|>]
@@ -11743,6 +11880,17 @@ dsKiraAttachActiveBasis[linearData_Association, setting_Association] := Module[
     ];
    derivativeTargetIDs = Lookup[integralIndex, derivativeIntegrals, {}];
    targetIDs = DeleteDuplicates[Join[activeIDs, derivativeTargetIDs]];
+   userMIData = Lookup[setting, "userMIData", None];
+   If[AssociationQ[userMIData],
+    userMIData = Join[userMIData, <|
+       "backendIDs" -> relationIDs,
+       "backendTokens" -> (Tuserweight /@ relationIDs),
+       "activeBackendIDs" -> activeIDs,
+       "activeBackendTokens" -> (Tuserweight /@ activeIDs),
+       "userMIToBackendRules" -> Thread[(userMI /@ relationIDs) -> (Tuserweight /@ relationIDs)],
+       "backendToUserMIRules" -> Thread[(Tuserweight /@ relationIDs) -> (userMI /@ relationIDs)]
+       |>]
+    ];
    activeData = <|
      "status" -> "configured",
      "count" -> count,
@@ -11765,7 +11913,8 @@ dsKiraAttachActiveBasis[linearData_Association, setting_Association] := Module[
      "derivativeTargetIDs" -> derivativeTargetIDs,
      "targetIntegralIDs" -> targetIDs,
      "scalingDegrees" -> degrees,
-     "sourceIntegralCount" -> oldCount
+     "sourceIntegralCount" -> oldCount,
+     "userMI" -> userMIData
      |>;
    Join[linearData, <|
      "integralRules" -> shiftedRules,
@@ -11960,9 +12109,9 @@ dsKiraExportManifest[exportData_Association, linearData_Association] := <|
    |>;
 
 DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
-   {orderedLinearData, preparedLinearData, activeSetting = OptionValue[KiraActiveBasis], effectiveTargets,
-     makeOptions, exportData, manifest, deVariableRuleAudit, numericStage = OptionValue[KiraNumericStage], outputDirectory = OptionValue[OutputDirectory], manifestPath,
-    progress = OptionValue[ProgressReporting], integralOrder = OptionValue[KiraIntegralOrder]},
+   {preparedLinearData, activeSetting = OptionValue[KiraActiveBasis], effectiveTargets,
+      makeOptions, exportData, manifest, deVariableRuleAudit, numericStage = OptionValue[KiraNumericStage], outputDirectory = OptionValue[OutputDirectory], manifestPath,
+     progress = OptionValue[ProgressReporting]},
     If[! KeyExistsQ[linearData, "linearEquations"],
      Message[DSKiraExport::badlinear]; dsErrorPrint["输入缺少 linearEquations。 The input does not contain linearEquations."]; Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
      ];
@@ -11977,11 +12126,7 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
     Return[<|"status" -> "failed", "reason" -> "incompleteSystemForFormalReduction",
       "completeSystemQ" -> Lookup[linearData, "completeSystemQ", False]|>]
     ];
-   If[Lookup[validateKiraIntegralOrderSpec[integralOrder], "status", "invalid"] =!= "ok",
-    Message[DSKiraExport::badlinear]; Return[<|"status" -> "failed", "reason" -> "invalidKiraIntegralOrder"|>]
-    ];
-   orderedLinearData = If[ListQ[integralOrder], reorderLinearSystemIntegrals[linearData, integralOrder], linearData];
-   preparedLinearData = dsKiraAttachActiveBasis[orderedLinearData, activeSetting];
+   preparedLinearData = dsKiraAttachActiveBasis[linearData, activeSetting];
     If[Lookup[preparedLinearData, "status", "missing"] =!= "generated",
     Message[DSKiraExport::badbasis, Lookup[preparedLinearData, "reason", "unknown"]];
     dsErrorPrint["active basis 或其导数 target closure 未通过导出门禁。 The active basis or its derivative target closure failed the export gate."]; Return[preparedLinearData]
@@ -12003,15 +12148,14 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
     effectiveTargets = dsKiraEffectiveTargets[preparedLinearData, OptionValue[KiraTargetIntegrals]];
     makeOptions = DeleteCases[
       FilterRules[{opts}, Options[makeKiraExportData]],
-      HoldPattern[(KiraIntegralOrder | KiraTargetIntegrals | KiraNumericStage) -> _]
+       HoldPattern[(KiraTargetIntegrals | KiraNumericStage) -> _]
      ];
    exportData = dsStageRun[
      "序列化 Kira 基础输入 / Serializing basic Kira input",
      makeKiraExportData[
       preparedLinearData,
       Sequence @@ makeOptions,
-      KiraIntegralOrder -> Automatic,
-      KiraTargetIntegrals -> effectiveTargets
+       KiraTargetIntegrals -> effectiveTargets
       ],
      progress
      ];
@@ -12033,13 +12177,164 @@ DSKiraExport[linearData_Association, opts : OptionsPattern[]] := Module[
     ];
 
 (* ::Package:: *)
+(* 用户主积分只定义 J 线性空间中的有序坐标，不建立与 J 并行的物理积分表示。 *)
 
-(* 本文件为 DSGenerateIBP 产生的 linearData 构造 reference-style 积分顺序、
-   预约化 targets 和解析 derivative closure。package 只生成计划与输入，不运行 Kira。 *)
+(* ::Chapter:: *)
+(*018 userMI basis 构造与查询*)
+
+DSUserMI::badlinear = "DSUserMI 需要 DSLinear 返回且尚未附加 userMI 的 linearData。";
+DSUserMI::badbasis = "userMI basis 无效：`1`。";
+
+
+(* ::Section::Closed:: *)
+(*精确线性坐标*)
+
+dsUserMIFirstNonzeroPosition[row_List] := FirstCase[
+   Range[Length[row]],
+   index_ /; ! TrueQ[Together[row[[index]]] === 0],
+   Missing["NoPivot"]
+   ];
+
+
+dsUserMICoordinateData[expressions_List, activeIndices_List, integralList_List] := Module[
+   {support, outsideSupport, matrix, residuals, reduced, pivotColumns, rank,
+    activeRank, spectatorColumns, pivotMatrix, spectatorMatrix, tokens,
+    pivotIntegrals, spectatorIntegrals, reverseExpressions, forwardRules,
+    reverseRules, forwardResiduals, reverseResiduals, payload},
+   support = DeleteDuplicates@Cases[expressions, _J, Infinity];
+   outsideSupport = Complement[support, integralList];
+   If[support === {} || outsideSupport =!= {},
+    Return[<|"status" -> "failed", "reason" -> "basisSupportOutsideLinearData",
+      "supportIntegrals" -> support, "outsideSupportIntegrals" -> outsideSupport|>]
+    ];
+   matrix = Table[
+     Coefficient[Expand[expressions[[i]]], support[[j]]],
+     {i, Length[expressions]}, {j, Length[support]}
+     ];
+   residuals = MapThread[Together[#1 - #2.#3] &, {
+      expressions,
+      matrix,
+      ConstantArray[support, Length[expressions]]
+      }];
+   If[! And @@ (TrueQ[# === 0] & /@ residuals),
+    Return[<|"status" -> "failed", "reason" -> "basisMustBeHomogeneousLinearInJ",
+      "reconstructionResiduals" -> residuals|>]
+    ];
+   reduced = Quiet@Check[RowReduce[matrix], $Failed];
+   If[reduced === $Failed,
+    Return[<|"status" -> "failed", "reason" -> "basisRankComputationFailed"|>]
+    ];
+   pivotColumns = DeleteMissing[dsUserMIFirstNonzeroPosition /@ reduced];
+   rank = Length[pivotColumns];
+   activeRank = MatrixRank[matrix[[activeIndices]]];
+   If[rank =!= Length[expressions] || activeRank =!= Length[activeIndices],
+    Return[<|"status" -> "failed", "reason" -> "basisRowsMustBeIndependent",
+      "rank" -> rank, "basisCount" -> Length[expressions],
+      "activeRank" -> activeRank, "activeCount" -> Length[activeIndices]|>]
+    ];
+   spectatorColumns = Complement[Range[Length[support]], pivotColumns];
+   pivotMatrix = matrix[[All, pivotColumns]];
+   spectatorMatrix = matrix[[All, spectatorColumns]];
+   tokens = userMI /@ Range[Length[expressions]];
+   pivotIntegrals = support[[pivotColumns]];
+   spectatorIntegrals = support[[spectatorColumns]];
+   reverseExpressions = Together /@ (Inverse[pivotMatrix].(
+        tokens - spectatorMatrix.spectatorIntegrals
+        ));
+   forwardRules = Thread[tokens -> expressions];
+   reverseRules = Thread[pivotIntegrals -> reverseExpressions];
+   forwardResiduals = Together /@ (tokens - (expressions /. reverseRules));
+   reverseResiduals = Together /@ (pivotIntegrals - (reverseExpressions /. forwardRules));
+   payload = <|
+     "status" -> "configured",
+     "count" -> Length[expressions],
+     "tokens" -> tokens,
+     "expressions" -> expressions,
+     "activeIndices" -> activeIndices,
+     "activeTokens" -> tokens[[activeIndices]],
+     "activeExpressions" -> expressions[[activeIndices]],
+     "supportIntegrals" -> support,
+     "supportCount" -> Length[support],
+     "coefficientMatrix" -> matrix,
+     "rank" -> rank,
+     "activeRank" -> activeRank,
+     "pivotColumns" -> pivotColumns,
+     "pivotIntegrals" -> pivotIntegrals,
+     "spectatorColumns" -> spectatorColumns,
+     "spectatorIntegrals" -> spectatorIntegrals,
+     "forwardRules" -> forwardRules,
+     "reverseRules" -> reverseRules,
+     "forwardRoundTripResiduals" -> forwardResiduals,
+     "reverseRoundTripResiduals" -> reverseResiduals,
+     "reversibleQ" -> TrueQ[And @@ (TrueQ[# === 0] & /@ Join[forwardResiduals, reverseResiduals])],
+     "sourceIntegralOrderDigest" -> dsKiraExpressionDigest[integralList]
+     |>;
+   Join[payload, <|"mappingDigest" -> dsKiraExpressionDigest[payload]|>]
+   ];
+
+
+(* ::Section:: *)
+(*公开构造与查询*)
+
+DSUserMI[linearData_Association, expressions_List, spec_Association : <||>] := Module[
+   {names, activeIndices, coordinateData, setting, prepared},
+   If[Lookup[linearData, "dSIBPStatus", "failed"] =!= "generated" ||
+     ! ListQ[Lookup[linearData, "integralList", Missing["integralList"]]] ||
+     Lookup[Lookup[linearData, "activeBasis", <||>], "status", "disabled"] === "configured",
+    Message[DSUserMI::badlinear];
+    Return[<|"status" -> "failed", "reason" -> "notUnpreparedLinearData"|>]
+    ];
+   names = dsKiraActiveBasisNames[Lookup[spec, "names", Automatic], Length[expressions]];
+   activeIndices = Replace[Lookup[spec, "activeIndices", Automatic], (Automatic | All) -> Range[Length[expressions]]];
+   If[names === $Failed || Length[names] =!= Length[expressions] ||
+     ! DuplicateFreeQ[names] || ! And @@ (StringQ[#] && # =!= "" & /@ names) ||
+     ! ListQ[activeIndices] || activeIndices === {} || ! DuplicateFreeQ[activeIndices] ||
+     ! And @@ (IntegerQ[#] && 1 <= # <= Length[expressions] & /@ activeIndices),
+    Message[DSUserMI::badbasis, "invalid names or activeIndices"];
+    Return[<|"status" -> "failed", "reason" -> "invalidNamesOrActiveIndices"|>]
+    ];
+   coordinateData = dsUserMICoordinateData[expressions, activeIndices, linearData["integralList"]];
+   If[Lookup[coordinateData, "status", "failed"] =!= "configured" ||
+     ! TrueQ[Lookup[coordinateData, "reversibleQ", False]],
+    Message[DSUserMI::badbasis, Lookup[coordinateData, "reason", "coordinate map is not reversible"]];
+    Return[coordinateData]
+    ];
+   setting = <|
+     "names" -> names,
+     "expressions" -> expressions,
+     "activeIndices" -> activeIndices,
+     "derivativeVariables" -> Lookup[spec, "derivativeVariables", Automatic],
+     "scalingDegrees" -> Lookup[spec, "scalingDegrees", Automatic],
+     "userMIData" -> coordinateData
+     |>;
+   prepared = dsKiraAttachActiveBasis[linearData, setting];
+   If[Lookup[prepared, "status", "failed"] =!= "generated",
+    Message[DSUserMI::badbasis, Lookup[prepared, "reason", "active-basis preparation failed"]]
+    ];
+   prepared
+   ];
+
+
+DSUserMI[data_Association] := Lookup[
+   Lookup[data, "activeBasis", <||>],
+   "userMI",
+   Missing["UserMINotConfigured"]
+   ];
+
+
+DSUserMI[data_Association, key_String] := Lookup[DSUserMI[data], key, Missing["UnknownUserMIKey", key]];
+
+
+DSUserMI[_, ___] := (Message[DSUserMI::badbasis, "expected linearData, an ordered expression list, and an optional Association"]; <|"status" -> "failed", "reason" -> "invalidArguments"|>);
+
+(* ::Package:: *)
+
+(* 本文件按 linearData 已冻结的积分顺序构造预约化 targets 和解析 derivative closure。
+   package 只生成计划与输入，不运行 Kira。 *)
 
 
 (* ::Chapter:: *)
-(*018 Kira 排序与两阶段 reduction 计划*)
+(*018 Kira 两阶段 reduction 计划*)
 
 DSKiraPlan::badlinear = "DSKiraPlan 需要 DSLinear 返回的 backend-neutral linearData。 DSKiraPlan requires backend-neutral linearData returned by DSLinear.";
 DSKiraPlan::badspec = "Kira 计划配置无效：`1`。 The Kira plan specification is invalid: `1`.";
@@ -12052,44 +12347,45 @@ Options[DSKiraPlan] = {ProgressReporting -> Automatic};
 
 
 (* ::Section::Closed:: *)
-(*Reference-style 积分顺序*)
+(*既定积分顺序与显式重排*)
+
+DSReorderIntegrals::badlinear = "DSReorderIntegrals 需要 DSLinear 返回的 backend-neutral linearData。";
+DSReorderIntegrals::badorder = "积分顺序必须是由现有 J 或积分 ID 组成的非空列表。";
+
+
+DSReorderIntegrals[linearData_Association, order_List] := Module[{result},
+   If[Lookup[linearData, "dSIBPStatus", "failed"] =!= "generated" ||
+     ! ListQ[Lookup[linearData, "integralList", Missing["integralList"]]],
+    Message[DSReorderIntegrals::badlinear];
+    Return[<|"status" -> "failed", "reason" -> "notLinearData"|>]
+    ];
+   If[Lookup[Lookup[linearData, "activeBasis", <||>], "status", "disabled"] === "configured",
+    Message[DSReorderIntegrals::badorder];
+    Return[<|"status" -> "failed", "reason" -> "reorderMustPrecedeUserMI"|>]
+    ];
+   If[order === {},
+    Message[DSReorderIntegrals::badorder];
+    Return[<|"status" -> "failed", "reason" -> "emptyIntegralOrder"|>]
+    ];
+   result = reorderLinearSystemIntegrals[linearData, order];
+   Join[result, <|
+     "integralOrderAuthority" -> "linearData.integralList",
+     "integralOrderDigest" -> dsKiraExpressionDigest[result["integralList"]]
+     |>]
+   ];
+
+
+DSReorderIntegrals[_, _] := (Message[DSReorderIntegrals::badorder]; <|"status" -> "failed", "reason" -> "invalidIntegralOrder"|>);
 
 dsKiraPlanIntegralFromItem[item_, linearData_Association] := Which[
    Head[item] === J && MemberQ[linearData["integralList"], item], item,
-   IntegerQ[item] && 1 <= item <= linearData["integralCount"], linearData["integralList"][[item]],
+   IntegerQ[item] && 1 <= item <= Length[linearData["integralList"]], linearData["integralList"][[item]],
    True, Missing["UnknownIntegral", item]
    ];
 
 
 dsKiraPlanIntegralList[items_List, linearData_Association] := DeleteDuplicates@DeleteMissing[
    dsKiraPlanIntegralFromItem[#, linearData] & /@ items
-   ];
-
-
-dsKiraPlanReferenceKey[int_J, preferred_List, metadata_List] := Module[
-   {allContinuous, aValues, bValues, ispValues, nValues, negativePenalty, preferredPosition,
-    sectorKey, sectorRank},
-   aValues = numericIndexValue /@ int[[1]];
-   bValues = numericIndexValue /@ Cases[Flatten[int[[2]]], _b | _bS];
-   ispValues = numericIndexValue /@ int[[3]];
-   nValues = numericIndexValue /@ Cases[Flatten[int[[2]]], _n];
-   allContinuous = Join[aValues, bValues, ispValues];
-   negativePenalty = If[AnyTrue[allContinuous, # < 0 &], 50, 0];
-   preferredPosition = FirstPosition[preferred, int, Missing["NotPreferred"], {1}, Heads -> False];
-   sectorKey = integralSectorKey[int, metadata];
-   sectorRank = If[sectorKey === "top", 1, 2 + FirstPosition[Lookup[metadata, "sectorKey", {}], sectorKey, {10^6}][[1]]];
-   {
-    If[Head[preferredPosition] === Missing, 1, 0],
-    If[Head[preferredPosition] === Missing, 10^9, First[preferredPosition]],
-    Total[Abs /@ allContinuous], negativePenalty, sectorRank,
-    Total[aValues], aValues, bValues, ispValues, nValues, ToString[int, InputForm]
-    }
-   ];
-
-
-dsKiraPlanReferenceOrder[linearData_Association, preferred_List] := SortBy[
-   linearData["integralList"],
-   dsKiraPlanReferenceKey[#, preferred, Lookup[linearData, "sectorMetadataList", {}]] &
    ];
 
 
@@ -12131,8 +12427,8 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
       "completeSystemQ" -> Lookup[linearData, "completeSystemQ", False]|>]
     ];
    preferred = dsKiraPlanIntegralList[Lookup[spec, "preferredIntegrals", {}], linearData];
-   order = dsKiraPlanReferenceOrder[linearData, preferred];
-   ordered = reorderLinearSystemIntegrals[linearData, order];
+   order = linearData["integralList"];
+   ordered = linearData;
    coefficientRules = Lookup[spec, "coefficientRules", {}];
    outputDirectory = Lookup[spec, "outputDirectory", None];
    jobOptions = Lookup[spec, "jobOptions", Automatic];
@@ -12152,7 +12448,7 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
       "status" -> "planned", "kiraPlanQ" -> True, "stage" -> stage,
       "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
       "linearData" -> linearData, "integralOrder" -> order,
-      "orderingConvention" -> "referenceActiveThenComplexityPenaltySectorIndices",
+      "orderingConvention" -> "linearDataIntegralList",
       "preferredIntegrals" -> preferred, "targetIntegrals" -> candidates,
       "targetCount" -> Length[candidates], "activeBasis" -> None,
       "numericStage" -> "symbolic", "coefficientRules" -> coefficientRules,
@@ -12160,8 +12456,11 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
       "phaseIsolation" -> <|"stage" -> stage, "requiresSeparateOutputDirectoryQ" -> True|>
       |>]
     ];
-   activeSetting = Lookup[spec, "activeBasis", Missing["activeBasis"]];
-   If[! AssociationQ[activeSetting],
+   activeSetting = Lookup[spec, "activeBasis", Automatic];
+   If[! AssociationQ[activeSetting] && ! (
+       activeSetting === Automatic &&
+        Lookup[Lookup[ordered, "activeBasis", <||>], "status", "disabled"] === "configured"
+       ),
     Message[DSKiraPlan::badbasis, "missing activeBasis Association"];
     Return[<|"status" -> "failed", "reason" -> "missingActiveBasis"|>]
     ];
@@ -12187,7 +12486,7 @@ DSKiraPlan[linearData_Association, spec_Association, OptionsPattern[]] := Module
     "status" -> "planned", "kiraPlanQ" -> True, "stage" -> stage,
     "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]],
     "linearData" -> linearData, "integralOrder" -> order,
-    "orderingConvention" -> "referenceActiveThenComplexityPenaltySectorIndices",
+    "orderingConvention" -> "linearDataIntegralList",
     "preferredIntegrals" -> preferred, "activeBasis" -> activeSetting,
     "activeBasisPreview" -> activeData,
     "preparedLinearData" -> preview,
@@ -12229,7 +12528,6 @@ DSKiraExport[plan_Association] /; dsKiraPlanQ[plan] := Module[
    result = DSKiraExport[
      prepared,
      KiraActiveBasis -> If[Lookup[plan, "stage", "formal"] === "formal", Automatic, None],
-     KiraIntegralOrder -> Automatic,
      KiraTargetIntegrals -> Lookup[plan, "targetIntegrals", Automatic],
      KiraCoefficientRules -> plan["coefficientRules"],
      KiraJobOptions -> plan["jobOptions"],
@@ -12488,9 +12786,43 @@ dsKiraArtifactIdentityQ[
 
 dsKiraActiveBasisData[manifest_Association] := Lookup[manifest, "activeBasis", <|"status" -> "disabled", "count" -> 0|>];
 
+dsKiraUserMIDataQ[userData_Association, activeData_Association] := Module[
+   {count, expressions, activeIndices, tokens, activeTokens, backendIDs, backendTokens, payload},
+   count = Lookup[userData, "count", -1];
+   expressions = Lookup[userData, "expressions", {}];
+   activeIndices = Lookup[userData, "activeIndices", {}];
+   tokens = Lookup[userData, "tokens", {}];
+   activeTokens = Lookup[userData, "activeTokens", {}];
+   backendIDs = Lookup[userData, "backendIDs", {}];
+   backendTokens = Lookup[userData, "backendTokens", {}];
+   payload = KeyDrop[userData, {
+      "mappingDigest", "backendIDs", "backendTokens", "activeBackendIDs",
+      "activeBackendTokens", "userMIToBackendRules", "backendToUserMIRules"
+      }];
+   Lookup[userData, "status", "failed"] === "configured" &&
+    count === Lookup[activeData, "count", -2] &&
+    expressions === Lookup[activeData, "expressions", Missing["expressions"]] &&
+    activeIndices === Lookup[activeData, "activeIndices", Missing["activeIndices"]] &&
+    tokens === (userMI /@ Range[count]) && activeTokens === tokens[[activeIndices]] &&
+    backendIDs === Lookup[activeData, "ids", Missing["ids"]] &&
+    backendTokens === (Tuserweight /@ backendIDs) &&
+    Lookup[userData, "activeBackendIDs", {}] === Lookup[activeData, "activeIDs", Missing["activeIDs"]] &&
+    Lookup[userData, "activeBackendTokens", {}] === (Tuserweight /@ Lookup[activeData, "activeIDs", {}]) &&
+    Lookup[userData, "userMIToBackendRules", {}] === Thread[tokens -> backendTokens] &&
+    Lookup[userData, "backendToUserMIRules", {}] === Thread[backendTokens -> tokens] &&
+    TrueQ[Lookup[userData, "reversibleQ", False]] &&
+    Lookup[userData, "rank", -1] === count &&
+    Lookup[userData, "mappingDigest", Missing["mappingDigest"]] === dsKiraExpressionDigest[payload]
+   ];
+
+
+dsKiraUserMIDataQ[None, _Association] := True;
+dsKiraUserMIDataQ[_, _Association] := False;
+
+
 dsKiraActiveBasisDataQ[data_Association] := Module[
    {status, count, activeCount, names, expressions, ids, tokens, activeIndices, activeNames,
-    activeExpressions, activeIDs, activeTokens, auxiliaryIDs, variables, targetIDs},
+    activeExpressions, activeIDs, activeTokens, auxiliaryIDs, variables, targetIDs, userData},
    status = Lookup[data, "status", "disabled"];
    If[status === "disabled", Return[True]];
    count = Lookup[data, "count", -1];
@@ -12507,6 +12839,7 @@ dsKiraActiveBasisDataQ[data_Association] := Module[
    auxiliaryIDs = Lookup[data, "auxiliaryIDs", {}];
    variables = Lookup[data, "derivativeVariables", {}];
    targetIDs = Lookup[data, "targetIntegralIDs", {}];
+   userData = Lookup[data, "userMI", None];
    status === "configured" && IntegerQ[count] && count > 0 && IntegerQ[activeCount] && activeCount > 0 &&
     Length[names] === count && Length[expressions] === count && Length[ids] === count && Length[tokens] === count &&
     And @@ (StringQ[#] && # =!= "" & /@ names) && DuplicateFreeQ[names] &&
@@ -12516,7 +12849,8 @@ dsKiraActiveBasisDataQ[data_Association] := Module[
     activeIDs === ids[[activeIndices]] && activeNames === names[[activeIndices]] &&
     activeExpressions === expressions[[activeIndices]] && activeTokens === (Tuserweight /@ activeIDs) &&
     auxiliaryIDs === Complement[ids, activeIDs] && variables =!= {} &&
-    DuplicateFreeQ[targetIDs] && Complement[activeIDs, targetIDs] === {}
+    DuplicateFreeQ[targetIDs] && Complement[activeIDs, targetIDs] === {} &&
+    dsKiraUserMIDataQ[userData, data]
    ];
 
 dsKiraBackendMasterObject[id_Integer, activeIDs_List, idToJ_Association] := If[
@@ -12532,7 +12866,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     coefficientQ, coefficientVariableMap, backendImaginaryUnit, backendVariableNames, allowedBackendVariableNames,
     backendEnergyConvention, backendEnergyConventionQ,
     gaussianPhaseGauge, gaussianPhaseGaugeQ,
-    backendCoefficientQ, activeData, activeDataQ, activeQ, relationIDs, activeIDs, auxiliaryIDs, activeExpressions, activeTokens,
+    backendCoefficientQ, activeData, activeDataQ, activeQ, relationIDs, activeIDs, auxiliaryIDs, activeExpressions, activeTokens, activeUserMITokens,
     activeMasterOrderQ, auxiliaryNotMastersQ, recognizedIDs, backendMasters, boundaryMasterIDs, boundaryMasters,
      checks, diagnostics, issues, reductionRules, masters, masterTokens, returnedMasterIDs, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
@@ -12612,6 +12946,10 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
    auxiliaryIDs = If[activeQ, Lookup[activeData, "auxiliaryIDs", {}], {}];
    activeExpressions = If[activeQ, Lookup[activeData, "activeExpressions", {}], {}];
    activeTokens = If[activeQ, Lookup[activeData, "activeTokens", {}], {}];
+   activeUserMITokens = If[activeQ,
+     Lookup[Lookup[activeData, "userMI", <||>], "activeTokens", activeTokens],
+     {}
+     ];
    activeMasterOrderQ = ! activeQ || Select[masterIDs, MemberQ[activeIDs, #] &] === activeIDs;
    auxiliaryNotMastersQ = ! activeQ || Intersection[auxiliaryIDs, masterIDs] === {};
    recognizedIDs = Join[mapIDs, relationIDs];
@@ -12659,7 +12997,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
    boundaryMasterIDs = Complement[masterIDs, relationIDs];
    boundaryMasters = Lookup[idToJ, boundaryMasterIDs, {}];
    masters = If[activeQ, activeExpressions, backendMasters];
-   masterTokens = If[activeQ, activeTokens, masters];
+   masterTokens = If[activeQ, activeUserMITokens, masters];
    returnedMasterIDs = If[activeQ, activeIDs, masterIDs];
    reductionRules = reductionRulesRaw /. Normal[Association[repKira2J]];
    <|
@@ -12670,6 +13008,7 @@ DSKiraImport[root_String, context_: Automatic, OptionsPattern[]] := Module[
     "backendReductionRules" -> reductionRulesBackend,
     "masters" -> masters,
     "masterTokens" -> masterTokens,
+    "backendMasterTokens" -> If[activeQ, activeTokens, backendMasters],
     "masterIDs" -> returnedMasterIDs,
     "backendMasters" -> backendMasters,
     "backendMasterIDs" -> masterIDs,
@@ -13190,6 +13529,8 @@ dsTreeNaiveDERaw018[context_Association, variables_: Automatic, masters_: Automa
 DSTreeNaiveDE[_, ___] := (Message[DSTreeNaiveDE::badibp]; <|"status" -> "failed", "reason" -> "invalidContextOrIBPData"|>);
 
 (* ::Package:: *)
+(* 本模块从闭合 DE 构造 Euler residual，并按显式次数、通用 loop topology
+   或 pure-massive-bubble reference convention 生成 master 的齐次次数。 *)
 
 (* ::Chapter:: *)
 (*018 标度关系检查*)
@@ -13223,6 +13564,80 @@ dsPureMassiveBubbleDegree[int_J, context_Association] := Module[{powers, vertexC
    vertexCount = Length[powers["aPowers"]];
    offset = Switch[vertexCount, 2, 2, 1, 1, _, Return[$Failed]];
    dim - Total[powers["bPowers"]] - Total[powers["aPowers"]] - offset
+   ];
+
+
+(* ::Section::Closed:: *)
+(*通用 loop topology 的 normalized J 次数*)
+
+(* ISP 是 loop scalar product，因而每个幂次贡献两个动量次数。sector prefactor
+   必须从完整 N_s 结构读取；只接受关于当前 Euler 变量齐次的 prefactor。 *)
+dsLoopTopologyDegree[
+   int : J[_, _, ispPowers_List],
+   variables_List,
+   weights_List,
+   context_Association
+   ] := Module[
+   {powers, rootTopo, loopCount, vertexCount, prefactorData, prefactor,
+    prefactorDegree},
+   powers = dsIntegralPhysicalPowers[int, context];
+   If[powers === $Failed, Return[$Failed]];
+   rootTopo = context["topology"];
+   loopCount = Lookup[rootTopo, "graphLoopCount", Length[Lookup[rootTopo, "loopMomenta", {}]]];
+   vertexCount = Length[powers["aPowers"]];
+   prefactorData = sectorPrefactorDataForIntegral018[rootTopo, int];
+   prefactor = materializeSectorPrefactor018[prefactorData];
+   If[prefactor === $Failed || TrueQ[prefactor === 0], Return[$Failed]];
+   prefactorDegree = Together[
+     Total[MapThread[#1 #2 D[prefactor, #2] &, {weights, variables}]]/prefactor
+     ];
+   If[! And @@ (dsScaleZeroQ[D[prefactorDegree, #]] & /@ variables), Return[$Failed]];
+   Together[
+    loopCount dim - Total[powers["bPowers"]] - Total[powers["aPowers"]] -
+     vertexCount + 2 Total[ispPowers] + prefactorDegree
+    ]
+   ];
+
+
+dsLoopTopologyExpressionDegree[
+   expr_,
+   variables_List,
+   weights_List,
+   context_Association
+   ] := Module[
+   {linearData, termDegrees, coefficientDegree, integralDegree, referenceDegree},
+   linearData = publicLinearIntegralDecomposition[expr];
+   If[
+    Lookup[linearData, "status", "failed"] =!= "linear" ||
+     ! TrueQ[linearData["constantTerm"] === 0],
+    Return[$Failed]
+    ];
+   termDegrees = MapThread[
+     Function[{coefficient, int},
+      If[
+       TrueQ[coefficient === 0],
+       Nothing,
+       coefficientDegree = Together[
+         Total[MapThread[#1 #2 D[coefficient, #2] &, {weights, variables}]]/coefficient
+         ];
+       integralDegree = dsLoopTopologyDegree[int, variables, weights, context];
+       If[
+        integralDegree === $Failed ||
+         ! And @@ (dsScaleZeroQ[D[coefficientDegree, #]] & /@ variables),
+        $Failed,
+        Together[coefficientDegree + integralDegree]
+        ]
+       ]
+      ],
+     {linearData["coefficients"], linearData["integrals"]}
+     ];
+   If[termDegrees === {} || MemberQ[termDegrees, $Failed], Return[$Failed]];
+   referenceDegree = First[termDegrees];
+   If[
+    And @@ (dsScaleZeroQ[# - referenceDegree] & /@ Rest[termDegrees]),
+    referenceDegree,
+    $Failed
+    ]
    ];
 
 (* 线性组合的次数同时包含显式动力学系数；所有非零项必须具有同一 Euler 次数。 *)
@@ -13281,6 +13696,7 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
      Automatic :> Which[
        ListQ[declaredDegrees], declaredDegrees,
        relation === "PureMassiveBubble", dsPureMassiveBubbleExpressionDegree[#, variables, weights, context] & /@ masters,
+       relation === "LoopTopology", dsLoopTopologyExpressionDegree[#, variables, weights, context] & /@ masters,
        True, $Failed
        ]
      ];
@@ -15058,9 +15474,10 @@ DSKinematics[input_, rules_: Automatic] := <|
    |>;
 
 (* ::Package:: *)
-(* 本模块定义 018 唯一积分表示与 sector 身份层。所有 root line 槽位永久保留；
-   full line 使用三槽，shrunk line 使用单槽，fixed line 用短字符串 "F" 标记无整数动量幂。
-   sector prefactor 只保存结构化参数、幂次和来源，物化表达式由一个统一 helper 完成。 *)
+(* 本模块定义 018 唯一积分表示、sector 身份与 massless seed quotient。所有 root
+   line 槽位永久保留；full line 使用三槽，shrunk line 使用单槽，fixed line 用短
+   字符串 "F" 标记无整数动量幂。masslessFull 的公开槽仍是 {n1,n2}，但 source
+   seed 只枚举 n2->0 的两个代数代表，导数输出再由统一 canonical 映回该代表。 *)
 
 (* ::Chapter:: *)
 (*统一 line-pack schema*)
@@ -15121,7 +15538,58 @@ discreteVarsForLine[line_Association] := If[
    ];
 
 
-discreteStateCountForLine[line_Association] := 2^Length[discreteVarsForLine[line]];
+(* 输入输出仍保留两个端点槽；这里只缩减 DSSeeds 的 source representatives。
+   massive 需要四态，masslessFull 只生成 00/10，cross 与 shrunk 不生成离散态。 *)
+discreteSeedRuleSetsForLine018[line_Association] := Module[
+   {id = line["id"], variables = discreteVarsForLine[line]},
+   Switch[Lookup[line, "packType", ""],
+    "masslessFull" /; Lookup[line, "state", "full"] =!= "shrunk",
+    {
+     {n[id, 1] -> 0, n[id, 2] -> 0},
+     {n[id, 1] -> 1, n[id, 2] -> 0}
+     },
+    _, ruleSetsForVars[variables]
+    ]
+   ];
+
+
+rawBinaryDiscreteStateCountForLine018[line_Association] :=
+  2^Length[discreteVarsForLine[line]];
+
+
+discreteStateCountForLine[line_Association] :=
+  Length[discreteSeedRuleSetsForLine018[line]];
+
+
+(* enumerateDiscreteStates 是所有普通 time/momentum seed 的共同入口。返回值同时保存
+   raw 双端点空间与 quotient representative 空间，供 release/audit 核对缩减边界。 *)
+enumerateDiscreteStates[expr_, topo_Association] := Module[
+   {perLineRuleSets, allRuleSets, rawStateCount},
+   perLineRuleSets = discreteSeedRuleSetsForLine018 /@ topo["lines"];
+   allRuleSets = Flatten[#, 1] & /@ Tuples[perLineRuleSets];
+   rawStateCount = Times @@ (rawBinaryDiscreteStateCountForLine018 /@ topo["lines"]);
+   <|
+    "rules" -> allRuleSets,
+    "integrals" -> (expr /. # & /@ allRuleSets),
+    "mode" -> "masslessQuotientRepresentatives",
+    "canonicalDirection" -> "n2ToZero",
+    "rawBinaryStateCount" -> rawStateCount,
+    "representativeStateCount" -> Length[allRuleSets],
+    "eliminatedAlgebraicStateCount" -> rawStateCount - Length[allRuleSets]
+    |>
+   ];
+
+
+selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
+   {data = enumerateDiscreteStates[makeBaseIntegral[topo], topo]},
+   Join[
+    <|"status" -> "generated", "ruleCount" -> Length[data["rules"]]|>,
+    KeyTake[data, {
+      "mode", "canonicalDirection", "rawBinaryStateCount",
+      "representativeStateCount", "eliminatedAlgebraicStateCount", "rules"
+      }]
+    ]
+   ];
 
 
 publicExpectedPackLength[_Association, "shrunk"] := 1;
@@ -16379,13 +16847,20 @@ lineFunctionPreset018[line_Association] := Lookup[
    ];
 
 
-parityFunctionSystemUsableQ018[topo_Association] := Module[{massiveLines, presets},
-   massiveLines = Select[
-     topo["lines"],
-     Lookup[#, "massType", "massive"] === "massive" &
-     ];
-   presets = lineFunctionPreset018 /@ massiveLines;
-   massiveLines =!= {} && And @@ (MemberQ[{"h", "H"}, #] & /@ presets)
+(* Parity transport only needs every line building block to have a proved GF(2)
+   closure. Massive h/H and massless exponential lines both satisfy this contract;
+   an unknown custom function system remains fail closed. *)
+parityLineFunctionSystemUsableQ018[line_Association] := Switch[
+   Lookup[line, "massType", "massive"],
+   "massive", MemberQ[{"h", "H"}, lineFunctionPreset018[line]],
+   "massless", Lookup[line, "bbType", Missing["NoMasslessPreset"]] === "exp",
+   _, False
+   ];
+
+
+parityFunctionSystemUsableQ018[topo_Association] := Module[{lines},
+   lines = Lookup[topo, "lines", {}];
+   lines =!= {} && And @@ (parityLineFunctionSystemUsableQ018 /@ lines)
    ];
 
 
@@ -16446,7 +16921,7 @@ parityMetadataForSector018[topo_Association] := Module[
       "parityUsableQ" -> usableFunctionQ, "constraints" -> {}|>]
     ];
    If[! usableFunctionQ,
-    Return[<|"status" -> "disabled", "reason" -> "nonHankelFunctionSystem",
+    Return[<|"status" -> "disabled", "reason" -> "unsupportedParityFunctionSystem",
       "parityUsableQ" -> False, "constraints" -> {}|>]
     ];
    normalized = normalizeParityConstraints018[raw];
@@ -16570,9 +17045,54 @@ treeFormulaPendingRederivation018[operation_String, context_Association] := Modu
 (* ::Chapter:: *)
 (*018 template-only DSSeeds*)
 
+(* 数值规则在 general template 密封前逐线性项应用。J 的指标保持符号；这里只化简
+   coefficient，并把剩余变量作为 producer 诊断交给后续 full-numeric workflow 检查。 *)
+dsNumericSeedTerm018[term_, rules_List] := Module[{evaluated, integrals, integral, coefficient},
+   evaluated = term /. rules;
+   integrals = DeleteDuplicates[Cases[evaluated, _J, {0, Infinity}]];
+   Which[
+    Length[integrals] === 1,
+    integral = First[integrals];
+    coefficient = Cancel[Together[evaluated/integral]];
+    coefficient integral,
+    True,
+    Cancel[Together[evaluated]]
+    ]
+   ];
+
+
+dsNumericSeedExpression018[expr_, rules_List] :=
+  Total[dsNumericSeedTerm018[#, rules] & /@ linearTerms[Expand[expr]]];
+
+
+dsSeedCoefficientVariables018[expr_] := Module[{coefficients},
+   coefficients = Map[
+     Function[term,
+      With[{integrals = DeleteDuplicates[Cases[term, _J, {0, Infinity}]]},
+       If[Length[integrals] === 1, Cancel[Together[term/First[integrals]]], term]
+       ]
+      ],
+     linearTerms[Expand[expr]]
+     ];
+   DeleteDuplicates[Quiet@Check[Variables[coefficients], {}]]
+   ];
+
+
+dsApplyNumericRulesToSeedTemplate018[entry_Association, rules_List] := Module[{equation},
+   equation = dsNumericSeedExpression018[Lookup[entry, "equation", 0], rules];
+   Join[entry, <|
+     "equation" -> equation,
+     "numericRulesAppliedBeforeSeeds" -> True,
+     "seedNumericRules" -> rules,
+     "seedCoefficientVariables" -> dsSeedCoefficientVariables018[equation]
+     |>]
+   ];
+
 DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
    {resolved, seedSkeleton, templateData, sealedTemplates, seedGroups, seedGroupMetadata,
-    seedRangeMetadata, discoveredIndices, progress = OptionValue[ProgressReporting]},
+    seedRangeMetadata, discoveredIndices, applyNumericRules,
+    seedNumericRules, seedCoefficientVariables, seedContinuousCoefficientVariables,
+    seedResidualCoefficientVariables, progress = OptionValue[ProgressReporting]},
    resolved = dsResolveContext[context];
    If[Head[resolved] === Missing,
     Message[DSSeeds::noinit];
@@ -16594,7 +17114,9 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
      |>;
    templateData = dsStageRun[
      "构造全部 reachable-sector 离散态 seed 模板 / Building all reachable-sector discrete-state seed templates",
-     If[Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly",
+     If[
+      Lookup[resolved["topology"], "ibpMode", "full"] === "timeOnly" &&
+       ! treeFormulaMasslessPendingQ018[resolved],
       dsPureTimeDirectTemplateData018[resolved],
       dsLoopSeedTemplateData[resolved, seedSkeleton]
       ],
@@ -16604,10 +17126,33 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
     Message[DSSeeds::failed, Lookup[templateData, "reason", "templateGenerationFailed"]];
     Return[Join[seedSkeleton, <|"status" -> "failed", "templateData" -> templateData|>]]
     ];
+   applyNumericRules = TrueQ[OptionValue[ApplyNumericRules]];
+   seedNumericRules = If[applyNumericRules, Lookup[resolved["topology"], "numericRules", {}], {}];
+   If[applyNumericRules,
+    templateData = Join[templateData, <|
+       "allSeeds" -> (dsApplyNumericRulesToSeedTemplate018[#, seedNumericRules] & /@
+          Lookup[templateData, "allSeeds", {}])
+       |>]
+    ];
    sealedTemplates = dsSealSeedTemplates[templateData["allSeeds"], resolved];
+   seedCoefficientVariables = If[
+     applyNumericRules,
+     DeleteDuplicates[Flatten[Lookup[sealedTemplates, "seedCoefficientVariables", {}]]],
+     {}
+     ];
    seedGroups = dsDefaultSeedGroups[sealedTemplates];
    seedGroupMetadata = dsSeedGroupMetadataFromGroups[seedGroups];
    discoveredIndices = DeleteDuplicates[Flatten[dsEntrySeedVariables /@ sealedTemplates]];
+   seedContinuousCoefficientVariables = If[
+     applyNumericRules,
+     Select[seedCoefficientVariables, MemberQ[discoveredIndices, #] &],
+     {}
+     ];
+   seedResidualCoefficientVariables = If[
+     applyNumericRules,
+     Select[seedCoefficientVariables, ! MemberQ[discoveredIndices, #] &],
+     {}
+     ];
    seedRangeMetadata = DSMetaSeedRange[seedGroups, discoveredIndices];
    $dSIBPLastSeedTemplates = sealedTemplates;
    $dSIBPLastSeedGroups = seedGroups;
@@ -16625,6 +17170,11 @@ DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
      "seedGroupMetadata" -> seedGroupMetadata,
      "seedRangeMetadata" -> seedRangeMetadata,
      "seedTemplateSummary" -> KeyDrop[templateData, "allSeeds"],
+     "numericRulesAppliedBeforeSeeds" -> applyNumericRules,
+     "seedNumericRules" -> seedNumericRules,
+     "seedCoefficientVariables" -> seedCoefficientVariables,
+     "seedContinuousCoefficientVariables" -> seedContinuousCoefficientVariables,
+     "seedResidualCoefficientVariables" -> seedResidualCoefficientVariables,
      "dSIBPStatus" -> "generated",
      "dSIBPContextSummary" -> dsContextSummary[resolved]
      |>]

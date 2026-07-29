@@ -59,6 +59,11 @@ detailedRanges = ({#, 0, 0} & /@ continuousIndices);
 seedDataDetailed = generateIBP[allSeeds, Sequence @@ detailedRanges];
 
 linearData = DSLinear[seedData, context, Sequence @@ linearOptions];
+(* 后端需要不同编号时只在 linearData 层显式重排一次；plan 不再自行改序。 *)
+integralOrder = Lookup[linearData, "integralList", {}];
+If[Length[integralOrder] >= 2,
+ linearData = DSReorderIntegrals[linearData, Reverse@Take[integralOrder, 2]]
+ ];
 kiraPlan = DSKiraPlan[linearData, <|
     "stage" -> "preReduction",
     "candidateIntegrals" -> Take[Lookup[linearData, "integralList", {}], UpTo[3]]
@@ -73,6 +78,7 @@ summary = <|
    "equationCount" -> Lookup[seedData, "equationCount", Missing["NotAvailable"]],
    "uniformDetailedEqual" -> (Lookup[seedData, "equations", {}] === Lookup[seedDataDetailed, "equations", {}]),
    "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"],
+   "integralOrderAuthority" -> Lookup[linearData, "integralOrderAuthority", Missing["NotReordered"]],
    "kiraPlanStatus" -> Lookup[kiraPlan, "status", "missing"]
    |>;
 

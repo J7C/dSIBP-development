@@ -10,7 +10,7 @@ buildDir = DirectoryName[$InputFileName];
 packageRoot = DirectoryName[buildDir];
 projectRoot = DirectoryName[DirectoryName[packageRoot]];
 loaderPath = FileNameJoin[{packageRoot, "Kernel", "dSIBP.wl"}];
-defaultOutputPath = FileNameJoin[{projectRoot, "000_code", "test", "results_test", "package_018.wl"}];
+defaultOutputPath = FileNameJoin[{projectRoot, "000_code", "test", "results_test", "package_018.1.wl"}];
 outputOverride = Quiet[Environment["DSIBP_BUILD_OUTPUT"]];
 outputPath = If[
    StringQ[outputOverride] && StringLength[StringTrim[outputOverride]] > 0,
@@ -28,6 +28,7 @@ modulePaths = FileNameJoin[Prepend[#, packageRoot]] & /@ {
     {"Kernel", "IBP", "PureTime018.wl"},
     {"Kernel", "IBP", "GenerateIBP.wl"},
     {"Kernel", "Backends", "KiraExport.wl"},
+    {"Kernel", "Backends", "UserMI.wl"},
     {"Kernel", "Backends", "KiraPlan.wl"},
     {"Kernel", "Backends", "KiraImport.wl"},
     {"Kernel", "DE", "BuildDE.wl"},
@@ -87,6 +88,6 @@ If[! DirectoryQ[DirectoryName[outputPath]],
 
 writeUTF8LFText[outputPath, singleFileSource];
 
-Print["package_018.wl: ", outputPath];
+Print["package_018.1.wl: ", outputPath];
 Print["bytes: ", FileByteCount[outputPath]];
 Print["modules: ", Length[modulePaths]];

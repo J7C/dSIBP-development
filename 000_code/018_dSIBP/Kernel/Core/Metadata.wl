@@ -273,8 +273,8 @@ DSInit[input_Association, OptionsPattern[]] := Module[
     ];
    If[! parityRequestedQ && ! parityUsableQ,
     dsErrorPrint[
-     "当前函数族不是完整 h/H parity 域，parity 筛选已禁用；普通 IBP 仍可继续。 " <>
-      "The current family is not a complete h/H parity domain; parity filtering is disabled, while ordinary IBP remains available."
+     "当前函数系统没有已证明可运输的 parity 闭合，parity 筛选已禁用；普通 IBP 仍可继续。 " <>
+      "The current function system has no proved transportable parity closure; parity filtering is disabled, while ordinary IBP remains available."
      ]
     ];
    warnings = Select[

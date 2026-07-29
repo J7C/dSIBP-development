@@ -31,7 +31,7 @@
 - Phase 1 不生成大范围解析 IBP，不撒任何连续指标点或数值点；连续指标保持 general，zero-point 保持非零符号。
 - 每个函数族只使用第 9.0 节冻结的一个纯同号分支和一个混合分支，并应用 family 已声明的 parity。通用模板按实际可达 sector 与适用 time/momentum 生成元组织；离散端点只按允许的 `0/1` 等价类推导，不再把连续指标包络展开。
 - 任何 massive `n=2` 一出现就立即 EOM；massless 正式表示从不产生 `n=2`。
-- Phase 2 的 package 全流程可以展开冻结的 seed envelope；只允许任务书点名的 representative workflow 运行外部 reduction，并且每个 workflow 只使用一组确定性精确数值规则。reference 既有解析结果只复制、哈希核验并作约定变换，不重新生成 reference IBP 或运行 reference Kira。
+- Phase 2 的 package 全流程可以展开冻结的 seed envelope；只允许任务书点名的 representative workflow 运行外部 reduction，并且每个 workflow 只使用一组确定性精确数值规则。纯数值 workflow 必须先从符号 topology 构造参量微分算符，再从 `DSSeeds[...,ApplyNumericRules->True]` 起让 seed、撒点关系、导数系数和 reduction 共用同一点；要求 `seedResidualCoefficientVariables==={}`、`sampledCoefficientVariables==={}`，并对去掉全部 `J` 后的系数独立确认 `Variables==={}`。reference 既有解析结果只复制、哈希核验并作约定变换，不重新生成 reference IBP 或运行 reference Kira。
 
 ## 2. 自包含的 SK 费曼规则与 building block
 
@@ -179,7 +179,7 @@ J[aList, linePacks, ispList]
 |---|---|---|
 | `J[[1]] = aList` | 顶点时间幂的整数指标 | 先按 sector 的顶点合并关系取每个连通类在 `vertexOrder` 中最早的顶点为代表，再按这些代表在 `vertexOrder` 中的次序排列；`aList[[i]]` 对应该代表顶点的时间幂 |
 | `J[[2]] = linePacks` | 每条原始内线的指标包 | `linePacks[[p]]` 永远对应 `e=lineOrder[[p]]`；即使线已缩并也保留该 line slot，只改变 pack 形状 |
-| `J[[3]] = ispList` | ISP numerator 的整数幂 | `ispList[[r]]` 对应 `ispData[[r]]`；被积函数使用 `ISP[r]^ispList[[r]]`，正指标表示 numerator 幂 |
+| `J[[3]] = ispList` | ISP 坐标的整数幂 | `ispList[[r]]` 对应 `ispData[[r]]`；零点固定为 0，正指标表示 numerator，用户显式负指标表示该坐标的额外 denominator |
 
 每个 ISP 使用当前最新 package 的公开 Association schema：
 
@@ -187,7 +187,7 @@ J[aList, linePacks, ispList]
 <|"name" -> rho1, "expr" -> sp[q1,k], "range" -> {0,1}|>
 ```
 
-`name` 是用户侧唯一符号，`expr` 是由声明动量基组成的标量积表达式，`range` 是该 numerator 指标在 seed 中允许的值域。独立推导与 package 对照均直接使用这三个字段，不设 `id/expression` adapter。
+`name` 是用户侧唯一符号，`expr` 是由声明动量基组成的标量积表达式，`range` 是该整数指标在 seed 中允许的值域。独立推导与 package 对照均直接使用这三个字段，不设 `id/expression` adapter。物理 numerator case 使用非负幂；package 对用户显式负 range 不得报错或删点。
 
 每个 line pack 内部的槽位由图论线型和 SK 状态共同固定。`ibpMode->"full"` 时只有 cycle line 使用 indexed-power schema；bridge/non-cycle line 使用 fixed-coefficient schema。`ibpMode->"timeOnly"` 时全部 active lines 都使用 fixed-coefficient schema：
 
@@ -317,7 +317,7 @@ q1^(-beta1) M[sigma,n11,n12;q1,tau1-tau2]
 | unshrunk cycle line `e` | `b[e]` | `b0[e]` | `q[e]^(-(b[e]+b0[e]))` |
 | shrunk cycle line `e` | `bS[e]` | `bS0Sector[e]` | `q[e]^(-(bS[e]+bS0Sector[e]))` |
 | fixed/bridge/timeOnly line `e` | 无 `b/bS` 槽 | `b0[e]` 及 sector 派生零点 | 全部物理幂在显式系数中 |
-| ISP `r` | `ispList[[r]]` | 无零点 | `ispData[[r]]["expr"]^ispList[[r]]` |
+| ISP `r` | `ispList[[r]]` | 固定零点 `0` | `ispData[[r]]["expr"]^ispList[[r]]` |
 
 这里的符号约定必须严格区分：`a` 是正的时间幂指标；cycle line 的 `b/bS` 是分母幂指标，所以实际 `q` 指数前有负号。`a0/b0/bS0` 可以是符号、质量参数的函数或其它固定表达式，不要求为整数；只有实际存在于 `J` 的 `a/b/bS` 才是 IBP 后端整数移位变量。fixed line 即使输入 `b0[e]`，也不能据此获得 `b` 槽。
 
@@ -488,7 +488,7 @@ masslessCross:                {b[e],0,0}           | {"F",0,0}
 shrunk:                       {bS[e]}              | {"F"}
 ```
 
-各 family 数据块后展示的 top notation 就是 `topIntegralTemplate` 必须保存的值。它必须分别展示同分支与异分支时实际的 `J`，不能只写一个无法判断 pack 长度的占位符。ISP 被积函数约定为 `ISP[r]^ispN[r]`，故正 `ispN` 表示 numerator 幂，并按 `ispData` 顺序放入 `J` 第三槽。
+各 family 数据块后展示的 top notation 就是 `topIntegralTemplate` 必须保存的值。它必须分别展示同分支与异分支时实际的 `J`，不能只写一个无法判断 pack 长度的占位符。ISP 被积函数约定为 `ISP[r]^ispN[r]`，零点固定为 0；正 `ispN` 表示 numerator，用户显式负值表示额外 denominator，并按 `ispData` 顺序放入 `J` 第三槽。
 
 sector 名统一为 `"top"` 或按 `lineOrder` 排序的 `"e1"`、`"e1_e3"` 等。某 sign case 只枚举由第 8 节独立推导实际到达的 line sets；cross 线没有 theta 导数，不应伪造 shrink sector。缩并后以 `vertexOrder` 中序号最小的顶点作为合并类代表，`aList` 按代表顶点的原顺序排列。
 
@@ -501,7 +501,7 @@ sector 名统一为 `"top"` 或按 `lineOrder` 排序的 `"e1"`、`"e1_e3"` 等�
 | `pure_massless_bubble` | `--` | `+-` | 不适用 |
 | `mixed_bubble` | `++` | `-+` | 直接 h |
 | `mixed_triangle` | `---` | `+-+` | 直接 h |
-| `mixed_sunrise` | `++` | `+-` | 直接 h |
+| `single_massive_sunrise` | `++` | `+-` | 直接 h |
 | `pure_massive_bubble_reference` | `--` | `-+` | 直接 h；裸 H `T=I`；H 经 `T_Htoh` 变到 h |
 | `two_loop_isp_toy` | `++` | `-+` | 不适用 |
 | `massless_sunrise_bundle_guard` | `--` | `+-` | 不适用 |
@@ -529,7 +529,7 @@ loopMomenta = {};
 loopExternalMomenta = {};
 independentExternalMomenta = {ell};
 ibpMode = "timeOnly";
-vertexEnergies = <|v1->E1,v2->E2|>;
+vertexEnergies = <|v1->kE,v2->kE|>;
 lineOrder = {1};
 lineData = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->ell,
@@ -555,11 +555,11 @@ J[{a12},{{"F"}},{}]
 
 sector 为：`++ -> {top,e1}`，`+- -> {top}`。另建端点反转子例，只把 line 1 改为 `endpoints->{v2,v1}`，物理动量和其它输入不变；端点反转对双端点 quotient 的作用必须由第 4 节定义推导。
 
-Phase 2 按正式用户手册所述的公开 workflow 验收，不在任务书中另行规定通用调用教程或私有分派参数。验收合同仅为：`++` 的公开 canonical seed batch 必须保留三槽 fixed line pack、覆盖 top 的四个双端点输入状态、quotient canonical 与 `{top,e1}` 两个 sector，并能生成 backend-neutral linear data；`+-` 只覆盖 `{top}`。任何必须依赖未公开状态参数才能得到这些结果的实现均不通过。
+Phase 2 按正式用户手册所述的公开 workflow 验收，不在任务书中另行规定通用调用教程或私有分派参数。验收合同仅为：`++` 的公开 canonical seed batch 必须保留三槽 fixed line pack，但 source seeds 只生成 `n2->0` 的 `00/10` 两个 quotient representatives；`01/11` 的原始定义、关系、符号与模长参数系数仍由 Phase 1 四态手推覆盖，并在 package 导数输出中检查其立即 canonical。batch 覆盖 `{top,e1}` 两个 sector并能生成 backend-neutral linear data；`+-` 只覆盖 `{top}`。任何必须依赖未公开状态参数才能得到这些结果的实现均不通过。
 
 专测：
 
-- `(n1,n2) in {0,1}^2`、两条 quotient relations与 canonical 方向；
+- Phase 1 的 `(n1,n2) in {0,1}^2` 两条 quotient relations、原始 `q^2`/fixed 参数系数；Phase 2 source 的 `00/10` representatives 与 canonical 方向；
 - 固定的 `++` 与 `+-` 两个分支；
 - 端点反转；
 - 同端点二阶导数；
@@ -643,7 +643,7 @@ symmetryRules = {};
 - 固定的 `--` 与 `+-` 两个分支；
 - 每个 case 的全部可达 sector；
 - 每个 sector 全部 time 和 `d/dq.q`、`d/dq.k`；
-- 所有剩余 masslessFull `(n1,n2) in {0,1}^2`，并在 relation 层验证 quotient canonical。
+- 所有剩余 masslessFull line 的 `00/10` source representatives；对导数临时产生的 `01/11` 在 relation 层验证 quotient canonical 与完整动量系数链。
 
 本 benchmark 保留 018 逐线 `J` 表示：每条 masslessFull 线各自保留 `{b[e],n[e,1],n[e,2]}`。这只是输出槽 convention，不规定多传播子乘积的分布结果；独立推导必须从原始乘积确定 quotient、contact 与 canonical 各项，不能把 package 的实现或当前 expected 当作输入。
 
@@ -726,7 +726,7 @@ J[{a1,a2,a3},
 - 全部剩余 massive/massless 离散状态；
 - 缩并导致的顶点合并、coincident line 和 sector zero-point。
 
-### 9.6 mixed_sunrise
+### 9.6 single_massive_sunrise
 
 固定定义：
 
@@ -734,32 +734,40 @@ J[{a1,a2,a3},
 vertexOrder = {v1,v2};
 vertexSignCases = <|
   "++"->{+1,+1}, "+-"->{+1,-1}|>;
-loopMomenta = {q1,q2};
-loopExternalMomenta = {k};
+loopMomenta = {l3,k321};
+loopExternalMomenta = {kL};
 independentExternalMomenta = {};
 (* 缺省输出：sp[k,k]->ss11^2。 *)
 vertexEnergies = <|v1->E1,v2->E2|>;
 lineOrder = {1,2,3};
 lineData = {
-  <|"id"->1, "endpoints"->{v1,v2}, "momentum"->q1,
+  <|"id"->1, "endpoints"->{v1,v2}, "momentum"->l3,
     "massType"->"massive", "bbType"->"h", "nu"->nuM|>,
-  <|"id"->2, "endpoints"->{v1,v2}, "momentum"->q2,
+  <|"id"->2, "endpoints"->{v1,v2}, "momentum"->k321,
     "massType"->"massless", "bbType"->"exp", "nu"->0|>,
-  <|"id"->3, "endpoints"->{v1,v2}, "momentum"->q1-q2-k,
+  <|"id"->3, "endpoints"->{v1,v2}, "momentum"->l3-k321-kL,
     "massType"->"massless", "bbType"->"exp", "nu"->0|>
 };
 ispData = {
-  <|"name"->rho1,"expr"->sp[q1,k],"range"->{0,1}|>,
-  <|"name"->rho2,"expr"->sp[q2,k],"range"->{0,1}|>
+  <|"name"->rhoMassless2,"expr"->sp[k321,l3],"range"->{0,1}|>,
+  <|"name"->rhoMassless3,"expr"->sp[l3-k321-kL,l3],"range"->{0,1}|>
 };
 zeroPointRules = {
-  a0[v1]->alpha1, a0[v2]->alpha2,
-  b0[1]->beta1, b0[2]->beta2, b0[3]->beta3
+  a0[v1]->alpha, a0[v2]->alpha,
+  b0[1]->betaM, b0[2]->beta0, b0[3]->beta0
 };
 generatorList = {dtau[v1],dtau[v2],
   dqq[1,1],dqq[1,2],dqk[1,1],
   dqq[2,1],dqq[2,2],dqk[2,1]};
-symmetryRules = {};
+symmetryRules = {
+  HoldPattern[(int_J /; vertexSwapNeededQ[int])] :> swapVertices[int],
+  HoldPattern[(int_J /; masslessLineSwapNeededQ[int])] :>
+    swapMasslessLinesAndISP[int]
+};
+parityConstraints = {
+  b[1]+n[1,1]+n[1,2] -> 1,
+  b[2]+n[2,1]+n[2,2]+b[3]+n[3,1]+n[3,2] -> 1
+};
 ```
 
 两条 massless 线 2、3 的双端点槽都按 `v1->v2` 排序。top notation 为
@@ -776,7 +784,9 @@ J[{a1,a2},
   {r1,r2}]
 ```
 
-每个 sign case 的 sector 集合都从三条线的完整原始乘积独立推导，任务书不列出目标答案。五个独立 loop scalar products为 `q1^2,q1.q2,q2^2,q1.k,q2.k`；三个 propagator square 加上述两个 ISP 必须先证明可反解。不能只在 `ispN=0` 检查：至少另取 `{r1,r2}={1,0}` 和 `{0,1}` 各一个最小 seed，验证两个 ISP 因子自身求导。
+每个 sign case 的 sector 集合都从三条线的完整原始乘积独立推导，任务书不列出目标答案。五个独立 loop scalar products为 `l3^2,l3.k321,k321^2,l3.kL,k321.kL`；三个 propagator square 加上述两个 ISP 必须先证明可反解。两个 ISP 因子自身的求导项都必须保留为 general `r1,r2` 公式，并在公式层确认 `rj=0` 时相应自身导数精确为零；不得为此枚举 ISP 数值点。`++` 分支使用 `odd,odd`：第一条约束是 massive line 的 `b+n1+n2`，第二条是两条可交换 massless lines 对应量之和；lower sector 的 affine offset必须由 root constraint 经 contact map 推导。
+
+两类对称性都必须先为等价类选定唯一 canonical representative，再写成指向该代表的单向规则；上述 `vertexSwapNeededQ`、`masslessLineSwapNeededQ` 及右端 helper 的明确定义必须保存在该 family 的 `family.wl`。顶点交换同时交换 `aList` 并反转三条 full line 的 endpoint slots；在 `k321 <-> l3-k321-kL` 下，两条 massless lines 交换必须同步交换 line 2/3 packs 与 ISP 1/2 指数。禁止写 `A->B` 和 `B->A` 的双向循环，也不能只交换 line packs 而遗漏 ISP。package 当前不负责给未排序规则自动定向。
 
 固定的 `++` 与 `+-` 两个分支、全部可达 sector、全部 active time，以及六个 momentum 生成元：
 
@@ -785,7 +795,11 @@ d/dq1.q1, d/dq1.q2, d/dq1.k
 d/dq2.q1, d/dq2.q2, d/dq2.k
 ```
 
+`++` 与对应 general seed 比较固定使用上述 `odd,odd` 子系统。第一行是唯一 massive line 的 `b+Sum[n]` parity；第二行是两条可交换 massless line 的总 `b+Sum[n]` parity。这里把 parity 作为 general source class 与 sector affine remainder 保存，不枚举连续指标点。contact/shrink sector 不重新手写约束，而由 root 两行经 compiled contact affine map 传播：每收缩一条 massless cycle line，第二行的 affine offset 翻转一次；simultaneous contact 按收缩条数模 2 累加。顶点交换及 massless line/ISP 同步交换必须保持这组 `odd,odd` 约束。
+
 三条线仍按当前逐线 `J` 表示分别保留 line pack；不得用其它 Head 替代这里的三槽 `J`，也不得由 pack 形状反推未经独立推导的分布结果。
+
+本 family 的交付范围到此为止，只允许两类输出：全部限定 branch/sector/generator/discrete class 的 general IBP seed identities，以及 `{ss11,kE}` 的 general 参数微分算符。`ss11=Sqrt[sp[kL,kL]]` 必须由 `2 ss11 d/d sp[kL,kL]` 链式得到；共同参数 `kE` 的算符同时包含两个顶点能量方向。Phase 1 不生成连续 seed 点、target、`linearData`、Kira 输入、master、DE 或 scaling。Phase 2 只用 `DSInit -> DSSeeds/DSAllSeeds` 和初始化 operator metadata/公开 `ds` witness 与上述 frozen expected 比较；不得为此 family 调用 `DSMetaSeedRange`、`DSGenerateIBP`、`DSLinear` 或任何后端。
 
 ### 9.7 pure_massive_bubble_reference
 
@@ -1023,7 +1037,7 @@ a[v], b[e], bS[e], ispN[j]
 
 为 general 符号，并显式保留 `a0[v]`、`b0[e]`、独立推导得到的 merged zero-point、适用的 `bS0[e]` 与结构化 sector prefactor。fixed/bridge/timeOnly line 没有连续 `b/bS` 槽，不得为了统一外形伪造该指标；其物理模长幂留在 `N_s`。若一个 general seed 恒等式严格为零，直接以零模板记录原因，不得另找非零整数点替代。
 
-离散端点状态不是连续撒点。对任务书点名 branch/parity 下实际存在的 massive 或 masslessFull line，只推导完成通用 seed 恒等式所需的有限 `n_i in {0,1}` 基底类，并在应用 quotient、EOM、symmetry、parity 与 canonical 后冻结。parity 已判定为零的类记录其选择规则和零原因，不再把相反 parity 当作额外验证项目。massive `n=2` 只作为 EOM 公式中的中间状态并立即消去；massless 正式输出不出现 `n=2`。
+离散端点状态不是连续撒点。对任务书点名 branch/parity 下实际存在的 massive 或 masslessFull line，Phase 1 先从四个原始 massless 双端点状态推导 quotient 与完整动量系数；冻结后，IBP source seeds 只保留 `n2->0` 的 `00/10` 两个代表，massive 仍按所需四态处理。parity 已判定为零的类记录其选择规则和零原因，不再把相反 parity 当作额外验证项目。massive `n=2` 只作为 EOM 公式中的中间状态并立即消去；massless 正式输出不出现 `n=2` 或非 canonical 的 source `n2=1`。
 
 每条 Phase 1 seed identity 覆盖一个冻结的 `{family,branch,sector,generator,discreteClass,basisMode}`。这里的“覆盖”是 general 公式覆盖，不是对连续指标 envelope 的点枚举。`DSGenerateIBP` 的连续范围、实际点数、parity 筛选和关系数量只属于 Phase 2 点名项目。
 
@@ -1059,7 +1073,7 @@ vertexExchangeRules = {
 - 单独应用 line exchange、单独应用 vertex exchange 和按指定顺序组合应用的结果；
 - 规则为空时表达式不变。
 
-只有 `pure_massive_bubble_reference` 使用非空 `symmetryRules`。其它函数族不加入额外对称性。`sp` 的 `Orderless` 另行检查，不能计入这里的图对称性覆盖。
+`pure_massive_bubble_reference` 与 `single_massive_sunrise` 使用非空 `symmetryRules`；其它函数族不加入额外对称性。两者都必须先固定等价类排序并只向 canonical representative 单向替换。`sp` 的 `Orderless` 另行检查，不能计入这里的图对称性覆盖。
 ## 12. 简单输出格式
 
 不要把 expected 输出成多层嵌套 Association。每个函数族建立独立目录：
@@ -1304,6 +1318,7 @@ Phase 1 的全部 general seeds/operators 冻结并记录哈希后，Phase 2 才
 3. `atomic_massive_line` 与 `pure_massive_bubble_reference` 依第 13.3 节比较 direct-h、bare-H、H-to-h 的 general seeds/operators 与 `AT/WT`；不在其它 massive family 重复 H 路线。
 4. 第 14 节两个 tree family 比较 general `dtau` seeds、treeEnergy 算符和公开三槽表示；递推与 naive/dlog 只按第 14.3、15.5 节作为 Phase 2 package 路线交叉验证。
 5. common-theta 多线只在 `massless_sunrise_bundle_guard` 固定分支中验证 odd-subset/contact；cross 分支必须没有 theta/`WT` source，不另造全 sign 组合。
+6. `single_massive_sunrise` 只比较 general seeds 和 `{ss11,kE}` general 参数微分算符；该 family 在 Phase 2 禁止 `DSMetaSeedRange/DSGenerateIBP/DSLinear/Kira/DE/scaling`。
 
 所有 general 对象差值在相同 `J`、zero-point、endpoint order、canonical、symmetry 和 parity convention 下严格为零。Phase 1 不使用数值 probe。
 
@@ -1312,9 +1327,9 @@ Phase 1 的全部 general seeds/operators 冻结并记录哈希后，Phase 2 才
 以下检查只附着于第 15.3 节的 pure massive bubble 和 mix bubble+tree，不扩展为独立 API/发布审计：
 
 1. `DSSeeds/DSAllSeeds` 模板与冻结 general seed identities 同序同式；零模板保留 ordinal/hash，forbidden `n` 不出现。
-2. `DSGenerateIBP` 只消费各流程明示的最终积分包络。连续指标范围 exact cover，parity 在代入点前筛选；一个反向/空区间负例必须返回不完整 capability，不能静默形成 formal system。
-3. `DSLinear` 保存 backend-neutral equations、integral order、source digest 与 complete/subset 状态。只对正式 complete producer 构造 formal `DSKiraPlan`；一个显式 subset 负例必须被 formal plan 拒绝。
-4. formal plan 先保存 active basis 的解析一阶导数、变量顺序、scaling degrees 与最小 target closure，之后才允许 `numericStage->"postDerivative"`。不得在 seed 或解析导数前固定 DE variables。
+2. `DSGenerateIBP` 只消费各流程明示的最终积分包络。连续指标范围 exact cover，parity 在代入点前筛选；一个反向/空区间负例必须返回不完整 capability，不能静默形成 formal system。另用一个最小 ISP relation 检查：用户显式负 definition range、seed range、target 和 `J` 均可通过；ISP metadata 零点仍为 `0`；target-to-seed 反推不把 ISP 下界降到用户 target 下界以下；`ispN=0` 的 ISP 自身求导不留下 `-1` 项。该最小接口检查不扩张第 9 节任一物理 family 的正式包络。
+3. `DSLinear` 保存 backend-neutral equations、唯一 `integralList` 顺序、source digest 与 complete/subset 状态。`DSKiraPlan` 和 exporter 不得二次重排；如流程需要自定义编号，只能在 `DSUserMI` 之前显式调用一次 `DSReorderIntegrals`。只对正式 complete producer 构造 formal plan；一个显式 subset 负例必须被 formal plan 拒绝。
+4. 用户 basis 必须通过 `DSUserMI` 从有序单个 `J`/齐次线性组合构造，检查 rank、support 内双向映射和 `userMI/backend` token；不得在 benchmark 内手写 active-basis adapter。formal plan 先保存该 basis 的解析一阶导数、变量顺序、scaling degrees 与最小 target closure，之后才允许 `numericStage->"postDerivative"`。不得在 seed 或解析导数前固定 DE variables。
 5. `DSKiraExport` 只序列化，不启动 Kira；manifest 保存 equations/map/targets/active basis、energy map、artifact identity 和实际文件 SHA-256。篡改一个文件或 target 的负例必须在 import 前失败。
 6. `DSKiraImport` 验证 completion、identity、双向积分映射、targets、master order 和 RHS closure；失败不得继续 `DSDE`。
 7. 在新 kernel 中动态解析唯一 `package_<currentVersion>.wl/pdf`，核对运行时版本和两份 frozen expected 哈希。全 API/example coverage 留给发布检查，不属于本独立 benchmark。
@@ -1325,7 +1340,7 @@ Phase 1 的全部 general seeds/operators 冻结并记录哈希后，Phase 2 才
 
 只在第 15.1--15.2 节全部通过后运行两套且仅两套 package fresh reduction；不为其它 family、branch、parity、默认/自定义坐标副本或扩大包络再运行 reduction：
 
-1. `pure_massive_bubble_reference`：固定 `--`、even parity、等顶点能量和缺省根号坐标 `ks=ss11`。直接加载成品 example 同目录的 `active_basis_19.wl`，固定前 19 个 active basis 及两个 auxiliary；`DSDE` 变量为 `{ss11,P0}`。只有等能量条件成立时才应用顶点交换 symmetry。
+1. `pure_massive_bubble_reference`：固定 `--`、even parity、等顶点能量和缺省根号坐标 `ks=ss11`。直接加载成品 example 同目录的 `reference_user_mi_basis.wl` 候选数据，再调用 package `DSUserMI` 固定前 19 个 active `userMI` 及两个 auxiliary；`DSDE` 变量为 `{ss11,P0}`。只有等能量条件成立时才应用顶点交换 symmetry。
 2. 第 17.4 节 mix bubble+tree：full flow 只取 `+++`，并明确 `parityMode->None`（或等价 `noParityConstraints`）；该 family 没有用户 parity rule，不得人为指定 even/odd。使用 exact 自定义变量 `{loopScale,legScale1,legScale2,E1,E2,E3}` 和一个在 Phase 2 开始时显式列出、冻结顺序与定义的小型 active basis。`++-` 只做 general seeds/operators 比较和 cross/contact guard，不运行 reduction。
 
 两套都按 `DSInit -> DSSeeds -> DSGenerateIBP -> DSLinear -> DSKiraPlan/DSKiraExport -> package 外部 Kira -> DSKiraImport -> DSDE -> scaling check` 执行。`DSKiraExport` 只写后端输入，不得由 package 启动 Kira；每套分别记录 equations、independent relations、masters、targets、unreduced、Kira 版本、命令、wall time 与 artifact hash。Phase 1 不选择 master、不构造 DE expected、不选择数值点。
@@ -1527,7 +1542,7 @@ Phase 2 先对两个分支比较 general seeds/operators。随后只对 `+++` �
 | Time IBP seeds | 每个 active vertex 一个 general `dtau`；不撒点 | 6, 9, 14 | 第 9 节点名范围；14.1 两个 tree；17.4 两分支 | 15.1 `DSSeeds`; 14.2 `DSTreeSeeds` | 只在两个 full flow 展开关系 |
 | Momentum IBP 与 ISP | 完整 `L(L+K)`；bridge 不进 `xi`; ISP 按声明顺序 | 7, 9.8, 17.1 | 第 9 节 full families；17.4 两分支 | 15.1 templates；17.4 bubble+tree；15.3 `+++` full flow | `timeOnly` 不产生 momentum generator |
 | Contact-reachable sector | sector 继承 root loop space/schema，只改变 line state/merged vertex | 8, 17.2 | 点名 family 的 general sector seeds | 15.1 templates；17.4 `+++`,`++-` | 不遍历任务书外 sector/family |
-| Symmetry/canonical | 仅显式用户规则和可判定离散态；不按符号大小猜 | 10, 11 | `pure_massive_bubble_reference`；其它 family `symmetryRules={}` | 15.1 general compare；13.2 R2->R1 | 不做全 family canonical 源码审阅 |
+| Symmetry/canonical | 显式用户规则先排序并单向指向唯一代表；不允许双向循环 | 9.6, 10, 11 | `pure_massive_bubble_reference`；`single_massive_sunrise` 的顶点与 massless-line/ISP 交换 | 15.1 general compare；13.2 R2->R1；9.6 ordered canonical | 不做全 family automorphism 检测或自动定向 |
 | Root-coordinate 算符 | symmetric `x_ij`，ordered `D_ij`，`partial_ssij=2ssij partial_xij` | 13.1, 16 | 16.1 mixed_triangle exact；16.2 fixed binding | 16.1/16.2 metadata + one `ds` witness/variable | 不做五组坐标 family |
 | Loop/independent momentum roles | 两个显式有序列表；不按名字猜；复合方向保留系数 | 2.5, 17.1 | 17.4 bubble+tree topology | 17.1 `DSInit` metadata；17.3 capability | 不做随机命名、自环、压力测试 |
 | Exact/under/over kinematics | exact full rank；under fail init；over 仅 diagnostic symbolic | 16.3, 17.3 | 同源 Jacobian rank/missing/null-space | `DSRedefineParameters`, `DSSeeds`, `DSLinear`, `ds`, `DSDE`, `rep2innerform`, `DSKiraExport` capability | 仅 mixed_triangle 与 bubble+tree 各一组 |

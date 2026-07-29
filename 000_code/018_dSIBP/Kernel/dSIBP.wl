@@ -5,7 +5,7 @@
 
 BeginPackage["dSIBP`"];
 
-$dSIBPVersion::usage = "$dSIBPVersion 给出当前加载的 dSIBP package 三位版本号。";
+$dSIBPVersion::usage = "$dSIBPVersion 给出当前加载的 dSIBP package 发布号。";
 AuditLevel::usage = "AuditLevel 控制同源数据是否重跑完整开发证书；\"standard\" 复用 sealed producer 状态，\"full\" 重算内容 hash、coverage、representation 或 residual 审计。";
 KiraRequireCompleteSystem::usage = "KiraRequireCompleteSystem 指定 Kira 导出是否要求 completeSystemQ；正式约化缺省为 True。";
 
@@ -18,7 +18,7 @@ a::usage = "a[v] 是 makeBaseIntegral 为顶点 v 建立的时间幂次整数指
 b::usage = "b[e] 是未缩并传播子 e 的分母幂次整数指标。";
 bS::usage = "bS[e] 是缩并传播子 e 的分母幂次整数指标。";
 n::usage = "n[e,...] 是 full-line 的二元离散态指标。";
-ispN::usage = "ispN[i] 是第 i 个 ISP 的整数幂次指标。";
+ispN::usage = "ispN[i] 是第 i 个 ISP 坐标的整数幂次指标，定义零点固定为 0；正值为 numerator 幂，用户显式给出的负值表示该坐标的额外 denominator，package 不阻断。";
 a0::usage = "a0[v] 是顶点时间幂次零点；物理幂次为 a+a0。";
 b0::usage = "b0[e] 是未缩并传播子分母幂次零点；物理分母幂次为 b+b0。";
 bS0::usage = "bS0[e] 是缩并传播子分母幂次零点；物理分母幂次为 bS+bS0。";
@@ -33,6 +33,7 @@ MassiveBlock::usage = "MassiveBlock[...] 是 massive line 的惰性 integrand bl
 MasslessBlock::usage = "MasslessBlock[...] 是同分支 massless line 的惰性 integrand block。";
 MasslessCrossBlock::usage = "MasslessCrossBlock[...] 是异分支 massless line 的惰性 integrand block。";
 Tuserweight::usage = "Tuserweight[id] 是 Kira user-defined system 结果中的积分编号 token。";
+userMI::usage = "userMI[i] 是用户定义主积分坐标的稳定公开 token；其物理内容始终由同源 J 线性组合给出。";
 
 dtau::usage = "dtau[vertex,expr] 生成指定顶点的时间 IBP；三参数形式接受 parsed topology 或 DSInit context。";
 dqq::usage = "dqq[dLoop,vectorLoop,expr] 生成圈动量沿圈动量方向的 IBP；四参数形式接受 parsed topology 或 DSInit context。";
@@ -61,10 +62,12 @@ DSSeedGroups::usage = "DSSeedGroups[seedData] 返回 DSSeeds 按 {sectorKey,ibpC
 DSSeedGroupMetadata::usage = "DSSeedGroupMetadata[seedData] 返回与 DSSeedGroups 同序的 sector、IBP 类型、生成元、模板 ordinal 和计数。无参数形式读取最近结果。";
 DSMetaSeedRange::usage = "DSMetaSeedRange[seeds,{indices...}] 按用户给定的 seeds 外层结构初始化逐组 seed shift metadata；flat seeds 作为一组，nested seeds 的每个顶层元素作为一组。积分参数先统一 Flatten，再由 Variables 审计实际指标。声明多余或遗漏只 warning，metadata 仍按实际完整集合建立；再次初始化覆盖旧状态。DSMetaSeedRange[] 返回当前状态。";
 metaSeedRange::usage = "metaSeedRange 是 DSMetaSeedRange 的同义入口。";
-DSGenerateIBP::usage = "DSGenerateIBP[seeds,{min,max}] 把统一目标积分指标包络按已初始化的逐输入组 shift metadata 反推成 seed 点域；DSGenerateIBP[seeds,{index,min,max},...] 要求 root 指标 exact cover。先筛 parity，再代入数值点生成 IBP；n_i 不得再次撒点。";
+DSGenerateIBP::usage = "DSGenerateIBP[seeds,{min,max}] 把统一目标积分指标包络按已初始化的逐输入组 shift metadata 反推成 seed 点域；DSGenerateIBP[seeds,{index,min,max},...] 要求 root 指标 exact cover。用户可显式给负 ISP 下界；自动反推不会把 ISP seed 下界降到用户 target 下界以下。先筛 parity，再代入数值点生成 IBP；n_i 不得再次撒点。";
 generateIBP::usage = "generateIBP 是 DSGenerateIBP 的同义入口；输入范围表示目标积分包络，不是直接 seed 范围。";
 DSLinear::usage = "DSLinear[seedData,context,opts] 把 canonical seeds 转换为 backend-neutral linearData。";
-DSKiraPlan::usage = "DSKiraPlan[linearData,spec] 生成 reference-style 积分顺序和 preReduction/formal 两阶段 Kira 计划；formal 计划先解析构造 active basis 一阶导数及最小 target closure。";
+DSReorderIntegrals::usage = "DSReorderIntegrals[linearData,order] 按用户给定的 J 或现有积分 ID 显式重排 linearData；其结果的 integralList 是后续 plan/export/import 的唯一积分顺序。";
+DSUserMI::usage = "DSUserMI[linearData,expressions,spec] 构造并附加有序 userMI basis；expressions 可为单个 J 或齐次 J 线性组合。DSUserMI[data] 或 DSUserMI[data,key] 查询同源可逆映射、秩和 backend ID。";
+DSKiraPlan::usage = "DSKiraPlan[linearData,spec] 按 linearData 的既定积分顺序生成 preReduction/formal 两阶段 Kira 计划；formal 计划先解析构造 active basis 一阶导数及最小 target closure。";
 DSKiraExport::usage = "DSKiraExport[linearData,opts] 或 DSKiraExport[kiraPlan] 序列化 Kira 基础输入和同源 manifest；不会启动 Kira。缺省禁止数值化微分变量，只有已冻结解析导数闭包的 formal plan 可显式选择 postDerivative 数值阶段。";
 DSKiraImport::usage = "DSKiraImport[path,context,opts] 导入并验证完整 Kira reduction、master 顺序和积分双向映射；完成日志只作诊断，实际 artifact identity 与结构闭合是硬边界。";
 DSDE::usage = "DSDE[reductionData,variables,opts] 用 ds 和 reduction rules 构造保持 master 顺序的微分方程矩阵。";
@@ -91,7 +94,7 @@ LinearSystemMode::usage = "LinearSystemMode 选择 DSLinear 的 \"symbolic\" 或
 ExportKira::usage = "ExportKira 是底层组合工作流的导出开关；DSKiraExport 本身不运行 Kira。";
 OutputDirectory::usage = "OutputDirectory 指定 serializer 输出目录；None 表示只返回内存数据。";
 KiraCoefficientRules::usage = "KiraCoefficientRules 指定 Kira 导出前的系数规则；配置 KiraActiveBasis 时规则不得触及其 derivativeVariables。";
-KiraIntegralOrder::usage = "KiraIntegralOrder 指定 Kira 导出的显式积分顺序。";
+KiraIntegralOrder::usage = "KiraIntegralOrder 是已停用的旧导出选项；需要改变编号时先调用 DSReorderIntegrals。";
 KiraTargetIntegrals::usage = "KiraTargetIntegrals 指定 Kira job 的目标积分。";
 KiraActiveBasis::usage = "KiraActiveBasis 为 DSKiraExport 指定有序 active basis 线性组合、名称和导数变量；缺省 None。";
 KiraNumericStage::usage = "KiraNumericStage 选择 \"symbolic\"（缺省，DE 变量不得数值化）或 \"postDerivative\"（只在 active basis 的解析一阶导数及 target closure 已构造后允许定点数值 reduction）。";
@@ -100,7 +103,7 @@ KiraReductionFile::usage = "KiraReductionFile 指定 DSKiraImport 读取的 redu
 KiraMasterFile::usage = "KiraMasterFile 指定 DSKiraImport 读取的有序 master 文件；缺省先查 results/Tuserweight/masters，再兼容 results/masters。";
 KiraCompletionFile::usage = "KiraCompletionFile 指定 DSKiraImport 检查的完成日志；缺省为 kira.log。";
 KiraCompletionPatterns::usage = "KiraCompletionPatterns 指定完成日志必须匹配的字符串或 RegularExpression 列表。";
-ScalingRelation::usage = "ScalingRelation 指定 DSScaleCheck 使用的 \"Custom\" 或 \"PureMassiveBubble\" 标度关系。";
+ScalingRelation::usage = "ScalingRelation 指定 DSScaleCheck 使用的 \"Custom\"、\"LoopTopology\" 或 \"PureMassiveBubble\" 标度关系。";
 ScalingVariables::usage = "ScalingVariables 指定 Euler 算符中的变量顺序。";
 ScalingWeights::usage = "ScalingWeights 指定 Euler 算符中各变量的系数；018 的 ssij 与独立无圈模长 sEi 都是动量一次量，缺省物理权重为 1。";
 ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数；PureMassiveBubble 可设 Automatic。";
@@ -111,7 +114,7 @@ ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数�
 Begin["`Private`"];
 
 $dSIBPPackageRoot = DirectoryName[DirectoryName[$InputFileName]];
-$dSIBPVersion = "018";
+$dSIBPVersion = "018.1";
 
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "TopologyKinematics018.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "LoopCore013.wl"}], CharacterEncoding -> "UTF-8"];
@@ -122,6 +125,7 @@ Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "Tree.wl"}], CharacterEnco
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "PureTime018.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "GenerateIBP.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Backends", "KiraExport.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Backends", "UserMI.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Backends", "KiraPlan.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Backends", "KiraImport.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "DE", "BuildDE.wl"}], CharacterEncoding -> "UTF-8"];

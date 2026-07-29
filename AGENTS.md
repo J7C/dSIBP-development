@@ -2,7 +2,9 @@
 
 ## 项目边界
 
-本 package 由拓扑输入驱动，为任意圈数、任意拓扑及 massive/massless 混合的 dS Feynman 图生成 IBP 关系，并导出 Kira 等后端的基础输入。package 只生成和序列化关系，不运行 reduction。
+本仓库包含三个职责隔离的组件：`000_code/018_dSIBP/` 是 topology-driven dS IBP 关系生成器；`package-MadStree/` 是直接应用树图/time-only 公式生成约化和 dlog DE 的独立 Mathematica 包；`000_FlintNDE/` 是只消费矩阵 DE 与边界数据的 Python/FLINT 数值后端。`dSIBP` 只生成和序列化关系，不运行 reduction；MadStree 不替代一般 topology IBP producer；FlintNDE 不推导 dS 边界条件或物理 normalization。
+
+本文件的 dSIBP 实现门禁适用于根目录和 `000_code/018_dSIBP/`。进入 `package-MadStree/` 后优先遵守其最近的 `AGENTS.md`；FlintNDE 的接口和能力边界以 `000_FlintNDE/README.md`、`code/package/README.md` 和 `note/FlintNDE.pdf` 为准。跨组件改动必须同时保持依赖方向 `MadStree -> FlintNDE`，不得让 FlintNDE 读取 MadStree/dSIBP 的积分族状态。
 
 `AGENTS.md` 只保存 agent 必须直接遵守的工作流、目录边界和正确性门禁。公式、convention、推导及接口细节以对应项目文档为准，不在本文件重复维护。
 
@@ -15,13 +17,18 @@
 - `000_note/2026-07-21_common_theta_correctness_todo.md`：共同-theta、`WT`、指标/零点、可达 sector 与下游模块的正确性验收清单。
 - `independent-benchmark/independent-benchmark.md`：交给独立推导者的自包含 benchmark 任务书。
 - `independent-benchmark/README.md`：独立 benchmark 的目录边界、内部/外部检验路线和报告回收规则。
+- `package-MadStree/AGENTS.md`、`README.md` 和 `VERSION_INDEX.md`：MadStree 版本、目录、独立验证与当前入口。
+- `package-MadStree/versions/MadStree-v0.3/Documentation/tree_formula.pdf`：MadStree 公式、convention、边界原理和接口手册。
+- `000_FlintNDE/README.md`、`code/package/README.md` 和 `note/FlintNDE.pdf`：FlintNDE 安装、调用、数值算法和 fail-closed 能力边界。
 
 文档表述冲突时，先在 `研究计划与研究进度.md` 登记，再依据当前代码与专项验证纠正权威文档；不得把 `AGENTS.md` 扩写成第二份技术笔记。
 
 ## 程序与目录
 
 - 当前开发主线由 `研究计划与研究进度.md` 指定；当前为模块化目录 `000_code/018_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 当前正式单文件兼容入口是 `independent-benchmark/package/package_018.wl`；`000_code/010_dS_ibp_general.wl` 至 `017_dSIBP/` 是只读基线/历史开发版本，不在 018 任务中回写。
+- 当前正式单文件兼容入口是 `independent-benchmark/package/package_018.1.wl`；`000_code/010_dS_ibp_general.wl` 至 `017_dSIBP/` 是只读基线/历史开发版本，不在 018 任务中回写。
+- MadStree 当前工作版本为 `package-MadStree/versions/MadStree-v0.3/`；交互入口是 `package-MadStree/load_current.wl`，正式验证必须显式加载版本目录。MadStree 的验证任务书与 T1--T6 版本化报告保存在其独立验证目录，不归入根 `000-report/` 的 dSIBP 独立审计报告体系。
+- MadStree 调用 FlintNDE 时只通过集中相对路径 `000_FlintNDE/code/package`；运行 JSON、cache、保存点和汇总由调用目录拥有，不得写入任一 package 源码目录。FlintNDE `continuation_ready=False` 时必须停止，不得把不支持奇点当普通点继续。
 - 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。018 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `018.1`、`018.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
 - 根目录 `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；每项可复用检查放入名称直接说明功能的独立子目录，禁止重新堆叠全 family、全 sign/parity、连续指标撒点或完整 reduction 工作树。运行产物只放对应子目录的 `results_test/` 并在任务结束后清理。
 - `000_code/check/` 与 `000_code/test/` 是已清空的历史目录，不再写入新的日常 smoke/check/test 资产。
@@ -30,7 +37,7 @@
 - `independent-benchmark/package/` 只保留当前版本化程序 `package_<version>.wl`、同版本正式用户手册 `package_<version>.pdf` 和少量应用 examples；更新版本时覆盖当前交付并删除旧版本或无版本名副本。
 - `independent-benchmark/package/` 不得放 expected、验证脚本、开发文档、报告或 reduction 输出。
 - 每个发布版本必须维护 `independent-benchmark/package/examples/coverage_manifest.wl`：列出全部需要用户掌握的公开函数及其成品 example；正式检查必须与 package 的 `DSPublicAPI[]` 比较并验证源码调用覆盖，缺项不得发布。
-- 三个典型成品 example 长期保留且不得由全 family 变体取代：`03_single_massive_sunrise/` 是唯一 sunrise example，固定三平行边、单 massive line 和 ISP；`04_pure_massive_bubble_closed_loop/` 保留 dlog basis、既有 reference 对照及从初始化到 19-master DE/scaling 的完整闭环；`06_mix_bubble_tree/` 固定一条 massive cycle line，其余 cycle/bridge lines massless，覆盖 `kL/kE`、无圈参量、massless convention 与 cycle/bridge contraction。清理 smoke/check 时不得删除、降格或移出 examples。
+- 三个典型成品 example 长期保留且不得由全 family 变体取代：`03_single_massive_sunrise/` 是唯一 sunrise example，固定三平行边、单 massive line 和 ISP，只生成 general seeds 与 general 参数微分算符，禁止撒点、`linearData`、Kira、DE 和 scaling；`04_pure_massive_bubble_closed_loop/` 保留 dlog basis、既有 reference 对照及从初始化到 19-master DE/scaling 的完整闭环；`06_mix_bubble_tree/` 固定一条 massive cycle line，其余 cycle/bridge lines massless，覆盖 `kL/kE`、无圈参量、massless convention 与 cycle/bridge contraction。清理 smoke/check 时不得删除、降格或移出 examples。
 - `000-report/` 是本项目唯一的独立检验报告归档目录；除目录说明 `README.md` 外，不在其它项目目录散放报告。
 
 新建、移动、清理程序目录时遵守 `program-directory-layout` skill：正式可复用结果进 `results/`，临时测试进 `test/results_test/`，可重跑中间产物进 `results_temp/`；不得误删用户未提交改动。
@@ -69,6 +76,7 @@
 - 共同-theta bundle、compiled `WT -> shrinkTerms`、simultaneous contact shift 累加、coincident canonical 和 contact-reachable sector 必须作为一个整体通过专项验收。
 - h/H 模式、质量参数、缩并 prefactor、zero-point 和 H EOM 必须使用当前 tech note 与 preset；不得从历史版本重新引入旧递推。
 - 多圈动量 IBP 生成元必须覆盖当前 plan/tech note 规定的完备集合；ISP 由用户定义并在生成关系前验证闭合性。
+- ISP 指数的定义零点固定为 `0`。正指数是 numerator 幂；用户显式选择负 range/target/J 时 package 不阻断。自动 target-to-seed 反推不得把 ISP 下界降到用户给定下界以下，且 `ispN=0` 的 ISP 自身求导必须先精确化为零。
 - topology、sector metadata、canonical seed、`linearData` 和 serializer 之间的状态必须一致；backend 只消费 backend-neutral `linearData`。
 - 016 要求用户分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。旧 `externalMomenta/externalLegMomenta` 只作为字段别名兼容。
 - 加减号和复合方向必须保留精确系数。整体反号的无圈动量模长可 canonical 成同一对象，但 `p_1+p_2` 与 `p_1-p_2` 不得合并；实际模长只生成 `sE1,sE2,...` 或 dependent binding，不主动输出外腿交叉点积。
@@ -76,6 +84,8 @@
 - 动量列表或动力学规则欠完备时必须红色报错，返回缺失方向/零空间表达式并拒绝初始化；所有下游入口读取 capability gate。过完备时 warning 后允许 symbolic IBP，但 `ds/DSDE` 与唯一反变换必须关闭。
 - root topology 决定圈数、loop space 与 cycle/bridge line-power schema；contact/shrink sector 必须继承这些 metadata，只改变端点代表、pack 状态、零点和对称性，不得重新降圈。
 - 根号坐标求导必须通过链式法则复用平方不变量原子导数：`d/dssij=2 ssij d/d(sp[ki,kj])`；不得复制或重写一套 loop 外动量导数实现。显式用户规则 `sp[ki,kj]->sij` 保持单位 Jacobian 的兼容语义。
+- 初次 Kira 探测不得把全部积分设为 targets；必须按预估 master 规模设置有界候选范围，未有更具体依据时上限取约 1000，formal 阶段只选择 active basis 及其导数闭包。
+- 任何进入 Kira reduction 的 family 都必须先实数化。实数化的固定动作是：从 topology/line 的 phase-dependency metadata 结构性识别每个 massless propagator 动量原子 `k`，定义单个实 backend 变量 `ik` 并执行 `k -> -I ik`，不得按符号名猜测；再用可逆积分相位变换消除剩余整体虚相位。`ibp.kira` 出现 `I`、`dsii` 或其它虚数替代 token 时必须拒绝导出；该 convention 只限 Kira 内部，import 后恢复物理变量和导数 Jacobian。实现与检查直接参考已经完成的 massive bubble 路线，不重新构造另一套 convention。
 
 ## Mathematica 实现约定
 

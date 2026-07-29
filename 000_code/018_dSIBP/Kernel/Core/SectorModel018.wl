@@ -1,7 +1,8 @@
 (* ::Package:: *)
-(* 本模块定义 018 唯一积分表示与 sector 身份层。所有 root line 槽位永久保留；
-   full line 使用三槽，shrunk line 使用单槽，fixed line 用短字符串 "F" 标记无整数动量幂。
-   sector prefactor 只保存结构化参数、幂次和来源，物化表达式由一个统一 helper 完成。 *)
+(* 本模块定义 018 唯一积分表示、sector 身份与 massless seed quotient。所有 root
+   line 槽位永久保留；full line 使用三槽，shrunk line 使用单槽，fixed line 用短
+   字符串 "F" 标记无整数动量幂。masslessFull 的公开槽仍是 {n1,n2}，但 source
+   seed 只枚举 n2->0 的两个代数代表，导数输出再由统一 canonical 映回该代表。 *)
 
 (* ::Chapter:: *)
 (*统一 line-pack schema*)
@@ -62,7 +63,58 @@ discreteVarsForLine[line_Association] := If[
    ];
 
 
-discreteStateCountForLine[line_Association] := 2^Length[discreteVarsForLine[line]];
+(* 输入输出仍保留两个端点槽；这里只缩减 DSSeeds 的 source representatives。
+   massive 需要四态，masslessFull 只生成 00/10，cross 与 shrunk 不生成离散态。 *)
+discreteSeedRuleSetsForLine018[line_Association] := Module[
+   {id = line["id"], variables = discreteVarsForLine[line]},
+   Switch[Lookup[line, "packType", ""],
+    "masslessFull" /; Lookup[line, "state", "full"] =!= "shrunk",
+    {
+     {n[id, 1] -> 0, n[id, 2] -> 0},
+     {n[id, 1] -> 1, n[id, 2] -> 0}
+     },
+    _, ruleSetsForVars[variables]
+    ]
+   ];
+
+
+rawBinaryDiscreteStateCountForLine018[line_Association] :=
+  2^Length[discreteVarsForLine[line]];
+
+
+discreteStateCountForLine[line_Association] :=
+  Length[discreteSeedRuleSetsForLine018[line]];
+
+
+(* enumerateDiscreteStates 是所有普通 time/momentum seed 的共同入口。返回值同时保存
+   raw 双端点空间与 quotient representative 空间，供 release/audit 核对缩减边界。 *)
+enumerateDiscreteStates[expr_, topo_Association] := Module[
+   {perLineRuleSets, allRuleSets, rawStateCount},
+   perLineRuleSets = discreteSeedRuleSetsForLine018 /@ topo["lines"];
+   allRuleSets = Flatten[#, 1] & /@ Tuples[perLineRuleSets];
+   rawStateCount = Times @@ (rawBinaryDiscreteStateCountForLine018 /@ topo["lines"]);
+   <|
+    "rules" -> allRuleSets,
+    "integrals" -> (expr /. # & /@ allRuleSets),
+    "mode" -> "masslessQuotientRepresentatives",
+    "canonicalDirection" -> "n2ToZero",
+    "rawBinaryStateCount" -> rawStateCount,
+    "representativeStateCount" -> Length[allRuleSets],
+    "eliminatedAlgebraicStateCount" -> rawStateCount - Length[allRuleSets]
+    |>
+   ];
+
+
+selectedDiscreteSeedRules[topo_Association, OptionsPattern[]] := Module[
+   {data = enumerateDiscreteStates[makeBaseIntegral[topo], topo]},
+   Join[
+    <|"status" -> "generated", "ruleCount" -> Length[data["rules"]]|>,
+    KeyTake[data, {
+      "mode", "canonicalDirection", "rawBinaryStateCount",
+      "representativeStateCount", "eliminatedAlgebraicStateCount", "rules"
+      }]
+    ]
+   ];
 
 
 publicExpectedPackLength[_Association, "shrunk"] := 1;

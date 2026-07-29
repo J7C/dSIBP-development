@@ -1,6 +1,7 @@
 (* ::Package:: *)
 (* Single-massive sunrise 示例：两顶点、三条平行边形成两圈，第一条线为 massive h，
-   其余两条线为 massless exponential。共同外腿能量 kE 与圈外模长 kL 构成两个标度。 *)
+   其余两条线为 massless exponential。本例只生成 general IBP seeds 与 general 参数
+   微分算符，不撒连续指标点，不生成 linearData，也不进入 Kira、DE 或 scaling。 *)
 
 
 (* ::Chapter:: *)
@@ -40,6 +41,8 @@ case = <|
      a0[v1] -> alpha, a0[v2] -> alpha,
      b0[e1] -> betaM, b0[e2] -> beta0, b0[e3] -> beta0
      },
+   "shrinkPrefactorRules" -> {Exp[Pi Im[nuM]]/Pi -> etaNu},
+   "parityConstraints" -> sunriseParityConstraints0,
    "symmetryRules" -> sunriseSymmetryRules0,
    "seedPreset" -> "quickCheck",
    "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0, 1}|>
@@ -47,7 +50,7 @@ case = <|
 
 
 (* ::Chapter:: *)
-(*完整模板与单个最小关系*)
+(*General seeds 与参数微分算符*)
 
 kinematicProposal = DSKinematics[case];
 context = DSInit[
@@ -55,38 +58,35 @@ context = DSInit[
    WriteInitializationFiles -> False,
    GenerateDerivativeMetadata -> True
    ];
-seedData = DSSeeds[context];
+seedData = DSSeeds[context, ProgressReporting -> False];
 allSeeds = DSAllSeeds[seedData];
 
 topSeeds = Select[allSeeds, Lookup[#, "sectorKey", None] === "top" &];
 topGenerators = DeleteDuplicates[Lookup[topSeeds, "generator", {}]];
-singleTemplate = SelectFirst[
-   topSeeds,
-   Lookup[#, "ibpClass", ""] === "qIBP" &,
-   Missing["NoTopQIBPTemplate"]
-   ];
-singleOrdinal = Lookup[singleTemplate, "templateOrdinal", Missing["NoTemplateOrdinal"]];
-singleSeedRecord = SelectFirst[
-   Lookup[Lookup[seedData, "seedRangeMetadata", <||>], "records", {}],
-   Lookup[#, "templateOrdinal", None] === singleOrdinal &,
-   Missing["NoSeedMetadata"]
-   ];
-singleIndices = Lookup[singleSeedRecord, "continuousIndices", {}];
-singleRangeMetadata = DSMetaSeedRange[{singleTemplate}, singleIndices];
-singleShiftBounds = Lookup[
-   First[Lookup[singleRangeMetadata, "groups", {<||>}]],
-   "shiftBounds",
-   {}
-   ];
+topTimeGenerators = DeleteDuplicates @ Lookup[
+    Select[topSeeds, Lookup[#, "ibpClass", ""] === "tIBP" &],
+    "generator",
+    {}
+    ];
+topMomentumGenerators = DeleteDuplicates @ Lookup[
+    Select[topSeeds, Lookup[#, "ibpClass", ""] === "qIBP" &],
+    "generator",
+    {}
+    ];
 
-(* 目标包络直接取该模板的 shift 上下界，所以每个连续指标反推出的 seed 域恰为 {0,0}。 *)
-singleTargetEnvelope = Replace[
-   singleShiftBounds,
-   Rule[index_, {minimum_, maximum_}] :> {index, minimum, maximum},
-   {1}
+derivativeData = Lookup[context, "derivatives", <||>];
+derivativeOperators = Lookup[derivativeData, "operators", {}];
+derivativeVariables = Lookup[derivativeOperators, "userVariable", {}];
+generalTopIntegral = SelectFirst[
+   Lookup[topSeeds, "sourceIntegral", {}],
+   Head[#] === J &,
+   Missing["NoTopIntegral"]
    ];
-generatedIBP = DSGenerateIBP[{singleTemplate}, Sequence @@ singleTargetEnvelope];
-linearData = DSLinear[generatedIBP, context, LinearSystemMode -> "symbolic"];
+parameterDerivativeWitnesses = AssociationThread[
+   derivativeVariables,
+   ds[generalTopIntegral, #, Lookup[context, "topology", <||>]] & /@
+    derivativeVariables
+   ];
 
 
 (* ::Chapter:: *)
@@ -120,16 +120,21 @@ summary = <|
    "ispCount" -> Length[Lookup[topology, "ispData", {}]],
    "topGeneratorCount" -> Length[topGenerators],
    "symmetryRuleCount" -> Length[repSymmetry0[topology]],
+   "parityConstraints" -> Lookup[topology, "parityConstraints", {}],
    "canonicalWitness" -> canonicalWitness,
    "seedStatus" -> Lookup[seedData, "dSIBPStatus", "missing"],
-   "singleRangeStatus" -> Lookup[singleRangeMetadata, "status", "missing"],
-   "singleTargetEnvelope" -> singleTargetEnvelope,
-   "derivedSeedRanges" -> Lookup[generatedIBP, "derivedSeedRanges", {}],
-   "generatedStatus" -> Lookup[generatedIBP, "dSIBPStatus", "missing"],
-   "equationCount" -> Lookup[generatedIBP, "equationCount", 0],
-   "subsetQ" -> TrueQ[Lookup[Lookup[generatedIBP, "artifactContract", <||>], "subsetQ", False]],
-   "linearStatus" -> Lookup[linearData, "dSIBPStatus", "missing"],
-   "linearCompleteSystemQ" -> TrueQ[Lookup[linearData, "completeSystemQ", True]]
+   "seedTemplateCount" -> Length[allSeeds],
+   "seedSectorKeys" -> DeleteDuplicates[Lookup[allSeeds, "sectorKey", {}]],
+   "topTimeGenerators" -> topTimeGenerators,
+   "topMomentumGenerators" -> topMomentumGenerators,
+   "derivativeStatus" -> Lookup[derivativeData, "status", "missing"],
+   "derivativeVariables" -> derivativeVariables,
+   "parameterDerivativeWitnessCount" -> Length[parameterDerivativeWitnesses],
+   "parameterDerivativeFailureQ" ->
+    ! FreeQ[Values[parameterDerivativeWitnesses], $Failed],
+   "numericSeedResidualCheck" -> "notApplicableForGeneralSymbolicSeeds",
+   "containsSampledOrLinearData" ->
+    Or @@ (ValueQ /@ {generatedIBP, linearData, kiraPlan, deData, scalingData})
    |>;
 
 Print[summary];
@@ -146,12 +151,16 @@ If[! And[
     summary["ispCount"] === 2,
     summary["topGeneratorCount"] === 8,
     summary["symmetryRuleCount"] === 1,
+    summary["parityConstraints"] === sunriseParityConstraints0,
     summary["canonicalWitness"] === expectedCanonicalWitness,
     summary["seedStatus"] === "generated",
-    summary["singleRangeStatus"] === "initialized",
-    summary["generatedStatus"] === "generated",
-    summary["equationCount"] > 0,
-    summary["subsetQ"],
-    summary["linearStatus"] === "generated",
-    ! summary["linearCompleteSystemQ"]
+    summary["seedTemplateCount"] > 0,
+    Length[summary["seedSectorKeys"]] > 1,
+    Length[summary["topTimeGenerators"]] === 2,
+    Length[summary["topMomentumGenerators"]] === 6,
+    summary["derivativeStatus"] === "generated",
+    summary["derivativeVariables"] === {ss11, kE},
+    summary["parameterDerivativeWitnessCount"] === 2,
+    ! summary["parameterDerivativeFailureQ"],
+    ! summary["containsSampledOrLinearData"]
     ], Exit[1]];

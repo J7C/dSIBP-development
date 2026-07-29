@@ -142,7 +142,7 @@ dsPublicAPISections[] := <|
      "dtau", "dqq", "dqk", "ds", "rep2innerform", "rep2outform", "rep2Integrand",
      "symmetry", "repSymmetry0"
      },
-   "loopWorkflow" -> {"DSSeeds", "DSAllSeeds", "DSSeedGroups", "DSSeedGroupMetadata", "DSMetaSeedRange", "metaSeedRange", "DSGenerateIBP", "generateIBP", "DSLinear", "DSKiraPlan", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
+    "loopWorkflow" -> {"DSSeeds", "DSAllSeeds", "DSSeedGroups", "DSSeedGroupMetadata", "DSMetaSeedRange", "metaSeedRange", "DSGenerateIBP", "generateIBP", "DSLinear", "DSReorderIntegrals", "DSUserMI", "DSKiraPlan", "DSKiraExport", "DSKiraImport", "DSDE", "DSScaleCheck"},
    "pureTimeWorkflow" -> {
      "DSTreeSeeds", "repIterative", "DSTreeNaiveIBP", "DSTreeNaiveDE", "DSTreeDLogDE"
      },

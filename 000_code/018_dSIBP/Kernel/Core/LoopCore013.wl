@@ -65,12 +65,14 @@ normalizeLine[{id_, endpoints_, momentum_, nu_, bbType_}] := <|
    |>;
 
 
-(* ISP 可用 {name, expr, range} 或 Association。006 用户口 expr 写成 sp[p,r] 或其线性组合。 *)
-normalizeISP[isp_Association] := isp;
+(* ISP 可用 {name, expr, range} 或 Association。其坐标由不可约 numerator 标量积定义，
+   零点固定为 0；正幂是 numerator，用户显式选择的负幂作为额外 denominator 保留。 *)
+normalizeISP[isp_Association] := Join[isp, <|"zeroPoint" -> 0|>];
 normalizeISP[{name_, expr_, range_}] := <|
    "name" -> name,
    "expr" -> expr,
-   "range" -> range
+   "range" -> range,
+   "zeroPoint" -> 0
    |>;
 
 
@@ -1192,12 +1194,6 @@ normaliseIntegralOrder[order_List, integrals_List] := DeleteDuplicates @ DeleteM
 missingIntegralOrderItems[order_List, integrals_List] := Cases[
    integralOrderItemToIntegral[#, integrals] & /@ order,
    Missing["UnknownIntegralOrderItem", item_] :> item
-   ];
-
-
-validateKiraIntegralOrderSpec[orderSpec_] := If[orderSpec === Automatic || ListQ[orderSpec],
-   <|"status" -> "ok"|>,
-   <|"status" -> "invalidKiraIntegralOrder", "reason" -> "KiraIntegralOrder must be Automatic or a list of integral IDs/J objects", "kiraIntegralOrder" -> orderSpec|>
    ];
 
 
@@ -4913,11 +4909,10 @@ kiraBackendCoefficientRules[variableMap_List] := Join[
    ];
 
 
-(* Mathematica 将 -I 和一般有理复数保存为不可再向下匹配的 Complex 原子，
-   因此必须先把每个 Gaussian numeric atom 显式写成 a+b dsii，再替换其它系数原子。 *)
+(* Kira 不消费虚数。Complex 原子必须在 energy map 与积分 phase gauge 阶段消失；
+   这里只映射已经通过实数化门禁的实 coefficient variables。 *)
 kiraBackendCoefficientExpression[expr_, variableMap_List] :=
-   (expr /. value_Complex :> Re[value] + Im[value] kiraBackendSymbol["dsii"]) /.
-    kiraBackendCoefficientRules[variableMap];
+   expr /. kiraBackendCoefficientRules[variableMap];
 
 
 kiraCoefficientString[expr_, variableMap_List] := StringReplace[
@@ -5125,46 +5120,87 @@ kiraRestoreEnergyVariableIdentities[expressions_, convention_Association] := Mod
 kiraExactRationalQ[value_] := IntegerQ[value] || Head[value] === Rational;
 
 
-kiraGaussianAxisData[value_] := Module[{normalized = Cancel[value], real, imaginary},
+kiraGaussianPairMultiply[{leftReal_, leftImaginary_}, {rightReal_, rightImaginary_}] := {
+   leftReal rightReal - leftImaginary rightImaginary,
+   leftReal rightImaginary + leftImaginary rightReal
+   };
+
+
+kiraGaussianPairPower[pair_List, exponent_Integer] := Which[
+   exponent === 0, {1, 0},
+   exponent > 0, Nest[kiraGaussianPairMultiply[#, pair] &, {1, 0}, exponent],
+   exponent < 0,
+   With[{positive = kiraGaussianPairPower[pair, -exponent]},
+    {
+     positive[[1]]/(positive[[1]]^2 + positive[[2]]^2),
+     -positive[[2]]/(positive[[1]]^2 + positive[[2]]^2)
+     }
+    ]
+   ];
+
+
+(* Kira coefficient variables and algebraic generators are real by contract. Only actual
+   Complex atoms need pair propagation; this avoids expanding every large rational function. *)
+kiraGaussianRealImaginaryPair[expr_] := Which[
+   FreeQ[expr, _Complex], {expr, 0},
+   Head[expr] === Complex, {Re[expr], Im[expr]},
+   Head[expr] === Plus, Total[kiraGaussianRealImaginaryPair /@ List @@ expr],
+   Head[expr] === Times, Fold[kiraGaussianPairMultiply, {1, 0}, kiraGaussianRealImaginaryPair /@ List @@ expr],
+   MatchQ[expr, Power[_, _Integer]],
+   kiraGaussianPairPower[kiraGaussianRealImaginaryPair[First[expr]], Last[expr]],
+   True, $Failed
+   ];
+
+
+kiraGaussianAxisData[value_] := Module[
+   {normalized = Cancel[value], pair, real, imaginary, realZeroQ, imaginaryZeroQ},
+   pair = kiraGaussianRealImaginaryPair[normalized];
+   If[pair === $Failed,
+    Return[<|"status" -> "invalid", "coefficient" -> value,
+      "normalizedCoefficient" -> normalized, "reason" -> "unsupportedComplexCoefficientStructure"|>]
+    ];
+   real = Cancel[First[pair]];
+   imaginary = Cancel[Last[pair]];
+   realZeroQ = TrueQ[real === 0];
+   imaginaryZeroQ = TrueQ[imaginary === 0];
    Which[
-    kiraExactRationalQ[normalized],
-    <|"status" -> "valid", "axisPhase" -> 0, "rationalPart" -> normalized|>,
-    Head[normalized] === Complex,
-    real = Re[normalized];
-    imaginary = Im[normalized];
-    If[kiraExactRationalQ[real] && kiraExactRationalQ[imaginary] && Xor[TrueQ[real === 0], TrueQ[imaginary === 0]],
-     <|"status" -> "valid", "axisPhase" -> If[TrueQ[real === 0], 1, 0],
-       "rationalPart" -> If[TrueQ[real === 0], imaginary, real]|>,
-     <|"status" -> "invalid", "coefficient" -> value, "normalizedCoefficient" -> normalized|>
-     ],
+    Xor[realZeroQ, imaginaryZeroQ],
+    <|"status" -> "valid", "axisPhase" -> If[realZeroQ, 1, 0],
+      "rationalPart" -> If[realZeroQ, imaginary, real]|>,
     True,
-    <|"status" -> "invalid", "coefficient" -> value, "normalizedCoefficient" -> normalized|>
+    <|"status" -> "invalid", "coefficient" -> value, "normalizedCoefficient" -> normalized,
+      "realPart" -> real, "imaginaryPart" -> imaginary|>
     ]
    ];
 
 
 kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Module[
-   {equationData, invalidItems, constraints, edges, adjacency, participatingIDs, invalidIDs,
+   {equationData, invalidItems = {}, invalidItemCount = 0, buildAxisItem,
+    constraints, edges, adjacency, participatingIDs, invalidIDs,
     phaseByID = <||>, componentByID = <||>, conflicts = {}, componentCount = 0,
-    queue, current, neighbor, expected, transformedEquations, rowPhases, rationalCoefficients,
+    queue, current, neighbor, expected, transformedEquations, rowPhases,
+    invalidTransformed = {}, invalidTransformedCount = 0, rationalCoefficientCount,
     phaseRules, appliedQ},
+   buildAxisItem[rule_] := Module[{data = kiraGaussianAxisData[Last[rule]]},
+     If[Lookup[data, "status", "invalid"] =!= "valid",
+      invalidItemCount++;
+      If[Length[invalidItems] < 20,
+       AppendTo[invalidItems, Join[<|"id" -> First[rule], "coefficient" -> Last[rule]|>, data]]
+       ]
+      ];
+     {First[rule], Lookup[data, "axisPhase", Missing["axisPhase"]]}
+     ];
    equationData = Map[
      Function[equation,
-      Map[
-       Function[rule,
-        Join[<|"id" -> First[rule], "coefficient" -> Last[rule]|>, kiraGaussianAxisData[Last[rule]]]
-        ],
-       kiraNonzeroCoefficientRules[equation["coefficientRules"]]
-       ]
+      buildAxisItem /@ kiraNonzeroCoefficientRules[equation["coefficientRules"]]
       ],
      linearEquations
      ];
-   invalidItems = Cases[equationData, item_Association /; Lookup[item, "status", "invalid"] =!= "valid", Infinity];
-   If[invalidItems =!= {},
-    Return[<|"status" -> "notRationalizable", "reason" -> "coefficientsMustBeExactPureAxisGaussianRationals",
-      "invalidCoefficientCount" -> Length[invalidItems], "invalidCoefficients" -> Take[invalidItems, UpTo[20]]|>]
+   If[invalidItemCount > 0,
+    Return[<|"status" -> "notRationalizable", "reason" -> "coefficientsMustBePureAxisRealRationalFunctions",
+      "invalidCoefficientCount" -> invalidItemCount, "invalidCoefficients" -> invalidItems|>]
     ];
-   participatingIDs = Sort@DeleteDuplicates@Cases[equationData, item_Association :> Lookup[item, "id", Nothing], Infinity];
+   participatingIDs = Sort@DeleteDuplicates@Cases[equationData, {id_Integer, _Integer} :> id, Infinity];
    invalidIDs = Select[participatingIDs, ! IntegerQ[#] || # < 1 || # > integralCount &];
    If[invalidIDs =!= {},
     Return[<|"status" -> "notRationalizable", "reason" -> "integralIDOutsideDeclaredRange", "invalidIntegralIDs" -> invalidIDs|>]
@@ -5173,8 +5209,8 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
      Map[
       Function[items,
        If[Length[items] < 2, {},
-        ({Lookup[First[items], "id"], Lookup[#, "id"],
-            BitXor[Lookup[First[items], "axisPhase"], Lookup[#, "axisPhase"]]} &) /@ Rest[items]
+        ({First[First[items]], First[#],
+            BitXor[Last[First[items]], Last[#]]} &) /@ Rest[items]
         ]
        ],
       equationData
@@ -5226,7 +5262,7 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
    rowPhases = Map[
      Function[items,
       If[items === {}, 0,
-       Mod[Lookup[First[items], "axisPhase"] + phaseByID[Lookup[First[items], "id"]], 2]
+       Mod[Last[First[items]] + phaseByID[First[First[items]]], 2]
        ]
       ],
      equationData
@@ -5242,15 +5278,36 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
       ],
      {linearEquations, rowPhases}
      ];
-   rationalCoefficients = Last /@ Flatten[
-      kiraNonzeroCoefficientRules[# ["coefficientRules"]] & /@ transformedEquations
-      ];
-   If[! And @@ (kiraExactRationalQ /@ rationalCoefficients),
-    Return[<|"status" -> "notRationalizable", "reason" -> "phaseTransformDidNotProduceRationalCoefficients",
-      "nonrationalCoefficients" -> Select[rationalCoefficients, ! kiraExactRationalQ[#] &, UpTo[20]]|>]
+   transformedEquations = Map[
+     Function[equation,
+      Join[equation, <|"coefficientRules" -> Map[
+          Function[rule,
+           If[TrueQ[Last[rule] === 0], rule,
+            Module[{data = kiraGaussianAxisData[Last[rule]]},
+             If[Lookup[data, "status", "invalid"] === "valid" && Lookup[data, "axisPhase", 1] === 0,
+              First[rule] -> Lookup[data, "rationalPart"],
+              invalidTransformedCount++;
+              If[Length[invalidTransformed] < 20, AppendTo[invalidTransformed, data]];
+              rule
+              ]
+             ]
+            ]
+           ],
+          equation["coefficientRules"]
+          ]|>]
+     ],
+     transformedEquations
+     ];
+   If[invalidTransformedCount > 0,
+    Return[<|"status" -> "notRationalizable", "reason" -> "phaseTransformDidNotProduceRealRationalFunctions",
+      "invalidCoefficientCount" -> invalidTransformedCount,
+      "invalidCoefficients" -> invalidTransformed|>]
     ];
+   rationalCoefficientCount = Total[
+     Length[kiraNonzeroCoefficientRules[# ["coefficientRules"]]] & /@ transformedEquations
+     ];
    phaseRules = SortBy[Normal[phaseByID], First];
-   appliedQ = AnyTrue[Flatten[equationData], AssociationQ[#] && Lookup[#, "axisPhase", 0] === 1 &];
+   appliedQ = AnyTrue[Flatten[equationData, 1], MatchQ[#, {_, 1}] &];
    <|
     "status" -> If[appliedQ, "applied", "notRequired"],
     "passQ" -> True,
@@ -5262,7 +5319,8 @@ kiraGaussianPhaseRationalize[linearEquations_List, integralCount_Integer] := Mod
     "participatingIntegralCount" -> Length[participatingIDs],
     "componentCount" -> componentCount,
     "conflictCount" -> 0,
-    "rationalCoefficientCount" -> Length[rationalCoefficients],
+    "rationalCoefficientCount" -> rationalCoefficientCount,
+    "coefficientDomain" -> "realRationalFunctions",
     "linearEquations" -> transformedEquations
     |>
    ];
@@ -5565,11 +5623,9 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
     ];
    normalizedJobOptions = normalizeKiraJobOptions[jobOptions];
    coefficientDiagnostics = linearCoefficientDiagnostics[exportedEquations];
-   gaussianPhaseGauge = If[
-     TrueQ[coefficientDiagnostics["numericCoefficientSystemQ"]] && coefficientDiagnostics["coefficientVariables"] === {},
-     kiraGaussianPhaseRationalize[exportedEquations, linearData["integralCount"]],
-     <|"status" -> "notApplicable", "passQ" -> True,
-       "reason" -> "coefficientSystemIsNotAnExactParameterFreeNumericSystem"|>
+   gaussianPhaseGauge = kiraGaussianPhaseRationalize[
+     exportedEquations,
+     linearData["integralCount"]
      ];
    If[MemberQ[{"notRationalizable"}, Lookup[gaussianPhaseGauge, "status", "notRationalizable"]],
     Return[Join[
@@ -5608,10 +5664,15 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
       Last /@ Flatten[kiraNonzeroCoefficientRules[#["coefficientRules"]] & /@ exportedEquations],
       _Complex
       ];
-   backendCoefficientVariables = Join[
-      Lookup[coefficientVariableMap, "backend", {}],
-      If[imaginaryUnitUsedQ, {"dsii"}, {}]
-      ];
+   If[imaginaryUnitUsedQ,
+    Return[<|
+      "status" -> "invalidRealBackendCoefficients",
+      "reason" -> "Kira coefficients must be real after massless momentum mapping and integral phase gauge",
+      "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
+      "topologyValidationReport" -> topologyReport
+      |>]
+    ];
+   backendCoefficientVariables = Lookup[coefficientVariableMap, "backend", {}];
    backendSyntaxReport = kiraBackendCoefficientSyntaxReport[exportedEquations, coefficientVariableMap];
    If[Lookup[backendSyntaxReport, "status", "invalid"] =!= "valid",
     Return[<|
@@ -5639,19 +5700,21 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
      If[appendNumericDummyQ, kiraDummyEquationBlock[numericDummyIntegralId, numericDummySymbol], ""];
    backendTextAudit = <|
      "status" -> If[
-       ! StringContainsQ[ibpText, "dsii"] && ! StringContainsQ[ibpText, numericDummySymbol] &&
+       ! StringContainsQ[ibpText, "dsii"] && ! StringContainsQ[ibpText, "Complex"] &&
+        ! StringContainsQ[ibpText, numericDummySymbol] &&
         If[pureRationalBackendQ, backendCoefficientVariables === {}, True],
        "passed",
        "failed"
        ],
      "pureRationalBackendQ" -> pureRationalBackendQ,
      "containsBackendImaginaryUnitQ" -> StringContainsQ[ibpText, "dsii"],
+     "containsComplexTokenQ" -> StringContainsQ[ibpText, "Complex"],
      "containsNumericDummySymbolQ" -> StringContainsQ[ibpText, numericDummySymbol],
      "backendCoefficientVariables" -> backendCoefficientVariables
      |>;
-   If[pureRationalBackendQ && Lookup[backendTextAudit, "status", "failed"] =!= "passed",
-    Return[<|"status" -> "invalidPureRationalBackendText",
-      "reason" -> "pure rational Kira text must not contain dsii, a numeric dummy, or backend coefficient variables",
+   If[Lookup[backendTextAudit, "status", "failed"] =!= "passed",
+    Return[<|"status" -> "invalidRealBackendText",
+      "reason" -> "Kira text must be real and must not contain dsii, Complex, or a numeric dummy",
       "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
       "backendTextAudit" -> backendTextAudit,
       "topologyValidationReport" -> topologyReport|>]
@@ -5679,7 +5742,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
           "backendExpressionVariables" -> coefficientDiagnostics["coefficientVariables"],
           "coefficientVariableMap" -> coefficientVariableMap,
          "backendCoefficientVariables" -> backendCoefficientVariables,
-          "backendImaginaryUnit" -> If[imaginaryUnitUsedQ, "dsii", None],
+          "backendImaginaryUnit" -> None,
           "backendCoefficientSyntaxReport" -> backendSyntaxReport,
            "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
            "backendEnergyConvention" -> energyConvention,
@@ -5720,7 +5783,7 @@ makeKiraInputStrings[linearData_Association, coeffRules_ : {}, jobOptions_: Auto
      "backendExpressionVariables" -> coefficientDiagnostics["coefficientVariables"],
     "coefficientVariableMap" -> coefficientVariableMap,
     "backendCoefficientVariables" -> backendCoefficientVariables,
-     "backendImaginaryUnit" -> If[imaginaryUnitUsedQ, "dsii", None],
+     "backendImaginaryUnit" -> None,
      "backendCoefficientSyntaxReport" -> backendSyntaxReport,
       "gaussianPhaseGauge" -> gaussianPhaseGaugeManifest,
       "backendEnergyConvention" -> energyConvention,
@@ -5775,7 +5838,6 @@ writeKiraInputFiles[outputDir_String, strings_Association] := Module[
 Options[makeKiraExportData] = {
    OutputDirectory -> None,
    KiraCoefficientRules -> {},
-   KiraIntegralOrder -> Automatic,
    KiraTargetIntegrals -> Automatic,
    KiraJobOptions -> Automatic
    };
@@ -5785,7 +5847,7 @@ makeKiraExportData::badlinear = "linear-system 不能导出 Kira：`1`。";
 
 
 makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
-   {linearForExport, strings, outputDir, outputDirReport, filesWritten, topologyReport, integralOrderReport},
+   {linearForExport, strings, outputDir, outputDirReport, filesWritten, topologyReport},
    topologyReport = Lookup[linearData, "topologyValidationReport", Missing["NoTopologyValidationReport"]];
    outputDir = OptionValue[OutputDirectory];
    outputDirReport = validateKiraOutputDirectory[outputDir];
@@ -5807,11 +5869,8 @@ makeKiraExportData[linearData_Association, OptionsPattern[]] := Module[
       "reason" -> "Kira exporter expects linear-system data; save seed batch as MMA first, then call makeLinearSystemData after numeric/sampling choices"
       |>]
     ];
-   integralOrderReport = validateKiraIntegralOrderSpec[OptionValue[KiraIntegralOrder]];
-   If[Lookup[integralOrderReport, "status", "ok"] =!= "ok",
-    Return[<|"status" -> "notReady", "caseName" -> Lookup[linearData, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalid KiraIntegralOrder", "linearSystem" -> linearData, "kiraInput" -> integralOrderReport|>]
-    ];
-   linearForExport = If[ListQ[OptionValue[KiraIntegralOrder]], reorderLinearSystemIntegrals[linearData, OptionValue[KiraIntegralOrder]], linearData];
+   (* serializer 只读取 linearData 的现有顺序；显式重排必须在此边界之前完成。 *)
+   linearForExport = linearData;
    strings = makeKiraInputStrings[linearForExport, OptionValue[KiraCoefficientRules], OptionValue[KiraJobOptions], OptionValue[KiraTargetIntegrals]];
    If[Lookup[strings, "status", "missing"] =!= "generated",
     If[! MemberQ[{"invalidKiraJobOptions", "invalidCoefficientRules"}, Lookup[strings, "status", Missing["status"]]],
@@ -5873,8 +5932,7 @@ Options[makeIBPWorkflowData] = Join[
     OutputDirectory -> None,
     ExportKira -> False,
     KiraCoefficientRules -> Automatic,
-    KiraIntegralOrder -> Automatic,
-    KiraTargetIntegrals -> Automatic,
+     KiraTargetIntegrals -> Automatic,
     KiraJobOptions -> Automatic
     }
    ];
@@ -6013,8 +6071,7 @@ makeIBPWorkflowData[caseOrTopo_Association, opts : OptionsPattern[]] := Module[
      {
       OutputDirectory -> OptionValue[OutputDirectory],
       KiraCoefficientRules -> kiraCoeffRules,
-      KiraIntegralOrder -> OptionValue[KiraIntegralOrder],
-      KiraTargetIntegrals -> OptionValue[KiraTargetIntegrals],
+       KiraTargetIntegrals -> OptionValue[KiraTargetIntegrals],
       KiraJobOptions -> OptionValue[KiraJobOptions]
       },
      Options[makeKiraExportData]
@@ -6213,6 +6270,14 @@ linearizeSeedEquation[entry_Association, integralIndex_Association] := Module[
    ];
 
 
+(* 来源 metadata 用于 producer coverage；去重键只包含后端真正消费的数学方程。 *)
+linearEquationMathematicalKey[entry_Association] := {
+   Lookup[entry, "coefficientRules", {}],
+   Lookup[entry, "constantTerm", 0],
+   Lookup[entry, "nonlinearTerms", {}]
+   };
+
+
 Options[makeLinearSystemData] = {KiraOrdering -> Automatic, AuditLevel -> "standard"};
 
 
@@ -6328,6 +6393,7 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     Return[<|"status" -> "notReady", "caseName" -> Lookup[batch, "caseName", Missing["caseName"]], "topologyValidationReport" -> topologyReport, "reason" -> "invalidSymmetryRules"|>]
     ];
    linearEquations = linearizeSeedEquation[#, integralIndex] & /@ equations;
+   linearEquations = DeleteDuplicatesBy[linearEquations, linearEquationMathematicalKey];
    coefficientDiagnostics = linearCoefficientDiagnostics[linearEquations];
    sourceDigest = If[
      trustedProducerQ,
@@ -6340,7 +6406,9 @@ makeLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPattern[]] 
     "caseName" -> Lookup[batch, "caseName", Missing["caseName"]],
     "topology" -> topo,
     "integralCount" -> Length[integrals],
-    "equationCount" -> Length[equations],
+    "sourceEquationCount" -> Length[equations],
+    "equationCount" -> Length[linearEquations],
+    "duplicateEquationCount" -> Length[equations] - Length[linearEquations],
     "integralList" -> integrals,
     "integralRules" -> Normal[integralIndex],
     "kiraOrdering" -> orderingSpec,

@@ -91,6 +91,25 @@ expectedLowerIntegrand = rep2outform[
    customContext["topology"]
    ];
 
+(* 这个 fixed-line normalized J 的非平凡 N_s=(u+v)^(2 nu1) 必须进入
+   自动 Euler 次数；若遗漏 prefactor，下面的次数不会化为 -2。 *)
+scalingMaster = topIntegral /. {a[v1] -> 0, a[v2] -> 0};
+scalingDE = <|
+   "status" -> "generated",
+   "masters" -> {scalingMaster},
+   "variables" -> {u, v},
+   "matrices" -> <|u -> {{0}}, v -> {{0}}|>,
+   "sources" -> <|u -> {0}, v -> {0}|>,
+   "activeBasis" -> <|"scalingDegrees" -> Automatic|>,
+   "sourceManifest" -> <||>,
+   "context" -> customContext
+   |>;
+scalingData = DSScaleCheck[
+   scalingDE,
+   <|"relation" -> "LoopTopology", "variables" -> {u, v}, "weights" -> {1, 1}|>
+   ];
+scalingDegree = First[Lookup[scalingData, "degrees", {$Failed}]];
+
 
 (* ::Chapter:: *)
 (*验收*)
@@ -110,7 +129,8 @@ checks = <|
    "coefficientProductRule" ->
     TrueQ[FullSimplify[ds[u topIntegral, u, customContext] - topIntegral - u fullDerivative] === 0],
    "integrandRestoresN" ->
-    TrueQ[FullSimplify[lowerIntegrand - expectedLowerIntegrand] === 0]
+    TrueQ[FullSimplify[lowerIntegrand - expectedLowerIntegrand] === 0],
+   "loopScalingIncludesN" -> TrueQ[FullSimplify[scalingDegree + 2] === 0]
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
@@ -119,6 +139,7 @@ Print[InputForm[<|
    "total" -> Length[checks],
    "failed" -> failed,
    "contactCoefficient" -> contactCoefficient,
+   "scalingDegree" -> scalingDegree,
    "checks" -> checks
    |>]];
 Exit[If[failed === {}, 0, 1]];

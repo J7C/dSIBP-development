@@ -23,11 +23,11 @@ If[packageOverrideQ,
   currentManualCandidates = {ExpandFileName[manualOverride]},
   currentPackageCandidates = Select[
     FileNames["package_*.wl", packageDeliveryDirectory],
-    StringMatchQ[FileBaseName[#], "package_" ~~ DigitCharacter ~~ DigitCharacter ~~ DigitCharacter] &
+    StringMatchQ[FileBaseName[#], RegularExpression["package_[0-9]{3}(\\.[0-9]+)?"]] &
     ];
   currentManualCandidates = Select[
     FileNames["package_*.pdf", packageDeliveryDirectory],
-    StringMatchQ[FileBaseName[#], "package_" ~~ DigitCharacter ~~ DigitCharacter ~~ DigitCharacter] &
+    StringMatchQ[FileBaseName[#], RegularExpression["package_[0-9]{3}(\\.[0-9]+)?"]] &
     ]
   ];
 
@@ -39,13 +39,13 @@ If[Length[currentPackageCandidates] =!= 1 || Length[currentManualCandidates] =!=
 currentPackagePath = First[currentPackageCandidates];
 currentManualPath = First[currentManualCandidates];
 currentVersion = FirstCase[
-   StringCases[FileBaseName[currentPackagePath], RegularExpression["package_([0-9]{3})"] -> "$1"],
-   value_ /; StringLength[value] === 3,
+   StringCases[FileBaseName[currentPackagePath], RegularExpression["package_([0-9]{3}(?:\\.[0-9]+)?)"] -> "$1"],
+   value_String,
    Missing["VersionToken"]
    ];
 currentManualVersion = FirstCase[
-   StringCases[FileBaseName[currentManualPath], RegularExpression["package_([0-9]{3})"] -> "$1"],
-   value_ /; StringLength[value] === 3,
+   StringCases[FileBaseName[currentManualPath], RegularExpression["package_([0-9]{3}(?:\\.[0-9]+)?)"] -> "$1"],
+   value_String,
    Missing["VersionToken"]
    ];
 

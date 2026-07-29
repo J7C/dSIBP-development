@@ -4,12 +4,15 @@
 
 保留范围：
 
-- `check_general_ibp_seeds/`：只构造一个 pure massive bubble 的 general IBP seed templates；不撒点，不调用 `DSGenerateIBP` 或 `DSLinear`。
-- `check_parameter_derivative_operators/`：用单条 fixed massive line 检查结构化 `kEpower`、参数重定义、normalized contact、`D[Log[N_s]]` 和 `rep2Integrand` 回乘。
-- `check_scaling_relation/`：只读已有 massive-bubble 解析 probe，在唯一固定点检查 Euler/scaling relation；不重新生成 reference，不运行 Kira。
+- `check_general_ibp_seeds/`：构造限定 family 的 general IBP seed templates；single-massive sunrise 子检查逐项核对 6 个 `q·q/q·kL` momentum generators、odd/odd sector 传播和 ISP 不参与 parity。不撒连续指标点，不调用 `DSGenerateIBP` 或 `DSLinear`。
+- `check_isp_numerator_contract/`：检查 ISP 零点固定为 `0`、正幂 numerator、用户显式负 range/target/`J` 可保留，以及自动反推 seed 只能保持或抬高用户下界；不运行 Kira 或 reduction。
+- `check_parameter_derivative_operators/`：用单条 fixed massive line 检查结构化 `kEpower`、参数重定义、normalized contact、`D[Log[N_s]]` 和 `rep2Integrand` 回乘。single-massive sunrise 的 `{ss11,kE}` general 算符由长期 example 直接覆盖，不保留 active-basis wrapper smoke。
+- `check_scaling_relation/`：只读已有 massive-bubble 解析 probe，在唯一固定点检查 Euler/scaling relation；不包含 sunrise，不重新生成 reference，不运行 Kira。
 - `check_massless_endpoint_contact/`：只检查一个 `++` fixed-line contact 和一个 `+-` endpoint 相位例子。
 - `check_kira_energy_convention/`：只检查 Kira 内部 `P0 -> -I ip0`、实有理数值映射以及普通导数/Euler 算符的 Jacobian。
 - `check_topology_loop_count/`：并列检查普通两顶点单边、自环 tadpole 和三平行边 sunrise 的圈数、cycle/bridge、自环 metadata 与 routing rank。
+- `check_integral_order_authority/`：用两积分合成 linearData 检查 `integralList` 唯一顺序、显式 reindex 和 plan 不二次重排；不写 backend 文件。
+- `check_user_mi_basis/`：复用长期 massive-bubble 的既有积分表，检查 21/19 维 `userMI` 秩、support 双向映射、backend token 和解析导数 closure；不生成 seeds、不运行或读取 reduction。
 
 所有脚本都直接加载 `000_code/018_dSIBP/`。如需临时输出，只能写入对应功能目录下的 `results_test/`，任务结束后清理；当前保留脚本不写运行产物。
 

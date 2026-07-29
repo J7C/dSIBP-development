@@ -8,8 +8,12 @@
 
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
 packageDir = FileNameJoin[{projectRoot, "000_code", "018_dSIBP"}];
-$Path = Prepend[$Path, packageDir];
-Needs["dSIBP`"];
+candidatePackageFile = Environment["DSIBP_PACKAGE_FILE"];
+If[StringQ[candidatePackageFile] && candidatePackageFile =!= "" && FileExistsQ[candidatePackageFile],
+ Get[candidatePackageFile, CharacterEncoding -> "UTF-8"],
+ $Path = Prepend[$Path, packageDir];
+ Needs["dSIBP`"]
+ ];
 DSMessagesOff[];
 
 caseInput = <|
@@ -78,6 +82,59 @@ eulerResidual = Expand[
 
 
 (* ::Chapter:: *)
+(*符号与数值 Kira 实数化*)
+
+(* 这两个积分只承载 serializer 的相位约束；不生成 IBP，也不写后端文件。 *)
+serializerLinearData = <|
+   "status" -> "generated",
+   "topology" -> context["topology"],
+   "topologyValidationReport" -> Lookup[context["topology"], "validationReport", <|"status" -> "ok"|>],
+   "linearEquations" -> {
+     <|"linearQ" -> True, "constantTerm" -> 0,
+       "coefficientRules" -> {1 -> P0, 2 -> 1}|>
+     },
+   "integralRules" -> {
+     J[{0, 0}, {{0, 0, 0}, {0, 0, 0}}, {}] -> 1,
+     J[{1, 0}, {{0, 0, 0}, {0, 0, 0}}, {}] -> 2
+     },
+   "integralCount" -> 2,
+   "equationCount" -> 1
+   |>;
+
+symbolicSerializer = dSIBP`Private`makeKiraInputStrings[
+   serializerLinearData,
+   {},
+   <|"AppendNumericDummyEquation" -> False|>,
+   {1, 2}
+   ];
+numericSerializer = dSIBP`Private`makeKiraInputStrings[
+   serializerLinearData,
+   {P0 -> 29/13},
+   <|"AppendNumericDummyEquation" -> False|>,
+   {1, 2}
+   ];
+
+symbolicPhaseGauge = dSIBP`Private`kiraGaussianPhaseRationalize[
+   {
+    <|"linearQ" -> True, "constantTerm" -> 0,
+      "coefficientRules" -> {1 -> I x/(1 + x), 2 -> -1/(1 + x)}|>
+    },
+   2
+   ];
+mixedAxisFailure = dSIBP`Private`kiraGaussianPhaseRationalize[
+   {
+    <|"linearQ" -> True, "constantTerm" -> 0,
+      "coefficientRules" -> {1 -> 1 + I x, 2 -> 1}|>
+    },
+   2
+   ];
+
+symbolicKiraText = Lookup[symbolicSerializer, "ibp.kira", ""];
+numericKiraText = Lookup[numericSerializer, "ibp.kira", ""];
+forbiddenBackendTokenQ[text_String] := Or @@ (StringContainsQ[text, #] & /@ {"I", "Complex", "dsii"});
+
+
+(* ::Chapter:: *)
 (*验收*)
 
 checks = <|
@@ -90,7 +147,23 @@ checks = <|
    "physicalPointRestored" ->
     (Lookup[numericData, "physicalPointRules", {}] === {P0 -> -29 I/13}),
    "ordinaryDerivativeJacobian" -> (ordinaryResidual === 0),
-   "eulerOperatorInvariant" -> (eulerResidual === 0)
+   "eulerOperatorInvariant" -> (eulerResidual === 0),
+   "symbolicPhaseGaugeAccepted" ->
+    MemberQ[{"applied", "notRequired"}, Lookup[symbolicPhaseGauge, "status", "failed"]],
+   "symbolicPhaseGaugeReal" ->
+    FreeQ[Lookup[symbolicPhaseGauge, "linearEquations", {}], _Complex],
+   "mixedRealImaginaryRejected" ->
+    (Lookup[mixedAxisFailure, "status", "missing"] === "notRationalizable"),
+   "symbolicSerializerGenerated" ->
+    (Lookup[symbolicSerializer, "status", "missing"] === "generated"),
+   "symbolicBackendTextReal" -> ! forbiddenBackendTokenQ[symbolicKiraText],
+   "numericSerializerGenerated" ->
+    (Lookup[numericSerializer, "status", "missing"] === "generated"),
+   "numericBackendPureRational" ->
+    TrueQ[Lookup[numericSerializer, "pureRationalBackendQ", False]],
+   "numericBackendVariablesEmpty" ->
+    (Lookup[numericSerializer, "backendCoefficientVariables", Missing["variables"]] === {}),
+   "numericBackendTextReal" -> ! forbiddenBackendTokenQ[numericKiraText]
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];

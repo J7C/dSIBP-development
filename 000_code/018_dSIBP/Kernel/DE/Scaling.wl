@@ -1,4 +1,6 @@
 (* ::Package:: *)
+(* 本模块从闭合 DE 构造 Euler residual，并按显式次数、通用 loop topology
+   或 pure-massive-bubble reference convention 生成 master 的齐次次数。 *)
 
 (* ::Chapter:: *)
 (*018 标度关系检查*)
@@ -32,6 +34,80 @@ dsPureMassiveBubbleDegree[int_J, context_Association] := Module[{powers, vertexC
    vertexCount = Length[powers["aPowers"]];
    offset = Switch[vertexCount, 2, 2, 1, 1, _, Return[$Failed]];
    dim - Total[powers["bPowers"]] - Total[powers["aPowers"]] - offset
+   ];
+
+
+(* ::Section::Closed:: *)
+(*通用 loop topology 的 normalized J 次数*)
+
+(* ISP 是 loop scalar product，因而每个幂次贡献两个动量次数。sector prefactor
+   必须从完整 N_s 结构读取；只接受关于当前 Euler 变量齐次的 prefactor。 *)
+dsLoopTopologyDegree[
+   int : J[_, _, ispPowers_List],
+   variables_List,
+   weights_List,
+   context_Association
+   ] := Module[
+   {powers, rootTopo, loopCount, vertexCount, prefactorData, prefactor,
+    prefactorDegree},
+   powers = dsIntegralPhysicalPowers[int, context];
+   If[powers === $Failed, Return[$Failed]];
+   rootTopo = context["topology"];
+   loopCount = Lookup[rootTopo, "graphLoopCount", Length[Lookup[rootTopo, "loopMomenta", {}]]];
+   vertexCount = Length[powers["aPowers"]];
+   prefactorData = sectorPrefactorDataForIntegral018[rootTopo, int];
+   prefactor = materializeSectorPrefactor018[prefactorData];
+   If[prefactor === $Failed || TrueQ[prefactor === 0], Return[$Failed]];
+   prefactorDegree = Together[
+     Total[MapThread[#1 #2 D[prefactor, #2] &, {weights, variables}]]/prefactor
+     ];
+   If[! And @@ (dsScaleZeroQ[D[prefactorDegree, #]] & /@ variables), Return[$Failed]];
+   Together[
+    loopCount dim - Total[powers["bPowers"]] - Total[powers["aPowers"]] -
+     vertexCount + 2 Total[ispPowers] + prefactorDegree
+    ]
+   ];
+
+
+dsLoopTopologyExpressionDegree[
+   expr_,
+   variables_List,
+   weights_List,
+   context_Association
+   ] := Module[
+   {linearData, termDegrees, coefficientDegree, integralDegree, referenceDegree},
+   linearData = publicLinearIntegralDecomposition[expr];
+   If[
+    Lookup[linearData, "status", "failed"] =!= "linear" ||
+     ! TrueQ[linearData["constantTerm"] === 0],
+    Return[$Failed]
+    ];
+   termDegrees = MapThread[
+     Function[{coefficient, int},
+      If[
+       TrueQ[coefficient === 0],
+       Nothing,
+       coefficientDegree = Together[
+         Total[MapThread[#1 #2 D[coefficient, #2] &, {weights, variables}]]/coefficient
+         ];
+       integralDegree = dsLoopTopologyDegree[int, variables, weights, context];
+       If[
+        integralDegree === $Failed ||
+         ! And @@ (dsScaleZeroQ[D[coefficientDegree, #]] & /@ variables),
+        $Failed,
+        Together[coefficientDegree + integralDegree]
+        ]
+       ]
+      ],
+     {linearData["coefficients"], linearData["integrals"]}
+     ];
+   If[termDegrees === {} || MemberQ[termDegrees, $Failed], Return[$Failed]];
+   referenceDegree = First[termDegrees];
+   If[
+    And @@ (dsScaleZeroQ[# - referenceDegree] & /@ Rest[termDegrees]),
+    referenceDegree,
+    $Failed
+    ]
    ];
 
 (* 线性组合的次数同时包含显式动力学系数；所有非零项必须具有同一 Euler 次数。 *)
@@ -90,6 +166,7 @@ DSScaleCheck[deData_Association, spec_: <||>, OptionsPattern[]] := Module[
      Automatic :> Which[
        ListQ[declaredDegrees], declaredDegrees,
        relation === "PureMassiveBubble", dsPureMassiveBubbleExpressionDegree[#, variables, weights, context] & /@ masters,
+       relation === "LoopTopology", dsLoopTopologyExpressionDegree[#, variables, weights, context] & /@ masters,
        True, $Failed
        ]
      ];
