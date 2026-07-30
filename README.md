@@ -51,7 +51,7 @@ dSIBP 与 MadStree 主要基于以下 dSIBP 系列工作实现。使用这两个
 
 1. Jiaqi Chen and Bo Feng, [*Towards Systematic Evaluation of de Sitter Correlators via Generalized Integration-By-Parts Relations*](https://arxiv.org/abs/2401.00129), arXiv:2401.00129.
 2. Jiaqi Chen, Bo Feng and Yi-Xiao Tao, [*Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations*](https://arxiv.org/abs/2411.03088), arXiv:2411.03088.
-3. Jiaqi Chen, Bo Feng, Zhehan Qin and Yi-Xiao Tao, [*Loop integrals in de Sitter spacetime: The parity-split IBP system and d log-form differential equations*](https://arxiv.org/abs/2604.14549), arXiv:2604.14549（[仓库内 PDF](<reference/ref_paper/2604.14549_Loop integrals in de Sitter spacetime - The parity-split IBP system and d log-form differential equations.pdf>)）。
+3. Jiaqi Chen, Bo Feng, Zhehan Qin and Yi-Xiao Tao, [*Loop integrals in de Sitter spacetime: The parity-split IBP system and d log-form differential equations*](https://arxiv.org/abs/2604.14549), arXiv:2604.14549.
 
 FlintNDE 的高阶 pole 处理和解析正规化参数重构深度参考了 AMFlow 的公开算法与代码：
 
