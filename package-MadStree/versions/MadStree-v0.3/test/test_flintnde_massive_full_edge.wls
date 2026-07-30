@@ -54,7 +54,7 @@ transported = MSEvaluateTree[
 
 checks = <|
   "asymptoticBoundary" -> Lookup[directAtTarget, "method", None] ===
-    "2411TwoVertexSectorLeadingSeries" &&
+    "2411GenericSectorLeadingSeries" &&
     Lookup[directAtTarget, "directIntegrationFallbackQ", True] === False,
   "fiveMasters" -> Length[MSMasterIntegrals[context]] === 5,
   "transport" -> Lookup[transported, "status", None] === "computed",

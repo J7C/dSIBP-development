@@ -232,14 +232,18 @@ msComponentBasePower[component_List, vertices_List, lines_List, contractedIds_Li
 ];
 
 msBuildSector[vertices_List, lines_List, contractedIds_List, rootNormalization_] := Module[
-  {components, rootToComponent, slots, activeLines, normalization, sector, canonicalData},
+  {components, rootToComponent, slots, activeLines, contractedLines, normalization, contactDepth,
+   boundaryContactPhase, sector, canonicalData},
   components = msComponentsForContractions[vertices, lines, contractedIds];
   rootToComponent = msRootToComponent[components];
   slots = msSectorSlots[lines, contractedIds];
   activeLines = Select[lines, ! MemberQ[contractedIds, #["id"]] &];
+  contractedLines = Select[lines, MemberQ[contractedIds, #["id"]] &];
   normalization = Simplify[
-    rootNormalization Times @@ Lookup[Select[lines, MemberQ[contractedIds, #["id"]] &], "pinchNormalization", 1]
+    rootNormalization Times @@ Lookup[contractedLines, "pinchNormalization", 1]
   ];
+  contactDepth = Length[vertices] - Length[components];
+  boundaryContactPhase = I^Count[contractedLines, line_ /; line["type"] === "massiveFull"];
   sector = <|
     "sectorKey" -> msSectorKey[contractedIds],
     "contractedLineIds" -> contractedIds,
@@ -252,7 +256,9 @@ msBuildSector[vertices_List, lines_List, contractedIds_List, rootNormalization_]
     "activeLines" -> activeLines,
     "slots" -> slots,
     "slotCount" -> Length[slots],
-    "normalization" -> normalization
+    "normalization" -> normalization,
+    "contactDepth" -> contactDepth,
+    "boundaryContactPhase" -> boundaryContactPhase
   |>;
   canonicalData = msSectorCanonicalStateData[sector];
   Join[
@@ -304,13 +310,49 @@ msBuildMasters[sectors_List] := Module[{offset = 1, records},
 
 
 (* ::Section:: *)
+(*Sector 与 master 身份证书*)
+
+(*
+一次性验证 canonical contraction set、sector key 与全局 master 表的双射关系。
+consumer 随后只需读取同源证书和 masterDigest，不必重复扫描完整 context。
+*)
+msSectorIdentityCertificate[sectors_List, masters_List] := Module[
+  {sectorKeys, contractedSets, masterIntegrals, globalIndices, checks, digest},
+  sectorKeys = Lookup[sectors, "sectorKey"];
+  contractedSets = Lookup[sectors, "contractedLineIds"];
+  masterIntegrals = Lookup[masters, "integral"];
+  globalIndices = Lookup[masters, "globalIndex"];
+  digest = IntegerString[Hash[masterIntegrals, "SHA256"], 16, 64];
+  checks = <|
+    "sectorKeysUniqueQ" -> DuplicateFreeQ[sectorKeys],
+    "contractedSetsUniqueQ" -> DuplicateFreeQ[contractedSets],
+    "sectorKeysCanonicalQ" -> TrueQ[And @@ Map[
+      #1["sectorKey"] === msSectorKey[#1["contractedLineIds"]] &,
+      sectors
+    ]],
+    "masterIntegralsUniqueQ" -> DuplicateFreeQ[masterIntegrals],
+    "masterCountMatchesQ" -> Length[masters] === Total[Lookup[sectors, "masterCount"]],
+    "globalIndicesContiguousQ" -> globalIndices === Range[Length[masters]],
+    "masterSectorKeysKnownQ" -> SubsetQ[sectorKeys, DeleteDuplicates[Lookup[masters, "sectorKey"]]]
+  |>;
+  <|
+    "status" -> If[And @@ Values[checks], "certified", "collision"],
+    "checks" -> checks,
+    "sectorCount" -> Length[sectors],
+    "masterCount" -> Length[masters],
+    "masterDigest" -> digest
+  |>
+];
+
+
+(* ::Section:: *)
 (*公开初始化与查询*)
 
 Options[MSInitTree] = {NuConvention -> "Positive"};
 
 MSInitTree[spec_Association, OptionsPattern[]] := Module[
   {rawVertices, rawLines, vertices, lines, issues, rootNormalization, sectorData, sectors, masters,
-   context, nuConvention, graphMode, contactBundles},
+   context, nuConvention, graphMode, contactBundles, sectorIdentityCertificate},
   rawVertices = Lookup[spec, "vertices", {}];
   rawLines = Lookup[spec, "lines", {}];
   If[! ListQ[rawVertices] || ! And @@ (AssociationQ /@ rawVertices) ||
@@ -336,6 +378,10 @@ MSInitTree[spec_Association, OptionsPattern[]] := Module[
   sectorData = msBuildSectors[vertices, lines, rootNormalization];
   sectors = sectorData["sectors"];
   masters = msBuildMasters[sectors];
+  sectorIdentityCertificate = msSectorIdentityCertificate[sectors, masters];
+  If[sectorIdentityCertificate["status"] =!= "certified",
+    Return[Failure["SectorIdentityCollision", sectorIdentityCertificate]]
+  ];
   context = <|
     "head" -> "MadStreeContext",
     "version" -> $MadStreeVersion,
@@ -368,7 +414,8 @@ MSInitTree[spec_Association, OptionsPattern[]] := Module[
     "sectors" -> sectors,
     "sectorOrder" -> Lookup[sectors, "sectorKey"],
     "masters" -> masters,
-    "masterDigest" -> IntegerString[Hash[Lookup[masters, "integral"], "SHA256"], 16, 64],
+    "masterDigest" -> sectorIdentityCertificate["masterDigest"],
+    "sectorIdentityCertificate" -> sectorIdentityCertificate,
     "rootNormalization" -> rootNormalization,
     "capabilities" -> <|
       "formulaRecurrence" -> True,
@@ -376,7 +423,7 @@ MSInitTree[spec_Association, OptionsPattern[]] := Module[
       "simultaneousContact" -> True,
       "timeOnlyCycles" -> True,
       "automaticEuclideanBoundary" -> False,
-      "asymptoticBoundaryFormula" -> "2411SingleVertexFrobenius",
+      "asymptoticBoundaryFormula" -> "2411GenericSectorFrobenius",
       "flintNDETransport" -> True
     |>
   |>;

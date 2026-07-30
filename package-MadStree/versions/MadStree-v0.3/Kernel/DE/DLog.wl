@@ -112,7 +112,8 @@ msContactDLogBlock[
   context_?MSContextQ
 ] := Module[
   {targetSector, endpointComponents, matrices, r1Shifts, contributions, reductionRecords,
-   targetShift, reduction, localBlock, globalBlock, closedQ, sectorSlices, sectorStart, sectorDimension},
+   targetShift, reduction, localBlock, masslessContactPhase, globalBlock, closedQ, sectorSlices,
+   sectorStart, sectorDimension},
   targetSector = msSectorByKey[context, contactMap["targetSector"]];
   endpointComponents = DeleteDuplicates[contactMap["endpointComponents"]];
   matrices = contactMap["matricesByComponent"];
@@ -131,10 +132,12 @@ msContactDLogBlock[
       |>,
       msShiftedTargetReduction[targetSector, targetShift, context]
     ];
-    (* 2401.00129 Eq. (3.68) 已把 -I 包含在 transformed log kernel 中；
-       contact selector 只负责补位与二进制符号，不能再附加整体负号。 *)
+    (* 指数二态的 massless contact 相对 2401 massive Wronskian 原子多一个负号；
+       simultaneous event 按实际 selected lines 相乘，不能按图或 sector 特判。 *)
+    masslessContactPhase = (-1)^Count[contactMap["lineTypes"], "masslessFull"];
     localBlock = Simplify[
-      sourceBlock["componentLogKernels"][[componentPosition]].matrices[componentPosition]
+      masslessContactPhase
+        sourceBlock["componentLogKernels"][[componentPosition]].matrices[componentPosition]
     ];
     <|
       "componentPosition" -> componentPosition,

@@ -3,8 +3,10 @@
 (***
 文件：Boundary.wl
 用途：从 2411.03088 的 k0->Infinity Frobenius 解生成与 dlog master 顺序一致的生产边界。
-当前范围：任意个 massiveExternal h block 的单顶点函数族，以及 n=0 的纯指数顶点。
-正确性边界：生产代码不计算有限点定义积分，也不调用 NIntegrate；未覆盖的积分族返回结构化 Failure。
+当前范围：任意已完成公式 dlog 与 strict-rank chart 认证的 tree/time-only context；单顶点 massiveExternal
+函数族另保留 2411.03088 显式级数作为等价优化，其余情形统一由 sector DAG leading system 生成。
+正确性边界：生产代码不计算有限点定义积分，也不调用 NIntegrate；dlog/chart 未认证、pullback 非正则奇点、
+晚时幂次不收敛或 leading system 不闭合时返回结构化 Failure。
 ***)
 
 (* ::Chapter:: *)
@@ -456,67 +458,306 @@ msSingleVertexFrobeniusData[
 
 
 (* ::Chapter:: *)
-(*两顶点单 massive G++ 的奇点 leading system*)
+(*任意 sector DAG 的 Frobenius leading system*)
 
-(* 只解 indicial leading vector；完整 power-log 递推由 FlintNDE 的奇点模块负责。 *)
-msNormalizedIndicialVector[
+(* full propagator 的 Hankel branches 只由 SK 类型和 strict time rank 决定。 *)
+msBoundaryFullBranches["++", firstDominantQ_] := If[firstDominantQ, {1, 2}, {2, 1}];
+msBoundaryFullBranches["--", firstDominantQ_] := If[firstDominantQ, {2, 1}, {1, 2}];
+
+
+msBoundaryComponentRank[sector_Association, componentPosition_Integer, rank_Association] := Min[
+  rank /@ sector["vertexComponents"][[componentPosition]]
+];
+
+
+(* 输入一个 endpoint slot，返回初始化后固定或 strict-rank 固定的 Hankel branch。 *)
+msBoundaryHankelBranch[
+  slot_Association,
+  sector_Association,
+  rank_Association,
+  context_?MSContextQ
+] := Module[{line, endpointComponents, firstDominantQ, branches},
+  line = msLineById[context, slot["lineId"]];
+  Switch[line["type"],
+    "massiveExternal",
+      First[line["hankelBranches"]],
+    "massiveCross",
+      line["hankelBranches"][[slot["endpointIndex"]]],
+    "massiveFull" | "masslessFull",
+      endpointComponents = sector["rootToComponent"] /@ line["endpoints"];
+      firstDominantQ = If[
+        SameQ @@ endpointComponents,
+        True,
+        msBoundaryComponentRank[sector, First[endpointComponents], rank] <
+          msBoundaryComponentRank[sector, Last[endpointComponents], rank]
+      ];
+      branches = msBoundaryFullBranches[line["skType"], firstDominantQ];
+      branches[[slot["endpointIndex"]]],
+    _,
+      Missing["NoHankelBranch", slot["key"]]
+  ]
+];
+
+
+(* quotient massless slot 在 strict chamber 中是一个固定指数；bit=1 只留下方向符号。 *)
+msBoundaryMasslessSharedFactor[
+  slot_Association,
+  bit_Integer,
+  sector_Association,
+  rank_Association,
+  context_?MSContextQ
+] := Module[{line, endpointComponents, firstDominantQ},
+  line = msLineById[context, slot["lineId"]];
+  endpointComponents = sector["rootToComponent"] /@ line["endpoints"];
+  If[SameQ @@ endpointComponents, Return[If[bit === 0, 1, 0]]];
+  firstDominantQ = msBoundaryComponentRank[sector, First[endpointComponents], rank] <
+    msBoundaryComponentRank[sector, Last[endpointComponents], rank];
+  If[bit === 0, 1, If[firstDominantQ, -1, 1]]
+];
+
+
+(* 所有 blow-up 坐标沿同一个 t 射线缩放；t=1 是有限匹配点。 *)
+msGenericBoundaryCurveData[
+  context_?MSContextQ,
+  de_Association,
+  targetRules_List,
+  scale_,
+  rankOrder_List,
+  workingPrecision_Integer
+] := Module[
+  {rank, vertexCount, vertexById, momentumSizes, dampingBase, parameter, curveRules,
+   retainedRules, anchorRules, omegaAlongCurve, connection, residue, convergenceRatio},
+  rank = msBoundaryRankAssociation[rankOrder];
+  vertexCount = Length[rankOrder];
+  vertexById = AssociationThread[Lookup[context["vertices"], "id"] -> context["vertices"]];
+  momentumSizes = Abs[N[Lookup[context["lines"], "momentum", {}] /. targetRules, workingPrecision]];
+  dampingBase = Max[2, Ceiling[N[scale (1 + Total[momentumSizes]), 20]]];
+  parameter = Unique["msBoundaryT"];
+  curveRules = Table[
+    With[{vertex = vertexById[id], weight = vertexCount - rank[id] + 1},
+      vertex["energy"] -> -I vertex["phaseSign"] dampingBase^weight parameter^-weight
+    ],
+    {id, rankOrder}
+  ];
+  retainedRules = DeleteCases[
+    targetRules,
+    Rule[left_, _] /; MemberQ[Lookup[context["vertices"], "energy"], left]
+  ];
+  anchorRules = Join[curveRules /. parameter -> 1, retainedRules];
+  omegaAlongCurve = de["omegaPotential"] /. curveRules /. retainedRules;
+  connection = Map[Cancel[Together[D[#, parameter]]] &, omegaAlongCurve, {2}];
+  If[! FreeQ[connection, _Real],
+    Return[Failure[
+      "ExactSingularConnectionRequired",
+      <|"reason" -> "generic sector pullback must remain exact Q(i)(t)"|>
+    ]]
+  ];
+  residue = Map[Together[Limit[parameter #, parameter -> 0]] &, connection, {2}];
+  If[! FreeQ[residue, Indeterminate | ComplexInfinity | DirectedInfinity],
+    Return[Failure["RegularSingularPullbackRequired", <|"residue" -> residue|>]]
+  ];
+  convergenceRatio = If[momentumSizes === {}, 1/dampingBase, (1 + Total[momentumSizes])/dampingBase];
+  <|
+    "rank" -> rank,
+    "dampingBase" -> dampingBase,
+    "parameter" -> parameter,
+    "curveRules" -> curveRules,
+    "retainedRules" -> retainedRules,
+    "anchorRules" -> anchorRules,
+    "connection" -> connection,
+    "residue" -> residue,
+    "convergenceRatio" -> convergenceRatio
+  |>
+];
+
+
+msBoundaryAncestorSectorKeys[context_?MSContextQ, sectorKey_String] := FixedPoint[
+  Function[keys,
+    Union[
+      keys,
+      Lookup[
+        Select[context["contactTransitions"], MemberQ[keys, #["targetSector"]] &],
+        "sourceSector",
+        {}
+      ]
+    ]
+  ],
+  {sectorKey}
+];
+
+
+(* 固定 root sector 的单位分量并令非 ancestor sectors 为零，线性解出全部 ancestor 分量。 *)
+msBoundaryRootedIndicialVector[
+  context_?MSContextQ,
   residue_?MatrixQ,
   exponent_,
-  fixedIndex_Integer
-] := Module[{dimension, identity, zero, constraint, solution, residual},
+  sectorKey_String,
+  rootIndex_Integer
+] := Module[
+  {dimension, identity, matrix, ancestorKeys, allowedIndices, rootIndices, fixedIndices,
+   fixedValues, constraints, solution, residual},
   dimension = Length[residue];
   identity = IdentityMatrix[dimension];
-  zero = ConstantArray[0, dimension];
-  constraint = UnitVector[dimension, fixedIndex];
+  matrix = exponent identity - residue;
+  ancestorKeys = msBoundaryAncestorSectorKeys[context, sectorKey];
+  allowedIndices = Lookup[
+    Select[context["masters"], MemberQ[ancestorKeys, #["sectorKey"]] &],
+    "globalIndex"
+  ];
+  rootIndices = Lookup[Select[context["masters"], #["sectorKey"] === sectorKey &], "globalIndex"];
+  fixedIndices = Union[Complement[Range[dimension], allowedIndices], rootIndices];
+  fixedValues = If[# === rootIndex, 1, 0] & /@ fixedIndices;
+  constraints = UnitVector[dimension, #] & /@ fixedIndices;
   solution = Quiet@Check[
     LinearSolve[
-      Join[exponent identity - residue, {constraint}],
-      Join[zero, {1}]
+      Join[matrix, constraints],
+      Join[ConstantArray[0, dimension], fixedValues]
     ],
     $Failed
   ];
   If[solution === $Failed,
     Return[Failure[
       "SectorLeadingSystemFailed",
-      <|"frobeniusExponent" -> exponent, "fixedIndex" -> fixedIndex|>
+      <|"sectorKey" -> sectorKey, "rootIndex" -> rootIndex, "frobeniusExponent" -> exponent|>
     ]]
   ];
-  residual = Together[(exponent identity - residue).solution];
-  If[! TrueQ[And @@ (PossibleZeroQ /@ residual)] || ! TrueQ[PossibleZeroQ[solution[[fixedIndex]] - 1]],
+  residual = Together[matrix.solution];
+  If[
+    ! TrueQ[And @@ (PossibleZeroQ /@ residual)] ||
+      ! TrueQ[And @@ MapThread[PossibleZeroQ[#1 - #2] &, {solution[[fixedIndices]], fixedValues}]],
     Return[Failure[
       "SectorLeadingSystemResidual",
-      <|"frobeniusExponent" -> exponent, "fixedIndex" -> fixedIndex, "residual" -> residual|>
+      <|"sectorKey" -> sectorKey, "rootIndex" -> rootIndex, "residual" -> residual|>
     ]]
   ];
   Together[solution]
 ];
 
 
-msSingleVertexLeadingCoefficient[
-  timePower_,
-  physicalNu_,
-  formulaNu_,
-  momentum_,
-  branch_Integer,
-  bit_Integer,
-  nuConvention_String
-] := (-I)^(timePower + 1) *
-  Gamma[timePower + 1 - bit (2 formulaNu + 1)] *
-  (-I momentum)^(-bit (2 formulaNu + 1)) *
-  msVertexEndpointCoefficient[nuConvention, branch, bit, physicalNu];
-
-
-msTwoVertexMassiveFullQ[context_?MSContextQ] := Module[{lines = context["lines"]},
-  Length[context["vertices"]] === 2 &&
-    Length[lines] === 1 &&
-    First[lines]["type"] === "massiveFull" &&
-    First[lines]["skType"] === "++" &&
-    Length[context["sectors"]] === 2 &&
-    Length[context["masters"]] === 5
+(* 单个 sector master 的定义积分 leading coefficient；全部数据来自 sector slots/components。 *)
+msGenericSectorLeadingRecord[
+  context_?MSContextQ,
+  sector_Association,
+  stateBits_List,
+  globalIndex_Integer,
+  targetRules_List,
+  curveData_Association,
+  workingPrecision_Integer
+] := Module[
+  {rank, parameter, vertexCount, componentRecords, hSlots, timePower, alpha,
+   componentRank, weight, energyExpression, energyConstant, endpointFactor, slotBit,
+   line, momentum, physicalNu, formulaNu, branch, sharedFactor, redundantNormalization,
+   coefficient, exponent, lateTimeExponents},
+  rank = curveData["rank"];
+  parameter = curveData["parameter"];
+  vertexCount = Length[context["vertices"]];
+  componentRecords = Table[
+    hSlots = msHankelSlotsAtComponent[sector, componentPosition];
+    timePower = sector["baseTimePowers"][[componentPosition]] /. targetRules;
+    alpha = Simplify[
+      timePower + 1 - Total[
+        Function[slot,
+          slotBit = stateBits[[slot["slotPosition"]]];
+          slotBit (2 (slot["formulaNu"] /. targetRules) + 1)
+        ] /@ hSlots
+      ]
+    ];
+    componentRank = msBoundaryComponentRank[sector, componentPosition, rank];
+    weight = vertexCount - componentRank + 1;
+    energyExpression = Together[
+      sector["componentEnergies"][[componentPosition]] /.
+        curveData["curveRules"] /. curveData["retainedRules"]
+    ];
+    energyConstant = Together[Limit[parameter^weight energyExpression, parameter -> 0]];
+    If[TrueQ[PossibleZeroQ[energyConstant]],
+      Return[Failure[
+        "VanishingComponentBoundaryEnergy",
+        <|"sectorKey" -> sector["sectorKey"], "componentPosition" -> componentPosition|>
+      ]]
+    ];
+    endpointFactor = Times @@ Map[
+      Function[slot,
+        slotBit = stateBits[[slot["slotPosition"]]];
+        line = msLineById[context, slot["lineId"]];
+        momentum = line["momentum"] /. targetRules;
+        physicalNu = line["nu"] /. targetRules;
+        formulaNu = line["formulaNu"] /. targetRules;
+        branch = msBoundaryHankelBranch[slot, sector, rank, context];
+        (-I momentum)^(-slotBit (2 formulaNu + 1))
+          msVertexEndpointCoefficient[
+            context["convention", "nuConvention"], branch, slotBit, physicalNu
+          ]
+      ],
+      hSlots
+    ];
+    <|
+      "componentPosition" -> componentPosition,
+      "timePower" -> timePower,
+      "frobeniusPower" -> alpha,
+      "rankWeight" -> weight,
+      "energyLeadingConstant" -> energyConstant,
+      "coefficient" -> Simplify[
+        (-I)^(timePower + 1) Gamma[alpha] endpointFactor
+      ],
+      "anchorFactor" -> Simplify[energyConstant^-alpha]
+    |>,
+    {componentPosition, Length[sector["vertexComponents"]]}
+  ];
+  If[Head[componentRecords] === Failure || MemberQ[componentRecords, _Failure],
+    Return[FirstCase[componentRecords, _Failure, componentRecords]]
+  ];
+  lateTimeExponents = Lookup[componentRecords, "frobeniusPower"];
+  If[AnyTrue[lateTimeExponents, ! TrueQ[Re[N[#, workingPrecision]] > 0] &],
+    Return[Failure[
+      "LateTimeBoundaryNotVanishing",
+      <|
+        "sectorKey" -> sector["sectorKey"],
+        "stateBits" -> stateBits,
+        "componentExponents" -> lateTimeExponents
+      |>
+    ]]
+  ];
+  sharedFactor = Times @@ MapIndexed[
+    Function[{slot, position},
+      If[
+        slot["kind"] === "masslessShared",
+        msBoundaryMasslessSharedFactor[
+          slot, stateBits[[First[position]]], sector, rank, context
+        ],
+        1
+      ]
+    ],
+    sector["slots"]
+  ];
+  redundantNormalization = (Pi/2)^Count[
+    sector["activeLines"],
+    line_ /; line["type"] === "masslessFull" && line["masslessRepresentation"] === "RedundantH"
+  ];
+  coefficient = Simplify[
+    (sector["normalization"] /. targetRules)
+      sector["boundaryContactPhase"]
+      redundantNormalization sharedFactor Times @@ Lookup[componentRecords, "coefficient"]
+  ];
+  exponent = Simplify[Total[
+    Lookup[componentRecords, "rankWeight"] Lookup[componentRecords, "frobeniusPower"]
+  ]];
+  <|
+    "kind" -> "genericSectorDefinitionBranch",
+    "sectorKey" -> sector["sectorKey"],
+    "binaryState" -> stateBits,
+    "rootGlobalIndex" -> globalIndex,
+    "componentData" -> componentRecords,
+    "frobeniusExponent" -> exponent,
+    "logPower" -> 0,
+    "coefficient" -> coefficient,
+    "physicalWeight" -> Simplify[
+      coefficient Times @@ Lookup[componentRecords, "anchorFactor"]
+    ]
+  |>
 ];
 
 
-msTwoVertexFrobeniusData[
+msGenericSectorFrobeniusData[
   context_?MSContextQ,
   de_Association,
   targetRules_List,
@@ -525,206 +766,68 @@ msTwoVertexFrobeniusData[
   order_Integer,
   workingPrecision_Integer
 ] := Module[
-  {topSector, childSector, line, vertexById, highVertex, lowVertex, highPosition, lowPosition,
-   highEnergy, lowEnergy, highPower, lowPower, physicalNu, formulaNu, momentum,
-   nuConvention, endpointRanks, endpointBranches, topStateOrder, branchRecords,
-    childPower, childCoefficient, dimension, childIndex,
-   dampingLow, dampingHigh, anchorRules, xValue, yValue, parameter, curveRules,
-   omegaAlongCurve, connection, residue, identity, zero, leadingVector, normalizedVector,
-   branches, lambda, mu, exponent, highBit, lowBit, coefficient, convergenceRatio,
-   topResiduals},
-  topSector = First[context["sectors"]];
-  childSector = Last[context["sectors"]];
-  line = First[context["lines"]];
-  vertexById = AssociationThread[Lookup[context["vertices"], "id"] -> context["vertices"]];
-  highVertex = First[rankOrder];
-  lowVertex = Last[rankOrder];
-  highPosition = First@FirstPosition[line["endpoints"], highVertex];
-  lowPosition = First@FirstPosition[line["endpoints"], lowVertex];
-  highEnergy = vertexById[highVertex]["energy"];
-  lowEnergy = vertexById[lowVertex]["energy"];
-  If[! MatchQ[highEnergy, _Symbol] || ! MatchQ[lowEnergy, _Symbol],
-    Return[Failure[
-      "AsymptoticBoundaryEnergyCoordinateRequired",
-      <|"energies" -> {highEnergy, lowEnergy}|>
-    ]]
+  {curveData, sectorByKey, localRecords, failure, branches, normalizedVector, thetaFixing},
+  curveData = msGenericBoundaryCurveData[
+    context, de, targetRules, scale, rankOrder, workingPrecision
   ];
-  highPower = vertexById[highVertex]["timePower"] /. targetRules;
-  lowPower = vertexById[lowVertex]["timePower"] /. targetRules;
-  physicalNu = line["nu"] /. targetRules;
-  formulaNu = line["formulaNu"] /. targetRules;
-  momentum = line["momentum"] /. targetRules;
-  nuConvention = context["convention", "nuConvention"];
-  If[! And @@ (TrueQ[PossibleZeroQ[Im[N[#, workingPrecision]]]] & /@
-      {highPower, lowPower, physicalNu, formulaNu, momentum}),
-    Return[Failure[
-      "AsymptoticBoundaryComplexNuUnsupported",
-      <|"reason" -> "two-vertex leading system is currently certified for real parameters"|>
-    ]]
-  ];
-  endpointRanks = AssociationThread[rankOrder -> Range[2]];
-  endpointBranches = If[
-    endpointRanks[line["endpoints"][[1]]] < endpointRanks[line["endpoints"][[2]]],
-    {1, 2},
-    {2, 1}
-  ];
-  topStateOrder = topSector["stateOrder"];
-  branchRecords = MapIndexed[
-    Function[{bits, position},
-      highBit = bits[[highPosition]];
-      lowBit = bits[[lowPosition]];
-      lambda = highPower + 1 - highBit (2 formulaNu + 1);
-      mu = lambda + lowPower + 1 - lowBit (2 formulaNu + 1);
-      coefficient =
-        msSingleVertexLeadingCoefficient[
-          highPower, physicalNu, formulaNu, momentum,
-          endpointBranches[[highPosition]], highBit, nuConvention
-        ]
-        msSingleVertexLeadingCoefficient[
-          lowPower, physicalNu, formulaNu, momentum,
-          endpointBranches[[lowPosition]], lowBit, nuConvention
-        ];
-      <|
-        "kind" -> "homogeneousProduct",
-        "binaryState" -> bits,
-        "topPosition" -> First[position],
-        "lambda" -> lambda,
-        "mu" -> mu,
-        "coefficient" -> coefficient
-      |>
-    ],
-    topStateOrder
-  ];
-  childPower = First[childSector["baseTimePowers"]] /. targetRules;
-  If[! TrueQ[PossibleZeroQ[highPower - lowPower]],
-    Return[Failure[
-      "TwoVertexUnequalTimePowersUnsupported",
-      <|
-        "highTimePower" -> highPower,
-        "lowTimePower" -> lowPower,
-        "reason" -> "2411.03088 Eq. (4.11) is certified here only for equal vertex time powers"
-      |>
-    ]]
-  ];
-  (* 2411.03088 Eq. (4.11)。正 prefactor context 只通过 formulaNu=-|nu|
-     复用论文公式，避免从 child normalization 再猜一次 Wick/branch 相位。 *)
-  childCoefficient = Simplify[
-    -(4 I/Pi) Exp[Pi Im[formulaNu]] momentum^(-2 formulaNu - 1)
-      Exp[I Pi (formulaNu - highPower)] Gamma[childPower + 1]
-  ];
-  If[AnyTrue[
-      Join[Lookup[branchRecords, "lambda"], Lookup[branchRecords, "mu"], {childPower + 1}],
-      ! TrueQ[Re[N[#, workingPrecision]] > 0] &
-    ],
-    Return[Failure[
-      "LateTimeBoundaryNotVanishing",
-      <|"branchWeights" -> Lookup[branchRecords, {"lambda", "mu"}], "childWeight" -> childPower + 1|>
-    ]]
-  ];
-  dampingLow = Max[2, Ceiling[N[scale (1 + Abs[momentum]), 20]]];
-  dampingHigh = Max[dampingLow + 1, Ceiling[N[scale dampingLow, 20]]];
-  anchorRules = Join[
-    {highEnergy -> -I vertexById[highVertex]["phaseSign"] dampingHigh,
-     lowEnergy -> -I vertexById[lowVertex]["phaseSign"] dampingLow},
-    DeleteCases[targetRules, Rule[left_, _] /; MemberQ[{highEnergy, lowEnergy}, left]]
-  ];
-  xValue = (lowEnergy/highEnergy) /. anchorRules;
-  yValue = (1/lowEnergy) /. anchorRules;
-  convergenceRatio = Abs[N[momentum yValue, workingPrecision]] + Abs[N[xValue, workingPrecision]];
-  If[! TrueQ[convergenceRatio < 1],
-    Return[Failure[
-      "FrobeniusAnchorOutsideConvergenceDomain",
-      <|"ratioBound" -> convergenceRatio, "required" -> "Abs[x]+Abs[ks y]<1"|>
-    ]]
-  ];
-  parameter = Unique["msBoundaryT"];
-  curveRules = {
-    highEnergy -> 1/(xValue yValue parameter^2),
-    lowEnergy -> 1/(yValue parameter)
-  };
-  omegaAlongCurve = de["omegaPotential"] /. curveRules /.
-    DeleteCases[targetRules, Rule[left_, _] /; MemberQ[{highEnergy, lowEnergy}, left]];
-  connection = Map[Cancel[Together[D[#, parameter]]] &, omegaAlongCurve, {2}];
-  If[! FreeQ[connection, _Real],
-    Return[Failure[
-      "ExactSingularConnectionRequired",
-      <|"reason" -> "the pulled-back connection must remain exact Q(i)(t)"|>
-    ]]
-  ];
-  dimension = de["masterCount"];
-  identity = IdentityMatrix[dimension];
-  zero = ConstantArray[0, dimension];
-  residue = Map[Together[Limit[parameter #, parameter -> 0]] &, connection, {2}];
-  If[! FreeQ[residue, Indeterminate | ComplexInfinity | DirectedInfinity],
-    Return[Failure[
-      "RegularSingularPullbackRequired",
-      <|"residue" -> residue|>
-    ]]
-  ];
-  branches = Map[
-    Function[record,
-      leadingVector = zero;
-      leadingVector[[record["topPosition"]]] = 1;
-      exponent = Together[record["lambda"] + record["mu"]];
-      Join[
-        record,
-        <|
-          "frobeniusExponent" -> exponent,
-          "logPower" -> 0,
-          "normalizedLeadingVector" -> leadingVector,
-          "physicalWeight" -> record["coefficient"] xValue^record["lambda"] yValue^record["mu"]
-        |>
+  If[Head[curveData] === Failure, Return[curveData]];
+  sectorByKey = AssociationThread[context["sectorOrder"] -> context["sectors"]];
+  localRecords = Map[
+    Function[master,
+      msGenericSectorLeadingRecord[
+        context,
+        sectorByKey[master["sectorKey"]],
+        master["stateBits"],
+        master["globalIndex"],
+        targetRules,
+        curveData,
+        workingPrecision
       ]
     ],
-    branchRecords
+    context["masters"]
   ];
-  topResiduals = Map[
-    Together[(#["frobeniusExponent"] identity - residue).#["normalizedLeadingVector"]] &,
-    branches
+  failure = FirstCase[localRecords, _Failure, Missing["NoFailure"]];
+  If[Head[failure] === Failure, Return[failure]];
+  localRecords = Select[localRecords, ! TrueQ[PossibleZeroQ[#["physicalWeight"]]] &];
+  branches = Map[
+    Function[record,
+      normalizedVector = msBoundaryRootedIndicialVector[
+        context,
+        curveData["residue"],
+        record["frobeniusExponent"],
+        record["sectorKey"],
+        record["rootGlobalIndex"]
+      ];
+      If[
+        Head[normalizedVector] === Failure,
+        normalizedVector,
+        Join[record, <|"normalizedLeadingVector" -> normalizedVector|>]
+      ]
+    ],
+    localRecords
   ];
-  If[! And @@ Flatten[Map[PossibleZeroQ, topResiduals, {2}]],
-    Return[Failure[
-      "FrobeniusLeadingVectorMismatch",
-      <|"residuals" -> topResiduals|>
-    ]]
-  ];
-  childIndex = Last[Lookup[de["masters"], "globalIndex"]];
-  exponent = Together[2 (childPower + 1)];
-  normalizedVector = msNormalizedIndicialVector[
-    residue, exponent, childIndex
-  ];
-  If[Head[normalizedVector] === Failure, Return[normalizedVector]];
-  branches = Append[
-    branches,
-    <|
-      "kind" -> "contactSectorParticular",
-      "binaryState" -> Missing["ChildSector"],
-      "topPosition" -> childIndex,
-      "lambda" -> childPower + 1,
-      "mu" -> childPower + 1,
-      "coefficient" -> childCoefficient,
-      "frobeniusExponent" -> exponent,
-      "logPower" -> 0,
-      "normalizedLeadingVector" -> normalizedVector,
-      "leadingVector" -> Together[childCoefficient normalizedVector],
-      "physicalWeight" -> childCoefficient xValue^(childPower + 1) yValue^(childPower + 1)
-    |>
+  failure = FirstCase[branches, _Failure, Missing["NoFailure"]];
+  If[Head[failure] === Failure, Return[failure]];
+  thetaFixing = AssociationThread[
+    context["sectorOrder"] ->
+      (msSectorThetaFixing[#, curveData["rank"]] & /@ context["sectors"])
   ];
   <|
     "boundaryKind" -> "singularFrobenius",
-    "anchorRules" -> anchorRules,
-    "convergenceRatio" -> convergenceRatio,
+    "anchorRules" -> curveData["anchorRules"],
+    "convergenceRatio" -> curveData["convergenceRatio"],
     "leadingBranches" -> branches,
     "seriesOrder" -> order,
-    "blowupVariables" -> <|"x" -> lowEnergy/highEnergy, "y" -> 1/lowEnergy|>,
-    "singularParameter" -> parameter,
-    "singularCurveRules" -> curveRules,
-    "singularConnection" -> connection,
-    "singularResidue" -> residue,
+    "blowupVariables" -> msBoundaryEnergyChartData[context, rankOrder],
+    "singularParameter" -> curveData["parameter"],
+    "singularCurveRules" -> curveData["curveRules"],
+    "singularConnection" -> curveData["connection"],
+    "singularResidue" -> curveData["residue"],
     "singularStart" -> 0,
     "singularTarget" -> 1,
-    "thetaFixing" -> endpointBranches,
-    "sectorLeadingSystemQ" -> True
+    "thetaFixing" -> thetaFixing,
+    "sectorLeadingSystemQ" -> True,
+    "genericSectorProducerQ" -> True
   |>
 ];
 
@@ -767,23 +870,14 @@ MSBoundaryData[
     Return[Failure["BoundaryChartNotCertified", <|"certificate" -> chartCertificate|>]]
   ];
   seriesData = Which[
-    Length[context["vertices"]] === 1 && Length[context["sectors"]] === 1,
+    Length[context["vertices"]] === 1 && Length[context["sectors"]] === 1 &&
+      And @@ (#["type"] === "massiveExternal" & /@ context["lines"]),
       msSingleVertexFrobeniusData[
         context, targetRules, scale, order, workingPrecision
       ],
-    msTwoVertexMassiveFullQ[context],
-      msTwoVertexFrobeniusData[
-        context, de, targetRules, scale, rankOrder, order, workingPrecision
-      ],
     True,
-      Failure[
-        "AsymptoticBoundaryFamilyUnsupported",
-        <|
-          "supportedFamilies" -> {"singleVertexMassiveExternal", "twoVertexSingleMassiveG++"},
-          "vertexCount" -> Length[context["vertices"]],
-          "sectorCount" -> Length[context["sectors"]],
-          "fallbackUsedQ" -> False
-        |>
+      msGenericSectorFrobeniusData[
+        context, de, targetRules, scale, rankOrder, order, workingPrecision
       ]
   ];
   If[Head[seriesData] === Failure, Return[seriesData]];
@@ -799,7 +893,7 @@ MSBoundaryData[
     "status" -> "generated",
     "method" -> If[
       TrueQ[Lookup[seriesData, "sectorLeadingSystemQ", False]],
-      "2411TwoVertexSectorLeadingSeries",
+      "2411GenericSectorLeadingSeries",
       "2411VertexFrobeniusSeries"
     ],
     "masters" -> de["masters"],
@@ -824,7 +918,7 @@ MSBoundaryData[
     "directIntegrationFallbackQ" -> False,
     "formulaAuthority" -> If[
       TrueQ[Lookup[seriesData, "sectorLeadingSystemQ", False]],
-      "2411.03088 Eqs. (4.5)-(4.14); power-log recurrence delegated to FlintNDE",
+      "2411.03088 Secs. 3.3 and 4.2; sector-DAG power-log recurrence delegated to FlintNDE",
       "2411.03088 Eqs. (3.44)-(3.46), with endpoint coefficients from Eqs. (3.51)-(3.54)"
     ]
   |>,

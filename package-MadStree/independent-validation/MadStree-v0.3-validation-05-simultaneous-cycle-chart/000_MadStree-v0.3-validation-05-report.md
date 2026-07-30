@@ -25,9 +25,9 @@
 
 ## Timing
 
-- simultaneous/contact construction: `1.500093 s`
-- all-chart certificate: `0.513499 s`
-- total wall time: `2.373058 s`
+- simultaneous/contact construction: `1.106614 s`
+- all-chart certificate: `0.432536 s`
+- total wall time: `1.840734 s`
 
 ## Checks
 

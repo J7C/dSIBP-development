@@ -2,7 +2,7 @@
 
 (***
 文件：test_flintnde_mixed_three_vertex.wls
-用途：验证 mixed 三顶点公式系统已闭合，但未认证的自动无穷远边界必须结构化拒绝。
+用途：验证 mixed 三顶点四 sector 的通用 Frobenius leading system 与 FlintNDE 输运。
 运行：wolframscript -file package-MadStree/test/test_flintnde_mixed_three_vertex.wls
 ***)
 
@@ -34,12 +34,13 @@ targetRules = {
 
 
 (* ::Chapter:: *)
-(*自动边界能力边界*)
+(*通用无穷远边界*)
 
 directAtTarget = MSBoundaryData[
   context,
   targetRules,
-  BoundaryScale -> 2,
+  BoundaryScale -> 3,
+  BoundarySeriesOrder -> 18,
   RankOrder -> {v1, v2, v3},
   WorkingPrecision -> 26
 ];
@@ -48,25 +49,33 @@ transported = MSEvaluateTree[
   context,
   targetRules,
   BoundaryScale -> 3,
+  BoundarySeriesOrder -> 18,
   RankOrder -> {v1, v2, v3},
   WorkingPrecision -> 26,
-  TransportOrder -> 64,
-  ReferenceTransportOrder -> 84,
+  TransportOrder -> 36,
+  ReferenceTransportOrder -> 48,
   TargetRelativeError -> "1e-10"
 ];
 
 
 (* ::Chapter:: *)
-(*公式闭合与 fail-closed 汇总*)
+(*公式闭合与输运汇总*)
 
 checks = <|
   "fourSectors" -> Length[MSSectors[context]] === 4,
   "fifteenMasters" -> Length[MSMasterIntegrals[context]] === 15,
   "dlogClosed" -> MSDLogDE[context]["dlogStatus"] === "certifiedByFormulaChecks",
-  "boundaryFailsClosed" -> Head[directAtTarget] === Failure &&
-    directAtTarget[[1]] === "AsymptoticBoundaryFamilyUnsupported",
-  "evaluationFailsClosed" -> Head[transported] === Failure &&
-    transported[[1]] === "AsymptoticBoundaryFamilyUnsupported"
+  "genericBoundary" -> Lookup[directAtTarget, "method", None] ===
+    "2411GenericSectorLeadingSeries" &&
+    Length[Lookup[directAtTarget, "leadingBranches", {}]] === 15,
+  "leadingResidual" -> And @@ Flatten[Map[
+    PossibleZeroQ,
+    Together[(#["frobeniusExponent"] IdentityMatrix[15] - directAtTarget["singularResidue"]).
+      #["normalizedLeadingVector"]] & /@ directAtTarget["leadingBranches"],
+    {2}
+  ]],
+  "evaluationComputed" -> Lookup[transported, "status", None] === "computed",
+  "sameDigest" -> Lookup[transported, "masterDigest", None] === context["masterDigest"]
 |>;
 
 Print["MadStree mixed three-vertex checks: ", Count[Values[checks], True], "/", Length[checks]];

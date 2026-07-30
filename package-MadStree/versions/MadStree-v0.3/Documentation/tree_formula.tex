@@ -543,6 +543,12 @@ MadStree 的一个原生积分可记为
  \bm a\in\{0,1\}^{N_s}.
  \label{eq:MSIntegral-domain}
 \end{equation}
+这里 $s$ 不是由局部 $\bm n,\bm a$ 反推的标签。初始化先把已缩并 line ids 按 root line position 排序，得到 canonical set $L_s^{\rm ctr}$，再由它唯一生成
+\texttt{sectorKey}; 完整积分头始终把该 key 放在第一参数。因此两个 subsectors 即使 $c_s,N_s,\bm n,\bm a$ 全部相同，也仍是不同的
+\texttt{MSIntegral} 表达式。同一 contraction set 经不同 contact 路径到达时则合并到同一个 sector。\texttt{MSInitTree} 在返回 context 前生成
+\texttt{sectorIdentityCertificate}，一次性检查 canonical contraction sets、sector keys、完整 master expressions、连续 global indices 及完整有序 master 表的 SHA-256 digest；任一碰撞返回
+\texttt{SectorIdentityCollision}，不把歧义留给递推或 DE consumer。
+
 因此 \texttt{MSReduce} 的输入域不是“任意 dS 积分”，而是固定初始化 context 中由下列合法对象张成的空间
 \begin{equation}
  \boxed{
@@ -741,14 +747,21 @@ DE 非对角块必须使用升幂关系中的 remaining term，即论文的 $R^{
 \begin{equation}
  \boxed{
  \Omega_{st}^{\rm contact}
- =+\ii\sum_{v\in V_s}
+ =+\ii\,\chi(E_{st})\sum_{v\in V_s}
  U_s^{-1}\widetilde\Omega_{0;v,s}U_s
  C_{st}^{(v,1)},
  \qquad t\prec s.
  }
  \label{eq:global-offdiagonal-omega}
 \end{equation}
-这个正号不是 convention-free 的独立规则，而是式 \eqref{eq:package-raising-contact-sign} 与本文 $\widetilde\Omega_0=-\ii\log\kappa$ 定义的共同结果。单条 massless full edge 的定义积分有限差分给出直接检查：使用旧负号时 residual 恰为旧 contact contribution 的 $-2$ 倍；改成式 \eqref{eq:global-offdiagonal-omega} 后只剩有限差分误差。
+这里 $E_{st}$ 是该 simultaneous contact event 实际缩并的边集，
+\begin{equation}
+ \chi(E_{st})=(-1)^{N_0(E_{st})},
+ \qquad
+ N_0(E_{st})=\#\{e\in E_{st}:e\text{ is masslessFull}\}.
+ \label{eq:massless-contact-phase}
+\end{equation}
+pure-massive 时 $\chi=1$，式 \eqref{eq:global-offdiagonal-omega} 的正号是式 \eqref{eq:package-raising-contact-sign} 与本文 $\widetilde\Omega_0=-\ii\log\kappa$ 定义的共同结果。massless 指数二态由 2401 式 (3.13)--(3.14) 的两个 theta chambers 得到额外负号；它必须按 event 的 selected lines 计算，不能按图或 sector 写专用分支。单条 pure-massless full edge 的解析 chamber 积分对两个顶点能量求导后，式 \eqref{eq:massless-contact-phase} 使完整 DE residual 逐分量精确为零。
 
 \subsection{2401 式 (3.68) 的删位、补位与 massless quotient}
 
@@ -803,15 +816,15 @@ DE 非对角块必须使用升幂关系中的 remaining term，即论文的 $R^{
 \begin{align}
  \boxed{
  \left(\Omega_{s,s/e}^{(e)}\right)_{\bm a,\widehat{\bm c}}
- =\ii\eta_{s,e}\Big[
+ =-\ii\eta_{s,e}\Big[
  w_e^{(u_e)}(\mathcal K_{u_e,s})_{\bm a,\operatorname{Ins}_{p_e}(\widehat{\bm c},1)}
  +w_e^{(v_e)}(\mathcal K_{v_e,s})_{\bm a,\operatorname{Ins}_{p_e}(\widehat{\bm c},1)}
  \Big]
  }
  \notag\\
  =2\ii\eta_{s,e}\Big[
- (\mathcal K_{v_e,s})_{\bm a,\operatorname{Ins}_{p_e}(\widehat{\bm c},1)}
- -(\mathcal K_{u_e,s})_{\bm a,\operatorname{Ins}_{p_e}(\widehat{\bm c},1)}
+ (\mathcal K_{u_e,s})_{\bm a,\operatorname{Ins}_{p_e}(\widehat{\bm c},1)}
+ -(\mathcal K_{v_e,s})_{\bm a,\operatorname{Ins}_{p_e}(\widehat{\bm c},1)}
  \Big].
  \label{eq:massless-binary-top-to-sub}
 \end{align}
@@ -1373,7 +1386,37 @@ memoizedIntegralCount, singularLayers
 
 \subsection{当前 2411 无穷远边界与 FlintNDE 输运}
 
-生产入口不在有限 Euclidean 普通点直接计算定义积分。\texttt{MSBoundaryData} 以文献 \cite{Chen:2024jms} 的 $K_v\to\infty$ 数据为唯一边界来源：单顶点 massive-external family 使用式 (3.44)--(3.46) 的显式多变量级数；两顶点单 massive $G^{++}$ 使用 $x=k_{34}/k_{12}$、$y=1/k_{34}$ 的 blow-up，并把一参数曲线 $x=x_A t,y=y_A t$ 上的 exact $\mathbb Q(\ii)(t)$ 系统和五个 indicial branches 交给 FlintNDE。有限定义积分只允许存在于独立验证目录，不是生产 fallback。
+生产入口不在有限 Euclidean 普通点直接计算定义积分。\texttt{MSBoundaryData} 以文献 \cite{Chen:2024jms} 的 $K_v\to\infty$ 数据为唯一边界来源。单顶点 massive-external family 保留式 (3.44)--(3.46) 的显式多变量级数优化；其它已闭合 tree/time-only context 不再按顶点数、master 数或图名分派，而是统一消费 sector DAG、component、slot registry、normalization、state order 与 strict rank。
+
+具体地，对 sector $s$ 的 component $C$ 定义
+\begin{align}
+ \alpha_{sC}(\bm a)&=A_{sC}+1-
+ \sum_{r\in H(s,C)}a_r(2\nu_r^{\rm formula}+1),
+ \notag\\
+ \ell_{sC}&=V-\min_{v\in C}\operatorname{rank}(v)+1,
+ \qquad
+ K_{sC}(t)=c_{sC}t^{-\ell_{sC}}+O(t^{-\ell_{sC}+1}).
+ \label{eq:generic-sector-boundary-component}
+\end{align}
+这里 $H(s,C)$ 只含该 component 上仍活跃的 Hankel endpoint slots；massless shared slots 不进入 $\alpha_{sC}$，而是按固定 theta chamber 给出 $\pm1$ 的 state factor。对应 master 的 Frobenius 指数和物理 leading weight 为
+\begin{align}
+ \lambda_{s,\bm a}&=\sum_C\ell_{sC}\alpha_{sC}(\bm a),
+ \notag\\
+ W_{s,\bm a}&=N_s\Phi_s\Xi_{s,\bm a}
+ \prod_C\left[
+ (-\ii)^{A_{sC}+1}\Gamma(\alpha_{sC})
+ E_{sC,\bm a}\,c_{sC}^{-\alpha_{sC}}
+ \right].
+ \label{eq:generic-sector-boundary-weight}
+\end{align}
+$N_s$ 是 sector normalization，$\Phi_s$ 是已初始化的 massive-contact phase，$\Xi_{s,\bm a}$ 收集 shared-massless chamber sign 与 RedundantH normalization，$E_{sC,\bm a}$ 是该 component 全部 Hankel endpoint coefficients 的乘积。所有量都从当前 sector metadata 取得，不能从 root sector 猜 child 的幂次或 slots。
+
+把完整 dlog potential 沿 $K_{\sigma(j)}=B^{V-j+1}t^{-(V-j+1)}$ 拉回并记 residue 为 $R_0$。对每个 $(s,\bm a)$，程序固定该 sector 内对应 root master 的分量为 $1$，非 ancestor sectors 为 $0$，解
+\begin{equation}
+ (\lambda_{s,\bm a}I-R_0)v_{s,\bm a}=0.
+ \label{eq:generic-sector-indicial-vector}
+\end{equation}
+于是 $W_{s,\bm a}v_{s,\bm a}$ 自动包含 child solution 注入 parent 的 leading 分量。重根或整数差共振不另造图专用参数；完整 exact residue 与这些 $\{\lambda,0,v\}$ 交给 FlintNDE 的 power-log 递推。有限定义积分只允许存在于独立验证目录，不是生产 fallback。
 
 对两顶点等时间幂 $\nu_0$ 的负 prefactor convention，child master 直接采用 2411 式 (4.2)
 \begin{equation}
@@ -1391,7 +1434,7 @@ memoizedIntegralCount, singularLayers
  \Gamma(2\nu_0-2\nu_1+1).
  \label{eq:paper-two-vertex-contact-boundary}
 \end{align}
-正 prefactor context 只把这些公式中的论文参数统一换成 \texttt{formulaNu}$=-|\nu|$。当前两顶点 producer 只对两端相等的 time power 认证；不等时返回 \texttt{TwoVertexUnequalTimePowersUnsupported}，不猜测相位推广。实正物理动量的 massive pinch normalization 固定为式 \eqref{eq:paper-two-vertex-child-normalization} 的 $-4\ii k_s^{-2\nu_1-1}/\pi$，不能把形式符号 $(-k_s)^{-2\nu_1-1}$ 交给 Mathematica 主支。
+正 prefactor context 只把这些公式中的论文参数统一换成 \texttt{formulaNu}$=-|\nu|$。上述五维结果现在只是式 \eqref{eq:generic-sector-boundary-component}--\eqref{eq:generic-sector-indicial-vector} 的一个检查例，不是生产分派；一般不等 time powers 直接读取各 component 自身的 $A_{sC}$。实正物理动量的 massive pinch normalization 固定为式 \eqref{eq:paper-two-vertex-child-normalization} 的 $-4\ii k_s^{-2\nu_1-1}/\pi$，不能把形式符号 $(-k_s)^{-2\nu_1-1}$ 交给 Mathematica 主支。
 
 \texttt{MSEvaluateTree} 先调用 FlintNDE 的 regular-singular Frobenius 模块把每个 exact branch 从 $t=0$ 输运到有限匹配点，乘回 Gamma 等物理权重并求和，再沿匹配点到用户普通点的仿射参数拉回 dlog connection。\texttt{MSEvaluateVertexFamily} 对 \texttt{MSInitVertexFamily} context 复用同一链路。后端路径只由相对项目根目录的单一配置变量控制；运行文件与 Python cache 写入调用脚本目录的 \texttt{results\_temp/}，不写 package 源码目录。
 
@@ -1400,13 +1443,14 @@ memoizedIntegralCount, singularLayers
  \texttt{FlintNDESavePoints ->}\\
  \texttt{\{\{0,"save"\},\{1/2,"save"\},\{1,"save"\}\}}.
 \end{center}
-奇点与普通段同时存在时可用键 \texttt{"singular"}、\texttt{"ordinary"} 分开列出。接口不接受点名或第三个字段。后端每到一个标记点便立即在调用目录的 \texttt{results/flintnde\_save\_points/run-UUID/} 写独立 JSON，全链成功后再生成总表 \texttt{madstree\_flintnde\_save\_points.json}。普通点记录保存坐标和完整主积分向量；正则奇点起点保存可复用的 Frobenius $\{a,b,C\}$，不能伪造一个“奇点处函数值”。若后续段失败，已经完成的逐点文件保留，但不写完整汇总。
+奇点与普通段同时存在时可用键 \texttt{"singular"}、\texttt{"ordinary"} 分开列出。接口不接受点名或第三个字段。后端每到一个标记点便立即在调用目录的 \texttt{results/flintnde\_save\_points/run-UUID/} 写独立 JSON，全链成功后再生成总表 \texttt{madstree\_flintnde\_save\_points.json}。普通点记录保存坐标和完整主积分向量；正则奇点起点保存可复用的 Frobenius $\{a,b,C\}$，不能伪造一个“奇点处函数值”。若路径中的保存坐标属于 FlintNDE 已认证、可双向桥接的指数型高阶 pole，后端改为保存
+$\{\phi,a,b,C\}$，表示 $\exp(\phi(z))z^a(\log z)^bC$；\texttt{phi} 的全部负幂系数由微分方程推导并 exact 校验。缺少 Stokes connection 的 formal 分支只能保存起点，不能作为中间点或终点。若后续段失败，已经完成的逐点文件保留，但不写完整汇总。
 
-FlintNDE 在启动前分类局部奇点并执行 capability preflight；当前两顶点曲线起点被认证为 regular singular。若输入需要超出后端已声明能力的高阶或不规则奇点处理，适配器直接 fail closed，不把普通 Taylor 输运伪装成奇点解。
+FlintNDE 在启动前分类局部奇点并执行 capability preflight；MadStree 当前 generic boundary producer 只在拉回 connection 是 exact regular singular 时交付 $\{a,b,C\}$，因此新增 $\{\phi,a,b,C\}$ 是后端路径保存能力而不是改变 dS 边界来源。若输入需要超出后端已声明能力的高阶或不规则奇点处理，适配器直接 fail closed，不把普通 Taylor 输运伪装成奇点解。
 
-原被积函数的 $e^{-K_vt_v}$ 阻尼在 $K_v\to\infty$ 的原坐标表述中看起来具有指数渐近；这不等于正规化主积分的 dlog 系统在 blow-up 坐标 $x_j=0$ 必有本性奇点。对当前认证的单顶点与两顶点 $G^{++}$ families，抽出已知物理权重并作 nested blow-up 后，交给 FlintNDE 的 exact 系统分别是普通匹配问题或 Fuchsian regular-singular 问题。若实际拉回系统仍有不可约二阶以上 pole、需要 Stokes/ramification 或不属于当前 exact field，capability preflight 会返回实际分类并停止；package 不把它自动解释成已解决的边界条件。
+原被积函数的 $e^{-K_vt_v}$ 阻尼在 $K_v\to\infty$ 的原坐标表述中看起来具有指数渐近；这不等于正规化主积分的 dlog 系统在 blow-up 坐标 $x_j=0$ 必有本性奇点。抽出式 \eqref{eq:generic-sector-boundary-weight} 的已知物理权重并作 nested blow-up 后，当前接受的 exact 系统必须是普通匹配问题或 Fuchsian regular-singular 问题。若实际拉回系统仍有不可约二阶以上 pole、需要 Stokes/ramification 或不属于当前 exact field，capability preflight 会返回实际分类并停止；package 不把它自动解释成已解决的边界条件。
 
-当前已经端到端检查单顶点三 massive 的 2411 边界、三顶点 massive/massless 的 quotient/RedundantH 公式表示与 compatible-boundary 输运，以及两顶点 $G^{++}$ 五维系统。后者的完整 connection、奇点拉回、五个 leading vectors、五个系数和目标五维向量均与独立论文路线一致。结构检查还覆盖共同-theta simultaneous events、massless/massive coincident quotient，以及 triangle time-only 圈图 strict charts；FlintNDE 适配器另检查普通/正则奇点保存点和超能力 pole 的 fail-closed。v0.3 独立任务 T1--T6 的 fresh 计数依次为 $20/20,12/12,18/18,15/15,17/17,16/16$。任意 topology 与一般参数区域仍需按专项验证范围解释，不能由这些代表性结果外推为全面认证。
+当前已经端到端检查单顶点三 massive 的 2411 边界、两顶点 pure-massless 的解析 chamber 边界、三顶点 massive/massless 的通用 15 维边界与输运，以及两顶点 $G^{++}$ 五维系统。pure-massless 定义积分同时检查式 \eqref{eq:massless-contact-phase} 的两张 DE residual 和完整目标向量；massive 五维系统的 connection、奇点拉回、五个 leading vectors、五个系数和目标向量均与独立论文路线一致。结构检查还覆盖共同-theta simultaneous events、massless/massive coincident quotient，以及 triangle time-only 圈图的通用 boundary/residue。FlintNDE 适配器另检查普通/正则奇点保存点和超能力 pole 的 fail-closed。代表性运行证据不等于对所有 topology 与参数区域逐点认证；通用性来自同一 metadata 数据流与结构不同拓扑的共同回归，而不是列举专用生产分支。
 
 \section{直接公式 producer 的最小算法与验收}
 

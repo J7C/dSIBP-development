@@ -14,10 +14,9 @@
    <|"real" -> "0.75000000000000001850371707708594234039386113484701", "imag" -> "0",
     "realRadius" -> "[2.3647458176421538384488638440645868114541242425586e-60 +/- 2.91e-110]", "imagRadius" -> "0"|>,
    <|"real" -> "1.0000000000000000000000000000000000000000000000000", "imag" -> "0", "realRadius" -> "0",
-    "imagRadius" -> "0"|>}, "adaptivePathPointCount" -> 3, "boundarySeconds" -> 36.4055437,
- "directOracleSeconds" -> 16.4629811, "transportSeconds" -> 39.5982926,
- "transportPrimarySeconds" -> 0.7923906999931205, "transportReferenceSeconds" -> 1.3058485000074143,
- "elapsedSeconds" -> 133.7276519`9.577766212469959,
+    "imagRadius" -> "0"|>}, "adaptivePathPointCount" -> 3, "boundarySeconds" -> 35.615664,
+ "directOracleSeconds" -> 16.500881, "transportSeconds" -> 38.8439147, "transportPrimarySeconds" -> 0.773986900007003,
+ "transportReferenceSeconds" -> 1.325754399993457, "elapsedSeconds" -> 131.8032803`9.571471212543502,
  "masterDigest" -> "1bd87202e53366aa4f84ff7ebfad23740c4d2725d96113774c94491f4d9ca1cf",
  "runtimeDirectory" -> "F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0.3-\
 validation-02-paper2411-three-massive-vertex\\"|>

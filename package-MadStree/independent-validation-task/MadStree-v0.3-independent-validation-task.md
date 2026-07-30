@@ -6,6 +6,7 @@
 
 ## 统一门禁
 
+- 首先检视全部公开功能是否由 topology/context metadata 驱动并适配任意 dS 树图或声明支持的 time-only 图，而不是只对本任务中的单个函数族、单个图或单组参数成立。生产代码不得按测试图 id、固定顶点数、固定 master 数或论文例的固定数值参数分派；单个数值例通过只认证该例，通用性必须另由源码数据流和结构不同的拓扑共同确认。
 - 每个测试固定一个精确、普通、远离收敛边界的参数点；同一点的不同变量表示不计作多个数值点。
 - 初始化时总是显式给出 `NuConvention`。MadStree 缺省为 `"Positive"`，而 2411.03088 使用
   `h(nu,0;z)=z^(-nu) H_nu(z)`；所以测试 2、3 必须显式使用
@@ -20,7 +21,9 @@
 
 验证目录：`independent-validation/MadStree-v0.3-validation-01-massless-redundant-vs-quotient/`。
 
-状态：`passed (20/20, 2026-07-30)`。两种表示均由正式公式模块输出同一 topology 与 contact DAG 下的递推和 dlog；验证脚本只构造任务书冻结的常数映射，不自建第二套 producer。
+状态：`pending fresh numerical rerun`。旧的 `22/22` 结果只完成了完整符号 intertwining、
+manufactured ordinary-boundary continuation 和一个 child-sector 定义积分；它不再满足本轮要求的
+25/15 两套生产边界完整数值交叉，因此不能沿用为当前通过结论。
 
 ### 目的
 
@@ -56,24 +59,24 @@
 
 ### dlog 与数值检查
 
-1. 生成冗余四态和 quotient 二态的完整 block-triangular dlog 系统，先检查 quotient intertwining residual 为零。
-2. 完整 15/25 维输运采用固定的确定性 quotient 普通点向量 `bq` 及 `br=Sglobal.bq`。这不是物理边界 producer，而是对 exact intertwining 的独立数值 continuation 检查；报告必须明确标作 manufactured compatible boundary，不能写成自动物理边界已实现。
-3. 两套 dlog 从同一 anchor 输运到同一个普通点，比较 `Pglobal.br(target)` 与 `bq(target)`；误差必须受 FlintNDE refinement 与工作精度控制。
-4. 真实定义积分只在 `massiveFull` 已收缩而 `masslessFull` 仍活跃的 child sector 独立计算 quotient 二态和冗余四态。该二维积分仍属于同一三顶点 mixed contact DAG，并足以独立检验 `Pi/2` normalization、h-state 两条关系以及恢复动量因子后的物理 `q^2` 关系。top sector 的全维物理等价由 exact `M1/M0`、contact、约化和 dlog residual 为零保证，不再用不可接受地慢的三维无限域暴力积分作为门禁。
+1. 生成冗余四态和 quotient 二态的公式矩阵、contact、两项低阶约化及完整 block-triangular dlog；先代入本节冻结的有理数值点，再检查 `P M25 S-M15` 或对应系数向量的最大数值残差。不得每次对完整 25 维表达式执行全符号 `Simplify`。
+2. quotient 与 RedundantH context 分别调用生产 `MSBoundaryData`，固定 strict rank `{v1,v2,v3}`；两套边界必须都来自 `2411GenericSectorLeadingSeries`，不得用 manufactured ordinary boundary 代替。
+3. 两套生产边界分别交给 FlintNDE，从各自的 Frobenius 奇点起点输运到同一个普通数值点，得到完整 `I15` 与 `I25`。RedundantH 的全部 25 个 Frobenius 初值必须由 `MSBoundaryData[redundantContext]` 直接生成，禁止用 `Sglobal.Cq` 反推或替代；FlintNDE 只可把这 25 个直接生成的初值排成 `25x25` 多列矩阵，共享同一个局部基和路径算子进行批量输运。`Sglobal/Pglobal` 仅用于生成完成后的数值交叉。比较 `Pglobal.I25` 与 `I15`，并分别记录两条路径、阶数、refinement 和耗时。
+4. 对完整 `I25` 的每个仍含 `ez` 的 sector、每组 spectator bits，数值检查 `F01=-F10`、`F11=F00`，以及恢复端点动量后 `calF01=-calF10`、`calF11=qz^2 calF00`。这项必须覆盖 top sector，不能只用 massive 已收缩的 child sector 代替。
 
 ### 固定数值点、路径与精度
 
-- anchor 固定为 `{k1->-15 I,k2->-10 I,k3->-5 I,qm->4/3,qz->5/4,nu->1/5,a1->1,a2->1,a3->1}`；target 固定为 `{k1->-9 I,k2->-6 I,k3->-3 I}` 且其余参数与 anchor 相同。
+- 数值矩阵比较点之一固定为 `{k1->-15 I,k2->-10 I,k3->-5 I,qm->4/3,qz->5/4}`；输运 target 固定为 `{k1->-480 I,k2->-60 I,k3->-7 I,qm->4/3,qz->5/4}`，靠近 `BoundaryScale=2` 产生的有限 match point，以避免把无关的长路径成本混入表示比较。
 - 从 anchor 到 target 采用三顶点能量的同步仿射参数 `s in [0,1]`；运行前逐个检查两套 dlog 的全部 letters 在 anchor、target 和实际 FlintNDE 分段路径上均非零。若需要绕行，报告保存实际复路径，不改变数值点。
-- 测试专用 child-sector 定义积分只在验证目录内运行，不进入生产 Kernel。完整 dlog 的 manufactured boundary 固定为 `bq_j=j/17+I(16-j)/19`（`j=1,...,15`）及 `br=Sglobal.bq`。普通输运阶数固定为 `64`，reference 阶数固定为 `88`，工作精度 `50`，目标相对误差 `1e-20`。边界 Frobenius阶数与局部奇点阶数均为“不适用”；不得把该 manufactured boundary 称作生产边界功能。
+- 生产边界使用 `BoundarySeriesOrder=20`、`BoundaryScale=2`、strict rank `{v1,v2,v3}`。数值矩阵比较在两个固定普通点各做一次；Frobenius 与普通输运初值为 `TransportOrder=24`、`ReferenceTransportOrder=32`、`WorkingPrecision=30`、目标相对误差 `1e-8`，若实际 refinement 不通过才提高，并在报告中记录。禁止恢复 manufactured ordinary boundary。
 
 ### 通过条件
 
-- exact 约化和 dlog intertwining 的非零差值数为零；
+- 数值代入后的公式、contact、低阶约化和 dlog 投影残差小于工作精度相称的阈值；
 - 两种路线的 quotient 主积分逐分量一致；
-- 冗余数值积分满足完整的无质量关系，且没有漏掉 `q^2` 或 contact distribution。
+- 完整 25 维主积分数值在所有相关 sector 满足无质量关系，且没有漏掉 `q^2` 或 contact distribution。
 
-执行结果：全局 `S:25x15`、`P:15x25` 左逆成立；全部 `M1/M0`、contact、两只一阶约化和完整 dlog 的非零 residual 数均为零。massive 收缩 child 的 quotient/RedundantH 定义积分投影差为数值零；完整两套系统用 compatible ordinary boundary 经 FlintNDE 输运后目标点投影差为约 49 位精度的零，含 `qz^2=25/16` 的最大关系残差为约 47 位精度的零。正式程序与自动报告位于 T1 验证目录。
+执行结果：待按上述数值路线 fresh 重跑。旧 `22/22` 报告保留为历史文件内容，重跑成功前不作为当前认证。
 
 ## T2 2411.03088 单顶点三 massive 的 `k0 -> infinity` 解
 
@@ -129,7 +132,7 @@
 - 显式指定 `NuConvention -> "Negative"`；不得使用 MadStree 缺省正 prefactor。
 - master 顺序固定为论文二进制顺序 `{I00,I01,I10,I11,IR}`。top normalization 为 `1`；child master 固定使用论文 Eq. (4.2) 的 `IR=-(4 I/Pi) Exp[Pi Im[nu1]] ks^(-2 nu1-1)` 乘合并后的单时间积分。修正后的 package basis 与论文 basis 间正反映射都固定为 `IdentityMatrix[5]`，必须同时由完整 connection 和五个 leading branches 检查。
 - 精确参数固定为 `nu0=2,nu1=1/5,ks=1`；目标普通点固定为 `{k12=-30 I,k34=-6 I}`，即 `{x=k34/k12=1/5,y=1/k34=I/6}`，满足保守收敛余量 `Abs[x]+Abs[ks y]=11/30<1`。生产 anchor 由 `BoundaryScale=4` 确定为 `{k12=-32 I,k34=-8 I}`，即 `{x=1/4,y=I/8}`。
-- 奇点曲线固定为 `k12=1/(xA yA t^2), k34=1/(yA t)`、`t:0->1`；随后从 anchor 到 target 使用同步仿射参数 `s:0->1`。FlintNDE 局部 Frobenius/普通输运使用 `TransportOrder=56`、reference `80`、工作精度 `50`、目标相对误差 `1e-20`。论文双变量闭式级数不另截断；独立路线直接把 Eqs. (3.3)、(4.4)、(4.5)、(4.11)--(4.14) 写成 exact 奇点系统交给同一数值后端。
+- 奇点曲线固定为 `k12=1/(xA yA t^2), k34=1/(yA t)`、`t:0->1`；随后从 anchor 到 target 使用同步仿射参数 `s:0->1`。FlintNDE 局部 Frobenius/普通输运使用 `TransportOrder=72`、reference `96`、工作精度 `50`、目标相对误差 `1e-20`。论文双变量闭式级数不另截断；独立路线直接把 Eqs. (3.3)、(4.4)、(4.5)、(4.11)--(4.14) 写成 exact 奇点系统交给同一数值后端。
 
 ### 检查步骤
 

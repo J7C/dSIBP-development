@@ -47,11 +47,11 @@ Validate the eight leading coefficients of 2411.03088 Eqs. (3.44)-(3.46), an ind
 - production/independent series at anchor: `0``59.69897000433602`
 - direct oracle/production at anchor: `2.27415501672151846966018032508023`5.469564334403506*^-45`
 - FlintNDE/independent series at target: `9.461630928426300895861696450994348983537771498389242124`27.356927647498047*^-23`
-- boundary generation wall time in seconds: `36.4055437`
-- direct oracle wall time in seconds: `16.4629811`
-- MadStree/FlintNDE transport wall time in seconds: `39.5982926`
-- FlintNDE primary/reference transport time in seconds: `{0.7923906999931205, 1.3058485000074143}`
-- total wall time in seconds: `133.728`
+- boundary generation wall time in seconds: `35.615664`
+- direct oracle wall time in seconds: `16.500881`
+- MadStree/FlintNDE transport wall time in seconds: `38.8439147`
+- FlintNDE primary/reference transport time in seconds: `{0.773986900007003, 1.325754399993457}`
+- total wall time in seconds: `131.803`
 
 ## Outputs
 

@@ -1,47 +1,73 @@
 # dSIBP-development
 
-这是 de Sitter 积分计算的私有开发仓库。仓库同时维护 topology-driven `dSIBP`、公式直接计算包 MadStree，以及数值微分方程后端 FlintNDE；三者使用不同的输入和职责边界，不能互相替代。
+这是 de Sitter 积分计算的开发仓库，包含三个职责不同、可以独立使用、也可以按明确接口衔接的程序包。
 
-## 仓库组件
+## 三个程序包
 
-| 组件 | 当前入口 | 职责与状态 |
-| --- | --- | --- |
-| `dSIBP` | `000_code/018_dSIBP/`；正式单文件 `independent-benchmark/package/package_018.1.wl` | 从任意圈数/拓扑及 massive/massless 混合输入生成 time/loop IBP、参数微分 seed 和 backend-neutral `linearData`，可序列化到 Kira，但不运行 reduction。原公式型 tree reduction/dlog 入口保持禁用。 |
-| MadStree | `package-MadStree/load_current.wl`；当前版本 `versions/MadStree-v0.3/` | 不生成一般 IBP 方程组，直接由张量公式构造 tree/time-only graph 的主积分、迭代约化和 block-triangular dlog DE；支持 massless quotient 二态与 `RedundantH` 四态。T1--T6 独立验证为 `20/20,12/12,18/18,15/15,17/17,16/16`，开发回归为 `115/115`。 |
-| FlintNDE | `000_FlintNDE/code/package/`，Python import 名 `flintnde` | 对给定矩阵 DE 和边界数据执行任意精度普通点/局部奇点展开、路径规划、refinement 输运和无名 `save` 点即时输出。当前回归为 `68/68`；一般代数扩域、ramification 和 Stokes matching 仍 fail closed。 |
+| 程序包 | 主要输入 | 主要输出 | 核心特征与边界 | 当前入口 |
+| --- | --- | --- | --- | --- |
+| `dSIBP` | 任意圈数、任意拓扑及 massive/massless 混合的 dS Feynman 图；loop/external momentum 与 ISP 配置 | time/loop IBP 关系、参数微分 seed、sector metadata 和 backend-neutral `linearData`；可导出 Kira 基础输入 | topology-driven Wolfram Language 关系生成器。负责一般拓扑和 loop-momentum IBP，但只生成、检查和序列化关系，不运行 reduction，也不承担数值 DE 输运 | `package-dSibp/versions/018_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_018.1.wl` |
+| `MadStree` | dS tree 或只积分时间变量的 incidence graph、顶点分支、building blocks、动量和 Hankel convention | contact-reachable sectors、同序主积分、公式型迭代约化、block-triangular dlog DE、自动 Frobenius/sector-leading 边界及数值调用配置 | formula-driven Wolfram Language 包。直接使用张量 building-block 公式，不先生成一般 IBP 方程组；支持 massive/massless 混合、massless quotient 二态与 `RedundantH` 四态。它适合公式已闭合的 tree/time-only 系统，不替代一般 loop-momentum IBP | `package-MadStree/load_current.wl`；当前版本 `package-MadStree/versions/MadStree-v0.3/` |
+| `FlintNDE` | 与具体物理模型无关的矩阵微分方程、普通点向量、正则奇点 `{a,b,C}` 或指数型奇点 `{phi,a,b,C}` 边界、路径与精度要求 | 任意精度局部级数、奇点分类、路径规划、主链/参考链 refinement、普通点数值，以及可复用的奇点边界常数和逐点 JSON | 独立 Python/FLINT 数值后端。支持 exact Q(i) rational systems、普通点 Taylor、正则奇点 power-log 和已认证的部分高阶 pole 路线；严格解耦指数型奇点可保存起点/终点/中间点边界，超出代数扩域、ramification 或 Stokes 能力时 fail closed。它不包含 dS 图、主积分或 normalization 知识 | `package-FlintNDE/versions/FlintNDE-v0.1.0.dev0/`；Python import 名 `flintnde` |
 
-MadStree 在 Mathematica 内通过一个集中配置的仓库相对路径自动调用 FlintNDE。MadStree 负责 dS 主积分顺序、dlog 系统、Frobenius/sector-leading 边界和物理系数组合；FlintNDE 只负责检查局部奇点能力并进行数值展开与输运。`dSIBP` 当前不调用这条公式数值链。
+## 相互关系
 
-MadStree v0.3 的自动无穷远边界目前只认证单顶点 family 和两顶点单 massive `G++` family。其它 mixed/massless 多 sector 图的公式约化、dlog 与 boundary chart 可以生成，但通用 Frobenius producer 尚未认证，`MSBoundaryData`/`MSEvaluateTree` 对这些输入结构化 fail closed，不回退到有限点定义积分。
+仓库内存在两条不同的工作流：
 
-MadStree/FlintNDE 的运行文件和保存点结果归调用脚本目录所有，不写入 package 源码目录。开发测试产物放各自 `test/results_test/` 或 `results_temp/`；独立验证只长期保存报告与轻量 `results/summary.wl`。
+```text
+一般 dS 拓扑
+  -> dSIBP
+  -> IBP/微分关系与 linearData
+  -> Kira 或其它外部 reduction 后端
+
+tree 或 time-only graph
+  -> MadStree
+  -> 主积分 + 公式约化 + dlog DE + 物理边界
+  -> FlintNDE
+  -> 用户指定普通点的数值主积分
+```
+
+`dSIBP` 当前不调用 MadStree 或 FlintNDE；它解决的是一般拓扑关系生成。MadStree 负责 dS 公式、主积分顺序、normalization、dlog 系统和边界条件，并通过一个集中配置的仓库相对路径自动调用 FlintNDE。FlintNDE 只消费通用矩阵 DE 与边界数据，因此也可以脱离 dS 项目独立使用。
+
+MadStree v0.3 的自动无穷远边界由 sector DAG、component/slot metadata 和用户指定的 strict time rank 通用生成；单顶点显式级数只作为优化。生产路线不回退到有限点定义积分；dlog/chart 未闭合、late-time 指数不衰减、拉回系统非 exact regular singular 或 FlintNDE capability 不足时结构化 fail closed。
+
+MadStree/FlintNDE 的运行文件、保存点和奇点边界常数归调用脚本目录所有，不写入 package 源码目录。开发测试产物放各自 `test/results_test/` 或 `results_temp/`；独立验证只长期保存报告与轻量 `results/summary.wl`。
+
+## 新版本记录与分支
+
+从 2026-07-30 之后新增的 dSIBP、MadStree 和 FlintNDE 版本必须自带更新说明，说明它相对基线版本新增了什么、修复了什么、是否改变接口或 convention、用户如何迁移、已经完成哪些验证以及仍有哪些限制。现有 dSIBP 018.1、MadStree v0.3、FlintNDE `0.1.0.dev0` 及更早资产不追溯补建。
+
+| 组件 | 未来新版本的更新说明路径 |
+| --- | --- |
+| dSIBP | 新整数代码版本：`package-dSibp/versions/NNN_dSIBP/UPDATE_NOTES.md`；同一代码版本的新正式发布号：`package-dSibp/independent-benchmark/package/package_NNN.x_UPDATE_NOTES.md` |
+| MadStree | `package-MadStree/versions/MadStree-vX.Y/UPDATE_NOTES.md` |
+| FlintNDE | `package-FlintNDE/versions/FlintNDE-vX.Y.Z/UPDATE_NOTES.md`，目录版本必须与 `pyproject.toml` 一致 |
+
+建议新版本从稳定主线建立独立 Git branch 后开发和验证。branch 不是必须合并：是否创建、保留、关闭或合并均由仓库所有者决定，agent 不会因为版本完成而自行合并到 `main`。
 
 ## 先看这里
 
 - 当前任务、真实完成状态和交接顺序：`研究计划与研究进度.md`
-- 用户手册：`000_note/01_dS_ibp_package/dS_ibp_package.tex`，PDF 同目录
-- 独立 benchmark 交付：`independent-benchmark/independent-benchmark.md`；当前正式程序/手册为 `package_018.1.wl/pdf`
+- 用户手册：`package-dSibp/Documentation/01_dS_ibp_package/dS_ibp_package.tex`，PDF 同目录
+- 独立 benchmark 交付：`package-dSibp/independent-benchmark/independent-benchmark.md`；当前正式程序/手册为 `package_018.1.wl/pdf`
 - 三个长期典型 examples：`03_single_massive_sunrise/`、`04_pure_massive_bubble_closed_loop/`、`06_mix_bubble_tree/`；分别覆盖 single-massive sunrise 的 general seeds/参数微分算符、dlog/reference/scaling 闭环和 `kL/kE` 加 cycle/bridge contraction。sunrise example 不撒点、不生成 `linearData`、不运行 Kira/DE/scaling
-- 长期总体架构：`000_note/dS_IBP_package_plan.md`
-- 设计约定：`000_note/dS_IBP_package_design_note.md`
-- 技术公式：`000_note/dS_IBP_package_tech_note.tex`
-- 独立直接公式与数值包：`package-MadStree/`；从根目录运行 `Get["package-MadStree/load_current.wl"]` 可加载当前工作版本。版本 README、`DEVELOPMENT_PLAN.md` 和 `Documentation/tree_formula.pdf` 说明共同-theta simultaneous contact、time-only 圈图、直接递推/dlog、自动边界证书及 FlintNDE 接口。
-- 数值 DE 后端：`000_FlintNDE/README.md`；安装/导入说明见 `000_FlintNDE/code/package/README.md`，算法与能力边界见 `000_FlintNDE/note/FlintNDE.pdf`。
-- 给其它 AI 的独立推导任务书：`independent-benchmark/independent-benchmark.md`
+- 长期总体架构：`package-dSibp/Documentation/dS_IBP_package_plan.md`
+- 设计约定：`package-dSibp/Documentation/dS_IBP_package_design_note.md`
+- 技术公式：`package-dSibp/Documentation/dS_IBP_package_tech_note.tex`
+- 独立直接公式与数值包：`package-MadStree/`；从根目录运行 `Get["package-MadStree/load_current.wl"]` 可加载当前工作版本。版本 README 和 `Documentation/` 说明共同-theta simultaneous contact、time-only 圈图、直接递推/dlog、自动边界证书及 FlintNDE 接口。
+- 数值 DE 后端：`package-FlintNDE/README.md`；安装/导入说明见版本 README，算法与能力边界见 `package-FlintNDE/Documentation/FlintNDE.pdf`。
+- 给其它 AI 的独立推导任务书：`package-dSibp/independent-benchmark/independent-benchmark.md`
 
 每次收到新任务，先更新 `研究计划与研究进度.md`；不要把逐任务 todolist 写进总体 plan。
 
-维护侧最小功能检查放在根目录 `check-smoke/` 的明确命名子目录。根目录 `check/` 只供新独立会话按完整任务书从空工作区执行，旧内容不得复用。
+维护侧最小功能检查放在 `package-dSibp/check-smoke/` 的明确命名子目录。`package-dSibp/check/` 只供新独立会话按完整任务书从空工作区执行，旧内容不得复用。
 
 ## 当前主线
 
-- `000_code/018_dSIBP/`：当前开发主线，标准入口为 `Needs["dSIBP`"]`。
-- `independent-benchmark/package/package_018.1.wl`：当前正式冻结单文件兼容入口；`010`--`017` 为只读基线/历史版本。
-- `000_code/015_dSIBP/`、`000_code/015_dS_ibp_general.wl`：冻结的 015 基线，不回写。
-- `000_code/014_dSIBP/`、`000_code/014_dS_ibp_general.wl`：冻结的 014 基线。
-- `000_code/013_dS_ibp_general.wl`：已通过独立验收的稳定版本，新增 pure time-IBP/tree 模块。
-- `000_code/012_dS_ibp_general.wl`：013 的只读核心基线。
-- `000_code/011_dS_ibp_general.wl`、`000_code/010_dS_ibp_general.wl`：只读历史版本。001--009 及其专用检查不再保留。
+- `package-dSibp/versions/018_dSIBP/`：当前开发主线，标准入口为 `Needs["dSIBP`"]`。
+- `package-dSibp/independent-benchmark/package/package_018.1.wl`：当前正式冻结单文件兼容入口。
+- `package-dSibp/versions/016_dSIBP/` 与 `017_dSIBP/`：保留的最近两个冻结代码版本。
+- 010--015 已从工作树删除，仅保留在 Git 历史中。
 
 018 不自动猜外动量角色。用户必须分别给出 `loopExternalMomenta` 与 `independentExternalMomenta`；符号可以叫 `sah/bob/alice`，名字没有语义。前者是进入 loop scalar-product/ISP/momentum-IBP 的独立外向量基，后者是 topology 中实际出现的无圈动量模长列表。旧字段 `externalMomenta/externalLegMomenta` 只作兼容别名，不参与自动角色推断。
 
@@ -68,7 +94,7 @@ MadStree/FlintNDE 的运行文件和保存点结果归调用脚本目录所有�
 
 013 在上述核心上新增：loop `dtau` 到 tree 的完整物理幂次投影、`J[vertexPacks]`、general-index `repIterative0/repIterative`、有序 master list、dlog connection/letters 以及 same-sign contact source；`a0` 保留为 tree `nu0`，被删除的 `b0/bS0` 进入显式能量系数。对应归档报告与附件继续保留，手推/expected/check/result 工作资产已在 2026-07-23 清理。
 
-共同-theta boundary 是当前最高优先级正确性门禁，不是可选优化。完整链路必须同时覆盖 `WT -> shrinkTerms`、simultaneous integer/zero-point shift、coincident canonical、contact-reachable sector、linearData 和 serializer；专项清单见 `000_note/2026-07-21_common_theta_correctness_todo.md`，两种等价分布方案的证明见技术笔记附录。
+共同-theta boundary 是当前最高优先级正确性门禁，不是可选优化。完整链路必须同时覆盖 `WT -> shrinkTerms`、simultaneous integer/zero-point shift、coincident canonical、contact-reachable sector、linearData 和 serializer；专项清单见 `package-dSibp/Documentation/2026-07-21_common_theta_correctness_todo.md`，两种等价分布方案的证明见技术笔记附录。
 
 公开 API 示例：
 

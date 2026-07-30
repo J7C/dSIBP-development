@@ -28,14 +28,12 @@ __pycache__/
 ibp_equations*.m
 
 # Project generated outputs
-000_code/**/results_test/
-check-smoke/results_test/
-check-smoke/results_temp/
-check-smoke/**/results_test/
-check-smoke/**/results_temp/
-000_code/results/
-000_code/results_temp/
-000_code/results_ignore/
+package-dSibp/**/results_test/
+package-dSibp/check-smoke/results_temp/
+package-dSibp/check-smoke/**/results_temp/
+package-dSibp/results/
+package-dSibp/results_temp/
+package-dSibp/results_ignore/
 results_temp/
 results_ignore/
 **/test/results_test/
@@ -58,23 +56,8 @@ package-MadStree/independent-validation/**/results/*
 # Local document-rendering and review scratch
 /tmp/
 
-# Independent audit working tree; only finalized reports under 000-report are project assets.
-/check/
-
-# Retain package scripts from 007 onward; ignore retired 001--006 versions.
-000_code/001_*.wl
-000_code/002_*.wl
-000_code/003_*.wl
-000_code/004_*.wl
-000_code/005_*.wl
-000_code/006_*.wl
-
-# Keep source check scripts, but ignore old textual run outputs.
-000_code/check/*_out.txt
-000_code/check/*_output.txt
-000_code/check/check_stdout.txt
-000_code/check/compare_output*.txt
-000_code/check/extract_ref_stdout.txt
+# Independent audit working tree; only finalized reports under package-dSibp/000-report are assets.
+/package-dSibp/check/
 
 # Large/local runtime scratch
 input/

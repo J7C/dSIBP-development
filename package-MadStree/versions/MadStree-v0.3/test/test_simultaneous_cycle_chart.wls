@@ -124,6 +124,29 @@ record["thetaFixedInEverySector",
   FreeQ[Lookup[triangleCharts["charts"], "thetaFixingBySector"], "unfixed", Infinity]
 ];
 
+triangleBoundary = MSBoundaryData[
+  triangle,
+  {k1 -> -I 11, k2 -> -I 7, k3 -> -I 5, a1 -> 0, a2 -> 0, a3 -> 0,
+   q12 -> 2, q23 -> 3, q31 -> 4},
+  BoundaryScale -> 3,
+  BoundarySeriesOrder -> 12,
+  RankOrder -> {t1, t2, t3},
+  WorkingPrecision -> 30
+];
+record["triangleGenericBoundary",
+  Lookup[triangleBoundary, "method", None] === "2411GenericSectorLeadingSeries" &&
+    Length[Lookup[triangleBoundary, "leadingBranches", {}]] === Length[MSMasterIntegrals[triangle]]
+];
+record["triangleLeadingResidual",
+  Head[triangleBoundary] =!= Failure && And @@ Flatten[Map[
+    PossibleZeroQ,
+    Together[(#["frobeniusExponent"] IdentityMatrix[Length[MSMasterIntegrals[triangle]]] -
+      triangleBoundary["singularResidue"]).#["normalizedLeadingVector"]] & /@
+        triangleBoundary["leadingBranches"],
+    {2}
+  ]]
+];
+
 
 (* ::Chapter:: *)
 (*shifted child reduction helper 与总结*)

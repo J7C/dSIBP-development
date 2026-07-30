@@ -21,5 +21,5 @@
     ((4*I)*k0*k1*k2*(-1 + a0 + 2*nu1 + 2*nu2))/(k0^4 + (k1^2 - k2^2)^2 - 2*k0^2*(k1^2 + k2^2))},
  "coefficientResidual" -> {0, 0, 0, 0}, "boundaryPoint" -> Missing["NotApplicable"],
  "path" -> Missing["NotApplicable"], "frobeniusOrder" -> Missing["NotApplicable"],
- "transportOrder" -> Missing["NotApplicable"], "matrixSeconds" -> 0.0002457, "reductionSeconds" -> 0.1257776,
- "transformSeconds" -> 1.5101306, "elapsedSeconds" -> 1.7699759`7.699512346542373|>
+ "transportOrder" -> Missing["NotApplicable"], "matrixSeconds" -> 0.0002141, "reductionSeconds" -> 0.1202493,
+ "transformSeconds" -> 1.2110805, "elapsedSeconds" -> 1.4613708`7.616305418849796|>

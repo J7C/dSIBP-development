@@ -21,21 +21,21 @@ The independent route encodes 2411.03088 Eqs. (3.3), (4.4), (4.5), and (4.11)-(4
 ## Numerical point, chart and path
 
 - target: `{k12 -> -30*I, k34 -> -6*I, ks -> 1, nu0 -> 2, nu1 -> 1/5}`
-- anchor: `{k12 -> -32*I, k34 -> -8*I, ks -> 1, nu0 -> 2, nu1 -> 1/5}`
-- blow-up chart: `x=k34/k12`, `y=1/k34`; anchor `{x,y}={1/4, I/8}`
-- singular path: `t:0->1` with `{k12 -> (-32*I)/paperT12^2, k34 -> (-8*I)/paperT12}`
-- production ordinary adaptive path in `s`: `{<|"real" -> "0", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>, <|"real" -> "1.0000000000000000000000000000000000000000000000000", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>}`
-- paper ordinary adaptive path in `s`: `{<|"real" -> "0", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>, <|"real" -> "1.0000000000000000000000000000000000000000000000000", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>}`
+- anchor: `{k12 -> -64*I, k34 -> -8*I, ks -> 1, nu0 -> 2, nu1 -> 1/5}`
+- blow-up chart: `x=k34/k12`, `y=1/k34`; anchor `{x,y}={1/8, I/8}`
+- singular path: `t:0->1` with `{k12 -> (-64*I)/paperT12^2, k34 -> (-8*I)/paperT12}`
+- production ordinary adaptive path in `s`: `{<|"real" -> "0", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>, <|"real" -> "0.84716221795439614619159737194769442297743552772162", "imag" -> "0", "realRadius" -> "[3.5594280168560174879966422898541433673156336093972e-60 +/- 4.97e-110]", "imagRadius" -> "0"|>, <|"real" -> "1.0000000000000000000000000000000000000000000000000", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>}`
+- paper ordinary adaptive path in `s`: `{<|"real" -> "0", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>, <|"real" -> "0.84716221795439614619159737194769442297743552772162", "imag" -> "0", "realRadius" -> "[3.5594280168560174879966422898541433673156336093972e-60 +/- 4.97e-110]", "imagRadius" -> "0"|>, <|"real" -> "1.0000000000000000000000000000000000000000000000000", "imag" -> "0", "realRadius" -> "0", "imagRadius" -> "0"|>}`
 
 ## Orders, precision and timing
 
 - boundary metadata order: `20`
-- Frobenius/ordinary transport order: `56`; reference: `80`
+- Frobenius/ordinary transport order: `72`; reference: `96`
 - working precision: `50`; target relative error: `1e-20`
-- boundary generation wall time: `0.084926 s`
-- production transport wall time: `8.813645 s`
-- independent paper transport wall time: `8.354273 s`
-- total wall time: `19.070963 s`
+- boundary generation wall time: `0.115786 s`
+- production transport wall time: `3.980249 s`
+- independent paper transport wall time: `3.805521 s`
+- total wall time: `9.172418 s`
 
 ## Checks
 

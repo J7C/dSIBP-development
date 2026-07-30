@@ -2,7 +2,7 @@
 
 ## 适用范围与权威入口
 
-本文件适用于 `package-MadStree/` 及其全部子目录，只保存 agent 必须遵守的版本、目录、输出和独立验证工作流。公式、convention、接口和实现细节以当前版本的 `Documentation/`、`DEVELOPMENT_PLAN.md` 和 README 为准；任务状态以项目根目录 `研究计划与研究进度.md` 为准。
+本文件适用于 `package-MadStree/` 及其全部子目录，只保存 agent 必须遵守的版本、目录、输出和独立验证工作流。公式、convention、接口和实现细节以当前版本的 `Documentation/` 和 README 为准；任务状态以项目根目录 `研究计划与研究进度.md` 为准。
 
 收到 MadStree 的新开发、推导、验证或文档任务时，必须先更新项目根目录 `研究计划与研究进度.md`，再修改本子项目文件。
 
@@ -12,6 +12,8 @@
 - 是否升版只由用户明确指令决定，不由代码、公式或接口的改动类型或大小自动触发。用户未要求升版时，修订继续写入当前工作版本。
 - 用户明确要求新开或发布版本后，才建立新的 `versions/MadStree-vX.Y/`。新版本建立后，此前版本冻结并永久保留，不得覆盖、删除或继续修改。
 - 版本号必须在版本目录名、`VERSION.md`、公开版本字符串、验证任务书、验证目录和验证报告中保持一致。
+- 本规则生效后新建的版本目录必须包含 `UPDATE_NOTES.md`；v0.3 及此前已经存在的版本不追溯补建。更新说明至少列出基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制，不得只写版本号或提交列表。
+- 建议每个新版本从当前稳定主线建立独立 branch 后再开发和验证。是否创建 branch、是否长期保留以及是否合并回主线均由用户决定；用户未明确要求时，agent 不得自动创建或合并版本 branch。
 
 ## 固定目录结构
 
@@ -24,11 +26,13 @@ package-MadStree/
 |- versions/
 |  `- MadStree-vX.Y/
 |     |- VERSION.md
+|     |- UPDATE_NOTES.md
 |     |- README.md
-|     |- DEVELOPMENT_PLAN.md
 |     |- Kernel/
 |     |- Backend/
 |     |- Documentation/
+|     |  |- DEVELOPMENT_PLAN.md
+|     |  |- todolist_temp.md
 |     |- Examples/
 |     |- test/
 |     `- results_temp/

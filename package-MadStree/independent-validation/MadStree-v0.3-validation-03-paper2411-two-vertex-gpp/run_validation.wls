@@ -56,8 +56,8 @@ targetRules = {k12 -> -30 I, k34 -> -6 I, ks -> 1, nu0 -> 2, nu1 -> 1/5};
 boundaryScale = 4;
 boundarySeriesOrder = 20;
 workingPrecision = 50;
-transportOrder = 56;
-referenceTransportOrder = 80;
+transportOrder = 72;
+referenceTransportOrder = 96;
 targetRelativeError = "1e-20";
 
 formatSeconds[value_] := ToString[NumberForm[N[value], {Infinity, 6}], OutputForm];
@@ -312,7 +312,10 @@ checks = <|
   "paperIRNormalization" -> TrueQ[principalBranchCanonical[childNormalization - paperIRNormalization] === 0],
   "boundaryGenerated" -> Lookup[productionBoundary, "status", None] === "generated",
   "paperBoundaryNoDirectFallback" -> Lookup[productionBoundary, "directIntegrationFallbackQ", True] === False,
-  "thetaRank" -> Lookup[productionBoundary, "thetaFixing", {}] === {1, 2},
+  "thetaRank" -> Lookup[
+    First[Lookup[Lookup[productionBoundary, "thetaFixing", <||>], "top", {}]],
+    {"thetaUV", "thetaVU"}
+  ] === {1, 0},
   "dlogConnection" -> exactZeroQ[connectionResiduals],
   "singularConnection" -> exactZeroQ[singularConnectionResidual],
   "identityBasisMap" -> productionVectors === paperVectors,

@@ -4,7 +4,7 @@
 文件：Configuration.wl
 用途：集中解析 MadStree 版本目录、项目根目录及 FlintNDE Python package 的相对位置。
 约定：$MSFlintNDERelativePath 是唯一可修改的后端目录变量；其值始终相对仓库根目录，
-      公开函数和适配器不得在函数体中另写 000_FlintNDE 的硬编码路径。
+      公开函数和适配器不得在函数体中另写 package-FlintNDE 的硬编码路径。
 ***)
 
 (* ::Chapter:: *)
@@ -13,7 +13,9 @@
 $MadStreePackageDirectory = DirectoryName[$MadStreeKernelDirectory];
 $MadStreeCollectionDirectory = DirectoryName[DirectoryName[$MadStreePackageDirectory]];
 $MadStreeProjectDirectory = DirectoryName[$MadStreeCollectionDirectory];
-$MSFlintNDERelativePath = FileNameJoin[{"000_FlintNDE", "code", "package"}];
+$MSFlintNDERelativePath = FileNameJoin[{
+  "package-FlintNDE", "versions", "FlintNDE-v0.1.0.dev0"
+}];
 
 
 (* ::Section:: *)

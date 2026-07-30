@@ -7,10 +7,10 @@
    "allSixRankCharts" -> True, "allChartsNormalCrossing" -> True, "allSectorThetaFixed" -> True,
    "allChartQuotientsCertified" -> True, "shiftedChildReduction" -> True, "triangleDLogClosed" -> True|>,
  "passedCount" -> 17, "checkCount" -> 17, "sourceDigests" ->
-  <|"Kernel\\Core\\Sectors.wl" -> "9c0708ca44e410287cd8f29bbdab918c15d743926fdebb26cb3cc800b03bb599",
+  <|"Kernel\\Core\\Sectors.wl" -> "1e07d6e840c97bf830d16b51f3343edabf0169afd600bb54e6b1d98806968354",
    "Kernel\\Formula\\Recurrence.wl" -> "34f65df211b413186ba21db5f8a07e5556a744035eac1dff0ffc94e39a2a7565",
-   "Kernel\\DE\\DLog.wl" -> "3867e5950593c3e0d0296375c455112ed363677e5ed74e36ad64b46537f2f69c",
-   "Kernel\\Numerics\\Boundary.wl" -> "e83b1df67867b5646e4040431c819b99f016f01d54ec092a53e5431ab6b48fea"|>,
+   "Kernel\\DE\\DLog.wl" -> "0df5eebf68c3c1f6ade8a5913964e566a47d8e848bf8edecd421b21f4b355a57",
+   "Kernel\\Numerics\\Boundary.wl" -> "fdb77efacf2441e13d08f808c6632820e9fb1a2272190ff24dcfbff1aed5d0b5"|>,
  "masslessNormalization" -> <|"root" -> 1, "linePinches" -> {1, 1, 1}|>,
  "massiveNormalization" -> <|"root" -> 1, "linePinches" -> {2, 3, 5}|>,
  "oddSubsetExpected" -> {<|"selectedLineIds" -> {e1}, "coefficient" -> 1|>,
@@ -40,5 +40,5 @@
  "chartDivisorCounts" -> {25, 25, 25, 25, 25, 25},
  "boundaryPoint" -> "simultaneous K-infinity boundary in all six strict charts",
  "numericalTransportPath" -> Missing["NotApplicable"], "frobeniusOrder" -> Missing["NotApplicable"],
- "transportOrder" -> Missing["NotApplicable"], "simultaneousSeconds" -> 1.5000933`7.627663264828354,
- "chartSeconds" -> 0.5134988, "elapsedSeconds" -> 2.3730577`7.826853291547677|>
+ "transportOrder" -> Missing["NotApplicable"], "simultaneousSeconds" -> 1.1066138`7.495541075266461,
+ "chartSeconds" -> 0.432536, "elapsedSeconds" -> 1.840734`7.716536027693248|>

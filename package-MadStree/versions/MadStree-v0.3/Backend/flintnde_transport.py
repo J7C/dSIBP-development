@@ -64,6 +64,7 @@ def _run(data: dict[str, Any]) -> dict[str, Any]:
         frobenius_boundary,
         gaussian_rational,
         rational_function,
+        transport_frobenius_boundaries_refined,
         transport_path_refined,
     )
 
@@ -147,34 +148,58 @@ def _run(data: dict[str, Any]) -> dict[str, Any]:
         ]
 
     results = []
+    batch_result = None
     caught_messages: list[str] = []
     save_output_root = Path(data.get("saveOutputDirectory", Path.cwd())).resolve()
     save_summary_files: list[str] = []
-    for boundary_index, boundary in enumerate(boundaries, 1):
-        branch_save_directory = (
-            save_output_root
-            if len(boundaries) == 1
-            else save_output_root / f"branch_{boundary_index:03d}"
-        )
+    if singular_schema and len(boundaries) > 1 and not save_points:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            result = transport_path_refined(
+            batch_result = transport_frobenius_boundaries_refined(
                 system,
-                boundary,
+                boundaries,
                 path,
                 primary_order=int(data["primaryOrder"]),
                 reference_order=int(data["referenceOrder"]),
                 radius_fraction=0.60,
                 target_relative_error=data.get("targetRelativeError"),
-                save_output_directory=branch_save_directory,
             )
-        results.append(result)
         caught_messages.extend(str(item.message) for item in caught)
-        summary_file = branch_save_directory / "flintnde_save_points.json"
-        if summary_file.is_file():
-            save_summary_files.append(str(summary_file))
+    else:
+        for boundary_index, boundary in enumerate(boundaries, 1):
+            branch_save_directory = (
+                save_output_root
+                if len(boundaries) == 1
+                else save_output_root / f"branch_{boundary_index:03d}"
+            )
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                result = transport_path_refined(
+                    system,
+                    boundary,
+                    path,
+                    primary_order=int(data["primaryOrder"]),
+                    reference_order=int(data["referenceOrder"]),
+                    radius_fraction=0.60,
+                    target_relative_error=data.get("targetRelativeError"),
+                    save_output_directory=branch_save_directory,
+                )
+            results.append(result)
+            caught_messages.extend(str(item.message) for item in caught)
+            summary_file = branch_save_directory / "flintnde_save_points.json"
+            if summary_file.is_file():
+                save_summary_files.append(str(summary_file))
 
-    final_vectors = [result["reference_snapshots"][-1] for result in results]
+    if batch_result is None:
+        final_vectors = [result["reference_snapshots"][-1] for result in results]
+    else:
+        final_matrix = batch_result["reference_snapshots"][-1]
+        final_vectors = []
+        for column in range(len(boundaries)):
+            vector = acb_mat(dimension, 1)
+            for row in range(dimension):
+                vector[row, 0] = final_matrix[row, column]
+            final_vectors.append(vector)
     payload = {
         "status": "success",
         "schema": data["schema"],
@@ -194,26 +219,54 @@ def _run(data: dict[str, Any]) -> dict[str, Any]:
         "savePointSummaryFiles": save_summary_files,
     }
     if singular_schema:
-        payload["branchResults"] = [
-            {
-                "branchIndex": index,
-                "relativeDifferenceInf": result["relative_difference_inf"].str(digits),
-                "relativeDifferenceMidpoint": result["relative_difference_midpoint"],
-                "targetRelativeError": result["target_relative_error"],
-                "targetRelativeErrorMet": result["target_relative_error_met"],
-                "primarySeconds": result["primary_seconds"],
-                "referenceSeconds": result["reference_seconds"],
-                "finalValues": [
-                    _acb_record(final_vectors[index - 1][row, 0], digits)
-                    for row in range(dimension)
-                ],
-                "boundaryInitialization": result["reference_segments"][0],
+        if batch_result is None:
+            payload["branchResults"] = [
+                {
+                    "branchIndex": index,
+                    "relativeDifferenceInf": result["relative_difference_inf"].str(digits),
+                    "relativeDifferenceMidpoint": result["relative_difference_midpoint"],
+                    "targetRelativeError": result["target_relative_error"],
+                    "targetRelativeErrorMet": result["target_relative_error_met"],
+                    "primarySeconds": result["primary_seconds"],
+                    "referenceSeconds": result["reference_seconds"],
+                    "finalValues": [
+                        _acb_record(final_vectors[index - 1][row, 0], digits)
+                        for row in range(dimension)
+                    ],
+                    "boundaryInitialization": result["reference_segments"][0],
+                }
+                for index, result in enumerate(results, 1)
+            ]
+            payload["targetRelativeErrorMet"] = all(
+                result["target_relative_error_met"] for result in results
+            )
+        else:
+            payload["branchResults"] = [
+                {
+                    "branchIndex": index,
+                    "relativeDifferenceInf": batch_result["relative_differences_inf"][index - 1].str(digits),
+                    "relativeDifferenceMidpoint": batch_result["relative_differences_midpoint"][index - 1],
+                    "targetRelativeError": batch_result["target_relative_error"],
+                    "targetRelativeErrorMet": batch_result["target_relative_error_met"][index - 1],
+                    "primarySeconds": batch_result["primary_seconds"],
+                    "referenceSeconds": batch_result["reference_seconds"],
+                    "finalValues": [
+                        _acb_record(final_vectors[index - 1][row, 0], digits)
+                        for row in range(dimension)
+                    ],
+                    "boundaryInitialization": batch_result["reference_boundary_reports"][index - 1],
+                }
+                for index in range(1, len(boundaries) + 1)
+            ]
+            payload["targetRelativeErrorMet"] = all(batch_result["target_relative_error_met"])
+            payload["batchTransport"] = {
+                "enabled": True,
+                "columnCount": len(boundaries),
+                "primarySeconds": batch_result["primary_seconds"],
+                "referenceSeconds": batch_result["reference_seconds"],
+                "sharedLocalBasisQ": True,
+                "sharedOrdinaryTaylorMatricesQ": True,
             }
-            for index, result in enumerate(results, 1)
-        ]
-        payload["targetRelativeErrorMet"] = all(
-            result["target_relative_error_met"] for result in results
-        )
     else:
         result = results[0]
         final_vector = final_vectors[0]

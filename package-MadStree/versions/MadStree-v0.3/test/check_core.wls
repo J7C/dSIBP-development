@@ -127,6 +127,21 @@ record["mixedSectorCount", Length[MSSectors[mixedContext]] === 4];
 record["mixedDimensions", Lookup[MSSectors[mixedContext], "masterCount"] === {8, 2, 4, 1}];
 record["mixedDEDimension", mixedDE["matrixDimension"] === {15, 15} && mixedDE["masterCount"] === 15];
 record["mixedDLog", mixedDE["dlogStatus"] === "certifiedByFormulaChecks"];
+record["sectorKeysUnique", DuplicateFreeQ[Lookup[MSSectors[mixedContext], "sectorKey"]]];
+record["globalMasterIntegralsUnique", DuplicateFreeQ[Lookup[MSMasterIntegrals[mixedContext], "integral"]]];
+record["sectorIdentityCertificate",
+  mixedContext["sectorIdentityCertificate", "status"] === "certified" &&
+    And @@ Values[mixedContext["sectorIdentityCertificate", "checks"]]
+];
+record["sameLocalBitsRemainSectorDistinct",
+  MSIntegral["contracted:tm", {0, 0}, {0}] =!=
+    MSIntegral["contracted:tz", {0, 0}, {0}]
+];
+record["masterDigestUsesFullIntegralOrder",
+  mixedContext["masterDigest"] === IntegerString[
+    Hash[Lookup[MSMasterIntegrals[mixedContext], "integral"], "SHA256"], 16, 64
+  ]
+];
 
 mixedTopMatrices = MSFormulaMatrices[mixedContext, "top"];
 record["sharedMasslessTwoEndpoints",

@@ -28,11 +28,11 @@
 
 ## Timing
 
-- boundary generation: `0.020925 s`
-- ordinary save-point transport: `1.218607 s`
-- regular-singular transport: `1.648919 s`
-- unsupported-pole preflight: `0.536388 s`
-- total wall time: `5.012889 s`
+- boundary generation: `0.019460 s`
+- ordinary save-point transport: `0.955248 s`
+- regular-singular transport: `1.503991 s`
+- unsupported-pole preflight: `0.408395 s`
+- total wall time: `4.020248 s`
 
 ## Checks
 
@@ -58,8 +58,8 @@
 - ordinary saved-point relative residuals: `{0``39.74671908809498, 1.0021408592247500710878653`6.174018080970582*^-33, 1.0889534659376275567066499`6.20430891547883*^-33}`
 - ordinary primary/reference relative difference: `"[5.6371828678510944006191606881585354306946566817480e-25 +/- 2.89e-75]"`
 - singular-to-ordinary final/expected: `{-1.8489633982683592129156060660959094373945548139862`49.26692831403239 - 3.2024985471360072711345743662654461194061252946367`49.50548894139223*I, -1.8489633982683592129156060660958981211891603025540107641794`44.61722431466213 - 3.202498547136007271134574366265447590129086448602619266716`44.74076541524448*I}`
-- ordinary aggregate: `"F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-9f6613c8-a581-46ad-bdc5-d84050cdaff2\\madstree_flintnde_save_points.json"`
-- singular aggregate: `"F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-295c31e7-5386-4f44-baa8-9ea5085eb796\\madstree_flintnde_save_points.json"`
+- ordinary aggregate: `"F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-91500f07-15d2-4d86-ae1c-ae63d6fe1c61\\madstree_flintnde_save_points.json"`
+- singular aggregate: `"F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-91cafe7e-d263-4715-b0a3-7d7d283c49fc\\madstree_flintnde_save_points.json"`
 - unsupported backend error: `MadStree requires a regular_singular start and ordinary target; got non_fuchsian_input_basis, ordinary`
 - machine-readable validation summary: `results/summary.wl`
 - adapter JSON and Python cache: `results_temp/` in this validation directory.

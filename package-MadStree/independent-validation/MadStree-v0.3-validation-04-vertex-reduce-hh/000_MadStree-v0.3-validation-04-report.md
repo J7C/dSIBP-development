@@ -25,10 +25,10 @@
 
 ## Timing
 
-- matrix comparison: `0.000246 s`
-- reduction: `0.125778 s`
-- transforms/report preparation: `1.510131 s`
-- total wall time: `1.769976 s`
+- matrix comparison: `0.000214 s`
+- reduction: `0.120249 s`
+- transforms/report preparation: `1.211081 s`
+- total wall time: `1.461371 s`
 
 ## Checks
 

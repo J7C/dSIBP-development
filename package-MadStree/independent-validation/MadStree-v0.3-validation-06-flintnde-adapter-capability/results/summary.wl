@@ -9,8 +9,8 @@
    "packageDirectoryUnchangedByRuntime" -> True|>, "passedCount" -> 16, "checkCount" -> 16,
  "sourceDigests" -> <|"Kernel\\Numerics\\FlintNDE.wl" ->
     "4182a84e8b2e5198d0eb917ed14433e1a509777a7e0c27d4bd96c745aca48b28", "Backend\\flintnde_transport.py" ->
-    "ff2b6d64ffcb311dd67205d6d4beb5c217e37ea944f598041d5501dbd09740d2", "Kernel\\Numerics\\Boundary.wl" ->
-    "e83b1df67867b5646e4040431c819b99f016f01d54ec092a53e5431ab6b48fea"|>,
+    "0102581774867d4f19760eebaa768d67878636ccb4c1143b4f8300c392a1af03", "Kernel\\Numerics\\Boundary.wl" ->
+    "fdb77efacf2441e13d08f808c6632820e9fb1a2272190ff24dcfbff1aed5d0b5"|>,
  "normalization" -> <|"root" -> 1, "integral" -> "Integral[(-tau)^a Exp[I k0 tau]]"|>,
  "targetRules" -> {k0 -> 3, a -> 1/3}, "anchorRules" -> {k0 -> -8*I, a -> 1/3},
  "ordinaryPathRules" -> {k0 -> -8*I + (3 + 8*I)*msPathParameter11},
@@ -30,7 +30,7 @@
        "imag" -> "0", "realRadius" -> "[2.005463915149012758527718661338780783682e-62 +/- 2.99e-102]",
        "imagRadius" -> "0"|>}, "file" -> "flintnde_save_001.json", "stage" -> "ordinary",
     "sourceFile" -> "F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0.3-val\
-idation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-9f6613c8-a581-46ad-bdc5-d84050cdaff2\\ordina\
+idation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-91500f07-15d2-4d86-ae1c-ae63d6fe1c61\\ordina\
 ry\\flintnde_save_001.json"|>, <|"schema" -> "flintnde_saved_point_v1", "sequence" -> 2,
     "coordinate" -> "0.5000000000000000000000000000000000000000", "workingCoordinate" ->
      "0.5000000000000000000000000000000000000000", "classification" -> "ordinary", "singularityIdentifier" -> Null,
@@ -39,7 +39,7 @@ ry\\flintnde_save_001.json"|>, <|"schema" -> "flintnde_saved_point_v1", "sequenc
        "imag" -> "-0.05930124879735751872583504873184949855791", "realRadius" -> "0", "imagRadius" -> "0"|>},
     "file" -> "flintnde_save_002.json", "stage" -> "ordinary", "sourceFile" -> "F:\\Agent-projects-nut\\dSibp_package\\\
 package-MadStree\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_sa\
-ve_points\\run-9f6613c8-a581-46ad-bdc5-d84050cdaff2\\ordinary\\flintnde_save_002.json"|>,
+ve_points\\run-91500f07-15d2-4d86-ae1c-ae63d6fe1c61\\ordinary\\flintnde_save_002.json"|>,
    <|"schema" -> "flintnde_saved_point_v1", "sequence" -> 3,
     "coordinate" -> "1.000000000000000000000000000000000000000", "workingCoordinate" ->
      "1.000000000000000000000000000000000000000", "classification" -> "ordinary", "singularityIdentifier" -> Null,
@@ -48,7 +48,7 @@ ve_points\\run-9f6613c8-a581-46ad-bdc5-d84050cdaff2\\ordinary\\flintnde_save_002
        "imag" -> "-0.1787353492764213747097479361569202264038", "realRadius" -> "0", "imagRadius" -> "0"|>},
     "file" -> "flintnde_save_003.json", "stage" -> "ordinary", "sourceFile" -> "F:\\Agent-projects-nut\\dSibp_package\\\
 package-MadStree\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_sa\
-ve_points\\run-9f6613c8-a581-46ad-bdc5-d84050cdaff2\\ordinary\\flintnde_save_003.json"|>},
+ve_points\\run-91500f07-15d2-4d86-ae1c-ae63d6fe1c61\\ordinary\\flintnde_save_003.json"|>},
  "ordinaryPhysicalK0" -> {-8*I, 3/2 - 4*I, 3}, "ordinaryResiduals" ->
   {0``39.74671908809498, 1.0021408592247500710878653`6.174018080970582*^-33,
    1.0889534659376275567066499`6.20430891547883*^-33}, "ordinaryRefinementDifference" ->
@@ -64,8 +64,8 @@ ve_points\\run-9f6613c8-a581-46ad-bdc5-d84050cdaff2\\ordinary\\flintnde_save_003
     "role" -> "start", "resultType" -> "frobenius_boundary",
     "result" -> <|"terms" -> {<|"a" -> "2", "b" -> 0, "C" -> {"1"}|>}|>, "file" -> "flintnde_save_001.json",
     "stage" -> "singular", "sourceFile" -> "F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-valida\
-tion\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-295c31e7-5386-4f44-ba\
-a8-9ea5085eb796\\singular\\flintnde_save_001.json"|>, <|"schema" -> "flintnde_saved_point_v1", "sequence" -> 1,
+tion\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-91cafe7e-d263-4715-b0\
+a3-7d7d283c49fc\\singular\\flintnde_save_001.json"|>, <|"schema" -> "flintnde_saved_point_v1", "sequence" -> 1,
     "coordinate" -> "1.000000000000000000000000000000000000000", "workingCoordinate" ->
      "1.000000000000000000000000000000000000000", "classification" -> "ordinary", "singularityIdentifier" -> Null,
     "role" -> "target", "resultType" -> "ordinary_vector",
@@ -73,22 +73,22 @@ a8-9ea5085eb796\\singular\\flintnde_save_001.json"|>, <|"schema" -> "flintnde_sa
        "imag" -> "-3.202498547136007271134574366265446119406", "realRadius" -> "0", "imagRadius" -> "0"|>},
     "file" -> "flintnde_save_001.json", "stage" -> "ordinary", "sourceFile" -> "F:\\Agent-projects-nut\\dSibp_package\\\
 package-MadStree\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_sa\
-ve_points\\run-295c31e7-5386-4f44-baa8-9ea5085eb796\\ordinary\\flintnde_save_001.json"|>},
+ve_points\\run-91cafe7e-d263-4715-b0a3-7d7d283c49fc\\ordinary\\flintnde_save_001.json"|>},
  "unsupportedClassificationEvidence" -> <|"status" -> "failed", "errorType" -> "ValueError",
    "error" -> "MadStree requires a regular_singular start and ordinary target; got non_fuchsian_input_basis, ordinary",
    "traceback" -> "Traceback (most recent call last):\n  File \
 \"F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\versions\\MadStree-v0.3\\Backend\\flintnde_transport.py\", \
-line 244, in main\n    result = _run(_load_input(input_path))\n  File \
+line 297, in main\n    result = _run(_load_input(input_path))\n  File \
 \"F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\versions\\MadStree-v0.3\\Backend\\flintnde_transport.py\", \
-line 123, in _run\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: MadStree requires a regular_singular \
+line 124, in _run\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: MadStree requires a regular_singular \
 start and ordinary target; got non_fuchsian_input_basis, ordinary\n"|>, "boundarySeriesOrder" -> 24,
  "singularTransportOrder" -> {72, 96}, "ordinaryTransportOrder" -> {72, 96}, "workingPrecision" -> 50,
- "targetRelativeError" -> "1e-22", "boundarySeconds" -> 0.0209248, "ordinarySeconds" -> 1.2186072,
- "singularSeconds" -> 1.6489193, "failClosedSeconds" -> 0.5363884, "elapsedSeconds" -> 5.0128887`8.151633055676859,
+ "targetRelativeError" -> "1e-22", "boundarySeconds" -> 0.0194602, "ordinarySeconds" -> 0.9552481,
+ "singularSeconds" -> 1.5039907, "failClosedSeconds" -> 0.4083952, "elapsedSeconds" -> 4.0202483`8.055797870458479,
  "ordinarySaveSummary" -> "F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0\
-.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-9f6613c8-a581-46ad-bdc5-d84050cdaff2\\\
+.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-91500f07-15d2-4d86-ae1c-ae63d6fe1c61\\\
 madstree_flintnde_save_points.json", "singularSaveSummary" -> "F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\
-\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-2\
-95c31e7-5386-4f44-baa8-9ea5085eb796\\madstree_flintnde_save_points.json",
+\\independent-validation\\MadStree-v0.3-validation-06-flintnde-adapter-capability\\results\\flintnde_save_points\\run-9\
+1cafe7e-d263-4715-b0a3-7d7d283c49fc\\madstree_flintnde_save_points.json",
  "runtimeDirectory" -> "F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\independent-validation\\MadStree-v0.3-\
 validation-06-flintnde-adapter-capability\\"|>
