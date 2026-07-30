@@ -154,7 +154,15 @@ results/flintnde_save_points/run-UUID/madstree_flintnde_save_points.json
 
 普通点记录保存坐标和完整结果向量；正则奇点起点保存可复用的 Frobenius `{a,b,C}`，不伪造奇点处函数值。若同一 DE 的内部保存坐标是 FlintNDE 已认证、可桥接的指数型奇点，Python 后端会原样汇入其 `{phi,a,b,C}` / `exponential_boundary` 记录；start-only formal 或需要 Stokes 数据的中间点仍在建路阶段拒绝。后续路径失败时已完成的逐点文件保留，但不写完整汇总。
 
-完整公式、massless `4 -> 2` quotient、contact shift 与 top-to-sub dlog 推导见 [Documentation/tree_formula.pdf](Documentation/tree_formula.pdf)。可直接运行的最小脚本见 [Examples/01_massless_full_edge.wl](Examples/01_massless_full_edge.wl)。
+完整公式、massless `4 -> 2` quotient、contact shift 与 top-to-sub dlog 推导见 [Documentation/tree_formula.pdf](Documentation/tree_formula.pdf)。
+
+## Examples
+
+- [01_massless_full_edge.wl](Examples/01_massless_full_edge.wl)：massless quotient、主积分、递推、dlog 和自动边界/数值入口。
+- [02_vertex_family_reduction.wl](Examples/02_vertex_family_reduction.wl)：单顶点专用输入、局部张量逆和有限线性组合约化。
+- [03_time_only_cycle_chart.wl](Examples/03_time_only_cycle_chart.wl)：time-only 圈图、共同 theta、contact sector 与全部 strict-rank chart。
+
+后两项由已经通过的 v0.3 T4/T5 配置整理为用户入口；示例不复制验证断言，独立证据仍以版本化 T4/T5 报告为准。
 
 ## 当前边界
 

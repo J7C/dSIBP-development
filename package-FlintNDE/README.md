@@ -42,6 +42,8 @@
 当前版本不依赖 BlackHoleQNM 的 IBP、积分族或运行配置。QNM 只作为一个独立的
 二阶常微分方程示例放在 `examples/`，不进入程序包本体接口。
 
+三个公开 examples 分别是 `qnm_2x2.py`、`regular_singular_save.py` 和 `exponential_boundary_save.py`，覆盖 QNM 双端匹配、正则奇点 `{a,b,C}` 保存，以及已认证指数型奇点 `{phi,a,b,C}` 保存/复用。后两项由当前回归已执行配置整理，本轮不重复数值运行。
+
 用户环境要求只有两项：Python 3.10 或更高版本，以及 `python-flint>=0.6`。安装发布的
 wheel、从源码普通安装以及开发者可编辑安装分别为
 

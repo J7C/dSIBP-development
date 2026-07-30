@@ -25,3 +25,16 @@ reduction。
 - `check-smoke/`：维护者轻量检查；不属于独立验证证据。
 
 详细开发、验证和发布门禁见本目录 [AGENTS.md](AGENTS.md)。
+
+## Examples
+
+正式交付在 `independent-benchmark/package/examples/` 保留六个互补入口：
+
+- `01_mixed_bubble_workflow.wl`：mixed bubble 基本工作流。
+- `02_function_system_hankel.wl`：Hankel/function-system 输入与变换。
+- `03_single_massive_sunrise/`：两圈 single-massive sunrise 的 general seeds 与 `{ss11,kE}` 参数算符。
+- `04_pure_massive_bubble_closed_loop/`：19-master Kira 回读、DE、reference 与 scaling 闭环。
+- `05_tree_two_vertex_time_ibp/`：两顶点 tree time-IBP、naive DE 与公式路线。
+- `06_mix_bubble_tree/`：mixed cycle/bridge、massless convention 与 contact contraction。
+
+`03_single_massive_sunrise/` 明确不进入 sampled relations、Kira、DE 或 scaling。它的纯数值 DE/scaling 闭环已在任务书与进度表登记为未完成验证；其它 topology 的旧闭环不能替代。

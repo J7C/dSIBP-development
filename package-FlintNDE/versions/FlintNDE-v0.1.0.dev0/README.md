@@ -308,6 +308,8 @@ snapshots, segment_reports, elapsed = transport_path(
 也支持把已认证指数型奇点保存为 `resultType: "exponential_boundary"` 及 `{phi,a,b,C}` terms。
 以下限制只属于多列批量加速入口；它不表示 FlintNDE 不能保存奇点边界常数。
 
+仓库级 `examples/` 提供三个入口：`qnm_2x2.py`、`regular_singular_save.py` 和 `exponential_boundary_save.py`。后两项分别给出本节 `{a,b,C}` 与 `{phi,a,b,C}` 保存合同的最小可运行配置。
+
 多个 Frobenius 初值属于同一 exact `RationalMatrixSystem` 时，可用
 
 ```python

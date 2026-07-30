@@ -1555,3 +1555,11 @@ Phase 2 先对两个分支比较 general seeds/operators。随后只对 `+++` �
 | DE closure | master 同序；无 residual `J`/内部原子；显式系数求导保留 | 15.3, 15.5 | Phase 1 不推 DE matrix | 两套 loop `DSDE`；一个 two-vertex tree naive/dlog | full-loop 与 tree 无 map 时不比较 |
 | Scaling relation | 完整 physical degree 含 `N_s`; normalization 用 `E[T]T^-1` | 15.3 | Phase 1 不做 scaling | 两套 full flow，先符号恒等式后唯一精确点 | 不作为额外 family/example 任务 |
 | Reference basis/energy/`ks` | `P_pkg=-P_ref`; `P0=-I ip0`; 原始 `MIdlogNote`; explicit `ks` 导数恢复 | 13.2, 15.3 | pure massive bubble `--`/even seeds/operators，不读 reference | reference source hash、R2->R1、`T' T^-1`、三套 `361` 比较 | 不反解 adapter，不 fresh reference reduction |
+
+## 20. 未完成的 single-massive sunrise 纯数值闭环
+
+本节登记后续独立验证任务，不改变第 9.6 节和公开 example 的当前范围，也不计入本任务书现有通过项。验证必须复用 `single_massive_sunrise` 的同一 topology、branch、massive/massless 配置、ISP 顺序、symmetry 和 `{ss11,kE}` 参数算符；不得另造简化 sunrise family。
+
+执行时先在符号层生成 general seeds/operators，再选择一个避开全部 seed、normalization 和 DE 分母的固定精确有理点。`numericRules` 必须从 `DSSeeds[...,ApplyNumericRules->True]` 开始同时覆盖外部不变量、顶点能量和其它非 DE 参数；随后依次执行 `DSGenerateIBP -> DSLinear -> DSKiraPlan/DSKiraExport -> package 外部 Kira -> DSKiraImport -> DSDE -> DSScaleCheck`。报告至少保存关系数、积分数、master/target/unreduced 数、Kira 版本与耗时、DE 变量和矩阵维数、残留对象、一般 loop-topology scaling matrix/source residual、所选点全部分母非零证书及 artifact hash。
+
+该任务当前状态为 **未执行**。现有 sunrise example 只认证 general seeds/operators；pure massive bubble 或 mix bubble+tree 的 reduction、DE 与 scaling 结果不能作为 sunrise 的替代证据。

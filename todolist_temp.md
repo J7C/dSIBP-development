@@ -88,6 +88,7 @@
 - [x] 完成本轮全项目文档残留扫描、TeX 基本检查和临时目录清理，并把最终结果写回 `研究计划与研究进度.md`。
 - [x] 从当前 `000_code/018_dSIBP/` 模块重建并发布 source-identical 的 `package_018.1.wl/pdf`；候选与正式路径的受影响检查、hash 和手册渲染均已记录。
 - [ ] 在干净的根目录 `check/` 中按 `independent-benchmark/independent-benchmark.md` 从零完成 source-isolated 独立 benchmark；不得读取 `check-smoke/`、旧 expected 或旧 reduction 结果。
+- [ ] 为 `03_single_massive_sunrise/` 单独执行纯数值 DE/scaling 验证：从现有 general seeds/operators 建立 fixed exact rational point 的 sampled relations，经外部 Kira reduction、`DSKiraImport -> DSDE -> DSScaleCheck` 闭环；当前 example 和旧报告均不构成这项验证。
 
 ## P1 接口与排序
 

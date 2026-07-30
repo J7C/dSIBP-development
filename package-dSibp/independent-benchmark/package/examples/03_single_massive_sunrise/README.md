@@ -8,4 +8,6 @@
 
 本例不调用 `DSMetaSeedRange`、`DSGenerateIBP`、`DSLinear`、Kira、DE 或 scaling，也不选择数值点、target 或 master，不写任何运行产物。
 
+尚未完成的独立验证任务是：在不改变本 example 的 general 输入职责下，另建验证工作区，先固定一个避开全部分母的精确有理点，再由同一 `{ss11,kE}` 参数算符生成 sampled relations，经 package 外部 Kira reduction、`DSKiraImport -> DSDE -> DSScaleCheck` 完成纯数值闭环。当前目录、既有 sunrise seed 检查和其它 topology 的 DE/scaling 结果都不能替代该任务。
+
 本目录是 package 中唯一的 sunrise example；其它 examples 不应再复制或改名形成第二套 sunrise 输入。

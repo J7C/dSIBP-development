@@ -27,6 +27,10 @@ Needs["MadStree`"];
 
 运行时生成的适配器 JSON 和 Python cache 写入调用脚本目录的 `results_temp/`，不写入版本源码目录。用户以 `FlintNDESavePoints -> {{coordinate,"save"},...}` 标出的路径点会逐点即时写入调用目录的 `results/flintnde_save_points/run-UUID/`，成功后同目录生成汇总 JSON；保存点不接受名称字段。正式结果由调用程序写入自己的 `results/`。
 
+## Examples
+
+v0.3 在 `versions/MadStree-v0.3/Examples/` 随附三个典型脚本：`01_massless_full_edge.wl`、`02_vertex_family_reduction.wl` 和 `03_time_only_cycle_chart.wl`。它们分别覆盖 massless quotient 的完整公式/数值入口、单顶点函数族约化，以及 time-only 圈图的共同 theta/contact/chart。后两项由既有 T4/T5 已执行配置整理，本轮没有重新运行验证。
+
 ## 独立验证
 
 每个验证任务目录名必须包含被验证版本号。目录内的 `run_validation.wls` 负责执行检查、保存机器可读结果，并生成按名称排序位于最前面的 `000_MadStree-vX.Y-...-report.md`。报告必须包含验证目标、版本与源码身份、输入、所选数值点、实际路径、各类展开阶数、工作精度、分项或总耗时、实际执行结果、失败边界和结果文件；因此验证目录内不再放任务书副本。完整合同见 `AGENTS.md`。
