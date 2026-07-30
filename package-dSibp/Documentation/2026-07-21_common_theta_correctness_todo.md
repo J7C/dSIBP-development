@@ -42,7 +42,7 @@
 - [x] plan/design/README/AGENTS/用户手册将该模块列为正确性门禁，不得描述为 future 或可选优化。
 - [x] independent benchmark 只明确原始传播子、distribution 和指标/零点记账 convention；删除特定多线结果、triple/pair-sector 等答案提示。
 - [x] independent benchmark 明确一般 shrink factor `q^(-s-z)(-tau)^(-s-z)` 如何映射到 `bS=b+s`、`bS0=b0+z`、`aMerged=a_u+a_v-s`、`a0Merged=a0_u+a0_v-z`。
-- [x] `independent-benchmark/package/` 当前只保留 `package_018.1.wl`、`package_018.1.pdf` 和更新后的 examples；旧版本及无版本名程序/手册已删除。
+- [x] `independent-benchmark/package/` 当前只保留 `package_020.0.wl`、`package_020.0.pdf`、同版本更新说明和更新后的 examples；旧版本及无版本名程序/手册已删除。
 - [x] 两份 TeX/PDF 编译并目视检查；运行矛盾扫描、快照哈希和 `git diff --check`。
 
 ## E. 018 sector prefactor 与 parity 状态（已实施，待 source-isolated 独立审计）

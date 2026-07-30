@@ -57,15 +57,21 @@ $$
 4. massless 线始终走双 theta 合并主线，输出 pack 必须保持 `{b_e,n_{e,1},n_{e,2}}` 三槽并在统一 relation 层应用 quotient，不拆成两个 theta 分支。
 5. 任何含 `n=2`、未知 pack 或未处理 theta 边界项的表达式都不能进入 batch、linear-system 或 Kira exporter。
 
-积分的人读记号：
+积分的人读记号按 mode 分开：
 ```
-J[\{a_v\}, \{linePacks_e\}, \{n_{isp}\}]
+full:     J[\{a_v\}, \{linePacks_e\}, \{n_{isp}\}]
+timeOnly: J[sectorKey_String, timeShifts_List, stateBits_List]
 ```
 
-三个槽位：
+full 的三个槽位：
 - `\{a_v\}`：时间幂次 `(-\tau_v)^{a_v}`，写在分子
 - `\{linePacks_e\}`：逐条内线的指标包，结构由线的状态决定
 - `\{n_{isp}\}`：ISP 坐标的整数幂次，定义零点固定为 `0`；正值为 numerator，用户显式负值为该坐标的额外 denominator；没有 ISP 时为 `{}`
+
+timeOnly 的三个槽位：
+- `sectorKey`：按 root propagator 顺序冻结的定长 `0/1` 字符串，是唯一 sector 身份。
+- `timeShifts`：当前 sector 的 compact vertex-component 时间幂指标。
+- `stateBits`：(n_i) 类离散函数态，不是第二个 key；massive line 每端点一位，massless quotient 整边共享一位，shrunk line 不留占位。
 
 ### 线的两种状态
 
@@ -651,7 +657,7 @@ q_1 · Q_2 = q_1 · (q_1 - k) = q_12 - q_1·k = (z_1 + z_2 - k_s2) / 2
 
 ### 13.1 权威实现与公开工作流
 
-当前唯一权威实现是模块化 `versions/018_dSIBP/`，标准入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`；正式单文件兼容入口是 `independent-benchmark/package/package_018.1.wl`。工作树只保留 016、017、018，010--015 从 Git 历史追溯。
+当前唯一权威实现是模块化 `versions/020_dSIBP/`，标准入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`；正式单文件兼容入口是 `independent-benchmark/package/package_020.0.wl`。工作树只保留 018、019、020，更早版本从 Git 历史追溯。
 
 - `makeTopologyData`：解析用户 case，验证 topology、动量基和 `z/ISP` 坐标，并预缓存 index maps、seed summary 与 sector metadata。
 - `makeCanonicalSeedBatch`：生成全 sector 的 qIBP/tIBP canonical seed，自动派生受门禁保护的 massive/masslessFull shrink sectors。
@@ -903,7 +909,7 @@ $$
 
 但初始化 metadata 不缓存已乘开的 `p^u` 表达式。相同裸积分的不同 fixed powers 仍是同一个 master token；差异由其 sector normalization 表示，不能产生不同 Kira token 或 master candidate。
 
-`J` 本身不增加独立 sector 编号槽。root-ordered full/shrunk pack pattern 是 shrunk-line set 的隐式、可逆编码：每一条 root line 永久占据 `linePacks` 中同一位置，包括 fixed line 收缩后的 `{"F"}`；只改变该位置的 full/shrunk shape，绝不删除或重排。程序由此 pattern 派生 canonical `sectorKey`；每个 seed/`linearData` term 显式携带该 key 并与 `J` 重新推断的 key 交叉检查。若裸 `J` 无法唯一匹配，明确失败。不同 contact 顺序得到同一最终 shrunk set 时属于同一 sector并合并贡献；不同 shrink set 即使 `aList` 长度和表达式相同也不能合并。这样不在 `J` 中维护与 pack pattern 重复且可能漂移的第二份 sector id。
+`J` 本身不增加独立 sector 编号槽。root-ordered full/shrunk pack pattern 是 shrunk-line set 的隐式、可逆编码：每一条 root line 永久占据 `linePacks` 中同一位置，包括 fixed line 收缩后的 `{"F"}`；只改变该位置的 full/shrunk shape，绝不删除或重排。程序由此 pattern 派生 canonical `sectorKey`；每个 seed/`linearData` term 显式携带该 key 并与 `J` 重新推断的 key 交叉检查。若裸 `J` 无法唯一匹配，明确失败。不同 contact 顺序得到同一最终 shrunk set 时属于同一 sector并合并贡献；不同 shrink set 即使 `aList` 长度和表达式相同也不能合并。这样不在 `J` 中维护与 pack pattern 重复且可能漂移的第二份 sector id。019 的 time-only key 按 root line 顺序写成定长字符串，shrunk/full 分别为 `0/1`，top 为全 `1`；前导零不得删除。full-loop key 保持既有 convention。
 
 ### 21.2 compact `aList` 的合并
 
@@ -1039,3 +1045,9 @@ post-generation parity check 只作证书：提取每条实际方程中的不同
 统一三槽 time-only 路线会转换 massless 内建关系、其它 symmetry、seed、`sectorPrefactorData` 和 derivative operator。参数重定义后的 `parameterList`、source/target normalization ratio 与 prefactor derivative 必须一起转换。massless 关系与用户/tadpole 关系求并集，但按关系本身决定是安全 canonical rule 还是独立线性 equation。
 
 017 不在 massless quotient 上重建公式型 `repIterative` 和直接 dlogDE。含 massless 体内传播子的公式调用返回 `PendingRederivation`；未来任务是重新推导 quotient master basis、迭代终点、单步递推、dlog connection 及运动学依赖换基项，再与 naive time-only IBP+DE 使用同序 basis 交叉检查。
+
+### 21.8 020 原生 time-only 公开边界
+
+020 不重写 017--019 的 IBP、EOM、contact 或求导 producer。初始化为每个 reachable sector 冻结 `timeOnlyStateSlots`：massive endpoint 逐端点登记，massless quotient 只登记一个 shared slot，cross/exponential 与 shrunk line 不登记。中央 adapter 以 `sectorKey` 选择 sector metadata，把 Private `J[aList,linePacks,{}]` 与公开 `J[sectorKey,timeShifts,stateBits]` 精确双向转换；massless shared slot 的 canonical inverse 把被消去的端点固定为零。
+
+所有公开 producer/consumer 必须共用这一边界。`DSSeeds/DSGenerateIBP/DSLinear/dtau/ds`、tree 公式结果和 master list 不得泄漏旧 time-only 三槽；`rep2innerform/rep2outform` 保护 `J` 只变换显式系数，`rep2Integrand/symmetry` 仅在 Private 内临时还原 line metadata。旧 time-only 三槽输入直接失败。full 模式继续使用 017 三槽 schema，且不进入该 adapter。

@@ -37,11 +37,11 @@
 \def\verbatim@font{\normalfont\ttfamily\small}
 \makeatother
 
-\title{dS IBP Package 018.1 用户手册}
+\title{dS IBP Package 020.0 用户手册}
 \author[a]{Su Yingze}
 \affiliation[a]{Institute not specified}
 \emailAdd{yingze.su@outlook.com}
-\abstract{本手册说明 dS IBP package 的费曼规则、统一积分表示、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前发布为 018.1，属于 018 主线：所有公开积分统一写成 \texttt{J[aList,linePacks,ispList]}；用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。前者使用完整 \texttt{ssij} 根号 Gram 坐标，后者只为用户声明的实际无圈模长生成 \texttt{sE1,sE2,...}。package 只生成、序列化和验证关系，不运行 reduction。}
+\abstract{本手册说明 dS IBP package 的费曼规则、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前发布为 020.0：full 模式使用 \texttt{J[aList,linePacks,ispList]}，time-only 模式使用 \texttt{J[sectorKey,timeShifts,stateBits]}，初始化后 schema 固定且不能混用。用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。package 只生成、序列化和验证关系，不运行 reduction。}
 
 \begin{document}
 \sloppy
@@ -51,21 +51,21 @@
 
 \section{快速开始与当前边界}
 
-本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定发布为 018.1，模块源码位于 018 主线，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和冻结单文件兼容入口分别为
+本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定发布为 020.0，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和冻结单文件兼容入口分别为
 \begin{verbatim}
-package-dSibp/versions/018_dSIBP/
-package-dSibp/independent-benchmark/package/package_018.1.wl
+package-dSibp/versions/020_dSIBP/
+package-dSibp/independent-benchmark/package/package_020.0.wl
 \end{verbatim}
-工作树只保留 016、017、018：016 与 017 是冻结历史版本，018 是当前主线。010--015 已于 2026-07-30 从工作树删除，需要时从 Git 历史追溯。018 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、Kira serializer/importer 以及 DE/scaling 检查，并把 massive/massless 统一为双端点三槽 line pack，加入完整结构化 sector normalization、compact subsector 求导、h/H parity transport 及唯一公开 tree 表示。
+工作树只保留 018、019、020：018 与 019 是冻结历史版本，020 是当前主线；更早版本从 Git 历史追溯。020 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、Kira serializer/importer 以及 DE/scaling 检查。full 模式保留双端点三槽 line pack；time-only 在 020 改为显式 sector key、compact 时间幂和 building-block 状态位列表。
 
 仓库内标准加载与独立 benchmark 单文件加载是两个等价入口，应在新 kernel 中任选其一：
 \begin{verbatim}
-packageDir = FileNameJoin[{Directory[],"package-dSibp","versions","018_dSIBP"}];
+packageDir = FileNameJoin[{Directory[],"package-dSibp","versions","020_dSIBP"}];
 If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
 Needs["dSIBP`"];
 
 (* 独立 benchmark 的自包含单文件入口： *)
-Get["package-dSibp/independent-benchmark/package/package_018.1.wl"];
+Get["package-dSibp/independent-benchmark/package/package_020.0.wl"];
 \end{verbatim}
 两者都提供 \texttt{dSIBP`} 公开 context；独立交付文件不依赖主线模块路径。不要在同一 kernel 重复加载两个入口。
 
@@ -346,7 +346,7 @@ massless & 异分支 $+-/-+$ & \texttt{\{b[e],0,0\}}\\
 
 例如 mixed bubble 可取 $Q_1=q$ 为 massive，$Q_2=q-k$ 为 massless。pure massless bubble 则把两线都设为 massless。顶点符号从 $++$ 改成 $+-$ 时，两条线自动从 full 变为 cross；不是换一套积分 Head。
 
-\section{统一三槽积分表示}
+\section{按 mode 固定的三参数积分表示}
 
 所有 top/sub-sector 都使用三个正式槽位
 \begin{equation}
@@ -366,6 +366,13 @@ massless & 异分支 $+-/-+$ & \texttt{\{b[e],0,0\}}\\
   \item \texttt{linePacks}：按固定 line slot 排列的传播子/缩并线指标包；
   \item \texttt{ispList}：ISP 的正式指标槽，不是附注 metadata。
 \end{enumerate}
+
+式~\eqref{threeSlotJ} 是 full 模式的 schema。020 的 time-only 公开 schema 为
+\begin{equation}
+ \boxed{J[\texttt{sectorKey},\texttt{timeShifts},\texttt{stateBits}]}.
+ \label{timeOnlyPublicJ}
+\end{equation}
+\texttt{sectorKey} 是 root propagator 顺序的定长字符串；\texttt{timeShifts} 按当前 sector 的 compact vertex components 排列；\texttt{stateBits} 是 $n_i$ 类离散函数态，不是第二套 sector key。初始化一旦选择 mode，公开入口就只接受对应 schema。
 
 实际幂次包含初始化零点：
 \begin{equation}
@@ -760,7 +767,7 @@ sE1 = Sqrt[sp[PE1,PE1]], sE2 = Sqrt[sp[PE2,PE2]], ...
 
 特别地，若 topology 实际分别出现 $|k_{E1}|$、$|k_{E1}+k_{E2}|$、$|k_{E2}|$，用户就应在 \texttt{independentExternal\allowbreak Momenta} 中给出这三个表达式，缺省得到 \texttt{sE1,sE2,sE3}；程序既不输出 \texttt{sp[kE1,kE2]}，也不用余弦定理消去中间变量。若再声明 $2k_{E1}$，它是过完备项并触发 warning。
 
-018 的 \texttt{linePacks} 始终按 root \texttt{lineOrder} 保留每条传播子的位置。cycle/fixed full pack 分别为 \texttt{\{b,n1,n2\}} 与 \texttt{\{"F",n1,n2\}}；收缩后分别为 \texttt{\{bS\}} 与 \texttt{\{"F"\}}。因此 fixed line 没有 \texttt{b/bS}，但其端点离散态不会被删除；模长幂属于该 sector 的结构化 prefactor。\texttt{timeOnly} 也使用同一三参数公开表示，只令 \texttt{ispList=\{\}} 并把所有线按 fixed schema 保存。完整 pack pattern 唯一编码 shrink set；不得删除收缩槽位或用 compact \texttt{aList} 猜 sector。
+full 模式的 \texttt{linePacks} 始终按 root \texttt{lineOrder} 保留每条传播子的位置。cycle/fixed full pack 分别为 \texttt{\{b,n1,n2\}} 与 \texttt{\{"F",n1,n2\}}；收缩后分别为 \texttt{\{bS\}} 与 \texttt{\{"F"\}}。因此 fixed line 没有 \texttt{b/bS}，但模长幂仍属于该 sector 的结构化 prefactor。time-only 的这些 packs 只在 Private producer 内存在，由中央 adapter 映射到式~\eqref{timeOnlyPublicJ}。
 
 每个 sector 的完整 normalization 写为结构化 $N_s$。无圈模长部分按初始化时
 \texttt{independentExternalMomenta} 的稳定编号保存为
@@ -1023,13 +1030,9 @@ IBP 撒点为空，最终关系集合缺组，不能作为完整约化系统。�
 
 \texttt{DSSeeds} 对所有 \texttt{timeOnly} family 只返回
 \begin{verbatim}
-J[aList,linePacks,{}]
+J[sectorKey_String,timeShifts_List,stateBits_List]
 \end{verbatim}
-并记录 \texttt{representation -> "J[aList,linePacks,ispList]"}。每条 full line 都使用
-\texttt{\{"F",n1,n2\}}，shrunk line 使用 \texttt{\{"F"\}}；root line 位置始终保留。
-这条路线没有 momentum generator、$b/bS$ 或 ISP，但 fixed-line 模长幂仍在
-\texttt{sectorPrefactorData} 中参与 \texttt{ds/DSDE} 的乘积法则。用户不输入也不能调用
-Private vertex basis 或 state selector。
+并记录 \texttt{representation -> "J[sectorKey,timeShifts,stateBits]"}。\texttt{sectorKey} 的第 $e$ 位按 root line 顺序取 full/shrunk 的 $1/0$；top 是全 $1$ 字符串，前导零不可丢失。\texttt{stateBits} 的 registry 同样按 root line 顺序冻结：massive line 每端点一位，massless quotient 整边共享一位，cross/exponential 与 shrunk line 不留占位。这条路线没有 momentum generator、$b/bS$ 或 ISP，但 fixed-line 模长幂仍在 \texttt{sectorPrefactorData} 中参与 \texttt{ds} 的乘积法则。用户不输入也不能调用 Private line pack 或 vertex basis。
 
 例如 atomic massless 同分支 family 的公开流程为
 \begin{verbatim}
@@ -1037,7 +1040,7 @@ context = DSInit[case, RegisterAsCurrent->False];
 seeds = DSSeeds[context];
 linear = DSLinear[seeds, context];
 \end{verbatim}
-其中 top sector 的 source 状态集合为 $\{00,10\}$；raw $(n_1,n_2)\in\{0,1\}^2$ 只用于 quotient 与导数审计，$01/11$ 不重复生成。同分支可达 sector 为 \texttt{\{"top","e1"\}}，异分支只有 \texttt{\{"top"\}}。两个顶点各自的 time generator 作用于 top representatives；同分支 shrink sector 另有合并顶点的 time seed。成功时 \texttt{DSSeeds} 与 \texttt{DSLinear} 都返回 \texttt{status -> "generated"}。含 massless full line 的 \texttt{DSTreeSeeds/repIterative/DSTreeNaiveIBP/DSTreeNaiveDE/DSTreeDLogDE} 当前返回 \texttt{PendingRederivation} 与 \texttt{masslessQuotientFormulaNotCertified}；它们不会退回旧单 $n$ 或单参数 $J$ 公式。
+其中 top sector 的公开 shared state 为 $\{0,1\}$；raw $(n_1,n_2)\in\{0,1\}^2$ 只用于 quotient 与导数审计。同分支单线可达 sector keys 为 \texttt{\{"1","0"\}}，异分支只有 \texttt{"1"}。两个顶点各自的 time generator 作用于 top representatives；同分支 shrink sector 另有合并顶点的 time seed。成功时 \texttt{DSSeeds} 与 \texttt{DSLinear} 都返回 \texttt{status -> "generated"}。含 massless full line 的 \texttt{DSTreeSeeds/repIterative/DSTreeNaiveIBP/DSTreeNaiveDE/DSTreeDLogDE} 当前返回 \texttt{PendingRederivation} 与 \texttt{masslessQuotientFormulaNotCertified}；表示 adapter 不绕过这项数学门禁。
 
 \texttt{linearData} 是后端中立的 Mathematica Association，不是 reduction 结果。核心字段为：
 \begin{verbatim}
@@ -1149,13 +1152,13 @@ activeBasisClosureFailed, invalidNumericStage
 微分变量数值化的全部 serializer 门禁；成功只表示输入已写好或内存数据已就绪，不表示
 external reduction 已运行。
 
-\section{018 标准 package 与初始化}
+\section{020 标准 package 与初始化}
 
-一个 018 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。所有路径相对于 example 的 \texttt{main.wl}：
+一个 020 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。所有路径相对于 example 的 \texttt{main.wl}：
 \begin{verbatim}
 exampleDir = DirectoryName[$InputFileName];
 packageDir = FileNameJoin[{
-  exampleDir,"..","..","..","..","versions","018_dSIBP"
+  exampleDir,"..","..","..","..","versions","020_dSIBP"
 }];
 If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
 Needs["dSIBP`"];
@@ -1176,7 +1179,7 @@ init = DSInit[case,
 
 \texttt{init/} 中的 \texttt{manifest.wl}、\texttt{topology.wl}、\texttt{sectors.wl} 和 \texttt{conventions.wl} 是可重新 \texttt{Get} 的 Association。\texttt{derivatives.wl} 缺省不生成；只有显式打开 \texttt{GenerateDerivativeMetadata} 时才写出。已有目录若对应不同输入哈希，缺省拒绝覆盖。
 
-\texttt{DSSeeds} 始终完整枚举物理独立的离散基底：massive 为适用的 $n_i=0,1$ 四态，masslessFull 为 $n_2\to0$ 的 $00/10$ 两态；raw 四态 relation 仍可由 metadata 与导数检查审计。\texttt{quickCheck}、\texttt{fullDiscrete} 与 \texttt{bounded} 只提供不同的缺省连续 \texttt{seedRanges}，不改变离散基底，也不触发抽样。\texttt{timeOnly} 与 full mode 使用同一个三参数 \texttt{J} schema；不存在需要用户填写的 \texttt{TreeState} 或其它私有分派参数。
+\texttt{DSSeeds} 始终完整枚举物理独立的离散基底：massive line 为端点 $n_i=0,1$ 四态，masslessFull quotient 为 shared bit 的二态；raw 四态 relation 仍可由 metadata 与导数检查审计。\texttt{quickCheck}、\texttt{fullDiscrete} 与 \texttt{bounded} 只提供不同的缺省连续 \texttt{seedRanges}，不改变离散基底，也不触发抽样。timeOnly 与 full 共用 Head \texttt{J}，但使用式~\eqref{timeOnlyPublicJ} 与式~\eqref{threeSlotJ} 两个不兼容 schema；不存在需要用户填写的 \texttt{TreeState} 或其它私有分派参数。
 
 初始化后可查看当前摘要、完整 context 和公开接口清单：
 \begin{verbatim}
@@ -1296,13 +1299,11 @@ reference IBP 或运行 reference Kira。
 
 \section{Tree vertex family}
 
-Tree 与 loop 的公开对象完全相同：
+Tree 使用原生 time-only 公开对象：
 \begin{verbatim}
-J[aList,linePacks,{}]
+J[sectorKey,timeShifts,stateBits]
 \end{verbatim}
-\texttt{aList} 按当前 sector 的 active vertex 顺序保存时间幂次；\texttt{linePacks} 按 root line 顺序保存
-\texttt{\{"F",n1,n2\}} 或 \texttt{\{"F"\}}。massive-only 论文公式需要的 vertex basis 由 package
-在 Private context 内按 \texttt{sectorKey} 构造，完成迭代或 dlog 计算后立即映回上述公开表示；用户结果、诊断、master list 和 \texttt{linearData} 均不得出现一参数 \texttt{J}。
+\texttt{timeShifts} 按当前 sector 的 active vertex-component 顺序保存时间幂次；\texttt{stateBits} 按该 sector 的 registry 保存存活 building blocks 的离散态。massive-only 论文公式需要的 vertex basis 由 package 在 Private context 内按 \texttt{sectorKey} 构造，完成迭代或 dlog 计算后立即映回上述公开表示；用户结果、诊断、master list 和 \texttt{linearData} 均不得出现一参数或旧 line-packed time-only \texttt{J}。
 
 Loop 到 tree 的投影使用完整物理幂次。目标项相对参考 seed 的时间相位为 $(-1)^{\Delta\sum(a+a0)}$，每条线的显式能量系数为 $k_e^{-\Delta(b+b0)}$；缩并线改用 $bS+bS0$。当前 sector 的 $a0$ 进入 tree 的 $\nu_0$。所以 h-mode contact 的 $bS=b+1$、$bS0=b0+2\nu$ 必须共同给出 $(-k)^{-2\nu-1}$，不能只保留整数 $k^{-1}$。
 
@@ -1318,7 +1319,7 @@ omegaBlocks, dlogQ
 \end{verbatim}
 \texttt{masters} 中每项的 \texttt{coefficient} 正是对应 sector normalization；矩阵、letters 与该 master 顺序完全一致。
 
-018 还提供不使用上述直接 dlog/递推矩阵的交叉路线：
+020 还提供不使用上述直接 dlog/递推矩阵的交叉路线：
 \begin{verbatim}
 ibp = DSTreeNaiveIBP[context, treeDLog["masters"]];
 de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
@@ -1330,7 +1331,7 @@ de  = DSTreeNaiveDE[ibp, {K1,K2,k12}];
 \end{align}
 同一传播子的两个 endpoint 分别贡献，随后统一用 naive time-IBP 约到指定 masters。若 master 定义为 $N_sJ_s$，乘积法则中的 $(\partial N_s)J_s$ 会单独加入；输出的 \texttt{matrices/sources/residualObjects} 与输入 master 顺序一致。缺省 masters 来自 \texttt{DSTreeDLogDE}；做独立检验时应显式传入列表，确保两路线只共享 basis 和 normalization，而不共享 reduction rules。
 
-若不同 lower sectors 具有相同 compact \texttt{aList}，root-ordered line-pack pattern 仍唯一编码 shrink set；内部 tree linear data 和约化 token 另外保存由该 pattern 派生的 \texttt{sectorKey} 作交叉核验，不另建并行积分表示。公式型 tree 路线当前只认证 massive-only family；含 massless full line 时五个 tree 公式接口均 fail closed 为 \texttt{PendingRederivation}，直到三槽 quotient basis 的递推和 dlog 公式重新推导完成。
+若不同 lower sectors 具有相同长度的 \texttt{timeShifts}，公开 \texttt{sectorKey} 仍唯一编码 shrink set；内部 line-pack pattern 只用于验证该 key，不是第二套公开身份。公式型 tree 路线当前只认证 massive-only family；含 massless full line 时五个 tree 公式接口均 fail closed 为 \texttt{PendingRederivation}，直到 quotient basis 的递推和 dlog 公式重新推导完成。
 
 \section{常见错误与当前限制}
 

@@ -9,11 +9,15 @@
 - `check_parameter_derivative_operators/`：用单条 fixed massive line 检查结构化 `kEpower`、参数重定义、normalized contact、`D[Log[N_s]]` 和 `rep2Integrand` 回乘。single-massive sunrise 的 `{ss11,kE}` general 算符由长期 example 直接覆盖，不保留 active-basis wrapper smoke。
 - `check_scaling_relation/`：只读已有 massive-bubble 解析 probe，在唯一固定点检查 Euler/scaling relation；不包含 sunrise，不重新生成 reference，不运行 Kira。
 - `check_massless_endpoint_contact/`：只检查一个 `++` fixed-line contact 和一个 `+-` endpoint 相位例子。
+- `check_time_only_sector_key/`：检查 time-only 四传播子定长位串、前导零、唯一性和不同 contact 路径合并；不进入 full-loop、Kira 或 reduction。
+- `check_time_only_public_representation_020/`：检查 020 的 `J[sectorKey,timeShifts,stateBits]` 全 sector 往返、旧 time-only 三槽拒绝、massive/massless 状态和 lower/simultaneous-sector 导数。
+- `check_time_only_tree_formula_020/`：检查 020 massive-only tree 的 seed、迭代约化、naive IBP/DE、dlog 与表示辅助入口。
+- `check_public_api_example_coverage/`：比较 `DSPublicAPI[]`、coverage manifest 和成品 example 源码中的实际调用。
 - `check_kira_energy_convention/`：只检查 Kira 内部 `P0 -> -I ip0`、实有理数值映射以及普通导数/Euler 算符的 Jacobian。
 - `check_topology_loop_count/`：并列检查普通两顶点单边、自环 tadpole 和三平行边 sunrise 的圈数、cycle/bridge、自环 metadata 与 routing rank。
 - `check_integral_order_authority/`：用两积分合成 linearData 检查 `integralList` 唯一顺序、显式 reindex 和 plan 不二次重排；不写 backend 文件。
 - `check_user_mi_basis/`：复用长期 massive-bubble 的既有积分表，检查 21/19 维 `userMI` 秩、support 双向映射、backend token 和解析导数 closure；不生成 seeds、不运行或读取 reduction。
 
-所有脚本都直接加载 `versions/018_dSIBP/`。如需临时输出，只能写入对应功能目录下的 `results_test/`，任务结束后清理；当前保留脚本不写运行产物。
+本轮只重跑受 020 time-only 公开表示影响的检查；其它 full-loop、Kira、reduction 和 scaling 脚本不因 020 重跑。如需临时输出，只能写入对应功能目录下的 `results_test/`，任务结束后清理；当前保留脚本不写运行产物。
 
 明确不在本目录保留：016/017 回归、全 family 或全 sign/parity 枚举、大范围手推撒点、expanded envelope、full workflow、reference producer、Kira/reduction/post-reduction、coverage/release gate、旧 expected、失败副本和运行日志。

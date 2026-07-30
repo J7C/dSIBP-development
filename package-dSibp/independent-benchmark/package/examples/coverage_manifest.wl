@@ -1,9 +1,9 @@
 (* ::Package:: *)
-(* 018.1 成品 example 覆盖清单。键是相对于 examples/ 的文件路径，值是该文件实际演示的
+(* 020.0 成品 example 覆盖清单。键是相对于 examples/ 的文件路径，值是该文件实际演示的
    公开函数。正式检查会同时核对文件中的调用文本和 package 的 DSPublicAPI[]。 *)
 
 <|
- "version" -> "018.1",
+ "version" -> "020.0",
  "coverage" -> <|
    "01_mixed_bubble_workflow.wl" -> {
      "DSInit", "DSSeeds", "DSAllSeeds", "DSGenerateIBP", "generateIBP", "DSLinear", "DSReorderIntegrals", "DSKiraPlan"
@@ -21,7 +21,7 @@
      "DSGenerateIBP", "DSLinear", "DSUserMI", "DSKiraPlan", "DSKiraExport",
      "DSKiraImport", "DSDE", "DSScaleCheck"
      },
-   (* 同一成品展示统一三参数 J、massive-only 公式适配与 massless PendingRederivation。 *)
+   (* 同一成品展示原生 time-only J、massive-only 公式适配与 massless PendingRederivation。 *)
    "05_tree_two_vertex_time_ibp/main.wl" -> {
      "DSMessagesOn", "DSInit", "DSSeeds", "DSLinear", "DSTreeSeeds",
      "repIterative", "DSTreeNaiveIBP", "DSTreeNaiveDE", "DSTreeDLogDE"

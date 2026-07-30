@@ -20,7 +20,7 @@
 
 ## 目录与报告
 
-- `package/` 只保留当前正式 `package_018.1.wl`、`package_018.1.pdf` 与少量成品 examples；不得放 expected、验证脚本、报告或 reduction 输出。
+- `package/` 只保留当前正式 `package_020.0.wl`、`package_020.0.pdf`、同版本更新说明与少量成品 examples；不得放 expected、验证脚本、报告或 reduction 输出。
 - 成品 examples 中长期固定三个典型入口：`03_single_massive_sunrise/main.wl`、`04_pure_massive_bubble_closed_loop/main.wl` 和 `06_mix_bubble_tree/main.wl`。single-massive sunrise 只生成 general seeds 与 general 参数微分算符；只有 pure massive bubble 携带 dlog/reference/scaling 闭环，另外两个不复制 reference producer。
 - `reference-results/` 只保存任务书点名、带来源哈希的轻量 Phase 2 对照；它不能用于 Phase 1 或 master 选择。
 - 内部独立工作区使用根目录 `check/`，每轮开始前清空旧内容并从头建立；外部执行者在项目外新建工作区。两者都不得读取、复制、写入或引用维护侧 `check-smoke/`。

@@ -7,7 +7,7 @@
 (*加载开发包与 atomic topology*)
 
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-packageDir = FileNameJoin[{projectRoot, "versions", "018_dSIBP"}];
+packageDir = FileNameJoin[{projectRoot, "versions", "019_dSIBP"}];
 $Path = Prepend[$Path, packageDir];
 Needs["dSIBP`"];
 DSMessagesOff[];
@@ -31,6 +31,7 @@ caseInput = <|
    |>;
 
 context = DSInit[caseInput, RegisterAsCurrent -> False, ProgressReporting -> False];
+sectorMetadata = context["sectors"];
 topIntegral = dSIBP`Private`makeBaseIntegral[context["topology"]] /.
    {n[1, 1] -> 1, n[1, 2] -> 0};
 topData = dSIBP`Private`sectorPrefactorDataForIntegral018[
@@ -69,6 +70,10 @@ crossEndpointCoefficients = I dSIBP`Private`skEndpointPhaseSign[crossLine, #] & 
 
 checks = <|
    "initialized" -> (Lookup[context, "status", "failed"] === "initialized"),
+   "timeOnlySectorKeys" -> (Lookup[sectorMetadata, "sectorKey"] === {"1", "0"}),
+   "timeOnlySectorSchema" -> And @@ (
+      Lookup[#, "sectorKeySchema", <||>]["type"] === "rootPropagatorBitString" & /@ sectorMetadata
+      ),
    "fixedLineThreeSlotState" -> MatchQ[topIntegral, J[_, {{"F", _, _}}, {}]],
    "structuralKEPower" -> (Lookup[topData, "kEPower", None] === kEpower[-beta1]),
    "normalizedContact" -> (contactCoefficient === -2/sE1^beta1),
@@ -82,6 +87,7 @@ Print[InputForm[<|
    "passed" -> Count[Values[checks], True],
    "total" -> Length[checks],
    "failed" -> failed,
+   "sectorKeys" -> Lookup[sectorMetadata, "sectorKey"],
    "contactCoefficient" -> contactCoefficient,
    "crossEndpointCoefficients" -> crossEndpointCoefficients,
    "checks" -> checks

@@ -7,20 +7,27 @@ reduction。
 
 ## 当前版本与入口
 
-- 当前模块化源码：`versions/018_dSIBP/`。
+- 当前模块化源码：`versions/020_dSIBP/`。
 - 标准加载：把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 正式单文件交付：`independent-benchmark/package/package_018.1.wl`。
-- 保留代码版本：`016_dSIBP/`、`017_dSIBP/`、`018_dSIBP/`。
+- 正式单文件交付：`independent-benchmark/package/package_020.0.wl`。
+- 保留代码版本：`018_dSIBP/`、`019_dSIBP/`、`020_dSIBP/`。
 
 早期 `010_dS_ibp_general.wl` 是尚未模块化的通用 dS IBP 单文件实现；011--015 是该路线的
-后续历史快照。它们已被 016--018 模块化版本和 018.1 正式交付取代，并按仓库版本保留策略
+后续历史快照。它们已被模块化版本和当前正式交付取代，并按仓库版本保留策略
 于 2026-07-30 删除；需要追溯时从 Git 历史读取，不再作为运行入口。
+
+020.0 把 `ibpMode -> "timeOnly"` 的唯一公开积分改为
+`J[sectorKey,timeShifts,stateBits]`。`sectorKey` 按 root propagator 顺序保存定长 `0/1`
+字符串，`timeShifts` 与 `stateBits` 分别保存当前 sector 的 compact 时间幂和离散
+building-block 状态；旧 time-only `J[aList,linePacks,{}]` 不兼容。full-loop 仍使用原三槽
+表示，因此 Kira/reduction 资产不需迁移；细节见
+[`versions/020_dSIBP/UPDATE_NOTES.md`](versions/020_dSIBP/UPDATE_NOTES.md)。
 
 ## 目录
 
-- `versions/`：保留的 016、017、018 模块化源码。
+- `versions/`：保留的 018、019、020 模块化源码。
 - `Documentation/`：plan、design note、技术手册和专项正确性清单。
-- `independent-benchmark/`：独立任务书、正式 018.1 交付、reference results 和 examples。
+- `independent-benchmark/`：独立任务书、正式 020.0 交付、reference results 和 examples。
 - `000-report/`：历史独立检验报告归档。
 - `check-smoke/`：维护者轻量检查；不属于独立验证证据。
 

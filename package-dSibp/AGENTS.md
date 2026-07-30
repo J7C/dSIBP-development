@@ -22,9 +22,9 @@
 
 ## 程序与目录
 
-- 当前开发主线由 `../研究计划与研究进度.md` 指定；当前为模块化目录 `versions/018_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 当前正式单文件兼容入口是 `independent-benchmark/package/package_018.1.wl`。代码版本只保留 `versions/016_dSIBP/`、`versions/017_dSIBP/` 和 `versions/018_dSIBP/`；010--015 只从 Git 历史追溯。
-- 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。018 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `018.1`、`018.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
+- 当前开发主线由 `../研究计划与研究进度.md` 指定；当前为模块化目录 `versions/020_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
+- 当前正式单文件兼容入口是 `independent-benchmark/package/package_020.0.wl`。代码版本只保留 `versions/018_dSIBP/`、`versions/019_dSIBP/` 和 `versions/020_dSIBP/`；更早版本只从 Git 历史追溯。
+- 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。020 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `020.1`、`020.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
 - 本规则生效后新增的 dSIBP 版本都必须附带独立更新说明，至少记录基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制；018.1 及更早资产不追溯补建。新整数代码版本使用 `versions/NNN_dSIBP/UPDATE_NOTES.md`，同一代码版本的新正式发布号使用 `independent-benchmark/package/package_NNN.x_UPDATE_NOTES.md`。
 - `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；每项可复用检查放入名称直接说明功能的独立子目录，禁止重新堆叠全 family、全 sign/parity、连续指标撒点或完整 reduction 工作树。运行产物只放对应子目录的 `results_test/` 并在任务结束后清理。
 - `check-smoke/` 不属于独立检验工作区。内部或外部独立执行者均不得读取、复制、写入或引用其中的脚本、结果与结论。
@@ -68,6 +68,7 @@
 - package 运行时门禁只放在真实信任边界：用户新输入、尚未推导的数学公式、递推终止、外部 artifact 身份与 reduction/DE 闭合。由同一 producer 生成并带同源状态的 sealed 数据，consumer 缺省只读取状态、计数和 digest 字段，不得重复全量 canonical、parity、coverage、representation、residual 或内容 hash 自证；这些开发证书只在显式 `AuditLevel -> "full"`、`check-smoke/`、独立检验或发布阶段执行。没有实际失败证据或新信任边界时，不得向 package 默认路径追加门禁。
 - 数值交叉检查缺省只使用一个固定、非奇异、精确有理点。`P0`、`ip0`、`ks` 等同一点在不同变量 convention 或导数方向下的矩阵表示不计作多个数值点；除用户明确要求或原点落在奇异面外，不得通过增加数值点堆叠验收。
 - 所有 sector 统一使用 Head `J`，sector 由线状态区分；不得恢复按 sector 复制的 `G/R1/R2` 主实现。
+- 020 的 `ibpMode -> "timeOnly"` 只公开 `J[sectorKey,timeShifts,stateBits]`：第一槽是 root propagator 顺序的定长字符串 key，后两槽分别是 compact 时间幂和离散 building-block 状态。full-loop 保留既有三槽表示；不得为了统一显示而迁移或重写 full-loop Kira/reduction artifact identity。
 - 共同-theta bundle、compiled `WT -> shrinkTerms`、simultaneous contact shift 累加、coincident canonical 和 contact-reachable sector 必须作为一个整体通过专项验收。
 - h/H 模式、质量参数、缩并 prefactor、zero-point 和 H EOM 必须使用当前 tech note 与 preset；不得从历史版本重新引入旧递推。
 - 多圈动量 IBP 生成元必须覆盖当前 plan/tech note 规定的完备集合；ISP 由用户定义并在生成关系前验证闭合性。

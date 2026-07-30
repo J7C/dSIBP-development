@@ -6,8 +6,8 @@
 
 | 程序包 | 输入与输出 | 主要特征 | 当前入口 |
 | --- | --- | --- | --- |
-| [dSIBP](package-dSibp/README.md) | 任意圈数、任意拓扑、massive/massless 混合图；输出 time/loop IBP、参数微分 seed、sector metadata、`linearData` 和 Kira 基础输入 | topology-driven Wolfram Language 关系生成器；只生成、检查和序列化关系，不运行 reduction | `package-dSibp/versions/018_dSIBP/`；正式单文件 `package_018.1.wl` |
-| [MadStree](package-MadStree/README.md) | dS tree 或只积分时间变量的 incidence graph；输出主积分、公式型迭代约化、dlog DE、Frobenius 边界和数值调用配置 | formula-driven Wolfram Language 包；支持 massive/massless quotient 与冗余 Hankel 表示，自动调用 FlintNDE | `package-MadStree/load_current.wl`；当前 `v0.3` |
+| [dSIBP](package-dSibp/README.md) | 任意圈数、任意拓扑、massive/massless 混合图；输出 time/loop IBP、参数微分 seed、sector metadata、`linearData` 和 Kira 基础输入 | topology-driven Wolfram Language 关系生成器；只生成、检查和序列化关系，不运行 reduction | `package-dSibp/versions/020_dSIBP/`；正式单文件 `package_020.0.wl` |
+| [MadStree](package-MadStree/README.md) | dS tree 或只积分时间变量的 incidence graph；输出主积分、公式型迭代约化、dlog DE、Frobenius 边界和数值调用配置 | formula-driven Wolfram Language 包；支持 massive/massless quotient 与冗余 Hankel 表示，内置并自动调用 FlintNDE | `package-MadStree/load_current.wl`；当前 `v0.5` |
 | [FlintNDE](package-FlintNDE/README.md) | 一阶矩阵 DE、普通点向量或奇点边界、路径和精度；输出局部级数、路径输运、保存点与边界常数 | 独立 Python/FLINT 后端；支持普通点、正则奇点和已认证的部分高阶 pole，超出能力时 fail closed | `package-FlintNDE/versions/FlintNDE-v0.1.0.dev0/`；导入名 `flintnde` |
 
 两条工作流互不混用：
@@ -22,8 +22,8 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 
 ## 当前版本
 
-- dSIBP：开发主线 `018_dSIBP`，正式冻结交付 `018.1`；另保留 `016_dSIBP`、`017_dSIBP`。
-- MadStree：`v0.3`。
+- dSIBP：开发主线 `020_dSIBP`，正式冻结交付 `020.0`；另保留 `018_dSIBP`、`019_dSIBP`。
+- MadStree：`v0.5`。
 - FlintNDE：`0.1.0.dev0`。
 
 当前任务、未完成项和实际验收状态统一见 [研究计划与研究进度.md](研究计划与研究进度.md)。各包的公式、接口和能力边界以自己的 README、`Documentation/` 与 `AGENTS.md` 为准。
@@ -47,7 +47,7 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 
 ### MadStree
 
-目录：`package-MadStree/versions/MadStree-v0.3/Examples/`。
+目录：`package-MadStree/versions/MadStree-v0.5/Examples/`。
 
 | 示例 | 覆盖内容 |
 | --- | --- |
@@ -55,7 +55,7 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 | `02_vertex_family_reduction.wl` | 单顶点专用输入、局部张量逆和有限线性组合约化 |
 | `03_time_only_cycle_chart.wl` | time-only 圈图、共同 theta、contact sector 与全部 strict-rank chart |
 
-后两项由已经通过的 v0.3 T4/T5 配置整理而成；本轮没有重新运行数值验证。
+三个 example 已在 v0.5 fresh 运行并退出 `0`。独立验证 T1--T6 均由 v0.5 fresh 执行并通过；T6 通过 Wolfram 公开入口验证内置 FlintNDE 的保存点和能力边界。
 
 ### FlintNDE
 
@@ -79,7 +79,7 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 ## 文档与验证
 
 - dSIBP：`package-dSibp/Documentation/`、`package-dSibp/independent-benchmark/`、`package-dSibp/000-report/`。
-- MadStree：`package-MadStree/versions/MadStree-v0.3/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
+- MadStree：`package-MadStree/versions/MadStree-v0.5/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
 - FlintNDE：`package-FlintNDE/Documentation/`、版本 README、`check_*` 与 `test/`。
 
 验证报告只证明其记录的版本、路径和范围。旧实现历史保留在 Git history 和进度归档中，不在根 README 重复维护。

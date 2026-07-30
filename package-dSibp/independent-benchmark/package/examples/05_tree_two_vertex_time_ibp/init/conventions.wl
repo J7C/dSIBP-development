@@ -19,7 +19,7 @@
  "zeroPointRules" -> {a0[v1] -> alpha1, a0[v2] -> alpha2, b0[1] -> beta12},
  "shrinkPrefactorRules" -> {E^(Pi*Im[nu12]) -> eta12}, "symmetryRules" -> {},
  "effectiveSymmetryRules" ->
-  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "017TreeTwoVertexPlusPlus",
+  {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[<|"name" -> "020TreeTwoVertexPlusPlus",
         "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2}, "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+"|>,
         "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p12, "treeEnergy" -> k12, "nu" -> nu12,
            "bbType" -> "h", "massType" -> "massive", "skType" -> "++", "state" -> "full",
@@ -67,13 +67,14 @@
             "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>, "issues" -> {}|>,
         "capabilities" -> <|"initializationUsableQ" -> True, "timeIBPUsableQ" -> True, "momentumIBPUsableQ" -> False,
           "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>, "cycleLineIndices" -> {},
-        "bridgeLineIndices" -> {1}, "loopExternalMomenta" -> {}, "effectiveLoopExternalMomenta" -> {},
-        "independentExternalMomenta" -> {p12}, "momentumDecompositionBasis" -> {p12},
-        "fixedExternalVectorAtoms" -> {p12}, "externalMomenta" -> {}, "externalLegMomenta" -> {p12},
-        "rawExternalInvariantRules" -> {}, "externalInvariantRules" -> {}, "rawExternalLegInvariantRules" ->
-         {sp[p12, p12] -> sE1^2}, "externalLegInvariantRules" -> {sp[p12, p12] -> sE1^2},
-        "kinematicRules" -> Automatic, "kinematicCoordinateAudit" -> <|"status" -> "complete", "source" -> "default",
-          "baseCoordinateData" -> {<|"occurrenceIndex" -> 1, "momentum" -> p12, "squaredExpression" -> sp[p12, p12],
+        "bridgeLineIndices" -> {1}, "selfLoopLineIndices" -> {}, "loopExternalMomenta" -> {},
+        "effectiveLoopExternalMomenta" -> {}, "independentExternalMomenta" -> {p12},
+        "momentumDecompositionBasis" -> {p12}, "fixedExternalVectorAtoms" -> {p12}, "externalMomenta" -> {},
+        "externalLegMomenta" -> {p12}, "rawExternalInvariantRules" -> {}, "externalInvariantRules" -> {},
+        "rawExternalLegInvariantRules" -> {sp[p12, p12] -> sE1^2}, "externalLegInvariantRules" ->
+         {sp[p12, p12] -> sE1^2}, "kinematicRules" -> Automatic, "kinematicCoordinateAudit" ->
+         <|"status" -> "complete", "source" -> "default", "baseCoordinateData" ->
+           {<|"occurrenceIndex" -> 1, "momentum" -> p12, "squaredExpression" -> sp[p12, p12],
              "magnitudeExpression" -> Sqrt[sp[p12, p12]], "gramVector" -> {1}, "baseCoefficients" -> {1},
              "independentQ" -> True, "externalLegIndex" -> 1, "userVariable" -> sE1, "defaultSquaredExpression" ->
               sE1^2, "baseIndex" -> 1, "kind" -> "externalLegMagnitude", "inputExpression" -> sp[p12, p12],
@@ -104,7 +105,7 @@
     0}, "tadpoleSymmetryData" -> <|"status" -> "generated", "loopReversalData" -> {}, "massiveFullLineIndices" -> {},
    "masslessFullLineIndices" -> {}, "automaticRuleCount" -> 1,
    "automaticRules" -> {HoldPattern[dSIBP`Private`int$_J /; dSIBP`Private`tadpoleOddISPIntegralQ[
-         <|"name" -> "017TreeTwoVertexPlusPlus", "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2},
+         <|"name" -> "020TreeTwoVertexPlusPlus", "vertexData" -> {{v1, "+"}, {v2, "+"}}, "vertexIds" -> {v1, v2},
           "vertexSignAssoc" -> <|v1 -> "+", v2 -> "+"|>, "lines" -> {<|"id" -> 1, "endpoints" -> {v1, v2},
              "momentum" -> p12, "treeEnergy" -> k12, "nu" -> nu12, "bbType" -> "h", "massType" -> "massive",
              "skType" -> "++", "state" -> "full", "thetaConvention" -> "mergedTwoTheta", "packType" -> "massiveFull",
@@ -151,13 +152,13 @@
               "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>, "issues" -> {}|>,
           "capabilities" -> <|"initializationUsableQ" -> True, "timeIBPUsableQ" -> True, "momentumIBPUsableQ" -> False,
             "derivativeUsableQ" -> True, "inverseKinematicsUsableQ" -> True|>, "cycleLineIndices" -> {},
-          "bridgeLineIndices" -> {1}, "loopExternalMomenta" -> {}, "effectiveLoopExternalMomenta" -> {},
-          "independentExternalMomenta" -> {p12}, "momentumDecompositionBasis" -> {p12}, "fixedExternalVectorAtoms" ->
-           {p12}, "externalMomenta" -> {}, "externalLegMomenta" -> {p12}, "rawExternalInvariantRules" -> {},
-          "externalInvariantRules" -> {}, "rawExternalLegInvariantRules" -> {sp[p12, p12] -> sE1^2},
-          "externalLegInvariantRules" -> {sp[p12, p12] -> sE1^2}, "kinematicRules" -> Automatic,
-          "kinematicCoordinateAudit" -> <|"status" -> "complete", "source" -> "default", "baseCoordinateData" ->
-             {<|"occurrenceIndex" -> 1, "momentum" -> p12, "squaredExpression" -> sp[p12, p12],
+          "bridgeLineIndices" -> {1}, "selfLoopLineIndices" -> {}, "loopExternalMomenta" -> {},
+          "effectiveLoopExternalMomenta" -> {}, "independentExternalMomenta" -> {p12}, "momentumDecompositionBasis" ->
+           {p12}, "fixedExternalVectorAtoms" -> {p12}, "externalMomenta" -> {}, "externalLegMomenta" -> {p12},
+          "rawExternalInvariantRules" -> {}, "externalInvariantRules" -> {}, "rawExternalLegInvariantRules" ->
+           {sp[p12, p12] -> sE1^2}, "externalLegInvariantRules" -> {sp[p12, p12] -> sE1^2},
+          "kinematicRules" -> Automatic, "kinematicCoordinateAudit" -> <|"status" -> "complete", "source" -> "default",
+            "baseCoordinateData" -> {<|"occurrenceIndex" -> 1, "momentum" -> p12, "squaredExpression" -> sp[p12, p12],
                "magnitudeExpression" -> Sqrt[sp[p12, p12]], "gramVector" -> {1}, "baseCoefficients" -> {1},
                "independentQ" -> True, "externalLegIndex" -> 1, "userVariable" -> sE1, "defaultSquaredExpression" ->
                 sE1^2, "baseIndex" -> 1, "kind" -> "externalLegMagnitude", "inputExpression" -> sp[p12, p12],

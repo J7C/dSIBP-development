@@ -78,12 +78,24 @@
 - [x] 实现 MadStree 集中路径配置、普通点路径和 FlintNDE 薄适配层；原自动有限 Euclidean producer 现仅保留为待迁移的历史实现，不再属于生产能力。
 - [x] 既有 representative tree 的有限点定义积分对照只作为历史测试证据，不再认证生产边界架构。
 - [x] 实现 2411.03088 单顶点与两顶点单 massive `G++` 的无穷远 Frobenius/sector-leading system；有限普通点定义积分只在独立验证中作为 oracle。
-- [ ] 推广通用多 sector 的 2411 无穷远 Frobenius producer；当前其它 family 继续结构化 fail closed。
+- [x] 推广通用多 sector 的 2411 无穷远 Frobenius producer；按 sector metadata、strict-rank chart 与 ancestor residue 组装边界，超出已认证谱型时结构化 fail closed。
 - [x] 更新 MadStree 规划、README、公式手册、可执行 example 与研究进度，编译并检查 PDF。
 
 本文件只列仍需执行的工作。已完成过程、历史计数和取消路线统一留在 `研究计划与研究进度.md` 的归档区；这里不再重复旧 016/017、全 family、全 sign/parity 或 sunrise reduction 记录。
 
 ## P0 当前整理与正式发布
+
+- [ ] 新建 dSIBP 020，把 time-only 公开积分改为 metadata 驱动的 `J[sectorKey,timeShifts,stateBits]`；内部复用旧三参数 producer，所有 seed/关系/linearData/`ds`/derivative 输出经统一边界转换，full 模式不变。
+- [ ] 为 020 增加全 sector round trip、旧表示拒绝、massive/massless/simultaneous contact、lower-sector `ds` 和 mixed 三顶点跨包 DE 检验；只重跑 time-only 受影响范围。
+
+- [ ] 修正 dSIBP 019 time-only key：移除跨 mode 旧 key 兼容，只在显式 full-loop 分支保留 legacy key，并重建/复验 019.0。
+- [x] 新建 MadStree v0.5，内置 FlintNDE、标准化 package 初始化与调用目录输出，生成全 sector 约化 metadata/dlog DE/masters 和可选 `a_i` 代入；阶段接口 smoke `16/16`，全量验证另列。
+- [x] 调用 dSIBP 已有 time-only 外动量求导算符，接 MadStree 表示转换与迭代约化，并与直接 dlog 公式在 mixed 三顶点数值点逐项比较；MadStree 不新增求导实现。
+- [x] 修复 time-only `ds` 在 public key 逆转换后重新推断 lower-sector prefactor而丢失动量幂的问题；改读冻结 sector metadata，并增加非零 `D Log[N_s]` 回归。
+- [x] 把 MadStree dlog contact 的统一负号改为 event phase：pure massive 读取 component `phaseSign`，含 masslessFull 的 event 使用 `(-1)^N0`；同时通过 2401 Eq. (3.68)、正负 massless 定义积分、三边 simultaneous 与 dSIBP 跨包参考。
+- [x] 处理 dSIBP 019 的真实表示缺口：冻结 019，另建 020 原生 `J[sectorKey,timeShifts,stateBits]` public boundary；跨包 DE 已只对 020 认证并严格零差。
+- [x] fresh 重跑 MadStree v0.5 全部开发 tests、examples 与 T1--T6 独立验证；报告、summary、29 页手册编译目检、索引/README 更新和临时产物清理均已完成。
+- [x] 完成 dSIBP 019.0 与 MadStree v0.4 的第一轮 time-only sector 定长位串实现；该轮验证事实保留，但旧 key 兼容设计由上方当前任务取代。
 
 - [x] 完成本轮全项目文档残留扫描、TeX 基本检查和临时目录清理，并把最终结果写回 `研究计划与研究进度.md`。
 - [x] 从当前 `000_code/018_dSIBP/` 模块重建并发布 source-identical 的 `package_018.1.wl/pdf`；候选与正式路径的受影响检查、hash 和手册渲染均已记录。
@@ -117,3 +129,13 @@
 - [x] 清除 MadStree 中带正负号或论文专用下标的 $h$ 记号；测试参数统一写作 `nu`，重跑检查并重新编译手册。
 - [x] 把 `NuConvention` 冻结为 context 初始化属性，移除全 sector 换基的逐调用覆盖入口并复验。
 - [x] 清理本轮 `results_test/` 渲染图片、TeX 中间文件和迁移后空目录；完成 scoped diff 检查。
+- [x] dSIBP 020：建立 `J[sectorKey,timeShifts,stateBits]` 与内部三槽 `J` 的中央双向转换，并完成首轮 mixed 三顶点 smoke。
+- [x] dSIBP 020：接通 tree 公式公开入口及 `rep2innerform/rep2outform/rep2Integrand/symmetry`。
+- [x] dSIBP 020：确认 `DSDE`/`DSScaleCheck` 只消费 KiraImport reduction artifact，不属于本次 time-only tree 边界；未修改、未重跑 full/Kira/reduction/scaling。
+- [x] dSIBP 020：扩展 reachable-sector、simultaneous contact、massive/massless 状态与 lower-sector `ds` 检查。
+- [x] MadStree v0.5：令零传播子 family 的 width-zero `sectorKey` 显式等于字符串 `""`，并 fresh 复验边界检查 `9/9`、无 Wolfram 初始化消息。
+- [x] dSIBP 020：检查候选手册最终日志及封面、time-only 表示页和末页渲染。
+- [x] dSIBP 020：在提权 Wolfram 中完成候选路径 public representation、tree formula、example 05 与 API/example coverage 检查。
+- [x] dSIBP 020：记录候选哈希，以完全相同字节晋升 WL/PDF/更新说明，并从正式路径复验。
+- [x] dSIBP 020：active 文档已更新，候选临时产物已清理，Git 格式、状态、忽略项和 fetch 后远端分歧检查通过。
+- [ ] 提交并推送 dSIBP 020、MadStree v0.5 及对应文档/独立验证资产，随后登记发布提交。

@@ -1,5 +1,5 @@
-<|"status" -> "initialized", "packageVersion" -> "017",
- "inputHash" -> "857cb20c3ac547ccf4d070cc56f6281157526da36ce09e50b88fe44b5019dc32",
- "caseName" -> "017TreeTwoVertexPlusPlus", "generatedAt" -> "2026-07-24T14:42:47TimeZone",
+<|"status" -> "initialized", "packageVersion" -> "020.0",
+ "inputHash" -> "e1cc669c97e433f5d5a4796418051c42df8b648938d19148c1e977a52ce38ec8",
+ "caseName" -> "020TreeTwoVertexPlusPlus", "generatedAt" -> "2026-07-30T16:59:27TimeZone",
  "files" -> <|"topology.wl" -> "topology.wl", "sectors.wl" -> "sectors.wl", "conventions.wl" -> "conventions.wl"|>,
  "sectorCount" -> 2, "derivativeMetadataQ" -> False|>

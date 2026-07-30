@@ -1,0 +1,334 @@
+(* ::Package:: *)
+
+(***
+文件：DLog.wl
+用途：按 2401 Eq. (3.55)、(3.65)、(3.68) 直接组装同序主积分与 block-triangular dlog potential。
+门禁：只有 R^(1) 精确落在 child 零 shift、normalization 被吸收且 residue 不依赖运动学时才认证 dlog。
+***)
+
+(* ::Chapter:: *)
+(*Sector 对角块*)
+
+msOmegaEx[sector_Association] := DiagonalMatrix@Map[
+  Function[bits,
+    -Total@MapIndexed[
+       If[MemberQ[{"massiveEndpoint", "masslessEndpointH"}, #1["kind"]],
+        bits[[First[#2]]] (2 #1["formulaNu"] + 1) Log[#1["momentum"]],
+        0
+      ] &,
+      sector["slots"]
+    ]
+  ],
+  sector["stateOrder"]
+];
+
+msComponentLogKernel[sector_Association, componentPosition_Integer] := Module[
+  {u, uInverse, omegaTilde},
+  u = msSectorDiagonalizer[sector];
+  uInverse = msSectorDiagonalizerInverse[sector];
+  omegaTilde = DiagonalMatrix[-I Log /@ msEnergyLetters[sector, componentPosition]];
+  Simplify[-I uInverse.omegaTilde.u]
+];
+
+msSectorDLogBlock[sector_Association] := Module[
+  {componentCount, componentKernels, omega, normalizationGauge, letters},
+  componentCount = Length[sector["vertexComponents"]];
+  componentKernels = Table[
+    msComponentLogKernel[sector, componentPosition],
+    {componentPosition, componentCount}
+  ];
+  omega = msOmegaEx[sector] + Total@Table[
+    componentKernels[[componentPosition]].msM1Matrix[sector, componentPosition, 1],
+    {componentPosition, componentCount}
+  ];
+  normalizationGauge = If[
+    TrueQ[sector["normalization"] === 1],
+    ConstantArray[0, Dimensions[omega]],
+    Log[sector["normalization"]] IdentityMatrix[sector["masterCount"]]
+  ];
+  omega = Simplify[omega + normalizationGauge];
+  letters = DeleteDuplicates@Cases[omega, Log[letter_] :> letter, Infinity];
+  <|
+    "sectorKey" -> sector["sectorKey"],
+    "dimension" -> sector["masterCount"],
+    "omega" -> omega,
+    "omegaEx" -> msOmegaEx[sector],
+    "normalizationGauge" -> normalizationGauge,
+    "componentLogKernels" -> componentKernels,
+    "letters" -> letters,
+    "masters" -> Select[MSMasterIntegrals[$msActiveDLogContext], #["sectorKey"] === sector["sectorKey"] &]
+  |>
+];
+
+
+(* ::Section:: *)
+(*Eq. (3.68) parent-to-subsector block*)
+
+msContactComponentPhaseSign[
+  sourceSector_Association,
+  componentPosition_Integer,
+  context_?MSContextQ
+] := Module[{rootVertices, signs},
+  rootVertices = sourceSector["vertexComponents"][[componentPosition]];
+  signs = DeleteDuplicates@Lookup[
+    Select[context["vertices"], MemberQ[rootVertices, #["id"]] &],
+    "phaseSign",
+    {}
+  ];
+  If[
+    Length[signs] === 1,
+    First[signs],
+    Failure[
+      "MixedPhaseContactComponent",
+      <|"sectorKey" -> sourceSector["sectorKey"],
+        "componentPosition" -> componentPosition, "phaseSigns" -> signs|>
+    ]
+  ]
+];
+
+
+msTargetMasterEmbedding[targetSector_Association, context_?MSContextQ] := Module[
+  {globalBasis, targetBasis, globalIndex, matrix},
+  globalBasis = Lookup[context["masters"], "integral"];
+  targetBasis = MSIntegral[targetSector["sectorKey"], ConstantArray[0, Length[targetSector["vertexComponents"]]], #] & /@
+    targetSector["stateOrder"];
+  globalIndex = AssociationThread[ToString[#, InputForm] & /@ globalBasis, Range[Length[globalBasis]]];
+  matrix = ConstantArray[0, {Length[targetBasis], Length[globalBasis]}];
+  Do[
+    matrix[[row, globalIndex[ToString[targetBasis[[row]], InputForm]]]] = 1,
+    {row, Length[targetBasis]}
+  ];
+  matrix
+];
+
+
+msShiftedTargetReduction[
+  targetSector_Association,
+  targetShift_List,
+  context_?MSContextQ
+] := Module[{integrals, reductions, closedQ},
+  integrals = MSIntegral[targetSector["sectorKey"], targetShift, #] & /@ targetSector["stateOrder"];
+  reductions = MSReduce[#, context] & /@ integrals;
+  closedQ = And @@ Map[
+    Lookup[#, "status", None] === "reduced" &&
+      TrueQ[Lookup[#, "nonMasterResidual", Missing["Absent"]] === 0] &&
+      Lookup[#, "remainingShiftedIntegrals", {Missing["Absent"]}] === {} &,
+    reductions
+  ];
+  <|
+    "status" -> If[closedQ, "reducedToGlobalMasters", "shiftReductionFailed"],
+    "targetShift" -> targetShift,
+    "integrals" -> integrals,
+    "matrix" -> If[closedQ, Lookup[reductions, "coefficientVector"], Missing["UnclosedReduction"]],
+    "residuals" -> Lookup[reductions, "nonMasterResidual", Missing["Absent"]],
+    "remainingShiftedIntegrals" -> DeleteDuplicates@Flatten[
+      Lookup[reductions, "remainingShiftedIntegrals", {}]
+    ],
+    "singularLayers" -> DeleteDuplicates@Flatten[Lookup[reductions, "singularLayers", {}], 1]
+  |>
+];
+
+msContactDLogBlock[
+  sourceSector_Association,
+  contactMap_Association,
+  sourceBlock_Association,
+  context_?MSContextQ
+] := Module[
+  {targetSector, endpointComponents, matrices, r1Shifts, contributions, reductionRecords,
+   targetShift, reduction, componentPhaseSign, masslessCount, contactPhase, localBlock,
+   globalBlock, closedQ, sectorSlices,
+   sectorStart, sectorDimension},
+  targetSector = msSectorByKey[context, contactMap["targetSector"]];
+  endpointComponents = DeleteDuplicates[contactMap["endpointComponents"]];
+  matrices = contactMap["matricesByComponent"];
+  r1Shifts = Values[contactMap["R1TargetShiftsByComponent"]];
+  reductionRecords = Table[
+    targetShift = contactMap["R1TargetShiftsByComponent"][componentPosition];
+    reduction = If[
+      And @@ (# === 0 & /@ targetShift),
+      <|
+        "status" -> "alreadyTargetMasters",
+        "targetShift" -> targetShift,
+        "matrix" -> msTargetMasterEmbedding[targetSector, context],
+        "residuals" -> ConstantArray[0, targetSector["masterCount"]],
+        "remainingShiftedIntegrals" -> {},
+        "singularLayers" -> {}
+      |>,
+      msShiftedTargetReduction[targetSector, targetShift, context]
+    ];
+    componentPhaseSign = msContactComponentPhaseSign[
+      sourceSector,
+      componentPosition,
+      context
+    ];
+    If[Head[componentPhaseSign] === Failure, Return[componentPhaseSign]];
+    masslessCount = Count[contactMap["lineTypes"], "masslessFull"];
+    contactPhase = If[masslessCount === 0, componentPhaseSign, (-1)^masslessCount];
+    (* -I T^-1 OmegaTilde0 T 已在 component kernel。pure massive 只剩顶点指数符号；
+       含 massless 的 event 还需指数 quotient 相对 h/Wronskian 原子的 (-1)^N0。 *)
+    localBlock = Simplify[
+      contactPhase
+        sourceBlock["componentLogKernels"][[componentPosition]].matrices[componentPosition]
+    ];
+    <|
+      "componentPosition" -> componentPosition,
+      "localContactMatrix" -> localBlock,
+      "shiftReduction" -> reduction,
+      "globalContribution" -> If[
+        MemberQ[{"alreadyTargetMasters", "reducedToGlobalMasters"}, reduction["status"]],
+        Simplify[localBlock.reduction["matrix"]],
+        Missing["UnclosedShiftReduction"]
+      ]
+    |>,
+    {componentPosition, endpointComponents}
+  ];
+  closedQ = FreeQ[Lookup[reductionRecords, "globalContribution"], _Missing];
+  globalBlock = If[
+    closedQ,
+    Simplify[Total[Lookup[reductionRecords, "globalContribution"]]],
+    Missing["UnclosedShiftReduction"]
+  ];
+  sectorSlices = If[
+    closedQ,
+    Association@Table[
+      sectorStart = First@Lookup[
+        Select[context["masters"], #["sectorKey"] === sector["sectorKey"] &],
+        "globalIndex"
+      ];
+      sectorDimension = sector["masterCount"];
+      sector["sectorKey"] -> globalBlock[[All, sectorStart ;; sectorStart + sectorDimension - 1]],
+      {sector, context["sectors"]}
+    ],
+    <||>
+  ];
+  <|
+    "sourceSector" -> sourceSector["sectorKey"],
+    "targetSector" -> targetSector["sectorKey"],
+    "eventId" -> contactMap["eventId"],
+    "lineId" -> contactMap["lineId"],
+    "selectedLineIds" -> contactMap["selectedLineIds"],
+    "matrix" -> If[closedQ, sectorSlices[targetSector["sectorKey"]], Missing["UnclosedShiftReduction"]],
+    "globalMatrix" -> globalBlock,
+    "matricesByTargetSector" -> sectorSlices,
+    "dimensions" -> If[closedQ, Dimensions[globalBlock], Missing["UnclosedShiftReduction"]],
+    "R1TargetShifts" -> contactMap["R1TargetShiftsByComponent"],
+    "R1HitsTargetMasterQ" -> And @@ (And @@ (# === 0 & /@ #) & /@ r1Shifts),
+    "R1ReductionClosedQ" -> closedQ,
+    "shiftReductionRecords" -> reductionRecords,
+    "absorbedNormalization" -> contactMap["absorbedNormalization"]
+  |>
+];
+
+
+(* ::Chapter:: *)
+(*完整 connection 与认证*)
+
+msKinematicSymbols[context_?MSContextQ] := DeleteDuplicates@Cases[
+  Join[
+    Lookup[context["vertices"], "energy"],
+    If[context["lines"] === {}, {}, Lookup[context["lines"], "momentum"]]
+  ],
+  symbol_Symbol /; Context[symbol] =!= "System`",
+  Infinity
+];
+
+msConstantResidueQ[matrix_, kinematicSymbols_List] := If[
+  kinematicSymbols === {},
+  True,
+  FreeQ[matrix, Alternatives @@ kinematicSymbols]
+];
+
+MSDLogDE[context_?MSContextQ] := Module[
+  {sectors, sectorOrder, dimensions, sectorPositions, blocks, contactMaps, contactBlocks,
+   omegaBlocks, sourceIndex, targetIndex, omega, letters, letterMatrices, residual,
+   kinematicSymbols, constantResidueQ, shiftQ, normalizationQ, dlogStatus, offsets},
+  sectors = context["sectors"];
+  sectorOrder = context["sectorOrder"];
+  dimensions = Lookup[sectors, "masterCount"];
+  sectorPositions = AssociationThread[sectorOrder -> Range[Length[sectorOrder]]];
+  Block[{$msActiveDLogContext = context}, blocks = msSectorDLogBlock /@ sectors];
+  contactMaps = Flatten[msContactMapsForSector[#, context] & /@ sectors];
+  contactBlocks = Map[
+    Function[contactMap,
+      sourceIndex = sectorPositions[contactMap["sourceSector"]];
+      msContactDLogBlock[sectors[[sourceIndex]], contactMap, blocks[[sourceIndex]], context]
+    ],
+    contactMaps
+  ];
+  If[AnyTrue[contactBlocks, Head[#] === Failure &],
+    Return[FirstCase[contactBlocks, failure_Failure :> failure]]
+  ];
+  omegaBlocks = Table[
+    If[sourceIndex === targetIndex,
+      blocks[[sourceIndex, "omega"]],
+      ConstantArray[0, {dimensions[[sourceIndex]], dimensions[[targetIndex]]}]
+    ],
+    {sourceIndex, Length[sectors]},
+    {targetIndex, Length[sectors]}
+  ];
+  Do[
+    sourceIndex = sectorPositions[contactBlock["sourceSector"]];
+    If[TrueQ[contactBlock["R1ReductionClosedQ"]],
+      Do[
+        targetIndex = sectorPositions[targetSectorKey];
+        omegaBlocks[[sourceIndex, targetIndex]] = Simplify[
+          omegaBlocks[[sourceIndex, targetIndex]] +
+            contactBlock["matricesByTargetSector"][targetSectorKey]
+        ],
+        {targetSectorKey, sectorOrder}
+      ]
+    ],
+    {contactBlock, contactBlocks}
+  ];
+  omega = ArrayFlatten[omegaBlocks];
+  letters = DeleteDuplicates@Cases[omega, Log[letter_] :> letter, Infinity];
+  letterMatrices = Association@Table[
+    letter -> Map[Coefficient[#, Log[letter]] &, omega, {2}],
+    {letter, letters}
+  ];
+  residual = Simplify[omega - Total[(Log[#] letterMatrices[#]) & /@ letters]];
+  kinematicSymbols = msKinematicSymbols[context];
+  constantResidueQ = And @@ (msConstantResidueQ[#, kinematicSymbols] & /@ Values[letterMatrices]);
+  shiftQ = If[contactBlocks === {}, True, And @@ Lookup[contactBlocks, "R1ReductionClosedQ", False]];
+  normalizationQ = If[
+    contactMaps === {},
+    True,
+    And @@ (TrueQ[Simplify[# - 1] === 0] & /@ Lookup[contactMaps, "absorbedNormalization", 1])
+  ];
+  dlogStatus = Which[
+    ! shiftQ, "contactShiftReductionFailed",
+    ! normalizationQ, "requiresNormalizationGauge",
+    ! TrueQ[residual === ConstantArray[0, Dimensions[omega]]], "nonDLogResidual",
+    ! constantResidueQ, "requiresGaugeTransformation",
+    True, "certifiedByFormulaChecks"
+  ];
+  offsets = AssociationThread[
+    sectorOrder -> Most@FoldList[Plus, 1, dimensions]
+  ];
+  <|
+    "status" -> "generated",
+    "dlogStatus" -> dlogStatus,
+    "convention" -> context["convention"],
+    "sectorOrder" -> sectorOrder,
+    "sectorDimensions" -> dimensions,
+    "masterSectorOffsets" -> offsets,
+    "masters" -> context["masters"],
+    "bareMasters" -> Lookup[context["masters"], "integral"],
+    "masterCount" -> Length[context["masters"]],
+    "masterDigest" -> context["masterDigest"],
+    "sectorBlocks" -> blocks,
+    "contactBlocks" -> contactBlocks,
+    "omegaBlocks" -> omegaBlocks,
+    "omegaPotential" -> omega,
+    "matrixDimension" -> Dimensions[omega],
+    "letters" -> letters,
+    "letterMatrices" -> letterMatrices,
+    "dlogResidual" -> residual,
+    "constantResidueQ" -> constantResidueQ,
+    "contactR1MasterShiftQ" -> And @@ Lookup[contactBlocks, "R1HitsTargetMasterQ", True],
+    "contactR1ReductionClosedQ" -> shiftQ,
+    "normalizationAbsorbedQ" -> normalizationQ,
+    "kinematicSymbols" -> kinematicSymbols,
+    "formulaAuthority" -> "2401.00129 Eq. (3.55), (3.65), (3.68)"
+  |>
+];

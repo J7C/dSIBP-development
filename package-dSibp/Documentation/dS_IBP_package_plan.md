@@ -68,16 +68,20 @@ xij = sp[ki,kj] = ssij^2
 
 ### 2.1 核心设计
 
-所有 sector（top sector 和所有 sub-sector）使用同一个 Head `J`，通过每条线的状态区分：
+所有 sector（top sector 和所有 sub-sector）使用同一个 Head `J`。020 按初始化后固定的 mode 使用两种互不兼容的参数 schema：
 
-```
+```mathematica
+(* full *)
 J[{a_1, ..., a_V}, {pack_1, ..., pack_E}, {n_isp_1, ..., n_isp_R}]
+
+(* timeOnly *)
+J[sectorKey_String, timeShifts_List, stateBits_List]
 ```
 
-每条内线 `e` 的 pack 同时取决于状态和 line-power schema：
+full 模式中每条内线 `e` 的 pack 同时取决于状态和 line-power schema：
 - cycle full line 统一为三槽：massive/masslessFull 都是 `{b,n1,n2}`，masslessCross 是 `{b,0,0}`；cycle shrunk 为单槽 `{bS}`。
 - bridge/non-cycle full line 统一以短 sentinel `"F"` 保留三槽：massive/masslessFull 是 `{"F",n1,n2}`，masslessCross 是 `{"F",0,0}`；fixed shrunk 为单槽 `{"F"}`。fixed line 的物理幂由逐 sector 的结构化 `sectorPrefactorData` 保存并参与求导。
-- `timeOnly` 下所有 line 都使用 fixed-coefficient schema，即使原图存在结构 cycle。
+- `timeOnly` 下所有 line 都使用 fixed-coefficient schema，即使原图存在结构 cycle；这些 line packs 只在 Private producer 内存在。公开 `sectorKey` 是 root propagator 顺序的定长位串，`timeShifts` 按当前 sector 的 compact vertex components 排列，`stateBits` 按 metadata registry 排列。massive line 每端点一位，massless quotient 整边共享一位，shrunk line 不留占位。
 
 massless 完整线的单 `n_e` 只在双 theta 合并路线中使用。`shiftLinePower` 是唯一幂次原子：cycle line 移动 `b/bS`，fixed line 乘显式能量幂。contact sector 继承 root loop space 与 cycle/bridge schema；shrink 不重新运行一套降圈判定。
 
@@ -744,9 +748,9 @@ symmetryRules = {
 
 ## 7. 当前主线与工作流
 
-当前权威实现是模块化 `versions/018_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。当前正式冻结单文件兼容入口是 `independent-benchmark/package/package_018.1.wl`；工作树只保留 016、017、018，010--015 从 Git 历史追溯。
+当前权威实现是模块化 `versions/020_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。当前正式冻结单文件兼容入口是 `independent-benchmark/package/package_020.0.wl`；工作树只保留 018、019、020，更早版本从 Git 历史追溯。
 
-独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_018.1.wl/pdf` 和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
+独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_020.0.wl/pdf`、同版本更新说明和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
 
 正式交付采用候选先行门禁：构建器通过 `DSIBP_BUILD_OUTPUT` 把候选单文件写入 `test/results_test/`，正式检查通过 `DSIBP_PACKAGE_FILE`（phase 2 另用 `DSIBP_PDF_FILE`）显式加载候选。只有候选专项、独立单文件检查和受影响 phase 全部通过后，才用同一候选字节覆盖 `independent-benchmark/package/`，随后在正式路径复验并清理候选。未设置这些环境变量时保留原有正式构建/模块检查合同。
 
@@ -819,11 +823,11 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 | 项目 | 当前约定 |
 |------|----------|
-| 主线脚本 | 模块化 `versions/018_dSIBP/`；冻结单文件 `independent-benchmark/package/package_018.1.wl` |
-| 积分 Head | `J[aList, linePacks, ispList]` |
+| 主线脚本 | 模块化 `versions/020_dSIBP/`；正式单文件按 020.0 candidate-first 发布 |
+| 积分 Head | full：`J[aList,linePacks,ispList]`；timeOnly：`J[sectorKey,timeShifts,stateBits]` |
 | cycle line pack | full massive/massless 均为 `{b_e,n_{e1},n_{e2}}`，shrunk 为 `{bS_e}`；root line 位置永久保留 |
 | bridge/fixed line pack | full 为 `{"F",n_{e1},n_{e2}}`，shrunk 为 `{"F"}`；物理幂属于结构化 sector prefactor |
-| `timeOnly` pack | 公开对象仍为 `J[aList,linePacks,{}]`；论文 vertex basis 仅为 Private massive-only 公式 adapter |
+| `timeOnly` 状态 | `sectorKey` 唯一标 sector；`stateBits` 是 (n_i) 离散态，massless quotient 整边共享一位 |
 | Hankel 离散态 | seed 层枚举 `n=0,1`，`n>=2` 立即 EOM |
 | Sub-sector | 同一 Head `J`，compact `aList` + sector metadata |
 | 数值规则 | 解析 seed 后，在 sampled/linear/backend 层应用 |
@@ -832,7 +836,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 ## 11. 原子化公开接口
 
-018 在 `dSIBP`` context 中公开以下公式级接口，并由 `DSInit` 建立 family context。公开积分始终为三参数 `J[aList,linePacks,ispList]`；底层调用可显式传入 `topo`，也可使用当前已注册 context 的短签名。
+020 在 `dSIBP`` context 中公开以下公式级接口，并由 `DSInit` 建立 family context。full 与 timeOnly 均使用三参数 Head `J`，但参数 schema 由 context 初始化后固定且不允许混用；底层调用可显式传入 `topo`，也可使用当前已注册 context 的短签名。
 
 ### 11.1 指定生成元作用
 
@@ -1157,7 +1161,7 @@ line 是否参与 momentum IBP 由用户声明的 loop momenta 和 routing 决�
 
 字符串 `"F"` 是“fixed line 没有圈幂次指标”的短 sentinel。不能写 `{,n1,n2}`：Mathematica 会把省略项变成 `Null` 并发出 `Syntax::com`；不能用 `_`，因为它是 `Blank[]` pattern；也不能用 `Nothing`，因为它会从列表中消失。full line 的 slots 2/3 始终对应两个有序端点；shrunk line 已无端点态，可以退为单槽。massless full 不压缩成单个有向 `n`，其额外关系在统一 non-IBP relation 层处理。
 
-root-ordered full/shrunk pack pattern 是 shrink set 的**隐式、可逆编码**，不是仅供显示的 shape。例如第 2、4 条 root line 收缩时，无论它们是 cycle 还是 fixed，`linePacks[[2]]` 与 `linePacks[[4]]` 都保留原位置并改为相应的单槽 shrunk pack；由这些位置唯一得到 shrink set `{2,4}`。程序只允许由该 pattern 派生 canonical `sectorKey`，再让 seed、metadata 与 `linearData` 携带该 key 作交叉核验；不得维护一套可独立修改的第二 sector 编号。删除 fixed shrunk slot、压缩 `linePacks` 或只凭 compact `aList` 判 sector 都是非法表示。
+root-ordered full/shrunk pack pattern 是 shrink set 的**隐式、可逆编码**，不是仅供显示的 shape。例如第 2、4 条 root line 收缩时，无论它们是 cycle 还是 fixed，`linePacks[[2]]` 与 `linePacks[[4]]` 都保留原位置并改为相应的单槽 shrunk pack；由这些位置唯一得到 shrink set `{2,4}`。程序只允许由该 pattern 派生 canonical `sectorKey`，再让 seed、metadata 与 `linearData` 携带该 key 作交叉核验；不得维护一套可独立修改的第二 sector 编号。019 的 time-only key 使用同序定长字符串，shrunk 为 `0`、full 为 `1`，top 为全 `1`；full-loop key 不在本次迁移范围。删除 fixed shrunk slot、压缩 `linePacks`、把位串转成会丢前导零的整数，或只凭 compact `aList` 判 sector 都是非法表示。
 
 family 初始化必须为每个 sector 构造结构化 `sectorPrefactorData`。它不缓存 `parameter^power` 乘积，而按同一稳定顺序保存至少以下字段：
 

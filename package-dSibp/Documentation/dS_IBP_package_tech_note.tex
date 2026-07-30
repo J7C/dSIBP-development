@@ -36,7 +36,7 @@
   \item 同一代表顶点对的 full lines 按共同 theta 生成 odd-subset contact；sector 只枚举这些事件可达的状态。
 \end{itemize}
 
-当前 018 以既有 loop 物理核心为只读基线，已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/quotient canonical 门禁；time seed 已包含顶点幂次、外部相位、双端点 regular 项、massive/massless theta-boundary shrink、目标 sector coincident 抵消与 sector prefactor normalization，并通过标准 \texttt{dSIBP`} context 提供原子与高层接口。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，importer 只验证并读取外部完整 reduction；二者都不替代任何前端关系或运行 reduction。
+当前 020 以既有 loop 物理核心为只读基线，已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/quotient canonical 门禁；time seed 已包含顶点幂次、外部相位、双端点 regular 项、massive/massless theta-boundary shrink、目标 sector coincident 抵消与 sector prefactor normalization，并通过标准 \texttt{dSIBP`} context 提供原子与高层接口。020 只在 time-only 公开边界引入式~\eqref{directPureTimeJ}，不重写这些 producer。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，importer 只验证并读取外部完整 reduction；二者都不替代任何前端关系或运行 reduction。
 
 % ============================================================
 \section{h 函数及其性质}
@@ -1979,16 +1979,12 @@ time IBP 的作用域不同。对顶点 $v$ 做 $\tau_v$ total derivative 时，
 
 \subsection{direct pure-time 模式和能力门禁}
 
-树图缺省、圈图可选的 \texttt{ibpMode->"timeOnly"} 不构造残缺的 loop family。所有 active lines 统一标为 \texttt{fixedCoefficient}，公开对象仍只有
+树图缺省、圈图可选的 \texttt{ibpMode->"timeOnly"} 不构造残缺的 loop family。所有 active lines 统一标为 \texttt{fixedCoefficient}。从 020 起，time-only 的唯一公开对象为
 \begin{equation}
- J[\{a_v\}_v,\{P_e^{\rm fixed}\}_e,\{\}],
- \qquad
- P_e^{\rm fixed}\in
- \bigl\{\{\texttt{"F"},n_{e1},n_{e2}\},
- \{\texttt{"F"},0,0\},\{\texttt{"F"}\}\bigr\}.
+ J[\texttt{sectorKey},\{a_C\}_C,\{n_r\}_r].
  \label{directPureTimeJ}
 \end{equation}
-full massive/massless 线使用第一种三槽，masslessCross 使用固定零态，shrunk line 使用单槽；root line 位置始终保留。全部 active line 模长纳入 \texttt{independentExternalMomenta} 审计，且没有 momentum generator、$z$/ISP 闭合或 $b/b_S$ 指标。\texttt{DSSeeds} 完整枚举允许的端点态并立即应用 EOM/quotient/canonical。论文 vertex basis 只作为 Private massive-only 适配器服务于 \texttt{DSTreeSeeds}、\texttt{repIterative}、naive time-IBP/DE 与直接 dlog DE；结果必须映回同一公开表示并使用同序 master 列表比较。含 massless full line 的公式型 tree 接口在 quotient basis 重新推导前返回 \texttt{PendingRederivation}。
+第一槽是式~\eqref{v019TimeOnlySectorBitKey} 的定长字符串；第二槽按当前 sector 的 compact vertex-component 顺序保存时间幂指标；第三槽是 $n_i$ 类离散函数态，不是第二套 sector key。状态槽按 root line 顺序冻结：每条未收缩 massive line 依次贡献两个端点态，每条未收缩 massless quotient line 整边只贡献一个共享态，纯指数、massless cross 与已收缩 line 不贡献槽，也不保留占位。内部 producer 仍可短暂使用 root-ordered line pack，但该对象只存在于 Private 边界，并由 sector metadata 与状态槽 registry 精确双向转换。全部 active line 模长纳入 \texttt{independentExternalMomenta} 审计，且没有 momentum generator、$z$/ISP 闭合或 $b/b_S$ 指标。\texttt{DSSeeds} 完整枚举允许态并立即应用 EOM/quotient/canonical。论文 vertex basis 只作为 Private massive-only 适配器服务于 \texttt{DSTreeSeeds}、\texttt{repIterative}、naive time-IBP/DE 与直接 dlog DE；结果必须映回式~\eqref{directPureTimeJ} 并使用同序 master 列表比较。含 massless full line 的公式型 tree 接口在 quotient basis 重新推导前返回 \texttt{PendingRederivation}。
 
 用户列表和动力学规则的综合状态决定 context capabilities：exact 开放初始化、time IBP、full 模式下的 momentum IBP、求导及唯一反变换；undercomplete 返回 missing/null-space 后拒绝初始化；overcomplete 允许 symbolic seed，但关闭 \texttt{ds/DSDE} 与唯一反变换。\texttt{DSLinear} 还校验 seed 与 context 的 \texttt{inputHash}，serializer 只消费通过该门禁的 backend-neutral \texttt{linearData}。
 
@@ -2020,6 +2016,30 @@ full massive/massless 线使用第一种三槽，masslessCross 使用固定零�
 
 完整的 root-ordered full/shrunk pack pattern 是 shrink set 的隐式、可逆编码。例如第 2、4 条 root line 收缩时，第二和第四位置分别改成相应的单槽 shrunk pack，由位置直接重建集合 $\{2,4\}$；fixed shrunk line 同样必须保留 \texttt{\{"F"\}} 槽。canonical \texttt{sectorKey} 只能由该 pattern 派生，再由 seed、metadata 与 \texttt{linearData} 显式携带作交叉核验。不得删除收缩槽位、压缩 \texttt{linePacks}，也不得用 compact \texttt{aList} 充当 sector 身份。
 
+019 对 \texttt{ibpMode->"timeOnly"} 进一步固定显式 key 的写法。若 root propagator 按输入顺序为
+$E=(e_1,\ldots,e_{N_E})$，定义
+\begin{equation}
+ \operatorname{sectorKey}(s)=q_1q_2\cdots q_{N_E},\qquad
+ q_j=\begin{cases}
+ 0,&e_j\text{ 已收缩},\\
+ 1,&e_j\text{ 未收缩}.
+ \end{cases}
+ \label{v019TimeOnlySectorBitKey}
+\end{equation}
+不能发生 contact shrink 的传播子恒取 $q_j=1$，top sector 是全 $1$ 字符串。该对象的类型是字符串而不是二进制整数，故前导零必须保留；例如四条 root propagator 中收缩第 $1,2,4$ 条时 key 为 \texttt{"0010"}。metadata 同源保存 \texttt{rootLineOrder}、\texttt{width} 和位语义。所有 top/key predicate 必须同时读取 \texttt{ibpMode} 与 root 位宽；在 \texttt{timeOnly} 输入或生成批次中出现 \texttt{"top"}、\texttt{"contracted:..."} 或收缩线名拼接 key 时，初始化直接失败，不作 legacy alias。full-loop 工作流不属于本次接口变化，继续使用既有 key，以避免改动 Kira/reduction artifact identity。
+
+\subsection{020 time-only 状态槽 registry}
+
+对每个 reachable sector $s$，初始化冻结
+\begin{equation}
+ \mathcal R_s=(r_1,\ldots,r_{N_s}),\qquad
+ r_j=(\text{root line position},\text{endpoint/shared slot}).
+ \label{v020TimeOnlyStateRegistry}
+\end{equation}
+公开第三参数 \texttt{stateBits} 的第 $j$ 项就是 $r_j$ 对应的离散指标 $n_i$。它不是第二套 sector key，也不要求按顶点重新分组：massive line 的两个端点各占一项；massless quotient 的两个端点由额外关系缩成整边共享的一项。收缩一条 line 时，它的全部状态槽从 child sector 的 registry 删除，所以 child 不携带零占位。\texttt{sectorKey} 唯一决定采用哪份 $\mathcal R_s$，而 \texttt{stateBits} 只决定该 sector 内的函数态。逆转换把共享 massless 位写入选定 canonical 端点槽，并把被关系消去的另一槽固定为零；因此往返是对 quotient canonical representative 的精确往返。
+
+\texttt{DSSeeds/DSGenerateIBP/DSLinear/dtau/ds}、tree 公式接口、master list 以及表示辅助函数都使用同一转换边界。旧 time-only \texttt{J[aList,linePacks,\{\}]} 在 020 公开入口直接拒绝；full 模式的 \texttt{J[aList,linePacks,ispList]} 不经过该转换。\texttt{rep2innerform/rep2outform} 只作用于显式动力学系数并保护公开 \texttt{J}；\texttt{rep2Integrand} 与 \texttt{symmetry} 在需要 line metadata 时临时转入 Private producer 表示，完成后再回到式~\eqref{directPureTimeJ}。临时逆转换得到的 root-ordered pack 只服务旧 producer；sector normalization 必须继续按公开 \texttt{sectorKey} 读取初始化冻结的 metadata，不能从 pack shape 重新猜测 child zero point 或模长幂。
+
 \subsection{结构化 sector prefactor 与求导}
 
 fixed line 的模长幂不进入式~\eqref{v017FixedThreeSlotSchema} 的第一槽，而属于每个 sector 的 normalization。初始化首先按用户声明的 \texttt{independentExternalMomenta} 顺序冻结稳定编号
@@ -2034,7 +2054,7 @@ fixed line 的模长幂不进入式~\eqref{v017FixedThreeSlotSchema} 的第一�
  \qquad J_s=N_s I_s.
  \label{v017SectorNormalization}
 \end{equation}
-\texttt{DSRedefineParameters} 只更新式~\eqref{v017SectorPrefactorLists} 的 $\mathcal K$ 与 residual current-expression mapping，不改 kE 编号或 \texttt{kEpower}。求导、contact 和反变换在消费点才物化 $N_s$。由此
+\texttt{DSRedefineParameters} 只更新式~\eqref{v017SectorPrefactorLists} 的 $\mathcal K$ 与 residual current-expression mapping，不改 kE 编号或 \texttt{kEpower}。求导、contact 和反变换在消费点才物化 $N_s$。020 time-only consumer 总是从 \texttt{sectorKey} 对应的冻结 metadata 取得这份数据；例如 massive line 已收缩的 child sector 若 $N_s\propto s_E^{2\mu}$，则 \texttt{ds[J[s,...],sE]} 必须保留 $(2\mu/s_E)J_s$。由此
 \begin{equation}
  \partial_xJ_s=(\partial_x\log N_s)J_s
  +\sum_t c^{\rm raw}_{st}{N_s\over N_t}J_t,
