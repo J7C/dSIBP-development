@@ -138,4 +138,4 @@
 - [x] dSIBP 020：在提权 Wolfram 中完成候选路径 public representation、tree formula、example 05 与 API/example coverage 检查。
 - [x] dSIBP 020：记录候选哈希，以完全相同字节晋升 WL/PDF/更新说明，并从正式路径复验。
 - [x] dSIBP 020：active 文档已更新，候选临时产物已清理，Git 格式、状态、忽略项和 fetch 后远端分歧检查通过。
-- [ ] 提交并推送 dSIBP 020、MadStree v0.5 及对应文档/独立验证资产，随后登记发布提交。
+- [x] 提交并推送 dSIBP 020、MadStree v0.5 及对应文档/独立验证资产；主发布提交 `7833483` 已推送到 `origin/main`。
