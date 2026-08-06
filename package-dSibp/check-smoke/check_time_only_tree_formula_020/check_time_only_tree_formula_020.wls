@@ -5,15 +5,9 @@
 (* ::Chapter:: *)
 (*加载 020 开发版本*)
 
-scriptDir = DirectoryName[$InputFileName];
-projectRoot = ExpandFileName[FileNameJoin[{scriptDir, "..", ".."}]];
-packageOverride = Quiet[Environment["DSIBP_PACKAGE_FILE"]];
-If[StringQ[packageOverride] && StringLength[StringTrim[packageOverride]] > 0,
- Get[ExpandFileName[packageOverride]],
- packageRoot = FileNameJoin[{projectRoot, "versions", "020_dSIBP"}];
- PrependTo[$Path, packageRoot];
- Needs["dSIBP`"]
- ];
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
+projectRoot = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "020_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -88,16 +82,12 @@ checks = <|
    "naiveDEPublic" -> publicJQ[naiveDE]
    |>;
 
-failed = Keys@Select[checks, Not@*TrueQ];
-summary = <|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "masterCount" -> Length[masters],
-   "topIntegral" -> topIntegral,
-   "firstMaster" -> If[masters === {}, Missing["NoMaster"], First[masters]],
-   "checks" -> checks
-   |>;
-
-Print[InputForm[summary]];
-If[failed =!= {}, Exit[1]];
+failed = Keys@Select[checks, Not@TrueQ[#] &];
+Print["check_time_only_tree_formula_020: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
+    "masterCount" -> Length[masters],
+    "topIntegral" -> topIntegral,
+    "firstMaster" -> If[masters === {}, Missing["NoMaster"], First[masters]]
+  "checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

@@ -45,12 +45,10 @@ checks = <|
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
-Print[InputForm[<|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "point" -> packagePoint,
-   "nonzeroDifferenceCount" -> Count[Flatten[scalingDifference], Except[0]],
-   "checks" -> checks
-   |>]];
-Exit[If[failed === {}, 0, 1]];
+Print["check_scaling_relation: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
+    "point" -> packagePoint,
+    "nonzeroDifferenceCount" -> Count[Flatten[scalingDifference], Except[0]]
+  "checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

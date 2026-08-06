@@ -6,10 +6,9 @@
 (* ::Chapter:: *)
 (*加载开发包*)
 
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-packageDir = FileNameJoin[{projectRoot, "versions", "018_dSIBP"}];
-$Path = Prepend[$Path, packageDir];
-Needs["dSIBP`"];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -119,10 +118,7 @@ checks = <|
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
-Print[InputForm[<|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "checks" -> checks
-   |>]];
-Exit[If[failed === {}, 0, 1]];
+Print["check_topology_loop_count: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,"checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

@@ -4,18 +4,9 @@
 (* ::Chapter:: *)
 (*加载模块化 package*)
 
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = ExpandFileName@FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}];
-packageRoot = FileNameJoin[{projectRoot, "versions", "018_dSIBP"}];
-candidateArguments = Select[
-   $ScriptCommandLine,
-   StringQ[#] && StringMatchQ[FileNameTake[#], "package_" ~~ __ ~~ ".wl"] && FileExistsQ[#] &
-   ];
-candidatePackage = If[candidateArguments =!= {}, Last[candidateArguments], Quiet@Environment["DSIBP_CHECK_PACKAGE"]];
-If[StringQ[candidatePackage] && candidatePackage =!= "",
- Get[ExpandFileName[candidatePackage]],
- If[! MemberQ[$Path, packageRoot], AppendTo[$Path, packageRoot]];
- Needs["dSIBP`"]
- ];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -55,6 +46,8 @@ checks = <|
    "legacyExportOptionRemoved" -> FreeQ[Options[DSKiraExport], KiraIntegralOrder]
    |>;
 
-failed = Keys@Select[checks, ! TrueQ[#] &];
-Print[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed|>];
-If[failed =!= {}, Exit[1]];
+failed = Keys@Select[checks, Not@TrueQ[#] &];
+Print["check_integral_order_authority: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,"checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

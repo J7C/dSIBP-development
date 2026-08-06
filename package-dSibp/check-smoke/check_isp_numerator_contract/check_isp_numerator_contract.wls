@@ -9,11 +9,9 @@ $HistoryLength = 0;
 (* ::Chapter:: *)
 (*加载开发 package*)
 
-scriptDirectory = DirectoryName[$InputFileName];
-projectDirectory = ExpandFileName[FileNameJoin[{scriptDirectory, "..", ".."}]];
-packageDirectory = FileNameJoin[{projectDirectory, "versions", "018_dSIBP"}];
-$Path = Prepend[$Path, packageDirectory];
-Needs["dSIBP`"];
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
+projectDirectory = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
+dsSmokeLoadPackage[FileNameJoin[{projectDirectory, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -218,18 +216,16 @@ checks = <|
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
-Print[InputForm[<|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "negativeDefinitionStatus" -> Lookup[negativeDefinitionContext, "status", Missing["status"]],
-   "negativeTargetStatus" -> Lookup[negativeTargetResult, "status", Missing["status"]],
-   "negativeGeneratedISPValues" -> negativeGeneratedISPValues,
-   "derivedSeedRangeRules" -> Lookup[derivedRangeAudit, "seedRangeRules", {}],
-   "negativeDerivedSeedRangeRules" -> Lookup[negativeDerivedRangeAudit, "seedRangeRules", {}],
-   "zeroIntegral" -> zeroIntegral,
-   "negativeIntegral" -> negativeIntegral,
-   "validTargetStatus" -> Lookup[validTargetResult, "status", Missing["status"]],
-   "checks" -> checks
-   |>]];
-Exit[If[failed === {}, 0, 1]];
+Print["check_isp_numerator_contract: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
+    "negativeDefinitionStatus" -> Lookup[negativeDefinitionContext, "status", Missing["status"]],
+    "negativeTargetStatus" -> Lookup[negativeTargetResult, "status", Missing["status"]],
+    "negativeGeneratedISPValues" -> negativeGeneratedISPValues,
+    "derivedSeedRangeRules" -> Lookup[derivedRangeAudit, "seedRangeRules", {}],
+    "negativeDerivedSeedRangeRules" -> Lookup[negativeDerivedRangeAudit, "seedRangeRules", {}],
+    "zeroIntegral" -> zeroIntegral,
+    "negativeIntegral" -> negativeIntegral,
+    "validTargetStatus" -> Lookup[validTargetResult, "status", Missing["status"]]
+  "checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

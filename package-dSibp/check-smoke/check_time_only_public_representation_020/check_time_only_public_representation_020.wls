@@ -10,14 +10,9 @@
 (* ::Chapter:: *)
 (*加载与 mixed 三顶点输入*)
 
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-packageOverride = Quiet[Environment["DSIBP_PACKAGE_FILE"]];
-If[StringQ[packageOverride] && StringLength[StringTrim[packageOverride]] > 0,
- Get[ExpandFileName[packageOverride]],
- packageDirectory = FileNameJoin[{projectRoot, "versions", "020_dSIBP"}];
- $Path = Prepend[$Path, packageDirectory];
- Needs["dSIBP`"]
- ];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "020_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
@@ -133,25 +128,22 @@ checks = <|
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
-Print[InputForm[<|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "publicTop" -> publicTop,
-   "publicTopArgumentHeads" -> (Head /@ List @@ publicTop),
-   "publicTopMatchesOldPattern" -> MatchQ[publicTop, J[_List, _List, _List]],
-   "roundTripTop" -> roundTripTop,
+Print["check_time_only_public_representation_020: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
+    "publicTop" -> publicTop,
+    "publicTopArgumentHeads" -> (Head /@ List @@ publicTop),
+    "publicTopMatchesOldPattern" -> MatchQ[publicTop, J[_List, _List, _List]],
+    "roundTripTop" -> roundTripTop,
     "publicChild" -> publicChild,
     "roundTripChild" -> roundTripChild,
     "childDerivative" -> childDerivative,
-   "firstSeedSourceIntegral" -> Lookup[First[Lookup[seedData, "allSeeds", {<||>}]], "sourceIntegral", Missing["NoSource"]],
-   "firstSeedEquation" -> Lookup[First[Lookup[seedData, "allSeeds", {<||>}]], "equation", Missing["NoEquation"]],
-   "generatedStatus" -> KeyTake[generated, {"status", "reason", "invalidSectorKeys", "ibpMode", "rootLineCount", "invalidEntries", "templateIntegrityAudit"}],
-   "linearStatus" -> KeyTake[linearData, {"status", "reason"}],
-   "seedCount" -> Length[Lookup[seedData, "allSeeds", {}]],
-   "equationCount" -> Lookup[generated, "equationCount", Missing["NotGenerated"]],
-   "integralCount" -> Lookup[linearData, "integralCount", Missing["NotGenerated"]],
-   "checks" -> checks
-   |>]];
-
-Exit[If[failed === {}, 0, 1]];
+    "firstSeedSourceIntegral" -> Lookup[First[Lookup[seedData, "allSeeds", {<||>}]], "sourceIntegral", Missing["NoSource"]],
+    "firstSeedEquation" -> Lookup[First[Lookup[seedData, "allSeeds", {<||>}]], "equation", Missing["NoEquation"]],
+    "generatedStatus" -> KeyTake[generated, {"status", "reason", "invalidSectorKeys", "ibpMode", "rootLineCount", "invalidEntries", "templateIntegrityAudit"}],
+    "linearStatus" -> KeyTake[linearData, {"status", "reason"}],
+    "seedCount" -> Length[Lookup[seedData, "allSeeds", {}]],
+    "equationCount" -> Lookup[generated, "equationCount", Missing["NotGenerated"]],
+    "integralCount" -> Lookup[linearData, "integralCount", Missing["NotGenerated"]]
+  "checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

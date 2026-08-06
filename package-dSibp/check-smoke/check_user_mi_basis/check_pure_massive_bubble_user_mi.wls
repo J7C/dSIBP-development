@@ -4,19 +4,10 @@
 (* ::Chapter:: *)
 (*Package 与 family 输入*)
 
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = ExpandFileName@FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}];
-packageRoot = FileNameJoin[{projectRoot, "versions", "018_dSIBP"}];
 exampleDir = FileNameJoin[{projectRoot, "independent-benchmark", "package", "examples", "04_pure_massive_bubble_closed_loop"}];
-candidateArguments = Select[
-   $ScriptCommandLine,
-   StringQ[#] && StringMatchQ[FileNameTake[#], "package_" ~~ __ ~~ ".wl"] && FileExistsQ[#] &
-   ];
-candidatePackage = If[candidateArguments =!= {}, Last[candidateArguments], Quiet@Environment["DSIBP_CHECK_PACKAGE"]];
-If[StringQ[candidatePackage] && candidatePackage =!= "",
- Get[ExpandFileName[candidatePackage]],
- If[! MemberQ[$Path, packageRoot], AppendTo[$Path, packageRoot]];
- Needs["dSIBP`"]
- ];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
@@ -101,6 +92,8 @@ checks = <|
    "publicAPI" -> MemberQ[DSPublicAPI[]["functions"], "DSUserMI"]
    |>;
 
-failed = Keys@Select[checks, ! TrueQ[#] &];
-Print[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed|>];
-If[failed =!= {}, Exit[1]];
+failed = Keys@Select[checks, Not@TrueQ[#] &];
+Print["check_user_mi_basis: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,"checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

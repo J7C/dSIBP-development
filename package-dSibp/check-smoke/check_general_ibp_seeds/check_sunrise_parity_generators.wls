@@ -9,13 +9,9 @@ $HistoryLength = 0;
 (* ::Chapter:: *)
 (*路径、程序与函数族 convention*)
 
-scriptDirectory = DirectoryName[$InputFileName];
-projectDirectory = ExpandFileName[FileNameJoin[{scriptDirectory, "..", ".."}]];
-packagePath = Replace[
-   Environment["DSIBP_PACKAGE_FILE"],
-   {value_String /; StringLength[value] > 0 :> value,
-    _ :> FileNameJoin[{projectDirectory, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]}
-   ];
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
+projectDirectory = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
+packagePath = dsSmokeResolvePackageFile[FileNameJoin[{projectDirectory, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
 exampleDirectory = FileNameJoin[{
     projectDirectory, "independent-benchmark", "package", "examples",
     "03_single_massive_sunrise"

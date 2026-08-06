@@ -6,10 +6,9 @@
 (* ::Chapter:: *)
 (*加载开发包与单线 topology*)
 
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-packageDir = FileNameJoin[{projectRoot, "versions", "018_dSIBP"}];
-$Path = Prepend[$Path, packageDir];
-Needs["dSIBP`"];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
@@ -134,12 +133,10 @@ checks = <|
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
-Print[InputForm[<|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "contactCoefficient" -> contactCoefficient,
-   "scalingDegree" -> scalingDegree,
-   "checks" -> checks
-   |>]];
-Exit[If[failed === {}, 0, 1]];
+Print["check_parameter_derivative_operators: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
+    "contactCoefficient" -> contactCoefficient,
+    "scalingDegree" -> scalingDegree
+  "checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

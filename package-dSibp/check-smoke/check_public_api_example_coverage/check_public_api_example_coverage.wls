@@ -5,18 +5,11 @@
 (* ::Chapter:: *)
 (*候选程序与覆盖清单*)
 
-scriptDirectory = DirectoryName[$InputFileName];
-projectRoot = ExpandFileName[FileNameJoin[{scriptDirectory, "..", ".."}]];
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
+projectRoot = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
 examplesDirectory = FileNameJoin[{projectRoot, "independent-benchmark", "package", "examples"}];
 manifestPath = FileNameJoin[{examplesDirectory, "coverage_manifest.wl"}];
-packageOverride = Quiet[Environment["DSIBP_PACKAGE_FILE"]];
-
-If[StringQ[packageOverride] && StringLength[StringTrim[packageOverride]] > 0,
- Get[ExpandFileName[packageOverride]],
- packageDirectory = FileNameJoin[{projectRoot, "versions", "020_dSIBP"}];
- PrependTo[$Path, packageDirectory];
- Needs["dSIBP`"]
- ];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "020_dSIBP", "Kernel", "dSIBP.wl"}]];
 
 manifest = Get[manifestPath];
 coverage = Lookup[manifest, "coverage", <||>];
@@ -68,18 +61,14 @@ checks = <|
    "allDeclaredCallsPresent" -> And @@ (# === {} & /@ Lookup[Values[sourceAudit], "missingCalls", {"unknown"}])
    |>;
 
-failed = Keys@Select[checks, Not@*TrueQ];
-summary = <|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "publicFunctionCount" -> Length[publicFunctions],
-   "declaredFunctionCount" -> Length[declaredFunctions],
-   "missingPublicFunctions" -> Complement[publicFunctions, declaredFunctions],
-   "unknownDeclaredFunctions" -> Complement[declaredFunctions, publicFunctions],
-   "sourceAudit" -> sourceAudit,
-   "checks" -> checks
-   |>;
-
-Print[InputForm[summary]];
-If[failed =!= {}, Exit[1]];
+failed = Keys@Select[checks, Not@TrueQ[#] &];
+Print["check_public_api_example_coverage: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
+    "publicFunctionCount" -> Length[publicFunctions],
+    "declaredFunctionCount" -> Length[declaredFunctions],
+    "missingPublicFunctions" -> Complement[publicFunctions, declaredFunctions],
+    "unknownDeclaredFunctions" -> Complement[declaredFunctions, publicFunctions],
+    "sourceAudit" -> sourceAudit
+  "checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

@@ -10,10 +10,9 @@
 (* ::Chapter:: *)
 (*加载与四传播子输入*)
 
+Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-packageDirectory = FileNameJoin[{projectRoot, "versions", "019_dSIBP"}];
-$Path = Prepend[$Path, packageDirectory];
-Needs["dSIBP`"];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "019_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
@@ -109,13 +108,10 @@ checks = <|
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
-Print[InputForm[<|
-   "passed" -> Count[Values[checks], True],
-   "total" -> Length[checks],
-   "failed" -> failed,
-   "targetSector" -> targetSectors,
-   "sectorKeys" -> keys,
-   "checks" -> checks
-   |>]];
-
-Exit[If[failed === {}, 0, 1]];
+Print["check_time_only_sector_key: ", Count[Values[checks], True], "/", Length[checks]];
+Print["failed: ", InputForm[failed]];
+Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
+    "targetSector" -> targetSectors,
+    "sectorKeys" -> keys
+  "checks" -> checks|>]];
+If[Count[Values[checks], True] =!= Length[checks], Exit[1]];
