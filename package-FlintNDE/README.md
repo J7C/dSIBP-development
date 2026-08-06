@@ -27,7 +27,7 @@
 
 目录分工：
 
-- `versions/FlintNDE-v0.1.0.dev0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
+- `versions/FlintNDE-0.1.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
 - `examples/`：通过顶部路径变量加载程序包的示例；
 - `Documentation/`：论文源文件、论文结构和发布路线规划；
 - `../参考资料（文献、笔记、代码）/FlintNDE_ref/`：程序包论文与算法使用的外部参考资料。
@@ -44,20 +44,23 @@
 
 三个公开 examples 分别是 `qnm_2x2.py`、`regular_singular_save.py` 和 `exponential_boundary_save.py`，覆盖 QNM 双端匹配、正则奇点 `{a,b,C}` 保存，以及已认证指数型奇点 `{phi,a,b,C}` 保存/复用。后两项由当前回归已执行配置整理，本轮不重复数值运行。
 
-用户环境要求只有两项：Python 3.10 或更高版本，以及 `python-flint>=0.6`。安装发布的
+用户环境要求有三项：Python 3.10 或更高版本、`python-flint>=0.6` 和 `sympy>=1.12`。安装发布的
 wheel、从源码普通安装以及开发者可编辑安装分别为
 
 ```powershell
 python -m pip install .\flintnde-0.1.0-py3-none-any.whl
-python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-v0.1.0.dev0"
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-v0.1.0.dev0
+python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.1.0"
+python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.1.0
 ```
 
-前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint`。
+前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint` 与 `sympy`。
 
-2026-07-30 fresh 执行 `python -m unittest discover -s tests -v` 通过 `76/76`，wall time
-为 `8.653 s`。其中包含正则奇点 `{a,b,C}`、指数型奇点 `{phi,a,b,C}` 的起点/终点/中间点
-保存与重用、多列 Frobenius 批量输运、高阶 pole、Lee--Moser 与超能力 fail-closed 回归。
+2026-08-05 fresh 执行 `python -m unittest discover -s tests -v` 通过 `95/95`（88 项既有
++ 7 项 serializer 合同测试），wall time 约 `16.5 s`。其中包含正则奇点 `{a,b,C}`、
+指数型奇点 `{phi,a,b,C}` 的起点/终点/中间点保存与重用、多列 Frobenius 批量输运、
+高阶 pole、Lee--Moser、公开标量五阶尾项门禁、`fit_sampled_series` 自定义正规化点、
+regular-point DE 与解析 epsilon-jet DE 及超能力 fail-closed 回归。当前版本 0.1.0 为
+纯重构版本，公开接口与输出 schema 与 0.1.0.dev0 完全一致。
 
 安装一次后，任意目录 `A` 中的调用脚本都可直接 `import flintnde`，无需把 package 源码
 复制到 `A`。脚本调用 `initialize_output_layout(__file__, run_name=...)` 后，所有由该 layout
@@ -105,6 +108,12 @@ fail closed。
 后五阶项矢量和无穷范数与前五阶项矢量和无穷范数之比，以及五阶相对 refinement。该路线只允许作为
 路径起点；中间点或终点因没有 Stokes connection 而拒绝。重复/defective formal block、
 ramification、代数扩域和 Stokes matching 尚未实现。
+
+公开 `five_term_tail_diagnostic(terms,N,threshold=...)` 另用于 caller 已生成的标量项序列。
+它返回可读取的 `FiveTermTailDiagnostic`，按
+`abs(sum(T[N+1:N+6]))/sum(abs(T[N-4:N+1]))` 保存分子、分母、比值、阈值与严格小于的
+门禁状态。该标量判据不替换上述矩阵形式分支的矢量块比；零分母或区间无法严格证明通过时
+必须 fail closed。
 
 在正式输运前可先调用 `build_adaptive_path_plan` 做能力预检。它对起点、终点和每个内部
 奇点运行同一局部调度器，并返回 `continuation_ready`、每个奇点的分类、已认证 method 和

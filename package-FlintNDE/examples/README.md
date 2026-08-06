@@ -1,6 +1,6 @@
 # Examples
 
-仓库内示例通过脚本顶部的 `PACKAGE_ROOT` 路径变量加载当前 `versions/FlintNDE-v0.1.0.dev0/`，不复制程序包
+仓库内示例通过脚本顶部的 `PACKAGE_ROOT` 路径变量加载当前 `versions/FlintNDE-0.1.0/`，不复制程序包
 源码，也不读取项目外其它代码包。发布用户应先安装 `FlintNDE`，随后在任意调用目录直接
 `import flintnde`；路径变量只服务于尚未安装的仓库内开发示例。
 

@@ -29,7 +29,7 @@ from flint import fmpq, fmpq_mat, fmpq_poly
 TEST_DIR = Path(__file__).resolve().parent
 NDE_ROOT = TEST_DIR.parent
 REPO_ROOT = NDE_ROOT.parent
-PACKAGE_ROOT = NDE_ROOT / "versions" / "FlintNDE-v0.1.0.dev0"
+PACKAGE_ROOT = NDE_ROOT / "versions" / "FlintNDE-0.1.0"
 if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 

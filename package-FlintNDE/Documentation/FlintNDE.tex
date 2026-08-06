@@ -304,7 +304,7 @@ python -m pip install FlintNDE
 \end{verbatim}
 or install a downloaded source tree once with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-v0.1.0.dev0
+python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.1.0
 \end{verbatim}
 Editable development mode uses the same command with \texttt{-e}.  A calling script may
 then live in any directory and simply \texttt{import flintnde}; the package source is not
@@ -905,6 +905,18 @@ condition is $r_5<1$.  Failure does not suppress the result: FlintNDE emits a co
 and records the issue.  The actual value is always reported, including when it is below one, so
 the user can judge whether the decrease is sufficient.  The report also retains the least-term
 degree and magnitude as auxiliary information and says whether that degree was reached.
+For a caller that already owns scalar terms, the public
+\texttt{five\_term\_tail\_diagnostic} instead evaluates
+\begin{equation}
+ r_{5,\mathrm{scalar}}=
+ \frac{\left|\sum_{j=1}^{5}T_{N+j}\right|}
+ {\sum_{j=0}^{4}\left|T_{N-j}\right|}.
+ \label{eq:public-scalar-five-order-test}
+\end{equation}
+The returned \texttt{FiveTermTailDiagnostic} exposes the numerator, denominator, ratio,
+caller-supplied threshold, and strict pass flag.  This scalar diagnostic does not replace
+Eq.~\eqref{eq:formal-five-order-test}; a zero denominator or an interval comparison that cannot
+certify the strict inequality fails closed.
 Generalized local expansions in Feynman-integral differential equations are discussed in
 Ref.~\cite{Moriello:2019yhu}.
 
@@ -1171,11 +1183,11 @@ python -m pip install ./flintnde-0.1.0-py3-none-any.whl
 \end{verbatim}
 A downloaded source checkout can be installed normally with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-v0.1.0.dev0
+python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.1.0
 \end{verbatim}
 and developers may instead select editable mode with
 \begin{verbatim}
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-v0.1.0.dev0
+python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.1.0
 \end{verbatim}
 Neither the wheel nor source-install route requires the user to build the package manually;
 \texttt{pip} installs the declared \texttt{python-flint} dependency automatically.
@@ -1380,6 +1392,10 @@ exponential-times-power--log, or the simple-spectrum rank-one formal recurrence 
 \texttt{continuation\_ready} flag is false for the formal route; \texttt{evaluation\_report}
 returns the fixed order, five-order block ratio and refinement, plus auxiliary least-term diagnostics.  Unsupported formal/Stokes problems raise
 \texttt{LocalReductionError}. \\
+\texttt{five\_term\_tail\_diagnostic} & Parameters are scalar evaluated terms through degree
+$N+5$, the evaluation degree $N\geq4$, and an optional positive threshold.  It returns a
+\texttt{FiveTermTailDiagnostic} implementing
+Eq.~\eqref{eq:public-scalar-five-order-test}; equality does not pass. \\
 \texttt{build\_adaptive\_path} & Parameters are \texttt{system}, \texttt{start}, and
 \texttt{target}; keyword-only \texttt{detour\_points=()}, \texttt{path\_name=None},
 \texttt{max\_step\_over\_radius=0.45}, \texttt{path\_tolerance=1e-24},

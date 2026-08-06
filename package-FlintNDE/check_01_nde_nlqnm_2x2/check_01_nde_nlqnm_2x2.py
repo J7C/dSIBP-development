@@ -8,11 +8,8 @@
 
 from __future__ import annotations
 
-import hashlib
-import importlib.util
-import json
+import sys
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 
 from flint import acb, arb
@@ -21,7 +18,19 @@ from flint import acb, arb
 CHECK_DIR = Path(__file__).resolve().parent
 FLINTNDE_ROOT = CHECK_DIR.parent
 PROJECT_ROOT = FLINTNDE_ROOT.parent
-QNM_EXAMPLE_PATH = FLINTNDE_ROOT / "code" / "example" / "qnm_2x2.py"
+if str(FLINTNDE_ROOT) not in sys.path:
+    sys.path.insert(0, str(FLINTNDE_ROOT))
+
+from check_common import (  # noqa: E402
+    acb_record,
+    exact_record,
+    load_json,
+    load_module,
+    relative_difference,
+    sha256_file,
+    value_record,
+)
+QNM_EXAMPLE_PATH = FLINTNDE_ROOT / "examples" / "qnm_2x2.py"
 CONFIG_PATH = FLINTNDE_ROOT / "config" / "qnm_u_unified_it0_3_it1_minus1.json"
 NLQNM_SUMMARY_PATH = (
     PROJECT_ROOT
@@ -35,68 +44,6 @@ NLQNM_SUMMARY_PATH = (
 RESULT_PATH = CHECK_DIR / "results" / "check_01_nde_nlqnm_2x2_summary.json"
 COUT_TOLERANCE = arb("1e-12")
 FORBIDDEN_TOLERANCE = arb("1e-10")
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    """读取必需 JSON 对象，缺失或根类型错误时立即阻断。"""
-
-    payload = json.loads(path.read_text(encoding="utf-8-sig"))
-    if not isinstance(payload, dict):
-        raise TypeError(f"JSON root must be an object: {path}")
-    return payload
-
-
-def load_module(path: Path, name: str) -> ModuleType:
-    """按绝对路径加载 QNM 示例，确保检查调用当前工作树实现。"""
-
-    specification = importlib.util.spec_from_file_location(name, path)
-    if specification is None or specification.loader is None:
-        raise ImportError(f"cannot load module from {path}")
-    module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
-    return module
-
-
-def sha256_file(path: Path) -> str:
-    """返回输入文件的 SHA-256，固定正式检查的数据来源。"""
-
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def acb_record(record: dict[str, Any]) -> acb:
-    """把 ``{re,im}`` 文本记录恢复为 Acb 数。"""
-
-    return acb(str(record["re"]), str(record["im"]))
-
-
-def exact_record(record: dict[str, Any]) -> dict[str, str]:
-    """把十进制 ``{re,im}`` 作为 exact Q(i) 输入，不经过浮点对象。"""
-
-    return {"real": str(record["re"]), "imag": str(record["im"])}
-
-
-def value_record(value: acb, digits: int = 35) -> dict[str, str]:
-    """保存 Acb 中点和 ball，避免结果退回 binary64。"""
-
-    return {
-        "re": value.real.str(digits, radius=False),
-        "im": value.imag.str(digits, radius=False),
-        "re_ball": value.real.str(digits),
-        "im_ball": value.imag.str(digits),
-    }
-
-
-def relative_difference(left: acb, right: acb) -> arb:
-    """按参考值尺度计算相对差；本检查的 ``Cout`` 严格非零。"""
-
-    scale = abs(right)
-    if scale.contains(0):
-        raise ZeroDivisionError("reference Cout contains zero")
-    return abs(left - right) / scale
 
 
 def main() -> None:

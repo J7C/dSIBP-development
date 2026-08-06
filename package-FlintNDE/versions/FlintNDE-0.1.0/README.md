@@ -57,10 +57,10 @@ convention 变化、迁移要求、已执行验证和已知限制；文件中的
 python -m pip install .\flintnde-0.1.0-py3-none-any.whl
 
 # 从下载的源码普通安装
-python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-v0.1.0.dev0"
+python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.1.0"
 
 # 开发者可编辑安装
-python -m pip install -e "path\to\package-FlintNDE\versions\FlintNDE-v0.1.0.dev0"
+python -m pip install -e "path\to\package-FlintNDE\versions\FlintNDE-0.1.0"
 ```
 
 `pip` 会自动安装满足版本要求的 `python-flint` 与 `sympy`。安装一次后，可在任意目录 `A` 的脚本中
@@ -587,8 +587,10 @@ dimension * 10^(-precision_digits)
 python -m unittest discover -s tests -v
 ```
 
-2026-08-05 fresh 结果为 `88/88`，wall time `13.234 s`；测试临时目录显式位于
-D 盘 package 内并在运行后删除。当前 BlackHoleQNM resource 的 project-local extension
+2026-08-05 fresh 结果为 `95/95`（88 项既有 + 7 项 serializer 合同测试），wall time
+约 `16.5 s`；测试临时目录显式位于 D 盘 package 内并在运行后删除。本轮 0.1.0 为纯重构版本，
+公开接口与输出 schema 与 0.1.0.dev0 完全一致，详见 `UPDATE_NOTES_0.1.0.md`。
+当前 BlackHoleQNM resource 的 project-local extension
 覆盖 sampled-series 自定义正规化点、regular-point DE 与解析 epsilon-jet DE；权威 version、
 受控文件聚合 SHA-256、测试计数和 pending authority sync 状态以
 `RESOURCE_PROVENANCE.json` 为准。

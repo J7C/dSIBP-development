@@ -30,7 +30,7 @@ from flint import acb, acb_mat, arb, fmpq
 SCRIPT_DIR = Path(__file__).resolve().parent
 NDES_ROOT = SCRIPT_DIR.parent
 PROJECT_ROOT = NDES_ROOT.parent
-PACKAGE_ROOT = NDES_ROOT / "versions" / "FlintNDE-v0.1.0.dev0"
+PACKAGE_ROOT = NDES_ROOT / "versions" / "FlintNDE-0.1.0"
 RESOURCE_INSTANCE_ROOT = (
     PROJECT_ROOT
     / "000_resource"

@@ -41,7 +41,8 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
      Lee--Moser projector-balance 逐阶降 pole，以及严格解耦 Q(i) 标量
       sector 的指数乘 power-log 基，以及单重二阶-pole 的 start-only exact 形式递推；
    - 区分指数抽取后 residual-Fuchsian 的收敛 power-log 与一般 Gevrey/sectorial 渐近级数，
-      说明指数根差与 N/3 匹配点、固定 N 阶加五阶诊断、是否到达最小项和当前 Stokes fail-closed 边界；
+      说明指数根差与 N/3 匹配点、固定 N 阶加五阶诊断、公开标量尾项严格阈值对象、是否到达
+      最小项和当前 Stokes fail-closed 边界；
    - 明确 Moser 模块限于 exact Q(i)(x)、有限局部变量和无 ramification 的 meromorphic
      gauge；一般 formal block decoupling、代数扩域、ramification 与 Stokes 数据继续 fail closed；
    - regulator 重构的 AMFlow 误差公式、通用化参数选择、完整公开接口表与 connection matrix。
@@ -60,6 +61,7 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
 | `singularities.py` | 已实现 | exact Q(i)(x) 矩阵、逐元约分、有限/无穷远奇点清单 |
 | `fuchsian.py` | 已实现 | exact Lee--Moser projector-balance、ordered projectors、逐步 pole 阶与完整系统 round-trip 认证 |
 | `local_solutions.py` | 已实现（受限） | 统一 power-log、Moser 后原基 exact-jet 边界验证、严格解耦指数 sector 与单重二阶-pole 起点形式递推；一般 formal gauge/Stokes fail closed |
+| `asymptotics.py` | 已实现 | 公开标量五阶尾项诊断，返回分子、分母、比值、阈值与严格门禁状态 |
 | `routing.py` | 已实现 | `inf` 反演、普通/正则/高阶奇点调度、`build_adaptive_path_plan` 对全部非普通路径点执行同一局部 basis 预检、自描述 `list[acb]` 路径、可保存的中间 singular checkpoint、逐步 `step/R` 与绕行提示；非 Q(i) 正则中心/谱及未认证内部/终点 fail closed |
 | `transport.py` | 已实现 | 普通点分段输运、统一奇点局部基 bridge、双链 refinement，以及普通/正则/指数型 `(coordinate,"save")` 的逐点即时输出与完成后汇总 |
 | `frobenius.py` | 已实现 | Q(i) exact indicial/Jordan/resonance manifest 与 power-log 基；非 Q(i) 谱 fail closed |

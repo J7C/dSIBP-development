@@ -9,13 +9,9 @@ FlintNDE 只把矩阵当作一般解析函数，以 Cauchy-DFT 重建系数。�
 
 from __future__ import annotations
 
-import hashlib
-import importlib.util
-import json
 import sys
 import time
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 
 from flint import acb, acb_mat, arb, fmpq
@@ -24,7 +20,16 @@ from flint import acb, acb_mat, arb, fmpq
 CHECK_DIR = Path(__file__).resolve().parent
 FLINTNDE_ROOT = CHECK_DIR.parent
 PROJECT_ROOT = FLINTNDE_ROOT.parent
-PACKAGE_ROOT = FLINTNDE_ROOT / "versions" / "FlintNDE-v0.1.0.dev0"
+PACKAGE_ROOT = FLINTNDE_ROOT / "versions" / "FlintNDE-0.1.0"
+if str(FLINTNDE_ROOT) not in sys.path:
+    sys.path.insert(0, str(FLINTNDE_ROOT))
+
+from check_common import (  # noqa: E402
+    load_json,
+    load_module,
+    sha256_file,
+    vector_records,
+)
 NPACKAGE_SCRIPT = (
     PROJECT_ROOT
     / "000_code_Npackage"
@@ -67,36 +72,6 @@ from flintnde import (  # noqa: E402
 )
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    """读取必需 JSON 对象，输入不完整时 fail closed。"""
-
-    payload = json.loads(path.read_text(encoding="utf-8-sig"))
-    if not isinstance(payload, dict):
-        raise TypeError(f"JSON root must be an object: {path}")
-    return payload
-
-
-def load_module(path: Path, name: str) -> ModuleType:
-    """按绝对路径加载当前 Npackage fixed-epsilon NDE 后端。"""
-
-    specification = importlib.util.spec_from_file_location(name, path)
-    if specification is None or specification.loader is None:
-        raise ImportError(f"cannot load module from {path}")
-    module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
-    return module
-
-
-def sha256_file(path: Path) -> str:
-    """返回输入和求解器源码的 SHA-256。"""
-
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def evaluate_pole_residue(system: Any, point: acb) -> acb_mat:
     """只按矩阵函数求值，不向 FlintNDE 暴露 pole/residue Taylor 公式。"""
 
@@ -104,20 +79,6 @@ def evaluate_pole_residue(system: Any, point: acb) -> acb_mat:
     for pole, residue in zip(system.poles, system.residues):
         value += residue / (point - pole)
     return value
-
-
-def vector_records(vector: acb_mat, digits: int = 35) -> list[dict[str, str]]:
-    """保存完整 16 维端点向量的中点与 Acb ball。"""
-
-    return [
-        {
-            "re": vector[row, 0].real.str(digits, radius=False),
-            "im": vector[row, 0].imag.str(digits, radius=False),
-            "re_ball": vector[row, 0].real.str(digits),
-            "im_ball": vector[row, 0].imag.str(digits),
-        }
-        for row in range(vector.nrows())
-    ]
 
 
 def main() -> None:
@@ -242,7 +203,7 @@ def main() -> None:
             "fixed_epsilon_template_sha256": sha256_file(TEMPLATE_PATH),
             "npackage_nde_runtime": str(NPACKAGE_SCRIPT.relative_to(PROJECT_ROOT)).replace("\\", "/"),
             "npackage_nde_runtime_sha256": sha256_file(NPACKAGE_SCRIPT),
-            "flintnde_transport": "package-FlintNDE/versions/FlintNDE-v0.1.0.dev0/flintnde/transport.py",
+            "flintnde_transport": "package-FlintNDE/versions/FlintNDE-0.1.0/flintnde/transport.py",
             "flintnde_transport_sha256": sha256_file(PACKAGE_ROOT / "flintnde" / "transport.py"),
         },
     }
