@@ -80,10 +80,7 @@ class SeriesReconstructionResult:
         regulator = point if isinstance(point, acb) else acb(point)
         if regulator.is_zero() or abs(regulator).contains(0):
             raise ValueError("series evaluation requires a definitely nonzero regulator")
-        value = acb_mat(self.coefficients[-1])
-        for coefficient in reversed(self.coefficients[:-1]):
-            value = value * regulator + coefficient
-        return value * (regulator**self.leading_power)
+        return _evaluate_coefficients(self.coefficients, self.leading_power, regulator)
 
     def to_summary(self) -> dict[str, Any]:
         """返回可直接写入 JSON 的稳定摘要。"""
@@ -350,9 +347,7 @@ def _resolve_plan(
             raise ValueError("explicit sample_points do not cover the requested powers")
         if count > maximum_samples:
             raise ValueError("explicit sample_points exceed maximum_samples")
-        for index, point in enumerate(points):
-            if any(abs(point - previous).contains(0) for previous in points[:index]):
-                raise ValueError("sample_points must be distinct")
+        _require_distinct_points(points, "sample_points")
         alpha = _point_alpha(points)
         source = "user"
         base_label = "user-supplied"
@@ -404,12 +399,7 @@ def _resolve_plan(
         )
         validation_arguments = tuple(pair[0] for pair in validation_pairs)
         resolved_validation_points = tuple(pair[1] for pair in validation_pairs)
-        for index, point in enumerate(resolved_validation_points):
-            if any(
-                abs(point - previous).contains(0)
-                for previous in resolved_validation_points[:index]
-            ):
-                raise ValueError("validation_points must be distinct")
+        _require_distinct_points(resolved_validation_points, "validation_points")
         validation_source = "user"
     production_set = points
     if any(
@@ -814,6 +804,14 @@ def _sample_value_vector(value: Any, name: str) -> acb_mat:
     return vector
 
 
+def _require_distinct_points(points: tuple[acb, ...], name: str) -> None:
+    """拒绝互异的 Acb 点；零距离按 contains 判定（球重叠也算重复）。"""
+
+    for index, point in enumerate(points):
+        if any(abs(point - previous).contains(0) for previous in points[:index]):
+            raise ValueError(f"{name} must contain distinct points")
+
+
 def _explicit_series_points(values: Any, name: str) -> tuple[acb, ...]:
     """解析外部拟合点；拒绝 binary64、零点、重复点和隐式精度损失。"""
 
@@ -823,9 +821,7 @@ def _explicit_series_points(values: Any, name: str) -> tuple[acb, ...]:
         _sample_pair(value, rationalize=False, name=f"{name}[{index}]")[1]
         for index, value in enumerate(values)
     )
-    for index, point in enumerate(points):
-        if any(abs(point - previous).contains(0) for previous in points[:index]):
-            raise ValueError(f"{name} must contain distinct points")
+    _require_distinct_points(points, name)
     return points
 
 
