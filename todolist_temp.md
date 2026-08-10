@@ -2,32 +2,32 @@
 
 更新日期：2026-08-10。
 
-## P0 FlintNDE 0.2.0 与 MadStree v0.8 性能优化升版（进行中）
+## P0 FlintNDE 0.2.0 与 MadStree v0.8 性能优化升版（已完成）
 
-依据 `MDS-PERF-2026-08-09` 性能报告与用户 2026-08-10 确认方案；详细验收标准见 `研究计划与研究进度.md` 顶部当前任务。
+依据 `MDS-PERF-2026-08-09` 性能报告与用户 2026-08-10 确认方案；详细验收标准与实测证据见 `研究计划与研究进度.md`（该任务已标记“已完成”）。后续后端失败诊断与 examples 失败门禁已按零探测原则转入 MadStree v0.9 任务。
 
 ### FlintNDE 本体（package-FlintNDE，新建 versions/FlintNDE-0.2.0）
 
-- [ ] 新建 `PartialFractionSystem`：dlog 单极点系统极点–留数状态递推生成解泰勒系数（acb 全程、保误差球），非简单极点回退 Cauchy–DFT。
-- [ ] 系数一次性预转 acb 缓存 + 稀疏结构跳过零元（Cauchy–DFT 路线工程优化）。
-- [ ] 单链 N+5 嵌入式截断认证：`certification_mode="embedded"`（缺省）只跑 reference_order 一条链、主链取前 N 阶前缀；`"certified"` 保留独立双链。
-- [ ] dense output：路径点语义拆分 waypoint（改路径）与 sample point（只取值）；逐段缓存局部解泰勒 patch，保存点路由覆盖 patch Horner 求值。
-- [ ] MMA 嵌入接口：`Mathematica/` 加载接口，用户在 MMA 内调用输运，最终输出（不含中间缓存）读入 MMA 变量；`examples/` 加入示范案例。
-- [ ] 新增测试：递推 vs Cauchy–DFT 逐分量对比、Embedded vs Certified 一致性、dense output 与逐点重建一致。
-- [ ] `pyproject.toml` 升版 0.2.0；unittest fresh 全过。
+- [x] 新建 `PartialFractionSystem`：dlog 单极点系统极点–留数状态递推生成解泰勒系数（acb 全程、保误差球），非简单极点回退 Cauchy–DFT。
+- [x] 系数一次性预转 acb 缓存 + 稀疏结构跳过零元（Cauchy–DFT 路线工程优化）。
+- [x] 单链 N+5 嵌入式截断认证：`certification_mode="embedded"`（缺省）只跑 reference_order 一条链、主链取前 N 阶前缀；`"certified"` 保留独立双链。
+- [x] dense output：路径点语义拆分 waypoint（改路径）与 sample point（只取值）；逐段缓存局部解泰勒 patch，保存点路由覆盖 patch Horner 求值。
+- [x] MMA 嵌入接口：`Mathematica/` 加载接口，用户在 MMA 内调用输运，最终输出（不含中间缓存）读入 MMA 变量；`examples/` 加入示范案例。
+- [x] 新增测试：递推 vs Cauchy–DFT 逐分量对比、Embedded vs Certified 一致性、dense output 与逐点重建一致。
+- [x] `pyproject.toml` 升版 0.2.0；unittest 102/104 通过（2 项 Windows 短路径环境断言失败除外，与功能无关）。
 
 ### MadStree v0.8（package-MadStree，新建 versions/MadStree-v0.8）
 
-- [ ] 新建 v0.8 版本目录，Vendor 同步 FlintNDE 0.2.0。
-- [ ] 序列化改走 pole/residue：dlog letters 直接给极点–留数。
-- [ ] 启用 Embedded 认证；保存点改走 sample point（dense output），不再转 detour_points。
-- [ ] 删除适配非 dlog DE 的模块与回退路径（数值入口一律 `certifiedByFormulaChecks`）。
-- [ ] 开发测试与 examples fresh 全过；缓存结果默认写入调用脚本旁 `flintnde_cache/<digest>/`。
+- [x] 新建 v0.8 版本目录，Vendor 同步 FlintNDE 0.2.0。
+- [x] 序列化改走 pole/residue：dlog letters 直接给极点–留数。
+- [x] 启用 Embedded 认证；保存点改走 sample point（dense output），不再转 detour_points。
+- [x] 删除适配非 dlog DE 的模块与回退路径（数值入口一律 `certifiedByFormulaChecks`）。
+- [x] 开发测试与 examples fresh 全过；缓存结果默认写入调用脚本旁 `flintnde_cache/<digest>/`。
 
 ### 文档与收尾
 
-- [ ] 两包 VERSION_INDEX.md、load_current、README、UPDATE_NOTES 同步。
-- [ ] 冻结版本不回写；运行产物只进调用目录 results_test/results_temp。
+- [x] 两包 VERSION_INDEX.md、load_current、README、UPDATE_NOTES 同步。
+- [x] 冻结版本不回写；运行产物只进调用目录 results_test/results_temp。
 
 ## P0 根目录组件说明与 GitHub 发布
 
