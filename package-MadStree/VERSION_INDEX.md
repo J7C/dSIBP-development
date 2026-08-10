@@ -2,11 +2,11 @@
 
 ## 当前版本
 
-- 版本：`v0.7`
-- 目录：`versions/MadStree-v0.7/`
+- 版本：`v0.8`
+- 目录：`versions/MadStree-v0.8/`
 - 状态：当前工作版本
-- 版本沿革：`v0.5` -> `v0.6` -> `v0.7`（v0.7 在 v0.6 基础上修改建立，v0.6 由冻结 v0.5 复制）
-- 验证证据：T1--T6 继承自 v0.5（2026-07-30 fresh 通过，计数依次为 `24/24`、`12/12`、`18/18`、`15/15`、`17/17`、`16/16`）
+- 版本沿革：`v0.5` -> `v0.6` -> `v0.7` -> `v0.8`（v0.8 在 v0.7 基础上修改建立，升级内置 FlintNDE 至 0.2.0）
+- 验证证据：11 个开发测试 fresh 全过（合计 160/160）：check_core `49/49`、test_package_artifacts `18/18`、test_flintnde_boundary `9/9`、test_flintnde_massive_vertex `7/7`、test_flintnde_massless_edge `9/9`、test_flintnde_massive_full_edge `5/5`、test_flintnde_mixed_three_vertex `7/7`、test_flintnde_vertex_family `7/7`、test_dsibp_derivative_dlog `9/9`、test_simultaneous_cycle_chart `22/22`、test_vertex_family_reduce `18/18`
 
 ## 保留版本
 
@@ -14,6 +14,7 @@
 - `v0.4`：冻结源码、手册、examples 与 T1--T5 报告，不再回写。
 - `v0.5`：冻结源码、手册、examples 与 T1--T6 报告，不再回写。
 - `v0.6`：冻结源码、手册、examples 与继承自 v0.5 的 T1--T6 验证证据；作为 v0.7 的冻结基线（由冻结 v0.5 复制），不再回写。
+- `v0.7`：冻结源码、手册、examples 与继承自 v0.6 的验证证据；作为 v0.8 的冻结基线，不再回写。
 
 ## 升级规则
 
