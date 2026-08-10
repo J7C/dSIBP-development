@@ -22,16 +22,21 @@ from dataclasses import dataclass
 from typing import Any, Iterable
 
 import sympy as sp
-from flint import acb, acb_mat, acb_series, arb, ctx, fmpq
+from flint import acb, acb_mat, acb_series, arb, fmpq
 
+from .core import (
+    acb_midpoint_matrix,
+    column_vector,
+    configure_working_precision,
+    identity_matrix,
+    matrix_norm_inf,
+    relative_difference_inf,
+    vector_norm_inf,
+)
 
-def configure_working_precision(decimal_digits: int, guard_bits: int = 32) -> int:
-    """设置 Acb 工作精度并返回实际二进制位数。"""
-
-    if decimal_digits <= 0 or guard_bits < 0:
-        raise ValueError("working precision and guard bits must be nonnegative")
-    ctx.prec = math.ceil(decimal_digits * math.log2(10)) + guard_bits
-    return ctx.prec
+# 保留旧公开名，实现与 ``core`` 共用。
+midpoint_matrix = acb_midpoint_matrix
+_identity_matrix = identity_matrix
 
 
 def _rational_to_fmpq(value: sp.Expr) -> fmpq:
@@ -105,58 +110,6 @@ def arb_record(value: arb, digits: int = 35) -> str:
     """把 Arb 数值保存为包含误差半径的字符串。"""
 
     return str(value.str(digits))
-
-
-def vector_norm_inf(vector: acb_mat) -> arb:
-    """计算 Acb 列向量的无穷范数，并保留选中分量的 ball。"""
-
-    if vector.ncols() != 1:
-        raise ValueError("vector_norm_inf requires a column vector")
-    magnitudes = [abs(vector[row, 0]) for row in range(vector.nrows())]
-    if not magnitudes:
-        return arb(0)
-    return max(magnitudes, key=arb_midpoint_float)
-
-
-def matrix_norm_inf(matrix: acb_mat) -> arb:
-    """计算 Acb 矩阵的最大行和范数。"""
-
-    if matrix.nrows() == 0 or matrix.ncols() == 0:
-        return arb(0)
-    row_sums = [
-        sum((abs(matrix[row, column]) for column in range(matrix.ncols())), arb(0))
-        for row in range(matrix.nrows())
-    ]
-    return max(row_sums, key=arb_midpoint_float)
-
-
-def relative_difference_inf(primary: acb_mat, reference: acb_mat) -> arb:
-    """计算两个同维列向量的无穷范数相对差。"""
-
-    if primary.nrows() != reference.nrows() or primary.ncols() != reference.ncols():
-        raise ValueError("relative-difference vector dimensions do not match")
-    denominator = vector_norm_inf(reference)
-    if denominator.contains(0):
-        raise ZeroDivisionError("reference vector infinity norm contains zero")
-    return vector_norm_inf(reference - primary) / denominator
-
-
-def column_vector(values: list[acb]) -> acb_mat:
-    """把 Acb 标量列表转换为稠密列向量。"""
-
-    return acb_mat([[value] for value in values])
-
-
-def midpoint_matrix(matrix: acb_mat) -> acb_mat:
-    """以当前高精度中点重建矩阵，避免多段输运的区间包裹半径机械膨胀。"""
-
-    return acb_mat(
-        [
-            [acb(matrix[row, column].real.mid(), matrix[row, column].imag.mid())
-             for column in range(matrix.ncols())]
-            for row in range(matrix.nrows())
-        ]
-    )
 
 
 def vector_value_records(vector: acb_mat, digits: int = 70) -> list[dict[str, str]]:
@@ -1466,17 +1419,6 @@ def _exact_vector_to_acb(records: list[Any]) -> acb_mat:
     """把 exact 一维记录转换为 Acb 列向量。"""
 
     return column_vector([exact_inputform_to_acb(value) for value in records])
-
-
-def _identity_matrix(dimension: int) -> acb_mat:
-    """构造 Acb 单位矩阵。"""
-
-    return acb_mat(
-        [
-            [acb(1 if row == column else 0) for column in range(dimension)]
-            for row in range(dimension)
-        ]
-    )
 
 
 def _validate_k0_sample_indices(

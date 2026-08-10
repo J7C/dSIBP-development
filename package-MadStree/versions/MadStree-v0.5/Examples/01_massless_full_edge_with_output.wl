@@ -1,10 +1,9 @@
 (* ::Package:: *)
 
 (***
-文件：01_massless_full_edge.wl
-用途：展示单条含 theta 的 massless full edge 从拓扑初始化到主积分、递推与 dlog DE 的最小流程；
-     另含两个扩展：用户自定义有限边界（任选普通点作锚点）与批量多点求值（固定参数只写一次、每点只写变化量，自动边界只生成一次、逐点复用）。
-运行：在 Mathematica 前端逐节执行，或用 wolframscript -file 运行整个文件。
+文件：01_massless_full_edge_with_output.wl
+用途：示例 01（含用户自定义边界与批量多点求值扩展，固定参数只写一次）的带输出副本；内容与更新后的原示例一致，仅把顶层结果包上 Print。
+运行：wolframscript -file 01_massless_full_edge_with_output.wl，输出落盘新文件 01_massless_full_edge_output_v2.txt。
 ***)
 
 (* ::Chapter:: *)
@@ -13,6 +12,8 @@
 packageRoot = DirectoryName[DirectoryName[$InputFileName]];
 AppendTo[$Path, FileNameJoin[{packageRoot, "Kernel"}]];
 Needs["MadStree`"];
+
+Print["== MadStree example 01: massless full edge (with custom boundary and batch) =="];
 
 
 (* ::Chapter:: *)
@@ -31,7 +32,7 @@ treeSpec = <|
 
 context = MSInitTree[treeSpec];
 topKey = First[context["sectorOrder"]];
-MSSectors[context]
+Print["sectors = ", MSSectors[context]];
 
 
 (* ::Chapter:: *)
@@ -42,9 +43,9 @@ topMatrices = MSFormulaMatrices[context, topKey];
 contactMaps = MSContactMaps[context, topKey];
 dlogDE = MSDLogDE[context];
 
-Lookup[masters, "integral"]
+Print["masters = ", Lookup[masters, "integral"]];
 
-dlogDE["omegaPotential"] // MatrixForm
+Print["omegaPotential = ", MatrixForm[dlogDE["omegaPotential"]]];
 
 
 (* ::Chapter:: *)
@@ -52,10 +53,10 @@ dlogDE["omegaPotential"] // MatrixForm
 
 shiftedIntegral = MSIntegral[topKey, {1, 0}, {0}];
 reduction = MSReduce[shiftedIntegral, context];
-reduction["result"]
+Print["reductionResult = ", reduction["result"]];
 
 numericalTemplate = MSNumericalSystem[dlogDE];
-numericalTemplate["status"]
+Print["numericalStatus = ", numericalTemplate["status"]];
 
 targetRules = {k1 -> -9 I, k2 -> -3 I, q -> 1, a1 -> 1, a2 -> 1};
 boundary = MSBoundaryData[
@@ -75,8 +76,8 @@ targetValue = MSEvaluateTree[
   TargetRelativeError -> "1e-20"
 ];
 
-targetValue["values"]
-targetValue["flintNDE", "relativeDifferenceInf"]
+Print["targetValues = ", targetValue["values"]];
+Print["relativeDifferenceInf = ", targetValue["flintNDE", "relativeDifferenceInf"]];
 
 
 (* ::Chapter:: *)
@@ -93,6 +94,8 @@ userAnchorValue = MSEvaluateTree[
   TargetRelativeError -> "1e-20"
 ];
 userAnchorValues = userAnchorValue["values"];
+Print["userAnchorStatus = ", userAnchorValue["status"]];
+Print["userAnchorValues = ", userAnchorValues];
 
 (* 用锚点值构造有限边界；之后每个新点都从该锚点输运，不再经过无穷远边界。 *)
 userFiniteBoundary[targetRules_] := <|
@@ -115,8 +118,10 @@ userTargetValue = MSFlintNDETransport[
   TargetRelativeError -> "1e-20"
 ];
 
-userTargetValue["values"]
-userTargetValue["flintNDE", "relativeDifferenceInf"]
+Print["userTargetStatus = ", userTargetValue["status"]];
+Print["userTargetValues = ", userTargetValue["values"]];
+Print["userTargetRelativeDifferenceInf = ",
+  userTargetValue["flintNDE", "relativeDifferenceInf"]];
 
 
 (* ::Chapter:: *)
@@ -205,10 +210,12 @@ batchPoints = Map[
   batchPointTable
 ];
 
-Lookup[batchResults, "values"]
-MapThread[
-  {#1, #2, #3} &,
-  {batchPoints,
-   Lookup[batchResults, "status"],
-   Lookup[Lookup[batchResults, "flintNDE"], "relativeDifferenceInf"]}
-]
+Print["batchValues = ",
+  MapThread[Rule, {batchPoints, Lookup[batchResults, "values"]}]];
+Print["batchDiagnostics = ",
+  MapThread[
+    {#1, #2, #3} &,
+    {batchPoints,
+     Lookup[batchResults, "status"],
+     Lookup[Lookup[batchResults, "flintNDE"], "relativeDifferenceInf"]}
+  ]];

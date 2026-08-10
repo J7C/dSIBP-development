@@ -1,14 +1,13 @@
 (* ::Package:: *)
 
 (***
-文件：FlintNDE.wl
-用途：把 MadStree 的公式型 dlog connection 沿 anchor-to-target 仿射路径序列化为 Q(i)(s)，
-      调用独立 FlintNDE 后端，并把目标点列向量和 refinement 诊断恢复为 Wolfram Association。
-边界：只接受已认证 dlog、同 digest 自动边界和 exact Gaussian-rational 路径数据；不做浮点分母猜测。
+File: FlintNDE.wl
+Purpose: Serializes the MadStree formula-type dlog connection along the anchor-to-target affine path into Q(i)(s), invokes the standalone FlintNDE backend, and restores the target column vector and refinement diagnostics as a Wolfram Association.
+Scope: Only certified dlog, same-digest automatic boundaries and exact Gaussian-rational path data are accepted; floating-point denominator guessing is never performed.
 ***)
 
 (* ::Chapter:: *)
-(*Exact Q(i)(s) 序列化*)
+(* Exact Q(i)(s) serialization *)
 
 msGaussianRationalParts[value_] := Module[{real, imaginary},
   real = Together[ComplexExpand[Re[value]]];
@@ -62,7 +61,7 @@ msComplexDecimalRecord[value_?NumericQ, digits_Integer] := <|
   "imag" -> msDecimalString[Im[N[value, digits]], digits]
 |>;
 
-(* 当前 Windows WolframScript 内核保留 RunProcess 符号但不执行；Run 返回同样可靠的退出码。 *)
+(* On Windows the WolframScript kernel keeps the RunProcess symbol but does not execute it; Run returns an equally reliable exit code. *)
 msCommandArgument[value_] := Module[{text = ToString[value]},
   If[StringContainsQ[text, WhitespaceCharacter],
     "\"" <> StringReplace[text, "\"" -> "\\\""] <> "\"",
@@ -74,7 +73,7 @@ msCommandString[arguments_List] := StringRiffle[msCommandArgument /@ arguments, 
 
 
 (* ::Chapter:: *)
-(*沿仿射运动学路径构造一维系统*)
+(* Build the one-dimensional system along the affine kinematic path *)
 
 msRuleValue[symbol_, rules_List] := symbol /. rules;
 
@@ -118,26 +117,17 @@ msAffineConnectionData[
 
 
 (* ::Chapter:: *)
-(*Python 后端调用*)
+(* Python backend invocation *)
 
-(* 缺省使用调用脚本目录；Notebook 或交互会话没有输入文件时退回当前工作目录。 *)
-msDefaultRuntimeDirectory[] := Module[{inputFile = $InputFileName, notebookDirectory},
-  If[StringQ[inputFile] && inputFile =!= "",
-    Return[DirectoryName[ExpandFileName[inputFile]]]
-  ];
-  notebookDirectory = Quiet@Check[NotebookDirectory[], $Failed];
-  If[StringQ[notebookDirectory], ExpandFileName[notebookDirectory], Directory[]]
-];
+(* By default the calling script directory is used; notebooks or interactive sessions without an input file fall back to the current working directory. *)
+msDefaultRuntimeDirectory[] := msRuntimeDirectory[];
 
 
 msResolveRuntimeDirectory[Automatic] := msDefaultRuntimeDirectory[];
 
 
-(* 绝对路径直接展开；相对路径始终以调用脚本目录为基准，避免依赖当前进程目录。 *)
-msAbsoluteRuntimePathQ[path_String] := StringMatchQ[
-  StringReplace[path, "\\" -> "/"],
-  Alternatives[LetterCharacter ~~ ":/" ~~ ___, "/" ~~ ___]
-];
+(* Absolute paths are expanded directly; relative paths are always resolved against the calling script directory to avoid depending on the current process directory. *)
+msAbsoluteRuntimePathQ[path_String] := msAbsolutePathQ[path];
 
 
 msResolveRuntimeDirectory[path_String] := Module[{base = msDefaultRuntimeDirectory[]},
@@ -149,7 +139,7 @@ msResolveRuntimeDirectory[other_] := Failure[
 ];
 
 
-(* JSON 在调用目录的 results_temp 中短暂存在；成功后删除，失败时保留完整诊断。 *)
+(* JSON files exist only briefly in results_temp under the calling directory; they are deleted on success and kept with full diagnostics on failure. *)
 msExecuteFlintNDEAdapter[inputData_Association, pythonExecutable_, runtimeDirectory_String] := Module[
   {transportDirectory, identifier, inputFile, outputFile, adapterFile,
    command, process, imported},
@@ -194,9 +184,9 @@ msParseFlintVector[records_List] := Map[
 
 
 (* ::Section:: *)
-(*无名保存点合同*)
+(* Unnamed save-point contract *)
 
-(* 保存点坐标必须是 exact Q(i)，且标签只能是字面量 "save"；三元组会在 Python 启动前拒绝。 *)
+(* Save-point coordinates must be exact Q(i) and the tag must be the literal "save"; triples are rejected before Python starts. *)
 msSavePointListRecords[points_List] := Module[{records},
   If[! And @@ (MatchQ[#, {_, "save"}] & /@ points),
     Return[Failure[
@@ -242,7 +232,7 @@ msSavePointData[other_] := Failure[
   <|"expected" -> "list or singular/ordinary Association", "actual" -> HoldForm[other]|>
 ];
 
-(* 后端逐点文件已经即时写出；这里只在全链成功后合并各 stage 的 summary。 *)
+(* The backend writes per-point files immediately; here we only merge the per-stage summaries after the whole chain succeeds. *)
 msWriteSavePointAggregate[runDirectory_String, stageImports_List] := Module[
   {stageRecords, points, aggregateFile, payload},
   stageRecords = Flatten@Map[
@@ -286,7 +276,7 @@ msWriteSavePointAggregate[runDirectory_String, stageImports_List] := Module[
 ];
 
 
-(* 把一个 exact 规范化 leading branch 写成 FlintNDE 的 {a,b,C} 合同。 *)
+(* Writes one exact normalized leading branch as the FlintNDE {a,b,C} contract. *)
 msFrobeniusBranchRecord[branch_Association] := Module[{exponent, vector},
   exponent = msGaussianRationalString[branch["frobeniusExponent"]];
   vector = msGaussianRationalString /@ branch["normalizedLeadingVector"];
@@ -335,11 +325,8 @@ MSFlintNDETransport[
   digits = OptionValue[WorkingPrecision];
   runtimeDirectory = msResolveRuntimeDirectory[OptionValue[MSRuntimeDirectory]];
   If[Head[runtimeDirectory] === Failure, Return[runtimeDirectory]];
-  If[! DirectoryQ[runtimeDirectory],
-    Quiet@Check[
-      CreateDirectory[runtimeDirectory, CreateIntermediateDirectories -> True],
-      Return[Failure["RuntimeDirectoryCreationFailed", <|"path" -> runtimeDirectory|>]]
-    ]
+  If[msEnsureDirectory[runtimeDirectory] === $Failed,
+    Return[Failure["RuntimeDirectoryCreationFailed", <|"path" -> runtimeDirectory|>]]
   ];
   savePointData = msSavePointData[OptionValue[FlintNDESavePoints]];
   If[Head[savePointData] === Failure, Return[savePointData]];
@@ -471,7 +458,7 @@ MSFlintNDETransport[___] := Failure["InitializedContextRequired", <|"function" -
 
 
 (* ::Chapter:: *)
-(*端到端公开入口*)
+(* End-to-end public entry *)
 
 Options[MSEvaluateTree] = DeleteDuplicatesBy[
   Join[Options[MSBoundaryData], Options[MSFlintNDETransport]],
