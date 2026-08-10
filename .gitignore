@@ -65,3 +65,4 @@ output/
 batches/
 structured/
 cache/
+**/flintnde_cache/
