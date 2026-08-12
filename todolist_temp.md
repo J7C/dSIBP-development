@@ -1,6 +1,19 @@
 # dS IBP Package 当前待办
 
-更新日期：2026-08-10。
+更新日期：2026-08-12。
+## P0 FlintNDE 0.3.0 / MadStree v0.10 通用路径与同步修订（已完成）
+
+- [x] FlintNDE 从 `RationalMatrixSystem` 内部发现奇点，并自动认证 `P(x)+Sum R/(x-p)` 快速路线；`P` 支持任意有限次数。
+- [x] `FlintNDEPlanPath` / `MSGeneratePath` 只负责规划，`FlintNDEExecutePath` / `MSEvaluatePlannedPath` 只执行已有计划；不增加重复开关。缺省避开奇点，显式奇点折跃模式保留结构化分支诊断。
+- [x] 一般正则奇点接通 exact power-log/Jordan/log 局部基；高阶或未认证路线 fail closed。
+- [x] 修复奇点桥 Embedded 伪认证与 binary64 winding/monodromy/匹配几何；增加普通节点和奇点折跃节点的 70/100 位自适应高精度回归，
+  并拒绝用低精度序列化路径执行更高精度请求（要求重新规划）。
+- [x] MadStree 在 `MSGeneratePath` 阶段生成并保存完整单变量段计划，执行阶段禁止重新规划；补共线用户点合并与缓存求值路由，并允许全部 letters 沿线段为常量时的零连接输运。
+- [x] 两侧统一为 `MessageLanguage -> "EN"|"CN"`、Python `message_language` 与 JSON `messageLanguage`，缺省英文；删除尚未发布的旧语言选项名。
+- [x] 当前源码、测试、示例和现行文档只保留唯一的两阶段接口、schema、奇点模式和点标签；物理删除被替代草案的名称、分派、读取分支、wrapper、fallback 与测试语料。
+- [x] 把 FlintNDE Mathematica 接口补成可经 `Needs["FlintNDE\`"]` 使用的包式两阶段入口，并覆盖一般有理矩阵。
+- [x] 两份 FlintNDE 的 26 个共同交付文件逐字节同步，更新 README、UPDATE_NOTES、版本索引、手册/规划并完成全量测试与 hash 门禁。
+
 
 ## P0 FlintNDE 0.2.0 与 MadStree v0.8 性能优化升版（已完成）
 

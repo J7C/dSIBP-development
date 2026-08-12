@@ -21,8 +21,12 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
      边界开始，不生成 IBP；引言暂不放入 QNM 或黑洞散射内容。
 2. Core function I: numerical matrix-DE transport
    - 第一张总流程图覆盖 exact/numerical 输入、奇点清单、路径、普通点、正则奇点、
-      高阶 pole 的 Moser balance/收敛指数/起点形式渐近/拒绝分支、refinement 与 caller-local 输出；图注逐节点指向
-     技术 subsection。
+     高阶 pole 的 Moser balance/收敛指数/起点形式渐近/拒绝分支、refinement 与 caller-local 输出；图注逐节点指向
+     技术 subsection；
+   - 明确 `RationalMatrixSystem` 内部发现奇点，并把任意次数矩阵多项式加简单极点写成
+     通过 exact 结构认证后采用的优化，而不是 dlog-only 输入边界；
+   - 把原始点规划与已有计划执行画成两个阶段：缺省避开奇点、显式奇点折跃的分支责任、
+     Arb 球序列化、规划精度门禁及 Wolfram `Needs["FlintNDE`"]` 入口。
 3. Core function II: semi-analytic regulator-series reconstruction
    - 第二张总流程图只把基础 NDE 作为一个模块；单独给 pilot、AMFlow-inspired production
      plan、Acb 方阵插值和独立样本验证。
@@ -62,7 +66,7 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
 | `fuchsian.py` | 已实现 | exact Lee--Moser projector-balance、ordered projectors、逐步 pole 阶与完整系统 round-trip 认证 |
 | `local_solutions.py` | 已实现（受限） | 统一 power-log、Moser 后原基 exact-jet 边界验证、严格解耦指数 sector 与单重二阶-pole 起点形式递推；一般 formal gauge/Stokes fail closed |
 | `asymptotics.py` | 已实现 | 公开标量五阶尾项诊断，返回分子、分母、比值、阈值与严格门禁状态 |
-| `routing.py` | 已实现 | `inf` 反演、普通/正则/高阶奇点调度、`build_adaptive_path_plan` 对全部非普通路径点执行同一局部 basis 预检、自描述 `list[acb]` 路径、可保存的中间 singular checkpoint、逐步 `step/R` 与绕行提示；非 Q(i) 正则中心/谱及未认证内部/终点 fail closed |
+| `routing.py` / `singularity_jump.py` | 已实现 | `inf` 反演、普通/正则/高阶奇点调度、通用有理矩阵内部奇点清单、缺省避奇点与显式奇点折跃、用户点前瞻、自描述 Arb 球计划及反序列化；非 Q(i) 正则中心/谱及未认证内部/终点 fail closed |
 | `transport.py` | 已实现 | 普通点分段输运、统一奇点局部基 bridge、双链 refinement，以及普通/正则/指数型 `(coordinate,"save")` 的逐点即时输出与完成后汇总 |
 | `frobenius.py` | 已实现 | Q(i) exact indicial/Jordan/resonance manifest 与 power-log 基；非 Q(i) 谱 fail closed |
 | `numeric_structure.py` | 已实现 | 浮点 residue 的精度感知斩杀、结构判别与审计 manifest |
@@ -73,7 +77,9 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
 ## 发布验收
 
 - 新包不得读取 BlackHoleQNM 私有结果或运行配置。
-- ordinary-point 主接口不得要求 pole/residue 分解。
+- ordinary-point 主接口不得要求 pole/residue 分解；简单极点快速路线必须由包内部 exact 认证。
+- 计划与执行必须分离；执行不得重新规划。执行工作精度高于计划精度时必须拒绝并要求重规划。
+- 缺省路径不得穿过内部奇点；显式奇点折跃必须报告多值分支责任。任何经过中途节点的多点输运均可称折跃，只有穿越奇点的局部基连接称奇点折跃。
 - exact gate 测试至少覆盖：半单重根无 log、长度三 Jordan 的 `log^2`、整数差共振
   自动 log、mixed-root defective fail closed。
 - 浮点 gate 必须记录输入精度、相对/绝对斩杀线、矩阵尺度和最大被判零量；binary64

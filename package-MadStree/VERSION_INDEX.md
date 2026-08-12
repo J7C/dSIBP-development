@@ -2,14 +2,16 @@
 
 ## 当前版本
 
-- 版本：`v0.9`
-- 目录：`versions/MadStree-v0.9/`
+- 版本：`v0.10`
+- 目录：`versions/MadStree-v0.10/`
 - 状态：当前工作版本
-- 版本沿革：`v0.5` -> `v0.6` -> `v0.7` -> `v0.8` -> `v0.9`（v0.9 在 v0.8 基础上修改建立：后端失败诊断增强、`PythonExecutable` 缺省 `Automatic` + `MADSTREE_PYTHON` 包级解析、examples 失败门禁；内置 FlintNDE 保持 0.2.0）
+- 版本沿革：`v0.5` -> `v0.6` -> `v0.7` -> `v0.8` -> `v0.9` -> `v0.10`（v0.10 在 v0.9 基础上修改建立：两阶段路径规划与折线输运、奇点节点化及奇点折跃与统一剔除、奇点领头阶（LO）保存语义、缺省避开奇点、点结果坐标成对格式、删单顶点超几何特例；内嵌后端为 FlintNDE 0.3.0 同版本同步副本，含精度污染修复）
 - 验证证据：
-  - 11 个开发测试 fresh 全过（`MADSTREE_PYTHON=D:/anaconda/python.exe`，合计 160/160）：check_core `49/49`、test_package_artifacts `18/18`、test_flintnde_boundary `9/9`、test_flintnde_massive_vertex `7/7`、test_flintnde_massless_edge `9/9`、test_flintnde_massive_full_edge `5/5`、test_flintnde_mixed_three_vertex `7/7`、test_flintnde_vertex_family `7/7`、test_dsibp_derivative_dlog `9/9`、test_simultaneous_cycle_chart `22/22`、test_vertex_family_reduce `18/18`
-  - examples 01--05 缺省（无环境变量）fresh 全跑，全部 `Example PASSED`、退出码 0
-  - 负例验证：对无 python-flint 的解释器显式传 `PythonExecutable`，输出为单条清晰诊断 Message（`Backend error: No module named 'flint'.`）+ `Failure`（含 `"stderr"` 键），example 退出码 1，无 `MapThread::mptd`/`Lookup::invrl` 刷屏
+  - 折线规划与输运专项：53/53 通过（含剔除/重连、前瞻节点、缺省避奇点、显式奇点折跃、双语提示、精度拒绝、LO 契约和零连接段）
+  - Python adapter：10/10 通过；计划 Arb 球 round-trip 与 execute-only 规划器哨兵均通过
+  - 单顶点显式级数 oracle 对照：新通用路线与 2411.03088 Sec.3.3 显式级数互检 8/8、10/10 一致
+  - 12 个 Wolfram 开发测试文件全部通过，合计 221/221；LO exact 方向记录、`leadingOrderRefused`、点状态排序和无 `Rule::argr` 已进入正式契约
+  - Examples 01--05：5/5 全部退出 0
 
 ## 保留版本
 
@@ -19,6 +21,7 @@
 - `v0.6`：冻结源码、手册、examples 与继承自 v0.5 的 T1--T6 验证证据；作为 v0.7 的冻结基线（由冻结 v0.5 复制），不再回写。
 - `v0.7`：冻结源码、手册、examples 与继承自 v0.6 的验证证据；作为 v0.8 的冻结基线，不再回写。
 - `v0.8`：冻结源码、手册、examples 与验证证据；作为 v0.9 的冻结基线，不再回写。
+- `v0.9`：冻结源码、手册、examples 与验证证据（160/160、examples 全过、负例诊断；远端 tag `MadStree-v0.9`）；作为 v0.10 的冻结基线，不再回写。
 
 ## 升级规则
 

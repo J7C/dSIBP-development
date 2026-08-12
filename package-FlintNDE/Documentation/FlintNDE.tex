@@ -304,12 +304,28 @@ python -m pip install FlintNDE
 \end{verbatim}
 or install a downloaded source tree once with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.1.0
+python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.3.0
 \end{verbatim}
 Editable development mode uses the same command with \texttt{-e}.  A calling script may
 then live in any directory and simply \texttt{import flintnde}; the package source is not
 copied beside it.  When the caller passes \texttt{initialize\_output\_layout(\_\_file\_\_)},
 all generated files are rooted beside that calling script, never in the installed package.
+
+The source tree also provides a standard Wolfram Language package.  Add the 0.3.0 version
+root to \texttt{\$Path}, then evaluate
+\begin{verbatim}
+Needs["FlintNDE`"];
+system = FlintNDERationalSystem[{{1/(x-1)}}, x];
+plan = FlintNDEPlanPath[system, 0, {1/2},
+  "WorkingPrecisionDigits" -> 100];
+result = FlintNDEExecutePath[system, {1}, plan,
+  "WorkingPrecisionDigits" -> 100];
+\end{verbatim}
+The planning default is \texttt{"SingularityMode" -> "Avoid"}; explicit
+\texttt{"SingularityJump"} mode carries the branch warning.  These are the only accepted
+mode values.  Messages use English by default and
+\texttt{MessageLanguage -> "CN"} selects Chinese.
+
 The complete input syntax and every optional parameter are listed in
 Sec.~\ref{subsec:public-interface}.
 
@@ -493,6 +509,19 @@ contribution has pole order $\max(0,n-d+2)$.  Exact divisibility is both faster 
 than probing $A(p+\delta)$ for small numerical $\delta$; displaced evaluations are useful
 diagnostics but cannot certify a cancellation or distinguish a small residue from zero.
 
+After building this inventory, the package attempts an exact structural decomposition
+\begin{equation}
+ A(s)=P(s)+\sum_j\frac{R_j}{s-p_j},
+ \label{eq:polynomial-simple-poles}
+\end{equation}
+where the matrix polynomial $P$ may have any finite degree.  The pole locations and residues
+are derived internally; the caller need not supply a dlog alphabet.  The partial-fraction
+recurrence is selected only if reconstruction of the complete matrix is exact and every
+finite pole is simple.  A higher-order pole or any failed identity check remains on the
+general rational-matrix route.  A pure polynomial system is the valid zero-finite-pole
+subcase.  Thus Eq.~\eqref{eq:polynomial-simple-poles} is a certified optimization of the
+generic interface, not a restriction to dlog differential equations.
+
 \subsubsection{Path subdivision and precision}
 \label{subsec:path}
 
@@ -515,21 +544,44 @@ not as a rigorous enclosure of the complete path.
 The convergence radius and the step length are distinct quantities.  The singularity set
 fixes $R(c)$ or $R_{\mathrm{sing}}(p)$; the user option
 \texttt{max\_step\_over\_radius} only imposes
-$|\Delta z|/R\leq f_{\mathrm{step}}$.  The executable path builder reports the
-classifications of both endpoints and all singularities on every straight segment.  A
-regular singular endpoint is replaced in the ordinary transport list by a nearby matching
-point inside its Frobenius disk.  If a singularity lies strictly inside a segment, the
-builder warns but does not stop.  The user may provide explicit complex
-\texttt{detour\_points}; otherwise the executable path stores a unified local-basis bridge
-between ordinary matching points on the two sides.  The bridge may use the original
-Frobenius system, a Moser-reduced Fuchsian system, or a certified exponential-times-power--log
-sector.  The incoming step is controlled by
-$R_{\mathrm{sing}}(p)$ of the target singularity, not by the radius of the preceding
-ordinary point.  The path reports the ordered list of all $|\Delta z|/R$ values and its
-maximum.  Bridge evaluation uses the principal Acb logarithm/power branch, corresponding
-to the upper-half-plane continuation from a negative real local coordinate to a positive
- one.  A high-pole checkpoint remains fail closed when neither the exact Moser reduction
- nor the certified exponential-sector gate supplies a local basis.
+$|\Delta z|/R\leq f_{\mathrm{step}}$.  Planning and execution are separate operations:
+a planner consumes raw user points and serializes all ordinary nodes, sample assignments,
+singularity classifications, and bridge geometry; the executor restores that plan and must
+not call the planner again.
+
+The default mode is \texttt{singularity\_mode="avoid"}.  If a straight segment contains
+an internal singularity, planning stops with a structured report naming both the singularity
+and the affected user-point pair.  The caller can instead provide explicit detour points.
+Any multipoint transport through intermediate nodes is called a jump in this manual.  Only
+the explicit \texttt{"singularity\_jump"} mode builds a local-basis bridge across a
+singularity; this operation is called a singularity jump.  No Boolean switch or alternate
+mode spelling is accepted.  A singularity jump
+chooses a branch of a multivalued local solution equivalent to one detour homotopy class;
+the package reports this responsibility and the caller must confirm the branch.  The bridge
+may use the original Frobenius system, a
+Moser-reduced Fuchsian system, or a certified exponential-times-power--log sector.  A
+high-pole checkpoint remains fail closed when none of these exact gates supplies a local
+basis.
+
+When a singularity jump is enabled, entering the step range of a pole creates incoming and outgoing
+matching nodes.  Subsequent user points are inspected in order; the last point still within
+one admissible pole-centred step becomes the next node.  If the first point is already
+outside that range, one admissible step is taken towards it before ordinary planning resumes.
+The incoming step is controlled by $R_{\mathrm{sing}}(p)$ of the target singularity, not by
+the radius of the preceding ordinary point.
+
+The global FLINT precision is
+\begin{equation}
+ p_{\mathrm{bit}}=\left\lceil p_{\mathrm{dec}}\log_2 10\right\rceil+32.
+\end{equation}
+For example, 70 and 100 decimal digits request 265 and 365 bits, and higher decimal requests
+continue to increase the bit count by the same formula.  Segment projection, match ratios,
+rotation factors, and winding/monodromy geometry are constructed at the current Arb
+precision rather than in binary64.  Serialized plans record
+\texttt{planning\_precision\_digits}; Acb coordinates are stored as Arb midpoint--radius--
+exponent records.  Execution at a higher working precision than planning is rejected and
+requires replanning, because serialization cannot recover discarded information.  Increasing
+only the number of output digits does not change the working precision.
 
 \small
 \begin{longtable}{L{0.22\textwidth}L{0.72\textwidth}}
@@ -545,12 +597,13 @@ Path role & Implemented action, radius rule, and returned object \\
 \endhead
 Ordinary start & The input is a finite Acb column.  Taylor transport starts at the stated
 point, and its convergence radius is the distance to the nearest singularity. \\
-Singular start & The input is an exact $\{a,b,C\}$ power--log record or an explicit
-$\{\phi,a,b,C\}$ exponential record, not a finite value at the singularity.  The package validates the indicial, exponential, and log branch, evaluates it
-at the first ordinary matching point, and then starts Taylor transport.  The matching
-distance is limited by $R_{\rm sing}$, which excludes the singularity itself.  For a
-certified exponential solution, legacy $\{a,b,C\}$ input infers the sector from $C$;
-explicit $\phi$ is checked against that same exact sector. \\
+Singular start & A regular singularity accepts an exact $\{a,b,C\}$ power--log record;
+an exponential singularity accepts only an explicit $\{\phi,a,b,C\}$ record.  Neither is
+a finite value at the singularity.  The package validates the indicial, exponential, and log
+branch, evaluates it at the first ordinary matching point, and then starts Taylor transport.
+The matching distance is limited by $R_{\rm sing}$, which excludes the singularity itself.
+For an exponential solution, FlintNDE derives the exact sector from the DE and verifies
+$\phi$; it never infers a missing exponential signature from $C$. \\
 Ordinary target & The last snapshot is the transported Acb column at the stated target. \\
 Regular-singular target & The executable list ends at an ordinary matching point inside the
 target Frobenius disk; it never invents a finite value at the singularity.  The target
@@ -691,7 +744,7 @@ only if
 If this compatibility condition fails, the defect is transferred to a logarithmic
 coefficient.  The package evaluates Eq.~\eqref{eq:resonance-compatibility} with exact
 rational matrices.  The default route never silently substitutes a floating-point threshold
-for this exact decision; the explicitly numerical fallback described below records its full
+for this exact decision; the explicit numerical route described below records its full
 threshold provenance.
 
 \subsubsection{Unified power--log recurrence}
@@ -1179,15 +1232,15 @@ python -m pip install FlintNDE
 \end{verbatim}
 or from a downloaded wheel with
 \begin{verbatim}
-python -m pip install ./flintnde-0.1.0-py3-none-any.whl
+python -m pip install ./flintnde-0.3.0-py3-none-any.whl
 \end{verbatim}
 A downloaded source checkout can be installed normally with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.1.0
+python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.3.0
 \end{verbatim}
 and developers may instead select editable mode with
 \begin{verbatim}
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.1.0
+python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.3.0
 \end{verbatim}
 Neither the wheel nor source-install route requires the user to build the package manually;
 \texttt{pip} installs the declared \texttt{python-flint} dependency automatically.
@@ -1658,16 +1711,16 @@ Repeated powers are combined and exact zero coefficients removed.  An empty
 \texttt{phi} list means $\phi=0$ and $\exp(\phi)=1$; this keeps a zero-signature sector in
 the same reusable format as other sectors of one high-pole system.  The record does not let
 the user choose a new exponential: FlintNDE derives each signature from the high-order
-Laurent matrices and requires exact equality.  Legacy $\{a,b,C\}$ exponential input remains
-accepted by inferring the sector from $C$, while saved output always records $\phi$ explicitly.
+Laurent matrices and requires exact equality.  Exponential input must therefore provide
+$\{\phi,a,b,C\}$, and saved output records the same complete schema.
 
 For a Moser-reduced high-pole start, the same record is interpreted in the original integral
 basis.  The package multiplies an exact reduced-basis power--log jet by the complete Laurent
 gauge and solves the earlier-power, higher-log, and requested-$C_i$ constraints in that basis;
-it does not transform only the isolated leading vector.  For an exponential start, the exact constant-basis transform of $C_i$ identifies
-the sector and the exponential of Eq.~\eqref{eq:implemented-exponential-factor} is supplied
-automatically for legacy input; explicit reusable input supplies $\phi$ and the program checks
-it against the inferred sector.  One term must not mix distinct
+it does not transform only the isolated leading vector.  For an exponential start, the exact
+constant-basis transform of $C_i$ identifies the sector, while the required input $\phi$ is
+checked against the exponential of Eq.~\eqref{eq:implemented-exponential-factor}.  One term
+must not mix distinct
 exponential signatures.  In either case, splitting a physical boundary into several records
 represents the required linear superposition.
 

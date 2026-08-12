@@ -4,8 +4,6 @@
 任意精度数值输运一阶矩阵微分方程，以及在固定 regulator 数值求解后重构“幂次解析、
 系数数值”的半解析 Laurent/幂级数解。支撑这两个功能的可复用能力包括：
 
-更名记录：2026-07-28，开发名 `NDEs-flint` 改为 `FlintNDE`，Python 导入名由
-`ndes_flint` 改为 `flintnde`。当前为发布前开发版本，不保留旧导入名兼容层。
 
 ## 版本更新说明与分支
 
@@ -17,6 +15,24 @@
 建议新版本从稳定主线新建独立 Git branch 开发和验证；branch 是否创建、保留或合并由用户
 决定，不会因版本完成而自动合并到 `main`。
 
+## 当前版本 0.3.0
+
+当前源码位于 `versions/FlintNDE-0.3.0/`。FlintNDE 仍是通用单变量矩阵微分方程包：
+`RationalMatrixSystem` 从矩阵元内部发现奇点，并在 exact 验证通过时自动采用
+`A(x)=P(x)+Sum R_j/(x-p_j)` 快速路线，其中 `P(x)` 可为任意有限次数；高阶极点和
+一般有理系统保留通用路线。用户无需预提取奇点或提供 dlog letters。
+
+原始点由规划入口生成完整计划，执行入口只执行计划；缺省避开奇点，只有显式奇点折跃才
+选择多值分支。任何经过中途节点的多点输运都可称为折跃，只有穿越奇点的局部基连接称为
+奇点折跃；模式只接受 `singularity_jump` / `"SingularityJump"`（以及缺省的
+`avoid` / `"Avoid"`）。工作位数为
+`ceil(WorkingPrecisionDigits*log2(10))+32`，序列化计划记录规划精度，执行要求更高精度
+时必须重新规划。独立包和 MadStree v0.10 的 `Vendor/FlintNDE` 保持同一实现。
+
+Python 使用 `import flintnde`。Wolfram Language 把版本根加入 `$Path` 后可直接
+`Needs["FlintNDE`"]`，使用 `FlintNDERationalSystem`、`FlintNDEPlanPath` 和
+`FlintNDEExecutePath`。
+
 - 一般解析矩阵在普通点的 Cauchy--DFT Taylor 系数重建与高精度输运；
 - exact Q(i)(x) 矩阵逐元约分、有限/无穷远奇点发现与命名路径规划；
 - 正则奇点的矩阵 indicial equation、Jordan/resonance gate 与 power-log 局部基；
@@ -27,7 +43,7 @@
 
 目录分工：
 
-- `versions/FlintNDE-0.1.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
+- `versions/FlintNDE-0.3.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
 - `examples/`：通过顶部路径变量加载程序包的示例；
 - `Documentation/`：论文源文件、论文结构和发布路线规划；
 - `../参考资料（文献、笔记、代码）/FlintNDE_ref/`：程序包论文与算法使用的外部参考资料。
@@ -48,19 +64,17 @@
 wheel、从源码普通安装以及开发者可编辑安装分别为
 
 ```powershell
-python -m pip install .\flintnde-0.1.0-py3-none-any.whl
-python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.1.0"
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.1.0
+python -m pip install .\flintnde-0.3.0-py3-none-any.whl
+python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.3.0"
+python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.3.0
 ```
 
 前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint` 与 `sympy`。
 
-2026-08-05 fresh 执行 `python -m unittest discover -s tests -v` 通过 `95/95`（88 项既有
-+ 7 项 serializer 合同测试），wall time 约 `16.5 s`。其中包含正则奇点 `{a,b,C}`、
-指数型奇点 `{phi,a,b,C}` 的起点/终点/中间点保存与重用、多列 Frobenius 批量输运、
-高阶 pole、Lee--Moser、公开标量五阶尾项门禁、`fit_sampled_series` 自定义正规化点、
-regular-point DE 与解析 epsilon-jet DE 及超能力 fail-closed 回归。当前版本 0.1.0 为
-纯重构版本，公开接口与输出 schema 与 0.1.0.dev0 完全一致。
+0.3.0 当前聚焦回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
+Arb 路径 round-trip、70/100 位自适应精度和高精度执行拒绝；Python `pytest` 144/144、`unittest discover` 133/133 通过，
+Wolfram `Needs["FlintNDE`"]` 端到端检查 18/18 通过。完整验证结果以
+`versions/FlintNDE-0.3.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
 
 安装一次后，任意目录 `A` 中的调用脚本都可直接 `import flintnde`，无需把 package 源码
 复制到 `A`。脚本调用 `initialize_output_layout(__file__, run_name=...)` 后，所有由该 layout
@@ -99,9 +113,11 @@ Frobenius 不在一般代数数域上自动运算。
 fail closed。
 `build_adaptive_path` 返回可直接作为数值输运路径参数的 `list[acb]`。普通点的
 收敛半径取最近奇点距离，奇点的收敛半径取最近的其他奇点距离；实际步长另由用户选择的
-`max_step_over_radius` 乘该半径限制。任一路段穿过内部奇点时，程序会提示用户可用
-`detour_points` 自选复平面绕行点，但不阻断路径生成。若用户保持原路径，内部奇点由两侧
-普通匹配点和自动局部基 bridge 处理；进入奇点的步长以该奇点的收敛半径为分母。路径按
+`max_step_over_radius` 乘该半径限制。任一路段穿过内部奇点时，缺省
+`singularity_mode="avoid"` 返回含奇点与对应路段的结构化拒绝；用户可用
+`detour_points` 自选复平面绕行点。只有显式 `singularity_mode="singularity_jump"`
+才建立两侧普通匹配点和局部基 bridge，并要求用户确认等价绕行类的多值分支。进入奇点的
+步长以该奇点的收敛半径为分母。路径按
 顺序报告完整 `step/R` 列表及其最大值。一般 formal block decoupling、
 对二阶 pole 且主导根在 Q(i) 中单重互异时，还可逐 sector 精确递推形式
 `exp(-k/z) z**rho Sum[v_n z**n]`。程序固定计算到用户要求的 `N` 阶，再额外计算五阶；报告
@@ -158,9 +174,9 @@ transition 都是 `ordinary_taylor`，且不直接处理路径 `save` 标签。M
 `z**a log(z)**b C` 的最高 log 领头项；有限奇点的 `z=s-s0`，无穷远的 `z=sinv=1/s`。
 程序以 exact Q(i) manifest 验证 `a`、`b` 和完整主积分系数矢量 `C`，自动生成 Jordan
 分支的低次 log completion，并在首个普通匹配点初始化输运。格式不符、`C` 不在要求的
-本征/广义本征子空间或把普通有限值冒充奇点边界时，均在计算前拒绝。旧输入仍可让指数
-sector 由 `C` 自动推断；可移植的显式输入/保存格式为
-`exponential_boundary([{"phi":[{"power":-1,"coefficient":-k}],"a":a,"b":b,"C":[...]}])`。
+本征/广义本征子空间或把普通有限值冒充奇点边界时，均在计算前拒绝。指数型奇点边界只接受显式输入/保存格式
+`exponential_boundary([{"phi":[{"power":-1,"coefficient":-k}],"a":a,"b":b,"C":[...]}])`；
+缺少 `phi` 或含有额外字段时直接拒绝。
 这里 `phi(z)=Sum[c_p z^p]` 只含负整数幂；`phi=[]` 明确表示该 sector 的 `exp(phi)=1`。
 程序会把每项与高阶 Laurent 矩阵推出的 sector
 逐项 exact 比较，跨多个指数 sector 的 `C` 必须拆成多项。该 Frobenius 协议也由
