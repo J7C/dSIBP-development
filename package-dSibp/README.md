@@ -9,7 +9,7 @@ reduction。
 
 - 当前模块化源码：`versions/021_dSIBP/`。
 - 标准加载：把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 保留代码版本：`018_dSIBP/`、`019_dSIBP/`、`020_dSIBP/`（冻结）。
+- 保留代码版本：`019_dSIBP/`、`020_dSIBP/`（冻结）与 `021_dSIBP/`（当前）。
 
 早期 `010_dS_ibp_general.wl` 是尚未模块化的通用 dS IBP 单文件实现；011--015 是该路线的
 后续历史快照。它们已被模块化版本和当前正式交付取代，并按仓库版本保留策略
@@ -25,9 +25,9 @@ check-smoke 共享 harness、H5 同左端覆盖静态回归），公开接口与
 
 ## 目录
 
-- `versions/`：保留的 018、019、020（冻结）与当前 021 模块化源码。
+- `versions/`：保留的 019、020（冻结）与当前 021 模块化源码。
 - `Documentation/`：plan、design note、技术手册和专项正确性清单。
-- `independent-benchmark/`：独立任务书、正式 020.0 交付、reference results 和 examples。
+- `independent-benchmark/`：独立任务书、正式 021.0 交付、reference results 和 examples。
 - `000-report/`：历史独立检验报告归档。
 - `check-smoke/`：维护者轻量检查；不属于独立验证证据。
 
@@ -35,7 +35,8 @@ check-smoke 共享 harness、H5 同左端覆盖静态回归），公开接口与
 
 ## Examples
 
-正式交付在 `independent-benchmark/package/examples/` 保留六个互补入口：
+当前源码随包提供 `versions/021_dSIBP/Examples/`；正式交付在
+`independent-benchmark/package/examples/` 同步保留六个互补入口：
 
 - `01_mixed_bubble_workflow.wl`：mixed bubble 基本工作流。
 - `02_function_system_hankel.wl`：Hankel/function-system 输入与变换。

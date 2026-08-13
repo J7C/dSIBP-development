@@ -21,7 +21,7 @@ from flint import acb, acb_mat
 
 # 独立复制 example 时只需让该路径指向已安装源码或删除本段后使用正式安装。
 EXAMPLE_DIR = Path(__file__).resolve().parent
-PACKAGE_ROOT = (EXAMPLE_DIR / ".." / "versions" / "FlintNDE-0.1.0").resolve()
+PACKAGE_ROOT = (EXAMPLE_DIR / ".." / "versions" / "FlintNDE-0.4.0").resolve()
 DEFAULT_CONFIG_PATH = EXAMPLE_DIR / ".." / "config" / "qnm_u_unified_it0_3_it1_minus1.json"
 if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
@@ -34,6 +34,7 @@ from flintnde import (  # noqa: E402
     build_local_solution_basis,
     column_vector,
     configure_working_precision,
+    exponential_boundary,
     frobenius_boundary,
     gaussian_rational,
     initialize_output_layout,
@@ -366,17 +367,25 @@ def run_frequency(
     horizon_forbidden_boundary = frobenius_boundary(
         [{"a": -a_h, "b": 0, "C": [0, horizon_root]}]
     )
-    infinity_outgoing_boundary = frobenius_boundary(
+    infinity_outgoing_boundary = exponential_boundary(
         [
             {
+                "phi": [{"power": -1, "coefficient": exact_iw}],
                 "a": gaussian_rational(convention["it0"]) - 2 * exact_iw,
                 "b": 0,
                 "C": [1, exact_iw],
             }
         ]
     )
-    infinity_incoming_boundary = frobenius_boundary(
-        [{"a": convention["it0"], "b": 0, "C": [1, -exact_iw]}]
+    infinity_incoming_boundary = exponential_boundary(
+        [
+            {
+                "phi": [{"power": -1, "coefficient": -exact_iw}],
+                "a": convention["it0"],
+                "b": 0,
+                "C": [1, -exact_iw],
+            }
+        ]
     )
 
     horizon_allowed, horizon_path = _transport_from_endpoint(

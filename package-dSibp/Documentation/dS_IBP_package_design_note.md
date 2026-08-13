@@ -657,7 +657,7 @@ q_1 · Q_2 = q_1 · (q_1 - k) = q_12 - q_1·k = (z_1 + z_2 - k_s2) / 2
 
 ### 13.1 权威实现与公开工作流
 
-当前唯一权威实现是模块化 `versions/020_dSIBP/`，标准入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`；正式单文件兼容入口是 `independent-benchmark/package/package_020.0.wl`。工作树只保留 018、019、020，更早版本从 Git 历史追溯。
+当前唯一权威实现是模块化 `versions/021_dSIBP/`，标准入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`；正式单文件兼容入口是 `independent-benchmark/package/package_021.0.wl`。工作树只保留 019、020、021，更早版本从 Git 历史追溯。当前 Examples 同时存在于模块版本目录和正式交付目录。
 
 - `makeTopologyData`：解析用户 case，验证 topology、动量基和 `z/ISP` 坐标，并预缓存 index maps、seed summary 与 sector metadata。
 - `makeCanonicalSeedBatch`：生成全 sector 的 qIBP/tIBP canonical seed，自动派生受门禁保护的 massive/masslessFull shrink sectors。

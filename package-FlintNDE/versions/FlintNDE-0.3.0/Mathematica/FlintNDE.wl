@@ -286,7 +286,7 @@ flintNDEInvoke[
     ]]
   ];
   Clear[Global`FlintNDEBridgeResult];
-  Get[outputFile];
+  Get[outputFile, CharacterEncoding -> "UTF-8"];
   result = Global`FlintNDEBridgeResult;
   Quiet[DeleteFile /@ Select[{requestFile, outputFile, logFile}, FileExistsQ]];
   Clear[Global`FlintNDEBridgeResult];

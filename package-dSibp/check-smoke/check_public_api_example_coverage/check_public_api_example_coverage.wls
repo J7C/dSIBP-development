@@ -7,9 +7,9 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
-examplesDirectory = FileNameJoin[{projectRoot, "independent-benchmark", "package", "examples"}];
+examplesDirectory = FileNameJoin[{projectRoot, "versions", "021_dSIBP", "Examples"}];
 manifestPath = FileNameJoin[{examplesDirectory, "coverage_manifest.wl"}];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "020_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "021_dSIBP", "Kernel", "dSIBP.wl"}]];
 
 manifest = Get[manifestPath];
 coverage = Lookup[manifest, "coverage", <||>];
@@ -53,7 +53,7 @@ sourceAudit = Association@KeyValueMap[
 (*发布门禁结果*)
 
 checks = <|
-   "manifestVersion" -> (Lookup[manifest, "version", Missing["version"]] === ToString[$dSIBPVersion]),
+   "manifestVersion" -> (Lookup[manifest, "version", Missing["version"]] === ToString[dSIBP`$dSIBPVersion]),
    "noMissingPublicFunctions" -> (Complement[publicFunctions, declaredFunctions] === {}),
    "noUnknownDeclaredFunctions" -> (Complement[declaredFunctions, publicFunctions] === {}),
    "allFilesExist" -> And @@ Lookup[Values[sourceAudit], "fileExistsQ", False],

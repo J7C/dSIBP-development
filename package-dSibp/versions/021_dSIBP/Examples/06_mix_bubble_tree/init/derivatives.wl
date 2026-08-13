@@ -1,0 +1,13 @@
+<|"status" -> "generated", "variableCount" -> 6,
+ "operators" -> {<|"variable" -> ss11, "userVariable" -> ss11, "kind" -> "kinematicCoordinate",
+    "decomposition" -> <|"status" -> "chainRuleAdapter", "atomicCoordinates" -> {sp[k1 + k2, k1 + k2], sp[k1, k1],
+        sp[k2, k2]}, "atomicJacobian" -> {2*ss11, 0, 0}|>|>, <|"variable" -> sE1, "userVariable" -> sE1,
+    "kind" -> "kinematicCoordinate", "decomposition" -> <|"status" -> "chainRuleAdapter",
+      "atomicCoordinates" -> {sp[k1 + k2, k1 + k2], sp[k1, k1], sp[k2, k2]}, "atomicJacobian" -> {0, 1, 0}|>|>,
+   <|"variable" -> sE2, "userVariable" -> sE2, "kind" -> "kinematicCoordinate",
+    "decomposition" -> <|"status" -> "chainRuleAdapter", "atomicCoordinates" -> {sp[k1 + k2, k1 + k2], sp[k1, k1],
+        sp[k2, k2]}, "atomicJacobian" -> {0, 0, 1}|>|>, <|"variable" -> E1, "userVariable" -> E1,
+    "kind" -> "vertexEnergy", "decomposition" -> Missing["DirectVertexEnergyDerivative"]|>,
+   <|"variable" -> E2, "userVariable" -> E2, "kind" -> "vertexEnergy",
+    "decomposition" -> Missing["DirectVertexEnergyDerivative"]|>, <|"variable" -> E3, "userVariable" -> E3,
+    "kind" -> "vertexEnergy", "decomposition" -> Missing["DirectVertexEnergyDerivative"]|>}|>

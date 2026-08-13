@@ -53,6 +53,12 @@ codex-independent-benchmark/todolist_temp.md
 package-MadStree/independent-validation/**/results/*
 !package-MadStree/independent-validation/**/results/summary.wl
 
+# FlintNDE independent validation retains its summary and serialized grouped plan.
+!package-FlintNDE/independent-validation/**/results/
+package-FlintNDE/independent-validation/**/results/*
+!package-FlintNDE/independent-validation/**/results/summary.json
+!package-FlintNDE/independent-validation/**/results/plan_grouped.json
+
 # Local document-rendering and review scratch
 /tmp/
 

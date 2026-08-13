@@ -37,11 +37,11 @@
 \def\verbatim@font{\normalfont\ttfamily\small}
 \makeatother
 
-\title{dS IBP Package 020.0 用户手册}
+\title{dS IBP Package 021.0 用户手册}
 \author[a]{Su Yingze}
 \affiliation[a]{Institute not specified}
 \emailAdd{yingze.su@outlook.com}
-\abstract{本手册说明 dS IBP package 的费曼规则、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前发布为 020.0：full 模式使用 \texttt{J[aList,linePacks,ispList]}，time-only 模式使用 \texttt{J[sectorKey,timeShifts,stateBits]}，初始化后 schema 固定且不能混用。用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。package 只生成、序列化和验证关系，不运行 reduction。}
+\abstract{本手册说明 dS IBP package 的费曼规则、massive/massless 指标约定、time 与 loop-momentum IBP、独立变量微分方程 seed、EOM/缩并 canonical、拓扑输入、公开 API、Kira 接口和 tree vertex family。当前发布为 021.0：full 模式使用 \texttt{J[aList,linePacks,ispList]}，time-only 模式使用 \texttt{J[sectorKey,timeShifts,stateBits]}，初始化后 schema 固定且不能混用。021.0 清理模块内部被覆盖定义并加强源码所有权检查，公开数学接口与 020.0 相同。用户显式分别声明任意命名的 \texttt{loopExternal\allowbreak Momenta} 与 \texttt{independentExternal\allowbreak Momenta}，程序验证结构圈数、routing、声明完备性和动力学坐标，不自动猜角色。package 只生成、序列化和验证关系，不运行 reduction。}
 
 \begin{document}
 \sloppy
@@ -51,21 +51,22 @@
 
 \section{快速开始与当前边界}
 
-本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定发布为 020.0，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和冻结单文件兼容入口分别为
+本 package 生成 dS 圈图的 canonical IBP seed，并把关系转换为后端中立的 \texttt{linearData}。当前稳定发布为 021.0，支持 topology-driven 的任意圈数、任意拓扑以及 massive/massless 混合内线；标准入口和单文件兼容入口分别为
 \begin{verbatim}
-package-dSibp/versions/020_dSIBP/
-package-dSibp/independent-benchmark/package/package_020.0.wl
+package-dSibp/versions/021_dSIBP/
+package-dSibp/independent-benchmark/package/package_021.0.wl
 \end{verbatim}
-工作树只保留 018、019、020：018 与 019 是冻结历史版本，020 是当前主线；更早版本从 Git 历史追溯。020 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、Kira serializer/importer 以及 DE/scaling 检查。full 模式保留双端点三槽 line pack；time-only 在 020 改为显式 sector key、compact 时间幂和 building-block 状态位列表。
+工作树只保留 019、020、021：019 与 020 是冻结历史版本，021 是当前主线；更早版本从 Git 历史追溯。021 继承标准 context、初始化 metadata、完整 time/loop-momentum 生成元、massive EOM、共同-theta odd-subset contact、contact 可达 sector、跨 sector coincident canonical、Kira serializer/importer 以及 DE/scaling 检查。full 模式保留双端点三槽 line pack；time-only 使用显式 sector key、compact 时间幂和 building-block 状态位列表。
 
 仓库内标准加载与独立 benchmark 单文件加载是两个等价入口，应在新 kernel 中任选其一：
 \begin{verbatim}
-packageDir = FileNameJoin[{Directory[],"package-dSibp","versions","020_dSIBP"}];
+packageDir = FileNameJoin[{Directory[],"package-dSibp","versions","021_dSIBP"}];
 If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
 Needs["dSIBP`"];
 
 (* 独立 benchmark 的自包含单文件入口： *)
-Get["package-dSibp/independent-benchmark/package/package_020.0.wl"];
+Get["package-dSibp/independent-benchmark/package/package_021.0.wl",
+  CharacterEncoding->"UTF-8"];
 \end{verbatim}
 两者都提供 \texttt{dSIBP`} 公开 context；独立交付文件不依赖主线模块路径。不要在同一 kernel 重复加载两个入口。
 
@@ -1152,16 +1153,13 @@ activeBasisClosureFailed, invalidNumericStage
 微分变量数值化的全部 serializer 门禁；成功只表示输入已写好或内存数据已就绪，不表示
 external reduction 已运行。
 
-\section{020 标准 package 与初始化}
+\section{021 标准 package 与初始化}
 
-一个 020 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。所有路径相对于 example 的 \texttt{main.wl}：
+一个 021 example 的开头分为四个独立单元：package 加载、详细输入、缺省 option、初始化。版本目录内 Examples 通过公共 loader 调用标准 \texttt{Needs} 入口：
 \begin{verbatim}
 exampleDir = DirectoryName[$InputFileName];
-packageDir = FileNameJoin[{
-  exampleDir,"..","..","..","..","versions","020_dSIBP"
-}];
-If[!MemberQ[$Path,packageDir],AppendTo[$Path,packageDir]];
-Needs["dSIBP`"];
+Get[FileNameJoin[{exampleDir,"..","load_current_package.wl"}],
+  CharacterEncoding->"UTF-8"];
 
 (* 详细输入：vertexData, lineData, momenta, ISP, zero point,
    symmetry, parity 和 independent variables。 *)

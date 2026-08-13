@@ -61,9 +61,9 @@ FlintNDE 的高阶 pole 处理和解析正规化参数重构深度参考了 AMFl
 
 | 程序包 | 当前版本 | 入口 |
 | --- | --- | --- |
-| dSIBP | `020.0` | `package-dSibp/versions/020_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_020.0.wl` |
-| MadStree | `v0.5` | `package-MadStree/load_current.wl` |
-| FlintNDE | `0.1.0.dev0` | `package-FlintNDE/versions/FlintNDE-v0.1.0.dev0/`；导入名 `flintnde` |
+| dSIBP | `021.0` | `package-dSibp/versions/021_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_021.0.wl` |
+| MadStree | `v0.10` | `package-MadStree/load_current.wl` |
+| FlintNDE | `0.3.0` | `package-FlintNDE/versions/FlintNDE-0.3.0/`；导入名 `flintnde` |
 
 ## 依赖与工作流
 
@@ -98,7 +98,7 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 
 ### MadStree
 
-目录：`package-MadStree/versions/MadStree-v0.5/Examples/`。
+目录：`package-MadStree/versions/MadStree-v0.10/Examples/`。
 
 | 示例 | 覆盖内容 |
 | --- | --- |
@@ -130,7 +130,7 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 ## 文档与验证
 
 - dSIBP：`package-dSibp/Documentation/`、`package-dSibp/independent-benchmark/`、`package-dSibp/000-report/`。
-- MadStree：`package-MadStree/versions/MadStree-v0.5/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
+- MadStree：`package-MadStree/versions/MadStree-v0.10/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
 - FlintNDE：`package-FlintNDE/Documentation/`、版本 README、`check_*` 与 `test/`。
 
 验证报告只证明其记录的版本、路径和范围。旧实现历史保留在 Git history 和进度归档中，不在根 README 重复维护。

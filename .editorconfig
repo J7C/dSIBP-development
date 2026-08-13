@@ -1,0 +1,11 @@
+root = true
+
+# 仓库源码、说明和机器可读文本统一使用无 BOM UTF-8。
+# Python 和 Wolfram 的用户可读输出仍须在各自 I/O 调用处显式指定 UTF-8。
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+
+[*.{py,md,tex,bib,toml,json,yaml,yml,csv,tsv}]
+end_of_line = lf

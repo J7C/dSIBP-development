@@ -78,7 +78,10 @@ $MadStreeVersion = "0.10";
 $MadStreeKernelDirectory = DirectoryName[$InputFileName];
 
 Scan[
-  Get[FileNameJoin[{$MadStreeKernelDirectory, #}]] &,
+  Get[
+    FileNameJoin[{$MadStreeKernelDirectory, #}],
+    CharacterEncoding -> "UTF-8"
+  ] &,
   {
     "Core/Paths.wl",
     "Core/Conventions.wl",

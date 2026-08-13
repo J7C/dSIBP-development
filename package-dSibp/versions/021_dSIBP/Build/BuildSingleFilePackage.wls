@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 本脚本把 020 模块化源码按主 loader 的固定顺序拼成独立单文件。
+(* 本脚本把 021 模块化源码按主 loader 的固定顺序拼成独立单文件。
    它不改写模块内容，也不参与运行时物理计算；可用 DSIBP_BUILD_OUTPUT 先生成候选测试版，
    未设置该变量时写入项目规定的候选测试目录。 *)
 
@@ -10,7 +10,7 @@ buildDir = DirectoryName[$InputFileName];
 packageRoot = DirectoryName[buildDir];
 projectRoot = DirectoryName[DirectoryName[packageRoot]];
 loaderPath = FileNameJoin[{packageRoot, "Kernel", "dSIBP.wl"}];
-defaultOutputPath = FileNameJoin[{projectRoot, "test", "results_test", "package_020.0.wl"}];
+defaultOutputPath = FileNameJoin[{projectRoot, "test", "results_test", "package_021.0.wl"}];
 outputOverride = Quiet[Environment["DSIBP_BUILD_OUTPUT"]];
 outputPath = If[
    StringQ[outputOverride] && StringLength[StringTrim[outputOverride]] > 0,
@@ -70,7 +70,7 @@ loaderPrefix = StringTrim[StringTake[loaderSource, firstGet - 1]];
 moduleSources = Import[#, "Text", CharacterEncoding -> "UTF-8"] & /@ modulePaths;
 
 If[! FreeQ[moduleSources, $Failed],
- Print["ERROR: 至少一个 020 模块无法读取。"];
+ Print["ERROR: 至少一个 021 模块无法读取。"];
  Exit[1]
  ];
 
@@ -89,6 +89,6 @@ If[! DirectoryQ[DirectoryName[outputPath]],
 
 writeUTF8LFText[outputPath, singleFileSource];
 
-Print["package_020.0.wl: ", outputPath];
+Print["package_021.0.wl: ", outputPath];
 Print["bytes: ", FileByteCount[outputPath]];
 Print["modules: ", Length[modulePaths]];

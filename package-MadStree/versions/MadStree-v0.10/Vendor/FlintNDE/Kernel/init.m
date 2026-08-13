@@ -9,4 +9,4 @@ Get[FileNameJoin[{
   DirectoryName[DirectoryName[$InputFileName]],
   "Mathematica",
   "FlintNDE.wl"
-}]];
+}], CharacterEncoding -> "UTF-8"];

@@ -1,0 +1,55 @@
+# MadStree v0.11 更新说明
+
+English version: [UPDATE_NOTES_en.md](UPDATE_NOTES_en.md)。
+
+## 基线与定位
+
+- 从冻结的 v0.10 建立；v0.10 不再回写。
+- 数值后端升级为版本内嵌 FlintNDE 0.4.0 同步副本。
+- MadStree 只负责最大连续复仿射单变量段的识别、dlog DE 拉回、边界和 master 顺序；
+  节点规划、输运和多点级数求值全部属于 FlintNDE。
+
+## 当前接口
+
+- 唯一数值入口为 `MSEvaluatePath[context, pointSequence, ...]`。
+- `FlintNDEPathPlanning -> True`（缺省）要求 FlintNDE 在每段内部自动规划节点。同一节点
+  覆盖的用户点按桶做 fast multipoint evaluation；大桶使用子积树/余数树，小桶使用
+  iterative 求值。
+- `FlintNDEPathPlanning -> False` 要求 FlintNDE 严格按用户点顺序建立节点链，不插点、
+  不删点、不调用规划器。用户点列若穿过奇点或超出局部收敛圆则明确失败。
+- `SingularityMode -> "Avoid"` 缺省拒绝穿过奇点；`"SingularityJump"` 只在开启 FlintNDE
+  规划时允许，并保留多值分支责任。
+- 裸坐标需要返回；`{coordinate,"tmp"}` 只参与路径。其它标签拒绝。
+
+## 删除
+
+v0.11 物理删除 MadStree 的路径规划模块、两阶段公开函数、计划对象判断、旧 JSON schema、
+计划序列化/恢复、LO 点标签和相关兼容测试。当前包不加载、不转发、不保留 wrapper 或
+fallback；需要旧行为只能显式加载冻结的 v0.10。
+
+## 实现与编码
+
+- 全部复仿射段、exact 拉回、边界和选项只通过一次 JSON 请求进入同一 Python 进程。
+- 正则奇点 `{a,b,C}` 边界初始化与后续有限段输运在同一后端进程完成。
+- 后端输入、输出、日志及 Wolfram 包内加载显式使用 UTF-8；普通 `Needs["MadStree`"]`
+  不需要用户额外指定编码。
+- `MSExportEvaluationData` 消费 `MSEvaluatePath` 的逐点结果和逐段 refinement 信息。
+
+## 验证状态
+
+- 单请求 Python adapter：4/4 通过。
+- 13 个 Wolfram 开发测试合计 184/184 通过；五个 examples 全部退出 0。
+- 完整 Python 回归 146/146，Wolfram `Needs["FlintNDE`"]` 18/18；独立包与 Vendor 的
+  20 个 Python 实现文件和 14 个测试文件逐文件同字节。
+- v0.11 独立验证 17/17：900 点乘 3 masters 全分量互检，最大绝对差 `5.8262e-43`；
+  自动规划路线 894 点进入 6 个 fast 桶，端到端与后端分别比严格用户节点路线快
+  2.5269 倍和 4.5128 倍。报告位于
+  `independent-validation/MadStree-v0.11-validation-01-flintnde-planned-vs-user-nodes/`。
+- 中英文手册均经 XeLaTeX/BibTeX 构建，日志无未定义引用，首页和数值接口页目检通过。
+
+## 已知限制
+
+- 关闭规划时不支持自动奇点折跃；用户必须给出合法普通点节点链。
+- fast multipoint 的收益依赖每个节点的覆盖桶大小、级数阶数和 master 维数；独立验证报告
+  必须同时记录实际节点、coverage、算法计数及相对直接节点路线的耗时。
+- MadStree 不生成一般 IBP 系统，也不运行 Kira。

@@ -22,8 +22,8 @@
 
 ## 程序与目录
 
-- 当前开发主线由 `../研究计划与研究进度.md` 指定；当前为模块化目录 `versions/020_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 当前正式单文件兼容入口是 `independent-benchmark/package/package_020.0.wl`。代码版本只保留 `versions/018_dSIBP/`、`versions/019_dSIBP/` 和 `versions/020_dSIBP/`；更早版本只从 Git 历史追溯。
+- 当前开发主线由 `../研究计划与研究进度.md` 指定；当前为模块化目录 `versions/021_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
+- 当前正式单文件兼容入口是 `independent-benchmark/package/package_021.0.wl`。代码版本只保留 `versions/019_dSIBP/`、`versions/020_dSIBP/` 和 `versions/021_dSIBP/`；更早版本只从 Git 历史追溯。
 - 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。020 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `020.1`、`020.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
 - 本规则生效后新增的 dSIBP 版本都必须附带独立更新说明，至少记录基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制；018.1 及更早资产不追溯补建。新整数代码版本使用 `versions/NNN_dSIBP/UPDATE_NOTES.md`，同一代码版本的新正式发布号使用 `independent-benchmark/package/package_NNN.x_UPDATE_NOTES.md`。
 - `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；每项可复用检查放入名称直接说明功能的独立子目录，禁止重新堆叠全 family、全 sign/parity、连续指标撒点或完整 reduction 工作树。运行产物只放对应子目录的 `results_test/` 并在任务结束后清理。

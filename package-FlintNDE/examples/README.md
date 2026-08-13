@@ -1,6 +1,6 @@
 # Examples
 
-仓库内示例通过脚本顶部的 `PACKAGE_ROOT` 路径变量加载当前 `versions/FlintNDE-0.1.0/`，不复制程序包
+仓库内示例通过脚本顶部的 `PACKAGE_ROOT` 路径变量加载当前 `versions/FlintNDE-0.4.0/`，不复制程序包
 源码，也不读取项目外其它代码包。发布用户应先安装 `FlintNDE`，随后在任意调用目录直接
 `import flintnde`；路径变量只服务于尚未安装的仓库内开发示例。
 
@@ -30,4 +30,4 @@ python exponential_boundary_save.py
 结果固定保留指定 N 阶并记录后五阶/前五阶矢量块比、五阶相对 refinement 和辅助最小项信息。
 块比不小于 1 时 warning 但仍保存结果；自动点和附近点另与独立二阶标量递推交叉验证。
 
-后两个脚本抽自当前 `tests/test_save_points.py` 已执行的公开调用配置。它们把输出写到本 example 调用目录下的 `results/`；本轮整理只做语法和相对路径检查，不另作数值通过声明。
+后两个脚本抽自当前 `tests/test_save_points.py` 已执行的公开调用配置。它们把输出写到本 example 调用目录下的 `results/`；发布前从本目录 fresh 执行并记录结果。

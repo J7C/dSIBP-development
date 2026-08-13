@@ -20,7 +20,7 @@ from flint import acb, acb_mat, arb, fmpq
 CHECK_DIR = Path(__file__).resolve().parent
 FLINTNDE_ROOT = CHECK_DIR.parent
 PROJECT_ROOT = FLINTNDE_ROOT.parent
-PACKAGE_ROOT = FLINTNDE_ROOT / "versions" / "FlintNDE-0.1.0"
+PACKAGE_ROOT = FLINTNDE_ROOT / "versions" / "FlintNDE-0.4.0"
 if str(FLINTNDE_ROOT) not in sys.path:
     sys.path.insert(0, str(FLINTNDE_ROOT))
 
@@ -203,7 +203,7 @@ def main() -> None:
             "fixed_epsilon_template_sha256": sha256_file(TEMPLATE_PATH),
             "npackage_nde_runtime": str(NPACKAGE_SCRIPT.relative_to(PROJECT_ROOT)).replace("\\", "/"),
             "npackage_nde_runtime_sha256": sha256_file(NPACKAGE_SCRIPT),
-            "flintnde_transport": "package-FlintNDE/versions/FlintNDE-0.1.0/flintnde/transport.py",
+            "flintnde_transport": "package-FlintNDE/versions/FlintNDE-0.4.0/flintnde/transport.py",
             "flintnde_transport_sha256": sha256_file(PACKAGE_ROOT / "flintnde" / "transport.py"),
         },
     }

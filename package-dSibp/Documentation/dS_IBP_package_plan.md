@@ -748,9 +748,9 @@ symmetryRules = {
 
 ## 7. 当前主线与工作流
 
-当前权威实现是模块化 `versions/020_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。当前正式冻结单文件兼容入口是 `independent-benchmark/package/package_020.0.wl`；工作树只保留 018、019、020，更早版本从 Git 历史追溯。
+当前权威实现是模块化 `versions/021_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。当前正式单文件兼容入口是 `independent-benchmark/package/package_021.0.wl`；工作树只保留 019、020、021，更早版本从 Git 历史追溯。021 随源码提供 `Examples/`，正式交付同步保留同一组 examples。
 
-独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_020.0.wl/pdf`、同版本更新说明和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
+独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_021.0.wl/pdf`、同版本更新说明和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
 
 正式交付采用候选先行门禁：构建器通过 `DSIBP_BUILD_OUTPUT` 把候选单文件写入 `test/results_test/`，正式检查通过 `DSIBP_PACKAGE_FILE`（phase 2 另用 `DSIBP_PDF_FILE`）显式加载候选。只有候选专项、独立单文件检查和受影响 phase 全部通过后，才用同一候选字节覆盖 `independent-benchmark/package/`，随后在正式路径复验并清理候选。未设置这些环境变量时保留原有正式构建/模块检查合同。
 
@@ -823,7 +823,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 | 项目 | 当前约定 |
 |------|----------|
-| 主线脚本 | 模块化 `versions/020_dSIBP/`；正式单文件按 020.0 candidate-first 发布 |
+| 主线脚本 | 模块化 `versions/021_dSIBP/`；正式单文件按 021.0 candidate-first 发布 |
 | 积分 Head | full：`J[aList,linePacks,ispList]`；timeOnly：`J[sectorKey,timeShifts,stateBits]` |
 | cycle line pack | full massive/massless 均为 `{b_e,n_{e1},n_{e2}}`，shrunk 为 `{bS_e}`；root line 位置永久保留 |
 | bridge/fixed line pack | full 为 `{"F",n_{e1},n_{e2}}`，shrunk 为 `{"F"}`；物理幂属于结构化 sector prefactor |
