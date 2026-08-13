@@ -13,9 +13,13 @@ FlintNDERationalSystem::usage =
 FlintNDEPartialFractionSystem::usage =
   "FlintNDEPartialFractionSystem[{P0,P1,...},residues,poles] constructs A(x)=Sum Pk x^k+Sum Rj/(x-pj); a constant polynomial is written as {P0}.";
 FlintNDEPlanPath::usage =
-  "FlintNDEPlanPath[system,start,points] plans a one-variable multipoint jump path from raw user points. The default singularity mode is Avoid; SingularityJump must be selected explicitly when the path may cross a singularity.";
+  "FlintNDEPlanPath[system,start,points] plans a one-variable multipoint jump path from raw user points. WorkingPrecisionDigits defaults to 200. The default singularity mode is Avoid; SingularityJump must be selected explicitly when the path may cross a singularity.";
 FlintNDEExecutePath::usage =
-  "FlintNDEExecutePath[system,initialVector,plan] executes a plan returned by FlintNDEPlanPath without replanning.";
+  "FlintNDEExecutePath[system,initialVector,plan] executes a plan returned by FlintNDEPlanPath without replanning. WorkingPrecisionDigits defaults to 200.";
+FlintNDEEvaluateEpBatch::usage =
+  "FlintNDEEvaluateEpBatch[jobs] plans and executes independent fixed-ep jobs in a bounded Python process pool. Each job contains ep, system, start, points and initialVector. WorkingPrecisionDigits->200 and ParallelTaskCount->12 are the defaults; the effective count is Min[ParallelTaskCount,Length[jobs]], and queued jobs start automatically as workers finish.";
+ParallelTaskCount::usage =
+  "ParallelTaskCount specifies the maximum number of independent ep tasks run concurrently. The default is 12; it is distinct from python-flint ctx.threads.";
 MessageLanguage::usage =
   "MessageLanguage selects the language of runtime notices and diagnostics; the default is \"EN\" and \"CN\" selects Chinese.";
 SingularityMode::usage =
@@ -311,7 +315,7 @@ flintNDEInvoke[
 Options[FlintNDEPlanPath] = {
   "Python" -> Automatic,
   "WorkDirectory" -> Automatic,
-  "WorkingPrecisionDigits" -> 80,
+  "WorkingPrecisionDigits" -> 200,
   "OutputDigits" -> 40,
   MessageLanguage -> "EN",
   SingularityMode -> "Avoid",
@@ -395,7 +399,7 @@ FlintNDEPlanPath[___] := Failure[
 Options[FlintNDEExecutePath] = {
   "Python" -> Automatic,
   "WorkDirectory" -> Automatic,
-  "WorkingPrecisionDigits" -> 80,
+  "WorkingPrecisionDigits" -> 200,
   "OutputDigits" -> 40,
   "PrimaryOrder" -> 40,
   "ReferenceOrder" -> 48,
@@ -549,6 +553,121 @@ FlintNDEExecutePath[
 FlintNDEExecutePath[___] := Failure[
   "InvalidExecuteArguments",
   <|"usage" -> "FlintNDEExecutePath[system, initialVector, plan]"|>
+];
+
+
+(* ::Chapter:: *)
+(*固定 ep 任务的有界并行*)
+
+Options[FlintNDEEvaluateEpBatch] = {
+  ParallelTaskCount -> 12,
+  "Python" -> Automatic,
+  "WorkDirectory" -> Automatic,
+  "WorkingPrecisionDigits" -> 200,
+  "OutputDigits" -> 40,
+  "PrimaryOrder" -> 40,
+  "ReferenceOrder" -> 48,
+  "TargetRelativeError" -> "1e-30",
+  "CertificationMode" -> "embedded",
+  MessageLanguage -> "EN",
+  SingularityMode -> "Avoid",
+  "RadiusFraction" -> 0.60,
+  "MaxStepOverRadius" -> 0.45,
+  "SingularityJumpThreshold" -> 0.5,
+  "MatchFraction" -> 0.6,
+  "MaxSingularityJumps" -> 16
+};
+
+
+flintNDEEpJobRequest[job_Association, options_Association] := Module[
+  {required, missing, mode},
+  required = {"ep", "system", "start", "points", "initialVector"};
+  missing = Select[required, ! KeyExistsQ[job, #] &];
+  If[missing =!= {},
+    Return[Failure["InvalidEpJob", <|"missingKeys" -> missing, "job" -> job|>]]
+  ];
+  mode = flintNDENormalizeMode[options[SingularityMode]];
+  If[Head[mode] === Failure, Return[mode]];
+  <|
+    "schema" -> $FlintNDERequestSchema,
+    "action" -> "evaluate",
+    "ep" -> job["ep"],
+    "system" -> job["system"],
+    "start" -> job["start"],
+    "points" -> job["points"],
+    "initialVector" -> job["initialVector"],
+    "workingPrecisionDigits" -> options["WorkingPrecisionDigits"],
+    "outputDigits" -> options["OutputDigits"],
+    "primaryOrder" -> options["PrimaryOrder"],
+    "referenceOrder" -> options["ReferenceOrder"],
+    "targetRelativeError" -> ToString[options["TargetRelativeError"]],
+    "certificationMode" -> options["CertificationMode"],
+    "messageLanguage" -> options[MessageLanguage],
+    "singularityMode" -> mode,
+    "radiusFraction" -> options["RadiusFraction"],
+    "maxStepOverRadius" -> options["MaxStepOverRadius"],
+    "singularityJumpThreshold" -> options["SingularityJumpThreshold"],
+    "matchFraction" -> options["MatchFraction"],
+    "maxSingularityJumps" -> options["MaxSingularityJumps"]
+  |>
+];
+
+
+FlintNDEEvaluateEpBatch[jobs_List, opts : OptionsPattern[]] := Module[
+  {unknownOptions, parallelCount, language, optionValues, requests, failure,
+   result, digits, decodedResults},
+  unknownOptions = flintNDEUnknownOptionNames[{opts}, Options[FlintNDEEvaluateEpBatch]];
+  If[unknownOptions =!= {},
+    Return[Failure["UnknownOption", <|"function" -> "FlintNDEEvaluateEpBatch",
+      "options" -> unknownOptions|>]]
+  ];
+  If[jobs === {}, Return[Failure["EpJobListEmpty", <||>]]];
+  parallelCount = OptionValue[ParallelTaskCount];
+  If[! IntegerQ[parallelCount] || parallelCount < 1,
+    Return[Failure["ParallelTaskCountPositiveIntegerRequired",
+      <|"value" -> parallelCount, "default" -> 12|>]]
+  ];
+  language = flintNDENormalizeLanguage[OptionValue[MessageLanguage]];
+  If[Head[language] === Failure, Return[language]];
+  optionValues = Association[Options[FlintNDEEvaluateEpBatch]];
+  optionValues = Join[optionValues, Association[{opts}], <|MessageLanguage -> language|>];
+  requests = flintNDEEpJobRequest[#, optionValues] & /@ jobs;
+  failure = FirstCase[requests, _Failure, None];
+  If[failure =!= None, Return[failure]];
+  Print[If[language === "CN",
+    "FlintNDE：不同 ep 任务的缺省并行数为 12；本次请求 " <>
+      ToString[parallelCount] <> "，实际并行数为 " <>
+      ToString[Min[parallelCount, Length[jobs]]] <> "。任务完成后自动续交队列。",
+    "FlintNDE: default ep-task parallelism is 12; requested " <>
+      ToString[parallelCount] <> ", effective " <>
+      ToString[Min[parallelCount, Length[jobs]]] <>
+      ". Queued jobs start automatically as workers finish."
+  ]];
+  result = flintNDEInvoke[
+    <|"schema" -> $FlintNDERequestSchema, "action" -> "ep_batch",
+      "requests" -> requests, "parallelTaskCount" -> parallelCount|>,
+    OptionValue["Python"], OptionValue["WorkDirectory"]
+  ];
+  If[! AssociationQ[result], Return[result]];
+  digits = OptionValue["OutputDigits"];
+  decodedResults = MapThread[
+    Function[{item, job},
+      If[AssociationQ[Lookup[item, "execution", None]],
+        Join[item, <|"ep" -> job["ep"],
+          "execution" -> flintNDEDecodeExecutionResult[
+            item["execution"], digits]|>],
+        Join[item, <|"ep" -> job["ep"]|>]
+      ]
+    ],
+    {Lookup[result, "results", {}], jobs}
+  ];
+  Join[result, <|"results" -> decodedResults|>]
+];
+
+
+FlintNDEEvaluateEpBatch[___] := Failure[
+  "InvalidEpBatchArguments",
+  <|"usage" -> "FlintNDEEvaluateEpBatch[{job1,...}, ParallelTaskCount->12]"|>
 ];
 
 

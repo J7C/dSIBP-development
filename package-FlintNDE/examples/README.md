@@ -4,13 +4,20 @@
 源码，也不读取项目外其它代码包。发布用户应先安装 `FlintNDE`，随后在任意调用目录直接
 `import flintnde`；路径变量只服务于尚未安装的仓库内开发示例。
 
-当前保留三个典型示例：
+当前保留六个典型示例：
 
 - `qnm_2x2.py`：统一 `u` 的 exact 2x2 一阶系统。分别从字面量 horizon `1` 和
   infinity `"inf"` 的 `{a,b,C}` 边界出发，输运到公共匹配点并检查另一端的禁戒分量；
   同时运行一个轻微偏移频率作为反事实对照。
 - `regular_singular_save.py`：标量正则奇点，从 `{a,b,C}` 起点输运到普通点，并保存可复用奇点边界和普通终点。
 - `exponential_boundary_save.py`：严格解耦的指数型奇点，从 `{phi,a,b,C}` 起点输运，保存并重新读入同一边界。
+- `ep_parallel.py`：Python 入口对不同固定 `ep` 做有界多进程 NDE；`parallel_task_count`
+  缺省 12，实际并行数自动取任务数与该值的较小者。
+- `ep_series_reconstruction.py`：从上游符号证书给出的 `leading_power=-1` 出发，自适应重构
+  `1/ep` 与有限项；演示缺省多拟合两阶、独立验证失败后增量扩阶、点值缓存复用及缺省 12
+  个外层进程。FlintNDE 不从数值样本猜最低阶。
+- `ep_parallel_mathematica.wl`：Wolfram 入口使用
+  `ParallelTaskCount -> 12`（缺省）运行相同的固定 `ep` 并行合同。
 
 运行：
 
@@ -20,6 +27,9 @@ python qnm_2x2.py
 python qnm_2x2.py --config ../config/qnm_u_unified_it0_3_it1_minus1.json
 python regular_singular_save.py
 python exponential_boundary_save.py
+python ep_parallel.py
+python ep_series_reconstruction.py
+wolframscript -file ep_parallel_mathematica.wl
 ```
 
 正式摘要写入 `results/qnm_2x2/summary/qnm_2x2_summary.json`；初始化布局说明写入

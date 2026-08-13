@@ -68,6 +68,8 @@ badDirectJump = MSEvaluatePath[
   Sequence @@ DeleteCases[commonOptions, SingularityMode -> _]
 ];
 
+oldPositionalEpPower = MSReconstructEpSeries[context, ep, points, 0];
+
 plannedValues = Lookup[Lookup[planned, "pointResults", {}], "value"];
 directValues = Lookup[Lookup[direct, "pointResults", {}], "value"];
 maximumDifference = Max[Abs[Flatten[plannedValues - directValues]]];
@@ -90,8 +92,19 @@ checks = <|
   "booleanRequired" -> MatchQ[badPlanningOption, Failure["FlintNDEPathPlanningBooleanRequired", _]],
   "directJumpRejected" -> MatchQ[badDirectJump, Failure["DirectTransportAvoidModeRequired", _]],
   "oldPublicSymbolsAbsent" -> And @@ (! NameQ[#] & /@ {
-    "MadStree`MSGeneratePath", "MadStree`MSEvaluatePlannedPath", "MadStree`MSPlannedPathQ"
-  })
+    "MadStree`MSGeneratePath", "MadStree`MSEvaluatePlannedPath", "MadStree`MSPlannedPathQ",
+    "MadStree`MSEvaluateEpBatch"
+  }),
+  "adaptiveEpSeriesPublic" -> NameQ["MadStree`MSReconstructEpSeries"],
+  "oldPositionalEpPowerRejected" ->
+    MatchQ[oldPositionalEpPower, Failure["InvalidEpSeriesArguments", _]],
+  "adaptiveEpSeriesDefaults" ->
+    MemberQ[Options[MSReconstructEpSeries], MaximumEpPower -> 0] &&
+    MemberQ[Options[MSReconstructEpSeries], EpGoalDigits -> 20] &&
+    MemberQ[Options[MSReconstructEpSeries], ParallelTaskCount -> 12],
+  "defaultWorkingPrecision" ->
+    MemberQ[Options[MSBoundaryData], WorkingPrecision -> 200] &&
+    MemberQ[Options[MSEvaluatePath], WorkingPrecision -> 200]
 |>;
 
 msTestSummary[checks, "MadStree v0.11 path evaluation"];

@@ -25,7 +25,7 @@
 原始点由规划入口生成完整计划，执行入口只执行计划；缺省避开奇点，只有显式奇点折跃才
 选择多值分支。任何经过中途节点的多点输运都可称为折跃，只有穿越奇点的局部基连接称为
 奇点折跃；模式只接受 `singularity_jump` / `"SingularityJump"`（以及缺省的
-`avoid` / `"Avoid"`）。工作位数为
+`avoid` / `"Avoid"`）。Python 导入与 Wolfram 公开入口的缺省工作精度均为 200 位；工作位数为
 `ceil(WorkingPrecisionDigits*log2(10))+32`，序列化计划记录规划精度，执行要求更高精度
 时必须重新规划。0.4.0 另提供按节点覆盖桶的 fast multipoint evaluation，以及不调用
 规划器的公开 `direct_user_point_path`。独立包和 MadStree v0.11 的 Vendor 保持同一实现。
@@ -40,7 +40,7 @@ Python 使用 `import flintnde`。Wolfram Language 把版本根加入 `$Path` �
 - 高阶 pole 的 exact Lee--Moser projector-balance 降阶、可严格解耦 sector 的
   指数乘 power-log 局部基、可复用 `{phi,a,b,C}` 边界保存，以及单重不同主导根二阶 pole
   的起点形式渐近基；
-- 正规化参数的自动采样、工作精度规划和 Laurent 幂级数解重构。
+- 正规化参数的自动采样、以 200 位为最低值的工作精度规划和 Laurent 幂级数解重构。
 
 目录分工：
 
@@ -59,7 +59,12 @@ Python 使用 `import flintnde`。Wolfram Language 把版本根加入 `$Path` �
 当前版本不依赖 BlackHoleQNM 的 IBP、积分族或运行配置。QNM 只作为一个独立的
 二阶常微分方程示例放在 `examples/`，不进入程序包本体接口。
 
-三个公开 examples 分别是 `qnm_2x2.py`、`regular_singular_save.py` 和 `exponential_boundary_save.py`，覆盖 QNM 双端匹配、正则奇点 `{a,b,C}` 保存，以及已认证指数型奇点 `{phi,a,b,C}` 保存/复用。三项均已从 0.4.0 路径 fresh 执行；QNM 无穷远两支显式使用 `{phi,a,b,C}`，不依赖旧边界 schema。
+公开 examples 还包括 `ep_parallel.py` 和 `ep_parallel_mathematica.wl`。两者分别展示 Python
+`run_ep_tasks(..., parallel_task_count=12)` 与 Wolfram
+`FlintNDEEvaluateEpBatch[..., ParallelTaskCount -> 12]`：缺省最多并行 12 个独立固定 `ep`
+任务，实际并发为该值与任务数的较小者，超出的任务在 worker 完成后自动续交。这个任务级
+选项不同于单进程 python-flint `ctx.threads`。原有三个 examples 覆盖 QNM 双端匹配、正则
+奇点 `{a,b,C}` 保存及指数型奇点 `{phi,a,b,C}` 保存/复用。
 
 用户环境要求有三项：Python 3.10 或更高版本、`python-flint>=0.6` 和 `sympy>=1.12`。安装发布的
 wheel、从源码普通安装以及开发者可编辑安装分别为
@@ -73,8 +78,8 @@ python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.4.0
 前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint` 与 `sympy`。
 
 0.4.0 当前聚焦回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
-Arb 路径 round-trip、fast multipoint、严格用户节点和精度拒绝；Python `unittest discover` 146/146 通过，
-Wolfram `Needs["FlintNDE`"]` 端到端检查 18/18 通过。完整验证结果以
+Arb 路径 round-trip、fast multipoint、严格用户节点和精度拒绝；Python `unittest discover` 158/158 通过，
+Wolfram `Needs["FlintNDE`"]` 端到端检查 20/20 通过。完整验证结果以
 `versions/FlintNDE-0.4.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
 
 2026-08-13 的 0.4.0 独立检验检查 257 点 fast/Horner 单节点桶和 30x30 复网格。
@@ -194,8 +199,10 @@ transition 都是 `ordinary_taylor`，且不直接处理路径 `save` 标签。M
 exact Frobenius 全链。当前结果为 `passed`，位于
 `test/results_test/kECep_16x16_ooo232/summary.json`。
 
-`reconstruct_series_solution` 已作为公开高层接口实现。最小调用只需给出 `DEmatrix`、
-`boundary`、`path` 和目标 `maximum_power`；最低幂缺省由 pilot NDE 自动判断。每个生产点
+`reconstruct_series_solution` 已作为公开高层接口实现。调用方给出 `DEmatrix`、
+`boundary`、`path`、目标 `maximum_power`、符号认证的整数 `leading_power` 及其严格证书。
+FlintNDE 面向任意 callable 时不具备证明 Laurent 支撑的符号信息，因此不再用数值 pilot
+猜最低阶；MadStree 会从自己的符号边界与 dlog DE 自动生成证书。每个生产点
 和独立验证点都复用同一基础输运函数，生产样本使用 FLINT Acb 方阵插值，不使用最小二乘
 或伪逆。自动样本数、参数量级和工作精度采用文献中 AMFlow 2.0 的经验公式，但程序包内的
 功能名称统一为“幂级数解重构”，不暴露 AMFlow 命名的接口。

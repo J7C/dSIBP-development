@@ -67,13 +67,37 @@ result = MSEvaluatePath[
   BoundaryScale -> 4,
   RankOrder -> {v1, v2},
   PythonExecutable -> "...",
-  WorkingPrecision -> 40,
+  WorkingPrecision -> 200,
   TransportOrder -> 80,
   ReferenceTransportOrder -> 104,
   TargetRelativeError -> "1e-20",
   MessageLanguage -> "EN"
 ];
 ```
+
+For a Laurent limit in a shared regulator, use
+
+```wl
+epSeries = MSReconstructEpSeries[
+  context, ep, pointTemplate,
+  MaximumEpPower -> 0,
+  EpGoalDigits -> 20,
+  ParallelTaskCount -> 12
+];
+```
+
+`MaximumEpPower` is the highest requested power; its default `0` asks for poles, if present,
+and the finite part. Users do not supply `ep` samples. Before any numerical NDE solve, the actual
+symbolic boundary condition and dlog DE certify the lowest integer power. A negative DE Laurent
+power, a non-Laurent boundary, or an unproved leading coefficient fails closed. The fit initially
+includes two powers above the user maximum; failed independent validation adds two powers per round,
+solves only new production points, and reuses separate production/validation caches. Three failed
+rounds stop without relaxing the tolerance. `ParallelTaskCount` defaults to 12 and controls outer
+process parallelism, not python-flint's in-process `ctx.threads` setting.
+
+`WorkingPrecision` defaults to 200 decimal digits for both `MSBoundaryData` and `MSEvaluatePath`.
+An explicit positive integer overrides the default; the backend uses
+`ceil(WorkingPrecision log2(10))+32` bits.
 
 For multiple points, replace the second argument with `{pointP1, pointP2, pointP3}`. MadStree partitions the input order into maximal consecutive complex-affine one-variable segments `x(s)=x0+s v`, pulls each segment back once, and sends all exact complex parameters to FlintNDE. MadStree does not plan nodes or detours. Bare coordinates are returned; `{coord,"tmp"}` is transient, and every other string tag is rejected.
 
@@ -177,8 +201,9 @@ The full formulas, the massless `4 -> 2` quotient, contact shifts and the top-to
 - [03_time_only_cycle_chart.wl](Examples/03_time_only_cycle_chart.wl): time-only cycle, common theta, contact sector and all strict-rank chart certificates.
 - [04_three_vertex_tree.wl](Examples/04_three_vertex_tree.wl): three-vertex massless tree with the `+++` vertex structure, followed by a batch multi-point evaluation with CSV/JSON export.
 - [05_massive_three_vertex_tree.wl](Examples/05_massive_three_vertex_tree.wl): three-vertex massive tree with the `+++` vertex structure and non-half-integer nu, followed by a batch multi-point evaluation with CSV/JSON export.
+- [06_massless_three_vertex_ep_regularization.wl](Examples/06_massless_three_vertex_ep_regularization.wl): a massless three-vertex chain with `a1=a2=a3=1+ep`; the symbolic boundary and DE certify leading power zero before numerical NDE work, after which the program selects production/validation points and extracts the finite part.
 
-All five examples passed fresh v0.11 runs with `Example PASSED` and exit code `0`.
+All six examples passed fresh v0.11 runs with `Example PASSED` and exit code `0`.
 
 ## Current boundaries
 
@@ -188,4 +213,4 @@ All five examples passed fresh v0.11 runs with `Example PASSED` and exit code `0
 - FlintNDE transport requires the pulled-back connection to be in exact `Q(i)(s)` or `Q(i)(t)`. The independent `15 x 15`/`25 x 25` boundary and transport of the T1 mixed three-vertex case passed `24/24`; T2 (single-vertex three massive) passed `12/12`; T3 (two-vertex `G++`) passed `18/18` for the paper/package basis map, the five boundary branches and the full target vector. The pure-massless and triangle time-only development checks use the same generic boundary producer.
 - FlintNDE 0.4.0 retains exact Lee--Moser, high-pole, and singularity-jump capabilities, and adds node-bucket fast multipoint evaluation plus the public strict user-node route. Uncertified high poles and internal/final points requiring ramification, algebraic extensions, or general Stokes connections continue to fail closed.
 
-The current v0.11 development regression is 184/184 across 13 Wolfram scripts, 4/4 for the Python adapter, and 5/5 examples. The versioned task book and report contain the new independent validation.
+The current v0.11 regression includes exact Laurent valuation, the real three-vertex symbolic support certificate, and an 8/8 Python adapter suite. The versioned task book and report contain the independent validation.

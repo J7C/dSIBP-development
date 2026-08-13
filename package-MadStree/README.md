@@ -18,7 +18,7 @@ Needs["MadStree`"];
 
 ## v0.11 数值边界
 
-唯一当前入口是：
+单个参数赋值与路径的当前入口是：
 
 ```wl
 result = MSEvaluatePath[
@@ -28,9 +28,31 @@ result = MSEvaluatePath[
 ];
 ```
 
+带共同正规化参数 `ep` 的极限计算使用：
+
+```wl
+series = MSReconstructEpSeries[
+  context, ep, pointTemplate,
+  MaximumEpPower -> 0,
+  EpGoalDigits -> 20,
+  ParallelTaskCount -> 12
+];
+```
+
+`MaximumEpPower -> 0` 表示返回到 `ep^0`。用户不提供 `ep` 取值；任何数值 NDE 启动前，
+程序从实际符号边界条件与 dlog DE 自动认证最低整数幂，并把证书交给后续采样规划。DE 含负
+`ep` 阶、边界不是有限 Laurent 型、最低阶系数无法证明非零或路径坐标依赖 `ep` 时均
+fail closed，不用终点数值 pilot 猜测。随后自动决定生产点、独立验证点、工作精度和输运阶数；
+内部缺省多拟合两阶，验证失败时每轮再增加两阶，只求解新增生产点并复用既有生产/验证缓存。
+自动工作精度不低于 200 位。`ParallelTaskCount` 缺省为 12，是不同 `ep` 的外层进程上限，
+不是单个 Python 进程内的 `ctx.threads`。
+
 MadStree 只按输入顺序识别最大连续复仿射单变量段 `x(s)=x0+s v`，并对每段拉回一次
 dlog DE。它不选择输运节点、不构造绕行，也不保存路径计划。全部段和边界数据在一次
 Python 进程中交给 FlintNDE。
+
+`MSBoundaryData` 与 `MSEvaluatePath` 的 `WorkingPrecision` 缺省均为 200 位。用户显式传入
+其它正整数时按该值覆盖；内部 bit 数为 `ceil(WorkingPrecision*log2(10))+32`。
 
 - `FlintNDEPathPlanning -> True`（缺省）：FlintNDE 自动规划节点。同一展开节点覆盖的
   多个用户点按桶使用 fast multipoint evaluation；大桶由子积树/余数树算法求值，小桶

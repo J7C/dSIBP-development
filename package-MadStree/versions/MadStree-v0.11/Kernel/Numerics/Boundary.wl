@@ -14,7 +14,7 @@ Options[MSBoundaryData] = {
   BoundaryScale -> 8,
   BoundarySeriesOrder -> 24,
   RankOrder -> Automatic,
-  WorkingPrecision -> 50
+  WorkingPrecision -> 200
 };
 
 msRuleList[rules_List] := rules;
@@ -645,7 +645,8 @@ msGenericSectorLeadingRecord[
   globalIndex_Integer,
   targetRules_List,
   curveData_Association,
-  workingPrecision_Integer
+  workingPrecision_Integer,
+  regularizationLimitRules_List : {}
 ] := Module[
   {rank, parameter, vertexCount, componentRecords, hSlots, timePower, alpha,
    componentRank, weight, energyExpression, energyConstant, endpointFactor, slotBit,
@@ -710,7 +711,10 @@ msGenericSectorLeadingRecord[
     Return[FirstCase[componentRecords, _Failure, componentRecords]]
   ];
   lateTimeExponents = Lookup[componentRecords, "frobeniusPower"];
-  If[AnyTrue[lateTimeExponents, ! TrueQ[Re[N[#, workingPrecision]] > 0] &],
+  If[AnyTrue[
+      lateTimeExponents,
+      ! TrueQ[Re[N[# /. regularizationLimitRules, workingPrecision]] > 0] &
+    ],
     Return[Failure[
       "LateTimeBoundaryNotVanishing",
       <|
@@ -767,7 +771,8 @@ msGenericSectorFrobeniusData[
   scale_,
   rankOrder_List,
   order_Integer,
-  workingPrecision_Integer
+  workingPrecision_Integer,
+  regularizationLimitRules_List : {}
 ] := Module[
   {curveData, sectorByKey, localRecords, failure, branches, normalizedVector, thetaFixing},
   curveData = msGenericBoundaryCurveData[
@@ -784,7 +789,8 @@ msGenericSectorFrobeniusData[
         master["globalIndex"],
         targetRules,
         curveData,
-        workingPrecision
+        workingPrecision,
+        regularizationLimitRules
       ]
     ],
     context["masters"]

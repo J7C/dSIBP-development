@@ -20,6 +20,8 @@ English version: [UPDATE_NOTES_en.md](UPDATE_NOTES_en.md)。
 - `SingularityMode -> "Avoid"` 缺省拒绝穿过奇点；`"SingularityJump"` 只在开启 FlintNDE
   规划时允许，并保留多值分支责任。
 - 裸坐标需要返回；`{coordinate,"tmp"}` 只参与路径。其它标签拒绝。
+- `MSBoundaryData` 与 `MSEvaluatePath` 的缺省 `WorkingPrecision` 提高到 200 位；正规化自动
+  精度规划也以 200 位为下限。用户显式指定精度时继续直接采用指定值。
 
 ## 删除
 
@@ -34,12 +36,21 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
 - 后端输入、输出、日志及 Wolfram 包内加载显式使用 UTF-8；普通 `Needs["MadStree`"]`
   不需要用户额外指定编码。
 - `MSExportEvaluationData` 消费 `MSEvaluatePath` 的逐点结果和逐段 refinement 信息。
+- 新增 `MSReconstructEpSeries[context,ep,pointTemplate,MaximumEpPower->m]`。用户不提供 `ep` 点；
+  数值 NDE 前由符号边界条件与 dlog DE 自动认证最低整数幂，程序再确定生产/验证 exact 点、
+  内部缓冲幂、工作精度和输运阶数。缺省额外拟合两阶；验证失败每轮再增加两阶，只计算
+  新增生产点并复用两类旧点，最多三轮仍失败则关闭失败。
+- `ParallelTaskCount -> 12` 控制生产和验证批次的外层进程上限，超额任务自动续交。
+- 物理删除旧公开 `MSEvaluateEpBatch`；固定点批量器仅作为私有阶段执行器，不保留 wrapper。
+- Example 06 的真实无质量三顶点共同正规化 `a1=a2=a3=1+ep` 只指定最高阶 `0`，
+  fresh 符号证书得到最低幂 `0`；DE 无负 `ep` 阶，边界在 `ep=0` 解析。
 
 ## 验证状态
 
-- 单请求 Python adapter：4/4 通过。
-- 13 个 Wolfram 开发测试合计 184/184 通过；五个 examples 全部退出 0。
-- 完整 Python 回归 146/146，Wolfram `Needs["FlintNDE`"]` 18/18；独立包与 Vendor 的
+- Python adapter：8/8 通过；接收已认证 `-1` 后使用 4 个生产点、内部拟合至 `ep^2`，
+  并恢复人工 `1/ep+2+3ep` 的 pole `1` 与 finite part `2`。
+- Laurent valuation 8/8；真实 9 主积分、9 边界分支三顶点结构证书得到 `leadingPower=0`。
+- 完整 Python 回归 158/158，Wolfram `Needs["FlintNDE`"]` 20/20；独立包与 Vendor 的
   20 个 Python 实现文件和 14 个测试文件逐文件同字节。
 - v0.11 独立验证 17/17：900 点乘 3 masters 全分量互检，最大绝对差 `5.8262e-43`；
   自动规划路线 894 点进入 6 个 fast 桶，端到端与后端分别比严格用户节点路线快

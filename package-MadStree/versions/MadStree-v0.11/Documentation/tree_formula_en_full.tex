@@ -23,7 +23,7 @@
 
 \title{MadStree v0.11: tree formula}
 \author{\texttt{package-MadStree} formula handbook}
-\date{2026-08-12}
+\date{2026-08-14}
 
 \begin{document}
 \maketitle
@@ -1474,12 +1474,56 @@ singularities from each pulled-back one-variable system, so the user does not ex
 supply a singularity list.
 
 If every dlog letter is constant on a segment, every pulled-back derivative vanishes, so the
-segment is a zero connection with no finite poles and is transported normally. FlintNDE
-uses $\lceil p_{\rm dec}\log_2 10\rceil+32$ working bits: 70 and 100 digits use 265 and
+segment is a zero connection with no finite poles and is transported normally. Both
+\texttt{MSBoundaryData} and \texttt{MSEvaluatePath} default to 200 decimal working digits;
+automatic regulator planning takes the larger of 200 and its adaptive estimate, while an explicit
+precision overrides the default. FlintNDE uses $\lceil p_{\rm dec}\log_2 10\rceil+32$ working
+bits: the 200-digit default gives 697 bits, while 70 and 100 digits use 265 and
 365 bits, and higher requests continue to grow by the same formula; the numerical gates of
 the local singular basis tighten with the current precision as well. Segment projection,
 match ratios, rotation factors, and winding/monodromy retain the current Arb precision.
 All geometry retains the current Arb precision.
+
+\subsection{Symbolic Laurent-support certificate and regulator error control}
+
+Let the shared regulator be $\epsilon$.  In
+\texttt{MSReconstructEpSeries[..., MaximumEpPower -> $m$]} the user specifies only the
+highest returned power $m$; the lowest power $n_{\min}$ is not a numerical fit parameter.
+Before starting any NDE task at nonzero $\epsilon$, MadStree constructs a support certificate
+from the physical boundary and dlog DE of the same production context.  It requires:
+\begin{enumerate}[label=\arabic*.]
+  \item regulator-independent path coordinates and no negative Laurent power at
+  $\epsilon=0$ in any dlog matrix, pulled-back connection, or residue;
+  \item finite-Laurent defining-integral boundary branches; branches with the same limiting
+  Frobenius exponent and log degree are first combined with their physical weights and leading
+  vectors, and only then are component valuations extracted;
+  \item at least one provably nonzero coefficient at the lowest power of the combined boundary.
+  A noninteger power, non-Laurent structure, undecidable coefficient, or support entirely above
+  the checked user range fails closed.
+\end{enumerate}
+For $n_{\min}<0$ the certificate describes a finite meromorphic Laurent boundary, not an
+analytic boundary at $\epsilon=0$; analyticity is recorded only when $n_{\min}\geq0$.
+Along the current finite path, an $\epsilon$-analytic invertible fundamental matrix preserves
+the valuation of nonzero formal boundary data, so the certified $n_{\min}$ is passed directly
+to numerical sample planning.  A rank drop of an individual Frobenius recurrence operator at
+$\epsilon=0$ is retained as a resonance diagnostic only; it is not by itself interpreted as a
+$1/\epsilon$ pole across the already combined physical boundary.
+
+Example 06 uses the massless three-vertex family with
+$a_1=a_2=a_3=1+\epsilon$.  Its physical boundary weights include
+$\Gamma(2+\epsilon)^3$, $\Gamma(2+\epsilon)\Gamma(4+2\epsilon)$, and
+$\Gamma(6+3\epsilon)$, all regular at $\epsilon=0$.  The actual nine-dimensional DE also has
+no negative $\epsilon$ power.  The program therefore certifies $n_{\min}=0$ before any NDE
+solve: this example has no pole, and no artificial $1/\epsilon$ term is introduced.
+
+After support certification, the square interpolation initially includes at least two powers
+above the user maximum.  Independent validation points never enter the fit.  If their relative
+residual exceeds the fixed \texttt{EpGoalDigits} target, the next round adds two fitted powers
+by default, solves only the new production points, and reuses every previous production and
+validation value.  Failure after at most three rounds is closed: the tolerance is not relaxed,
+least squares is not substituted, and caches are not discarded.  Independent regulator tasks
+use an outer process pool with default \texttt{ParallelTaskCount -> 12}; the effective count is
+the smaller of this limit and the number of tasks.
 
 User points are bare coordinates or \texttt{\{coordinate,"tmp"\}}; the former are saved and
 the latter are transient waypoints. Ordinary saved points in the \texttt{MSEvaluatePath} result

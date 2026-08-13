@@ -393,6 +393,11 @@ Det[M0[C]] proportional to Product[kappa[C,s], s].
 - `MSNumericalSystem[de,spec]`：低层手动入口，验证用户提供的同序 boundary vector 并生成列向量系统；
 - `MSBoundaryData[context,targetRules]`：为任意已闭合 tree/time-only/vertex-family context 生成 exact 奇点分支数据；
 - `MSEvaluatePath[context,pointSequence]`：识别最大连续复仿射单变量段、逐段拉回，并在一次请求中委托 FlintNDE 规划与输运；
+- `MSReconstructEpSeries[context,ep,pointTemplate,MaximumEpPower->m]`：用户只给所需最高幂；程序
+  在任何数值 NDE 前从实际符号边界条件与 dlog DE 自动认证最低幂，再对每个自动生成的
+  exact `ep` 独立建立完整请求并完成方阵 Laurent 重构和独立验证；固定点批量器只保留为私有阶段执行器，
+  以 `ParallelTaskCount -> 12` 为缺省上限做有界进程并行；实际并发取任务数与上限的较小者，
+  超出部分由程序自动续交；
 - `MSExportEvaluationData[evaluation]`：导出普通保存点的 CSV/JSON。
 
 任何经过中途节点的多点输运都称为折跃；只有显式穿过奇点并使用局部基连接两侧匹配点时才称为奇点折跃。`SingularityMode -> "Avoid"` 是缺省，命中奇点时返回问题线段与奇点；只有 `SingularityMode -> "SingularityJump"` 才允许奇点折跃，并提示用户确认等价绕行类的多值分支。`MessageLanguage` 缺省 `"EN"`，可选 `"CN"`；两个选项都严格拒绝其它值和宽松大小写。
@@ -435,7 +440,7 @@ package-MadStree/versions/MadStree-v0.11/
   test/results_test/
 ```
 
-现行公开接口包括初始化、结构、公式、边界、输运和导出六层：`MSInitTree`、`MSInitTimeGraph`、`MSInitVertexFamily`、`MSContextQ`、`MSSectors`、`MSSlotRegistry`、`MSIntegral`、`MSMasterIntegrals`、`MSFormulaMatrices`、`MSFormulaData`、`MSWriteFormulaArtifacts`、`MSContactMaps`、`MSRecurrenceStep`、`MSReduce`、`MSDLogDE`、`MSHTohMatrix`、`MShToHMatrix`、`MSConvertBasis`、`MSToDSIBPJ`、`MSFromDSIBPJ`、`MSFromDSIBPExpression`、`MSNumericalSystem`、`MSBoundaryChartCertificate`、`MSBoundaryData`、`MSFlintNDEConfiguration`、`MSSetFlintNDERelativePath`、`MSEvaluatePath` 和 `MSExportEvaluationData`。
+现行公开接口包括初始化、结构、公式、边界、输运和导出六层：`MSInitTree`、`MSInitTimeGraph`、`MSInitVertexFamily`、`MSContextQ`、`MSSectors`、`MSSlotRegistry`、`MSIntegral`、`MSMasterIntegrals`、`MSFormulaMatrices`、`MSFormulaData`、`MSWriteFormulaArtifacts`、`MSContactMaps`、`MSRecurrenceStep`、`MSReduce`、`MSDLogDE`、`MSHTohMatrix`、`MShToHMatrix`、`MSConvertBasis`、`MSToDSIBPJ`、`MSFromDSIBPJ`、`MSFromDSIBPExpression`、`MSNumericalSystem`、`MSBoundaryChartCertificate`、`MSBoundaryData`、`MSFlintNDEConfiguration`、`MSSetFlintNDERelativePath`、`MSEvaluatePath`、`MSReconstructEpSeries` 和 `MSExportEvaluationData`。
 
 内部函数按物理含义命名；不以数字后缀区分操作，不为不同 sector 或 fold 数复制实现。
 

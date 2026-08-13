@@ -22,7 +22,7 @@
 
 \title{MadStree v0.11: tree formula}
 \author{\texttt{package-MadStree} 公式手册}
-\date{2026-08-12}
+\date{2026-08-14}
 
 \begin{document}
 \maketitle
@@ -1471,9 +1471,44 @@ $x(s)=x_0+s v$，每段只拉回一次单变量矩阵 DE，并把全部 exact �
 或输入奇点列表。
 
 若某段所有 dlog letters 都是常量，则拉回导数全部为零，该段是无有限极点的零连接并正常输运。
-FlintNDE 工作位数为 $\lceil p_{\rm dec}\log_2 10\rceil+32$：70、100 位分别为 265、365 bit，
+\texttt{MSBoundaryData} 与 \texttt{MSEvaluatePath} 的缺省工作精度为 200 位；正规化自动规划
+取 200 位与自适应估计的较大者，用户显式指定精度时直接覆盖。FlintNDE 工作位数为
+$\lceil p_{\rm dec}\log_2 10\rceil+32$：缺省 200 位对应 697 bit，70、100 位分别为 265、365 bit，
 更高精度继续按同一公式增长；奇点局部基门禁也按当前工作精度收紧。线段投影、匹配比例、旋转
 因子和 winding/monodromy 均保持当前 Arb 精度。
+
+\subsection{正规化参数的符号 Laurent 支撑证书与误差控制}
+
+共同正规化参数记为 $\epsilon$。用户调用
+\texttt{MSReconstructEpSeries[..., MaximumEpPower -> $m$]} 时只指定需要返回的最高幂 $m$；
+最低幂 $n_{\min}$ 不是数值拟合参数。任何非零 $\epsilon$ 的 NDE 任务启动前，MadStree 都从
+同一个生产 context 的物理边界与 dlog DE 自动构造支撑证书。具体门禁为：
+\begin{enumerate}[label=\arabic*.]
+  \item 路径坐标不得依赖 $\epsilon$，且所有 dlog 矩阵、拉回 connection 与 residue 在
+  $\epsilon=0$ 不含负 Laurent 幂；
+  \item 定义积分给出的每个物理边界分支必须是有限 Laurent 型；具有相同极限 Frobenius
+  指数和 log 次数的分支先按物理权重与 leading vector 合并，再逐分量取 valuation；
+  \item 合并边界中至少一个最低阶系数必须可证明非零。所有分量都在用户检查范围以上、
+  非整数幂、非 Laurent 结构或无法判零时均 fail closed。
+\end{enumerate}
+若 $n_{\min}<0$，证书表示边界是亚纯的有限 Laurent 型而不是在 $\epsilon=0$ 解析；只有
+$n_{\min}\geq0$ 才同时记录解析性。沿当前有限路径，$\epsilon$-解析且可逆的基本解保持非零
+边界 formal data 的 valuation，因此该 $n_{\min}$ 可直接用于后续数值采样规划。单个
+Frobenius 递推算子在 $\epsilon=0$ 的降秩只作为共振诊断保存；它本身不能越过已经合并的
+物理边界而被解释成 $1/\epsilon$ pole。
+
+Example 06 的无质量三顶点采用
+$a_1=a_2=a_3=1+\epsilon$。其物理边界权重包含
+$\Gamma(2+\epsilon)^3$、$\Gamma(2+\epsilon)\Gamma(4+2\epsilon)$ 和
+$\Gamma(6+3\epsilon)$，都在 $\epsilon=0$ 正则；实际九维 DE 也无负 $\epsilon$ 阶，故程序在
+任何 NDE 求解前认证 $n_{\min}=0$。这意味着该例没有 pole；程序不会为了演示而虚构
+$1/\epsilon$ 项。
+
+认证支撑后，内部方阵插值缺省至少拟合到用户最高阶以上两阶。独立验证点从不进入拟合矩阵；
+若其相对残差高于固定的 \texttt{EpGoalDigits} 门槛，下一轮缺省再增加两阶，只求解新增生产点，
+并复用所有既有生产点和独立验证点。最多三轮仍未通过时返回失败，不降低容差、不改用最小二乘，
+也不从头重算缓存。不同 $\epsilon$ 任务由 \texttt{ParallelTaskCount -> 12} 的缺省外层进程池
+调度；实际并发取任务数与上限的较小者。
 
 用户点只接受裸坐标或 \texttt{\{coordinate,}\allowbreak\texttt{"tmp"\}}；前者缺省保存，后者是临时途经点。
 普通保存点在 \texttt{MSEvaluatePath} 返回值中携带坐标、完整主积分向量、状态和用户序号；使用

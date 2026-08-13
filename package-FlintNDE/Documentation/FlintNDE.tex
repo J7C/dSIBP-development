@@ -236,8 +236,8 @@ The second function reconstructs
  F(\eps)=\sum_{n=n_{\min}}^{m}f_n\eps^n+O(\eps^{m+1}),
 \end{equation}
 where the integer powers are analytic information and each $f_n$ is an arbitrary-precision
-numerical vector.  Only $m$ is required; the leading power, sample grid, working precision,
-and surplus fitted orders are automatic unless the user overrides them.  Every regulator
+numerical vector.  Both $m$ and an upstream symbolically certified $n_{\min}$ are required;
+the sample grid, working precision, and surplus fitted orders are automatic unless overridden. Every regulator
 sample calls the complete basic solver of Fig.~\ref{fig:numerical-workflow}; no independent
 solution-fitting DE engine exists.
 
@@ -251,36 +251,29 @@ solution-fitting DE engine exists.
 ]
 \node[box, text width=.82\textwidth] (input) at (0,0)
   {Input \texttt{DEmatrix}, \texttt{boundary}, \texttt{path}, requested
-   \texttt{maximum\_power} $m$, target digits, and optional overrides};
-\node[decision, text width=.29\textwidth] (leading) at (0,-1.55)
-  {Leading power supplied?};
-\node[box, text width=.36\textwidth] (pilot) at (-3.20,-3.25)
-  {No: run nested fixed-regulator pilot solves, infer a common stable integer
-   $n_{\min}$ from component ratios, and fail closed if ambiguous};
-\node[box, text width=.31\textwidth] (override) at (3.45,-3.25)
-  {Yes: accept the user integer $n_{\min}$ and record that the pilot was bypassed};
-\node[box, text width=.82\textwidth] (plan) at (0,-5.25)
+   \texttt{maximum\_power} $m$, certified integer $n_{\min}$, strict certificate, and target digits};
+\node[box, text width=.82\textwidth] (leading) at (0,-1.75)
+  {Validate the upstream symbolic boundary-and-DE certificate before any NDE solve;
+   reject missing, automatic, inconsistent, or uncertified support};
+\node[box, text width=.82\textwidth] (plan) at (0,-3.65)
   {From $n_{\min}$, $m$, and goal digits choose the AMFlow-inspired production count,
    exact-rational one-percent sample grid, internal surplus powers, working precision,
    primary order, and refinement order};
-\node[box, text width=.82\textwidth] (solve) at (0,-7.05)
+\node[box, text width=.82\textwidth] (solve) at (0,-5.45)
   {For every production sample call the complete basic numerical matrix-DE module in
    Fig.~\ref{fig:numerical-workflow}, including singular-start validation and refinement};
-\node[box, text width=.82\textwidth] (fit) at (0,-8.75)
+\node[box, text width=.82\textwidth] (fit) at (0,-7.15)
   {Solve the square Acb Laurent interpolation problem through all internal powers.
    Do not use least squares, a pseudoinverse, or a local polynomial ansatz at a singular point};
-\node[box, text width=.82\textwidth] (validate) at (0,-10.45)
+\node[box, text width=.82\textwidth] (validate) at (0,-8.85)
   {Run additional regulator values excluded from interpolation; compare reconstructed and
    directly transported vectors with the requested tolerance and Acb radii};
-\node[box, text width=.82\textwidth] (output) at (0,-12.15)
+\node[box, text width=.82\textwidth] (output) at (0,-10.55)
   {Return powers $n_{\min},\ldots,m$, numerical coefficient vectors, effective controls,
    all sample metadata, and independent residuals};
 
 \draw[flow] (input) -- (leading);
-\draw[flow] (leading) -| node[above left]{no} (pilot);
-\draw[flow] (leading) -| node[above right]{yes} (override);
-\draw[flow] (pilot) -- (plan);
-\draw[flow] (override) -- (plan);
+\draw[flow] (leading) -- (plan);
 \draw[flow] (plan) -- (solve);
 \draw[flow] (solve) -- (fit);
 \draw[flow] (fit) -- (validate);
@@ -288,7 +281,7 @@ solution-fitting DE engine exists.
 \end{tikzpicture}
 \caption{Semi-analytic regulator-series workflow.  The basic NDE node is exactly
 Fig.~\ref{fig:numerical-workflow} and is not expanded again.  The AMFlow error estimate,
-automatic $\eps$ scale, surplus orders, precision rules, pilot, square interpolation, and
+automatic $\eps$ scale, surplus orders, precision rules, support certificate, square interpolation, and
 validation are detailed in Sec.~\ref{subsec:reconstruction-details}; the complete optional
 parameter list is in Table~\ref{tab:regulator-api} of Sec.~\ref{subsec:public-interface}.}
 \label{fig:reconstruction-workflow}
@@ -310,6 +303,9 @@ Editable development mode uses the same command with \texttt{-e}.  A calling scr
 then live in any directory and simply \texttt{import flintnde}; the package source is not
 copied beside it.  When the caller passes \texttt{initialize\_output\_layout(\_\_file\_\_)},
 all generated files are rooted beside that calling script, never in the installed package.
+Importing the package initializes the global Acb context to 200 decimal working digits plus
+32 guard bits.  Calling \texttt{configure\_working\_precision()} restores that default, while
+an explicit positive integer overrides it.
 
 The source tree also provides a standard Wolfram Language package.  Add the 0.4.0 version
 root to \texttt{\$Path}, then evaluate
@@ -326,16 +322,42 @@ The planning default is \texttt{"SingularityMode" -> "Avoid"}; explicit
 mode values.  Messages use English by default and
 \texttt{MessageLanguage -> "CN"} selects Chinese.
 
+Independent fixed-regulator jobs use
+\texttt{FlintNDE}\allowbreak\texttt{EvaluateEpBatch}, with the option
+\texttt{Parallel}\allowbreak\texttt{TaskCount -> 12}.  The default upper bound is 12 worker processes; the
+effective count is the smaller of that bound and the number of jobs, and queued jobs start
+automatically as workers finish.  The Python counterparts are
+\texttt{run\_ep\_tasks(..., parallel\_task\_count=12)} and the same
+\texttt{parallel\_task\_count} option of \texttt{reconstruct\_series\_solution}.  This outer
+process count is independent of python-flint's in-process \texttt{ctx.threads} setting.
+
 The complete input syntax and every optional parameter are listed in
 Sec.~\ref{subsec:public-interface}.
 
 \section{Examples}
 \label{sec:examples}
 
-\subsection{de Sitter example}
+\subsection{Certified Laurent reconstruction}
 
-This subsection is reserved for a future de Sitter IBP/DE example.  No placeholder equation
-or untested numerical result is included in the present release.
+The executable \texttt{examples/ep\_series\_reconstruction.py} uses the zero matrix DE and
+the analytically known boundary
+\begin{equation}
+ Y(0,\epsilon)=\epsilon^{-1}+2+3\epsilon+4\epsilon^2+5\epsilon^3+6\epsilon^4.
+\end{equation}
+The upstream example certificate therefore states $n_{\min}=-1$.  FlintNDE validates that
+certificate before any solve, but does not infer it from sampled values.  The user requests only
+the finite part ($m=0$); the first square fit includes two additional powers.  With the deliberately
+strict independent-point tolerance, a failed first round appends two production points while
+reusing every old production and validation value.  The accepted result recovers the pole
+coefficient $1$ and finite part $2$.  The example uses
+\texttt{parallel\_task\_count=12}; the process pool automatically reduces the effective count
+when fewer regulator tasks are available and queues excess tasks otherwise.
+
+\subsection{de Sitter backend usage}
+
+MadStree provides the physical de Sitter example at the upstream layer: it derives the symbolic
+boundary and dlog DE, certifies the regulator support, and then calls this package.  FlintNDE does
+not duplicate dS topology, master ordering, or normalization in a backend-only example.
 
 \subsection{Schwarzschild two-ended radial system}
 \label{subsec:qnm-example}
@@ -582,6 +604,8 @@ precision rather than in binary64.  Serialized plans record
 exponent records.  Execution at a higher working precision than planning is rejected and
 requires replanning, because serialization cannot recover discarded information.  Increasing
 only the number of output digits does not change the working precision.
+The Python import and all three Wolfram entry points default to 200 decimal digits, which gives
+697 bits including the guard bits.
 
 \small
 \begin{longtable}{L{0.22\textwidth}L{0.72\textwidth}}
@@ -988,7 +1012,7 @@ exponential action.  If $N$ is the requested formal-series order and $q>1$ is a 
 the proposed distance is
 \begin{equation}
  |z|_{\rm root}=\min_i\frac{\Delta_i}{qN}.
- \label{eq:formal-pilot-point}
+ \label{eq:formal-root-gap-point}
 \end{equation}
 The default is $q=3$, so $N$ is approximately one third of the estimated least-term degree.  For more
 than two roots, each branch uses its nearest other root and the smallest proposed distance is
@@ -1084,34 +1108,22 @@ $X_{\rm extra}=\lceil\max(50,p_0/5)\rceil$.  The one-percent spacing, rationaliz
 sample points, doubled working precision, and these two expansion orders are implementation
 choices in AMFlow 2.0 rather than consequences of Eqs.~\eqref{eq:amflow-error-estimate} and
 \eqref{eq:amflow-optimal-estimate}.
+FlintNDE implements the automatic choice as
+$\max(200,\lceil2(1+p_{\mathrm extra})p_0\rceil)$.  The 200-digit lower bound is a
+FlintNDE default rather than part of the quoted AMFlow formula; an explicit
+\texttt{working\_precision\_digits} value overrides automatic planning.
 
 The FlintNDE interface should not require a loop count: $L$ is specific to the Feynman
 integral pole bound used by AMFlow and is not an intrinsic parameter of a general matrix
-differential equation.  The implemented default instead determines the actual leading integer
-power from pilot NDE evaluations.  For each nonzero output component it forms stable ratio
-estimates
-\begin{equation}
-  \nu_i^{(k)}=
-  \frac{\log|F_i(q\eps_k)/F_i(\eps_k)|}{\log q},
-\end{equation}
-and accepts a rounded integer only when several adjacent estimates agree within the
-precision-dependent tolerance.  The candidate is then required to pass a complete
-reconstruction and independent-sample residual check.  Ambiguous cancellation, a
-noninteger exponent, or unstable ratios cause a fail-closed request for a user override;
-they are never silently rounded.
+differential equation.  Nor can a finite collection of numerical regulator solves prove the
+Laurent support of arbitrary Python callables.  The current interface therefore requires an
+integer $n_{\min}$ together with a strict upstream certificate whose status is certified,
+whose recorded integer agrees with $n_{\min}$, and whose method identifies the symbolic
+boundary-and-DE analysis.  Missing certificates, automatic leading powers, and inconsistent
+integers fail before any NDE solve.  MadStree produces this certificate automatically from its
+physical boundary and dlog DE; FlintNDE remains independent of those physical data structures.
 
-The automatic pilot starts from the no-pole provisional depth
-$K_{\rm pilot}=\max(0,m)$ and scale
-\begin{equation}
- \eps_{\rm pilot}=10^{-g/(K_{\rm pilot}+1)}.
-\end{equation}
-It evaluates a nested grid with ratio $q$; after an unsuccessful round, the next round starts
-at the smallest scale reached by the preceding one.  The automatic integer-consistency
-tolerance is $10^{-\min(8,g/4)}$.  The starting scale, ratio, number of points, round limit,
-and tolerance are all user-overridable.  These pilot rules are FlintNDE safeguards, not
-formulas quoted from AMFlow.
-
-Let the detected global leading power be $n_{\min}$, let the user request only the absolute
+Let the certified global leading power be $n_{\min}$, let the user request the absolute
 highest power $m$, and define
 \begin{equation}
   P=\max(0,-n_{\min}),\qquad K=m-n_{\min}.
@@ -1133,14 +1145,19 @@ $n_{\min}+N_{\mathrm fit}-1$; only coefficients through the requested power $m$ 
 Thus the powers above $m$ absorb truncation effects exactly as in the AMFlow construction;
 the extra production points are neither discarded nor converted into a least-squares fit.
 At least $N_{\mathrm check}$ additional points, not used in that interpolation, validate the
-retained coefficients.  The pilot records an integer estimate for every nonzero component and
-uses their minimum as the common Laurent start; it does not forcibly zero coefficients of the
-other components.  All component coefficients are determined by the same square Acb
+retained coefficients.  All component coefficients are determined by the same square Acb
 interpolation and are tested at the independent points.  The reported result includes the
-pilot estimates, accepted leading powers, all effective parameters, the internal and returned
+upstream certificate, accepted leading power, all effective parameters, the internal and returned
 power ranges, coefficient vectors, and independent residuals.
 
-For example, if the pilot stage finds $n_{\min}=-4$, while the user requests
+The implementation initially enforces at least
+\texttt{fit\_extra\_order=2} powers above $m$.  If the independent residual is too large,
+each round adds \texttt{fit\_order\_increment=2} production points and corresponding powers.
+Only those new points are solved; prior production values and the separately cached validation
+values are reused.  The default \texttt{fit\_max\_rounds=3} then fails closed at the unchanged
+tolerance.  This incremental a posteriori check supplements the planning estimates above.
+
+For example, if the upstream certificate gives $n_{\min}=-4$, while the user requests
 $m=2$ and $g=30$, then $P=4$, $K=6$, and
 \begin{equation}
  N_{\mathrm fit}=19,\qquad
@@ -1151,7 +1168,7 @@ The interpolation internally covers powers $-4,\ldots,14$ and returns only
 $-4,\ldots,2$.  The same defaults give $p_0=122$, $p_{\mathrm work}=244$ decimal
 digits, a primary transport order $4p_0=488$, and an extra transport order
 $\lceil\max(50,p_0/5)\rceil=50$.  With the default two validation points, this stage performs
-19 production solves and two independent validation solves, in addition to any pilot solves.
+19 production solves and two independent validation solves.
 
 \subsubsection{Power-series-solution interface}
 
@@ -1162,6 +1179,12 @@ series_result = reconstruct_series_solution(
     boundary=boundary,
     path=path,
     maximum_power=2,
+    leading_power=-1,
+    leading_power_certificate={
+        "status": "certified",
+        "leading_power": -1,
+        "method": "symbolic-boundary-and-DE",
+    },
 )
 \end{verbatim}
 It calls the same basic NDE solver independently at every regulator sample.  All algorithm
@@ -1172,10 +1195,15 @@ series_result = reconstruct_series_solution(
     boundary=boundary,
     path=path,
     maximum_power=2,                 # required target
+    leading_power=-1,                # required certified support
+    leading_power_certificate={
+        "status": "certified",
+        "leading_power": -1,
+        "method": "symbolic-boundary-and-DE",
+    },
     series_parameter="ep",
     goal_digits=30,
     sample_points="automatic",
-    leading_power="automatic",
     sample_count="automatic",
     base_sample="automatic",
     sample_spacing=0.01,
@@ -1187,16 +1215,15 @@ series_result = reconstruct_series_solution(
     transport_extra_sample_count="automatic",
     radius_fraction=0.60,
     guard_bits=32,
-    pilot_sample_count=4,
-    pilot_base_sample="automatic",
-    pilot_ratio=0.5,
-    pilot_max_rounds=3,
-    leading_power_tolerance="automatic",
     validation_sample_count=2,
     validation_scale=0.5,
     validation_tolerance="automatic",
     maximum_samples=100,
     rationalize_sample_points=True,
+    fit_extra_order=2,
+    fit_order_increment=2,
+    fit_max_rounds=3,
+    parallel_task_count=12,
     output_layout=None,
     result_name="series_reconstruction",
 )
@@ -1204,7 +1231,7 @@ series_result = reconstruct_series_solution(
 Here \texttt{transport\_order} is the primary local-series order of the underlying NDE solve,
 and \texttt{transport\_extra\_order} is the added order used for its refinement check.  Their
 automatic values are $4p_0$ and $\lceil\max(50,p_0/5)\rceil$, respectively.  The literal
-\texttt{"automatic"} selects the documented pilot or production rule; a user value replaces
+\texttt{"automatic"} selects documented production controls only; a user value replaces
 only that decision.  No public object is named after AMFlow: the citation records the origin
 of the default empirical formulas, while the package feature is power-series-solution
 reconstruction.
@@ -1494,7 +1521,7 @@ A minimal ordinary-point calculation is
 from flint import acb, acb_mat
 from flintnde import *
 
-configure_working_precision(80)
+# The import has already selected the 200-digit default.
 system = AnalyticMatrixSystem(
     matrix_function=lambda z: acb_mat([[0, 1], [-1/(1-z), 0]]),
     dimension=2, singularities=(acb(1),), name="example",
@@ -1729,7 +1756,7 @@ adaptive path and ordinary transport continues from that value.  The first segme
 names the actual regular, Moser-reduced, or exponential initialization route; it records the
 original terms, reduction manifest, canonical basis constants, matching point, working
 variable, and principal Acb
-logarithm/power branch.  The same protocol is used independently at every pilot, production,
+logarithm/power branch.  The same protocol is used independently at every production
 and validation sample of \texttt{reconstruct\_series\_solution}.  A numerical Frobenius
 manifest and the pre-existing mixed-root defective exact case remain fail closed because
 neither currently supplies a certified canonical chain basis for this boundary conversion.
@@ -1841,8 +1868,12 @@ The boundary is an ordinary-point column vector or, when the path starts at an e
 singularity, the \texttt{FrobeniusBoundary} of Sec.~\ref{sec:frobenius-boundary}.  A boundary
 factory may return either format at each regulator sample; incompatible formats fail closed. \\
 \texttt{maximum\_power} & Required absolute highest regulator power $m$ returned to the user.
-There is no public \texttt{series\_range}: the lowest power is detected from the solved
-quantity or supplied through \texttt{leading\_power}. \\
+There is no public \texttt{series\_range}; the lowest power is supplied separately. \\
+\texttt{leading\_power} & Required integer $n_{\min}$ obtained before numerical NDE work from
+the symbolic boundary condition and DE.  The literal \texttt{"automatic"} is rejected. \\
+\texttt{leading\_power\_}\newline\texttt{certificate} & Required mapping with exactly
+\texttt{status="certified"}, the same integer \texttt{leading\_power}, and a nonempty
+\texttt{method}.  FlintNDE validates this contract before any sample solve. \\
 \texttt{series\_parameter="ep"} & Name of the parameter reconstructed by the outer sampling
 loop. \\
 \texttt{goal\_digits=30} & Positive requested decimal accuracy $g$ used by the automatic
@@ -1850,9 +1881,6 @@ sampling, working-precision, and validation rules. \\
 \texttt{sample\_points="automatic"} & Automatic uses Eq.~\eqref{eq:ndes-series-reconstruction-default}
 and the rationalized one-percent grid.  An explicit sequence bypasses automatic production
 point generation but not validation. \\
-\texttt{leading\_power="automatic"} & Automatic runs the stable pilot-ratio test and then
-requires successful reconstruction and validation.  An integer override skips the pilot
-classification. \\
 \texttt{sample\_count="automatic"} & Number $N_{\mathrm fit}$ of production interpolation
 points.  It must cover at least the powers $n_{\min},\ldots,m$. \\
 \texttt{base\_sample="automatic"} & Production scale $\eps_0$; automatic means
@@ -1877,16 +1905,6 @@ samples for the reference chain, with the same automatic rule at the higher orde
 ordinary-point Cauchy radius. \\
 \texttt{guard\_bits=32} & Binary guard bits added after converting the decimal working
 precision to the global FLINT context. \\
-\texttt{pilot\_sample\_count=4} & Number of nested points used to estimate each component's
-leading power when \texttt{leading\_power="automatic"}. \\
-\texttt{pilot\_base\_sample=}\newline\texttt{"automatic"} & Starting pilot scale;
-automatic means $10^{-g/(\max(0,m)+1)}$. \\
-\texttt{pilot\_ratio=0.5} & Scale ratio $q$ between adjacent pilot points. \\
-\texttt{pilot\_max\_rounds=3} & Maximum number of successively smaller pilot grids before an
-ambiguous leading power fails closed. \\
-\texttt{leading\_power\_}\newline\texttt{tolerance="automatic"} & Maximum spread and distance from a common
-integer accepted in the pilot estimates.  Automatic means $10^{-\min(8,g/4)}$ and the
-effective value is reported. \\
 \texttt{validation\_sample\_count=2} & Number $N_{\mathrm check}$ of solves excluded from the
 interpolation and reserved for a posteriori residual checks. \\
 \texttt{validation\_scale=0.5} & Scale of the independent validation grid relative to the
@@ -1894,10 +1912,16 @@ production grid. \\
 \texttt{validation\_tolerance=}\newline\texttt{"automatic"} & Relative residual tolerance; automatic targets
 $10^{-g}$ while respecting Acb enclosure radii and reports the effective cutoff. \\
 \texttt{maximum\_samples=100} & Cap on $N_{\mathrm fit}$, matching the AMFlow production-sample
-cap.  Pilot and validation evaluations are reported separately. \\
+cap.  Validation evaluations are reported separately. \\
 \texttt{rationalize\_sample\_points=True} & Convert automatically generated decimal scales
 and spacings to exact rational regulator values before each NDE solve.  False passes Acb
 samples to the factories instead. \\
+\texttt{parallel\_task\_count=12} & Maximum number of independent fixed-regulator worker
+processes.  The effective count is \texttt{min(parallel\_task\_count, number of samples)};
+queued samples start automatically as workers finish.  Fixed exact rational systems, ordinary
+boundary vectors, and serialized adaptive paths are restored in each worker.  Arbitrary
+\texttt{AnalyticMatrixSystem} instances and local closures must instead be module-level
+factories or run with count one. \\
 \texttt{output\_layout=None} & Optional caller-local \texttt{OutputLayout}.  When supplied,
 the JSON result is written only under its \texttt{regularization} category. \\
 \texttt{result\_name=}\newline\texttt{"series\_reconstruction"} & Single path-safe stem for
@@ -1905,9 +1929,9 @@ the JSON filename. \\
 \texttt{SeriesReconstructionResult} & Provides \texttt{powers}, coefficient column vectors,
 production and validation points/values, effective parameters, diagnostics,
 \texttt{coefficient(power)}, and \texttt{evaluate(ep)}. \\
-Failure classes & \texttt{LeadingPowerDetectionError} rejects unstable, noninteger, or
-ambiguous pilot behavior.  \texttt{SeriesValidationError} rejects an unresolved NDE
-refinement, interpolation, or independent-sample residual. \\
+Failure classes & \texttt{ValueError} rejects a missing or inconsistent leading-power
+certificate. \texttt{SeriesValidationError} rejects an unresolved NDE refinement,
+interpolation, or independent-sample residual. \\
 \bottomrule
 \end{longtable}
 \normalsize

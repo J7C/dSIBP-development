@@ -14,6 +14,9 @@ from typing import Any
 from flint import acb, acb_mat, arb, ctx, fmpq
 
 
+DEFAULT_WORKING_PRECISION_DIGITS = 200
+
+
 def require_exact_keys(
     record: Any,
     expected_keys: set[str] | frozenset[str],
@@ -38,13 +41,20 @@ def require_exact_keys(
     return record
 
 
-def configure_working_precision(decimal_digits: int, guard_bits: int = 32) -> int:
-    """设置 Acb 工作精度并返回实际二进制位数。"""
+def configure_working_precision(
+    decimal_digits: int = DEFAULT_WORKING_PRECISION_DIGITS,
+    guard_bits: int = 32,
+) -> int:
+    """设置 Acb 工作精度并返回实际二进制位数；缺省使用 200 位十进制精度。"""
 
     if decimal_digits <= 0 or guard_bits < 0:
         raise ValueError("decimal_digits must be positive and guard_bits nonnegative")
     ctx.prec = math.ceil(decimal_digits * math.log2(10)) + guard_bits
     return ctx.prec
+
+
+# 导入 FlintNDE 时建立确定的 200 位缺省；公开配置函数仍允许用户显式覆盖。
+configure_working_precision()
 
 
 def arb_ball_to_json(value: arb, decimal_digits: int) -> dict[str, Any]:

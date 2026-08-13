@@ -238,6 +238,24 @@ def test_plan_request_rejects_missing_current_field() -> None:
         bridge.run_request(request)
 
 
+def test_unknown_action_lists_all_current_actions() -> None:
+    """错误消息必须列出当前四种 bridge action，不能停留在旧两阶段文案。"""
+
+    with _ASSERTIONS.assertRaisesRegex(ValueError, "evaluate.*ep_batch"):
+        bridge.run_request({"schema": bridge.REQUEST_SCHEMA, "action": "unknown"})
+
+
+def test_ep_batch_worker_failure_propagates() -> None:
+    """一个无效 ep 请求必须使整个 bridge 批量调用失败。"""
+
+    requests = [
+        {"schema": bridge.REQUEST_SCHEMA, "action": "unknown"},
+        {"schema": bridge.REQUEST_SCHEMA, "action": "unknown"},
+    ]
+    with _ASSERTIONS.assertRaisesRegex(ValueError, "evaluate.*ep_batch"):
+        bridge.run_ep_requests(requests, parallel_task_count=2)
+
+
 class MathematicaBridgeTest(unittest.TestCase):
     """让标准库 unittest 执行全部 bridge 合同检查。"""
 
@@ -254,3 +272,5 @@ class MathematicaBridgeTest(unittest.TestCase):
     test_partial_fraction_schema = staticmethod(test_partial_fraction_schema_rejects_unexpected_field)
     test_internal_raw_plan = staticmethod(test_execute_rejects_internal_raw_plan)
     test_missing_field = staticmethod(test_plan_request_rejects_missing_current_field)
+    test_current_actions = staticmethod(test_unknown_action_lists_all_current_actions)
+    test_ep_batch_failure = staticmethod(test_ep_batch_worker_failure_propagates)

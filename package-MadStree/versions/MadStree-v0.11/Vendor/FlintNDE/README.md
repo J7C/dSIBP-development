@@ -10,9 +10,9 @@ convention 变化、迁移要求、已执行验证和已知限制；文件中的
 一致。当前 `0.1.0.dev0` 及此前已有资产豁免，不追溯补建。建议在独立版本 branch 中完成
 开发和验证，但是否创建或合并 branch 完全由用户决定。
 
-## 0.3.0 当前路径与精度合同
+## 0.4.0 当前路径与多点求值合同
 
-0.3.0 仍面向通用单变量矩阵方程 `Y'(x)=A(x)Y(x)`。对 exact
+0.4.0 仍面向通用单变量矩阵方程 `Y'(x)=A(x)Y(x)`。对 exact
 `RationalMatrixSystem`，有限奇点、极点阶数和无穷远分类全部由包内部从矩阵元分母发现；
 用户不需要先给出 dlog letters 或奇点位置。程序随后自动验证
 
@@ -36,25 +36,33 @@ Wolfram 模式只接受 `"Avoid"` / `"SingularityJump"`。
   这些点位于同一条实线段上。不同单变量拉回应分别规划，不能跨拉回共享局部系数；
 - `transport_planned_path_refined(...)` 或 `FlintNDEExecutePath[...]` 只恢复并执行该计划，
   不再次调用规划器；
+- 规划节点覆盖的多个用户点按节点/线段组成 evaluation bucket。点数不少于 8 的桶由
+  `acb_poly.evaluate(..., algorithm="fast")` 使用子积树/余数树快速多点求值；小桶用
+  iterative 算法，输出记录实际算法与点数；
+- `direct_user_point_path(...)` 是关闭规划的公开入口：严格使用 `start` 后的用户点序列作为
+  节点，不插点、不删点、不调用规划器；穿过奇点时 fail closed；
 - 缺省为避开奇点模式。直线段命中内部奇点时返回奇点及对应线段诊断；只有显式选择
   `singularity_mode="singularity_jump"` 或 `"SingularityMode" -> "SingularityJump"`
   才允许奇点折跃。奇点折跃所选多值分支等价于某条绕行路径，必须由用户自行确认；
 - `message_language="EN"|"CN"` 和 Mathematica 的
   `MessageLanguage -> "EN"|"CN"` 控制简洁提示，缺省英文。
 
-工作精度由 `WorkingPrecisionDigits`（Python 为相应 `decimal_digits`）决定：
+工作精度由 `WorkingPrecisionDigits`（Python 为相应 `decimal_digits`）决定。两种接口缺省
+都是 200 位：`import flintnde` 立即建立该全局 Acb 精度，`configure_working_precision()`
+可重置为同一缺省；显式传入其它正整数则按用户值覆盖：
 
 ```text
 working bits = ceil(WorkingPrecisionDigits log2(10)) + 32.
 ```
 
-例如 70、100 位请求分别使用 265、365 bit，更高十进制精度会按同一公式继续提高 bit 数。
+缺省 200 位请求使用 697 bit；例如显式 70、100 位请求分别使用 265、365 bit，更高十进制
+精度会按同一公式继续提高 bit 数。
 `OutputDigits` 只控制输出格式，不会提高内部精度。线段投影、匹配比例、旋转因子和
 winding/monodromy 均在当前 Arb 精度构造，不经过 binary64 几何。两类序列化路径都保存
 `planning_precision_digits`，节点和奇点折跃几何保存 Arb 中点--半径--指数；若执行请求
 高于规划精度，程序拒绝执行并要求按目标精度重新规划，不能声称从低精度 JSON 补回信息。
 
-Wolfram Language 入口已按普通程序包组织。把 0.3.0 版本根加入 `$Path` 后可直接使用：
+Wolfram Language 入口已按普通程序包组织。把 0.4.0 版本根加入 `$Path` 后可直接使用：
 
 ```wl
 Needs["FlintNDE`"];
@@ -80,6 +88,7 @@ result = FlintNDEExecutePath[
 - `GaussianRational` / `gaussian_rational`：不增加依赖的 Q(i) 精确复数公开输入；
 - `RationalMatrixSystem` / `analyze_singularities`：exact Gaussian-rational 矩阵与完整奇点清单；
 - `NamedPoint` / `prepare_local_expansion` / `build_adaptive_path`：统一局部调度与自描述可执行路径；
+- `plan_transport_path` / `direct_user_point_path`：自动规划或严格用户节点的两种路径构造；
 - `AnalyticMatrixSystem`：接收任意返回 FLINT `acb_mat` 的解析矩阵函数；
 - `transport_path` / `transport_path_refined`：普通点输运与统一奇点局部基 bridge；
 - `transport_frobenius_boundaries_refined`：共享局部基和普通段 Taylor 矩阵的多列 Frobenius
@@ -117,13 +126,13 @@ result = FlintNDEExecutePath[
 
 ```powershell
 # 安装发布的 wheel；用户无需自行构建
-python -m pip install .\flintnde-0.3.0-py3-none-any.whl
+python -m pip install .\flintnde-0.4.0-py3-none-any.whl
 
 # 从下载的源码普通安装
-python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.3.0"
+python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.4.0"
 
 # 开发者可编辑安装
-python -m pip install -e "path\to\package-FlintNDE\versions\FlintNDE-0.3.0"
+python -m pip install -e "path\to\package-FlintNDE\versions\FlintNDE-0.4.0"
 ```
 
 `pip` 会自动安装满足版本要求的 `python-flint` 与 `sympy`。安装一次后，可在任意目录 `A` 的脚本中
@@ -133,7 +142,8 @@ python -m pip install -e "path\to\package-FlintNDE\versions\FlintNDE-0.3.0"
 
 ## 正规化参数的幂级数解重构
 
-最小调用只指定完整 NDE 问题和用户需要返回的最高 regulator 幂：
+最小调用给出完整 NDE 问题、用户需要返回的最高 regulator 幂，以及上游从符号边界和
+DE 得到的最低阶证书：
 
 ```python
 from flintnde import reconstruct_series_solution
@@ -143,6 +153,12 @@ series_result = reconstruct_series_solution(
     boundary=boundary,
     path=path,
     maximum_power=2,
+    leading_power=-1,
+    leading_power_certificate={
+        "status": "certified",
+        "leading_power": -1,
+        "method": "symbolic-boundary-and-DE",
+    },
 )
 ```
 
@@ -161,7 +177,7 @@ def path(ep, system_at_ep):
     return build_path_at(ep, system_at_ep)
 ```
 
-固定的 `AnalyticMatrixSystem`/`RationalMatrixSystem`、边界和 `list[acb]` 也可直接传入。
+固定的 `AnalyticMatrixSystem`/`RationalMatrixSystem`、边界和路径也可直接传入。
 普通点边界是 `acb_mat` 或标量列表；正则奇点边界使用下文的 `frobenius_boundary`。
 `boundary(ep)` 可以按每个 regulator 样本返回其中任一种格式。
 
@@ -173,10 +189,15 @@ series_result = reconstruct_series_solution(
     boundary=boundary,
     path=path,
     maximum_power=2,
+    leading_power=-1,
+    leading_power_certificate={
+        "status": "certified",
+        "leading_power": -1,
+        "method": "symbolic-boundary-and-DE",
+    },
     series_parameter="ep",
     goal_digits=30,
     sample_points="automatic",
-    leading_power="automatic",
     sample_count="automatic",
     base_sample="automatic",
     sample_spacing=0.01,
@@ -188,32 +209,44 @@ series_result = reconstruct_series_solution(
     transport_extra_sample_count="automatic",
     radius_fraction=0.60,
     guard_bits=32,
-    pilot_sample_count=4,
-    pilot_base_sample="automatic",
-    pilot_ratio=0.5,
-    pilot_max_rounds=3,
-    leading_power_tolerance="automatic",
     validation_sample_count=2,
     validation_points="automatic",
     validation_scale=0.5,
     validation_tolerance="automatic",
     maximum_samples=100,
     rationalize_sample_points=True,
+    parallel_task_count=12,
     output_layout=None,
     result_name="series_reconstruction",
 )
 ```
 
-`maximum_power=m` 是唯一必填的展开阶数。最低幂 pilot 在多个嵌套小 `ep` 点分别构造
-边界和 DE，并完成同一条 NDE 输运，再由终点矢量的分量模比判定最低整数幂 `n_min`；
-不稳定、非整数或含混的零分量会抛出 `LeadingPowerDetectionError`。不能只把边界与 DE
-矩阵元的最低幂简单相加：含 regulator 负幂的 DE 可能产生非 Laurent 行为，完整输运
-pilot 才是这里采用的覆盖判据。
+`parallel_task_count` 控制同时运行的独立固定 `ep` NDE 任务，缺省为 `12`。程序实际启动
+`min(parallel_task_count, ep任务数)` 个 worker；任务更多时，任一 worker 完成后自动续交
+下一个任务，不需要用户手动分批。因为 python-flint 的精度与线程 context 是进程级全局状态，
+这里使用独立进程而不是 Python 线程。并行模式下 `DEmatrix(ep)`、`boundary(ep)` 和
+`path(ep,system)` 应定义为模块顶层函数，并在 worker 内构造 FLINT 对象。固定
+`RationalMatrixSystem`、普通边界向量和 `AdaptivePath` 会由程序结构化序列化并在 worker
+恢复；任意 `AnalyticMatrixSystem` 实例或局部闭包不能可靠跨 Windows worker 传输，需改为
+模块顶层 factory，或在调试时显式设置 `parallel_task_count=1`。该选项与 `ctx.threads` 不同：前者并行不同 `ep` 任务，后者只给
+单个进程内部分 FLINT 算术内核设置最大线程数。
 
-`leading_power="automatic"` 直接采用 pilot 检出的 `n_min`。显式给出整数时仍运行同一个
-pilot 作覆盖审计，但保留用户指定值；若用户值高于 `n_min`，FlintNDE 发出 `UserWarning`，
-说明哪些低幂将被遗漏，并把检测值及覆盖状态写入 `diagnostics["pilot"]`。显式给出更低的
-幂次是允许的，只会保留额外的零系数候选。随后定义
+也可直接对任意模块顶层固定 `ep` 任务使用：
+
+```python
+from flintnde import run_ep_tasks
+
+batch = run_ep_tasks(ep_values, solve_ep, parallel_task_count=12)
+```
+
+完整可运行示例见仓库级 `examples/ep_parallel.py`。
+
+`maximum_power=m` 与整数 `leading_power=n_min` 都是必填参数。FlintNDE 只消费矩阵 NDE，
+任意 Python callable 不携带足以证明 Laurent 支撑的符号结构，因此不再用数值样本猜测
+最低阶。调用方必须同时提供严格证书
+`{"status":"certified","leading_power":n_min,"method":"..."}`；字段不全、状态错误、
+`automatic` 或证书整数不一致都在任何 NDE 样本前 fail closed。MadStree 会从自己的实际
+符号边界条件和 dlog DE 自动生成证书，MadStree 用户无需手填。随后定义
 
 ```text
 P = max(0, -n_min)
@@ -222,9 +255,10 @@ N_fit = max(ceil(5 K / 2 + P), K + 1)
 alpha_ep = P / 4 + goal_digits / (K + 1)
 ep0 = 10^(-alpha_ep)
 p0 = max(ceil((N_fit + P) alpha_ep), 30)
-working_precision_digits = ceil(2 (1 + extra_working_precision) p0)
+working_precision_digits = max(200, ceil(2 (1 + extra_working_precision) p0))
 ```
 
+其中 200 是缺省自动规划下限；若用户显式给出 `working_precision_digits`，则直接采用用户值。
 全部 `N_fit` 个生产点用于一个 Acb 方阵插值，内部拟合到
 `n_min + N_fit - 1`，只把 `n_min..maximum_power` 返回用户；不使用最小二乘或伪逆。
 `transport_order=4*p0`，`transport_extra_order=ceil(max(50,p0/5))`，后者作为参考链增加的
@@ -235,7 +269,7 @@ working_precision_digits = ceil(2 (1 + extra_working_precision) p0)
 序列显式传入 `validation_points`。验证点完全不参与插值；NDE 主/参考链以及
 返回截断级数都必须通过 `validation_tolerance`，缺省为 `10^(-goal_digits)`，否则抛出
 `SeriesValidationError`。显式 `sample_points` 应使用字符串、`fmpq` 或 `acb`，不接受会掩盖
-输入精度的 Python `float/complex`。`rationalize_sample_points=False` 会让自动 pilot、生产和
+输入精度的 Python `float/complex`。`rationalize_sample_points=False` 会让自动生产和
 验证点以 Acb 而非 `fmpq` 传给工厂。
 
 结果的 `powers` 与 `coefficients` 一一对应；`coefficient(power)` 取单阶系数矢量，
@@ -439,7 +473,11 @@ snapshots, segment_reports, elapsed = transport_path(
 也支持把已认证指数型奇点保存为 `resultType: "exponential_boundary"` 及 `{phi,a,b,C}` terms。
 以下限制只属于多列批量加速入口；它不表示 FlintNDE 不能保存奇点边界常数。
 
-仓库级 `examples/` 提供三个入口：`qnm_2x2.py`、`regular_singular_save.py` 和 `exponential_boundary_save.py`。后两项分别给出本节 `{a,b,C}` 与 `{phi,a,b,C}` 保存合同的最小可运行配置。
+仓库级 `examples/` 另提供 `ep_parallel.py` 与 `ep_parallel_mathematica.wl`：分别演示 Python
+和 Wolfram 入口在缺省上限 12 下有界并行不同固定 `ep`，并与闭式 `2^ep` 比较。MMA 使用
+`FlintNDEEvaluateEpBatch[jobs, ParallelTaskCount -> 12]`；实际并行数及输入同序结果写入返回值。
+原有 `qnm_2x2.py`、`regular_singular_save.py` 和 `exponential_boundary_save.py` 分别覆盖 QNM、
+`{a,b,C}` 与 `{phi,a,b,C}` 保存合同。
 
 多个 Frobenius 初值属于同一 exact `RationalMatrixSystem` 时，可用
 
@@ -580,10 +618,16 @@ series_result = reconstruct_series_solution(
     boundary=boundary,
     path=path,
     maximum_power=2,
+    leading_power=0,
+    leading_power_certificate={
+        "status": "certified",
+        "leading_power": 0,
+        "method": "symbolic-frobenius-boundary-and-DE",
+    },
 )
 ```
 
-每个生产、pilot 和验证样本都会重新验证对应系统的 indicial/log 结构；参考链的边界初始化
+每个生产和验证样本都会重新验证对应系统的 indicial/log 结构；参考链的边界初始化
 审计记录保存在 `diagnostics` 的各样本 `boundary_initialization` 字段中。
 
 这里 `convergence_radius` 是由奇点位置决定的收敛半径；`max_step_over_radius=0.45` 只表示
@@ -651,10 +695,12 @@ dimension * 10^(-precision_digits)
 python -m unittest discover -s tests -v
 ```
 
-2026-08-12 fresh 结果为 `pytest 144/144`、`unittest discover 133/133`；
-Wolfram `Needs["FlintNDE`"]` 端到端检查为 `18/18`。验证覆盖一般有理矩阵、任意次数
+2026-08-14 fresh 结果为 `unittest discover 162/162`；
+Wolfram `Needs["FlintNDE`"]` 端到端检查为 `21/21`。验证覆盖一般有理矩阵、任意次数
 多项式加简单极点的内部特化、缺省避开奇点、显式奇点折跃、严格消息语言、计划序列化
-精度和执行期不重规划。独立包与 MadStree v0.10 的共同交付文件逐文件 SHA-256 一致。
+精度和执行期不重规划，并覆盖 fast multipoint、严格用户节点、符号最低阶证书门禁、
+增量扩阶与缓存复用。独立包与 MadStree v0.11 Vendor 的 42 个非缓存交付文件逐文件
+SHA-256 一致。
 
 完整安装方式、普通点输运、正则奇点、显式数值路线、正规化重建及全部公开参数见
 `../../Documentation/FlintNDE.pdf` 的 “Installation and public interface” 一节。

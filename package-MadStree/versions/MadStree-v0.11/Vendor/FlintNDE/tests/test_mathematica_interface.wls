@@ -88,6 +88,31 @@ polynomialSystem = FlintNDEPartialFractionSystem[
 
 
 (* ::Chapter:: *)
+(*不同 ep 的有界并行*)
+
+epValues = {1/5, 1/6, 1/7};
+epJobs = Map[
+  <|"ep" -> #, "system" -> FlintNDERationalSystem[{{#/(1 + x)}}, x],
+    "start" -> 0, "points" -> {1}, "initialVector" -> {1}|> &,
+  epValues
+];
+epBatch = FlintNDEEvaluateEpBatch[
+  epJobs,
+  ParallelTaskCount -> 12,
+  "Python" -> python,
+  "WorkDirectory" -> runtimeDirectory,
+  "WorkingPrecisionDigits" -> 60,
+  "OutputDigits" -> 40,
+  "PrimaryOrder" -> 48,
+  "ReferenceOrder" -> 64,
+  "TargetRelativeError" -> "1e-30",
+  MessageLanguage -> "CN"
+];
+epBatchValues = First[#1["execution", "referenceFinalVector"]] & /@
+  Lookup[epBatch, "results", {}];
+
+
+(* ::Chapter:: *)
 (*奇点模式与公开接口合同*)
 
 jumpSystem = FlintNDERationalSystem[{{1/(3 (x - 2))}}, x];
@@ -136,7 +161,21 @@ checks = <|
     Context[SingularityMode] === StringJoin["FlintNDE", FromCharacterCode[96]] &&
     MemberQ[Options[FlintNDEPlanPath], MessageLanguage -> "EN"] &&
     MemberQ[Options[FlintNDEPlanPath], SingularityMode -> "Avoid"] &&
-    MemberQ[Options[FlintNDEExecutePath], MessageLanguage -> "EN"],
+    MemberQ[Options[FlintNDEExecutePath], MessageLanguage -> "EN"] &&
+    Context[ParallelTaskCount] === StringJoin["FlintNDE", FromCharacterCode[96]] &&
+    MemberQ[Options[FlintNDEEvaluateEpBatch], ParallelTaskCount -> 12],
+  "defaultWorkingPrecision" ->
+    MemberQ[Options[FlintNDEPlanPath], "WorkingPrecisionDigits" -> 200] &&
+    MemberQ[Options[FlintNDEExecutePath], "WorkingPrecisionDigits" -> 200] &&
+    MemberQ[Options[FlintNDEEvaluateEpBatch], "WorkingPrecisionDigits" -> 200],
+  "epBatchParallelism" ->
+    Lookup[epBatch, "parallelTaskCountRequested", None] === 12 &&
+    Lookup[epBatch, "parallelTaskCountEffective", None] === 3 &&
+    Lookup[Lookup[epBatch, "results", {}], "ep"] === epValues,
+  "epBatchClosedForm" -> TrueQ[
+    Length[epBatchValues] === Length[epValues] &&
+    Max[Abs[epBatchValues - N[2^epValues, 40]]] < 10^-30
+  ],
   "unknownOptionsRejected" ->
     MatchQ[unknownPlanOption, Failure["UnknownOption", _Association]] &&
     MatchQ[unknownExecuteOption, Failure["UnknownOption", _Association]],

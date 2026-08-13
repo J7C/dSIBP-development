@@ -1,13 +1,19 @@
-"""MadStree v0.11 到 FlintNDE 0.4.0 的单请求适配器。
+"""MadStree v0.11 到 FlintNDE 0.4.0 的数值适配器。
 
 MadStree 只提交连续复仿射单变量段、exact dlog 拉回、边界和 master 顺序。
 FlintNDE 在本进程内完成边界输运、各段自动规划或顺序直输、dense 多点求值和
-奇点领头阶解析；本协议不生成、保存或恢复路径计划对象。
+奇点领头阶解析。正规化级数控制协议接收 MadStree 的符号最低阶证书，生成自适应
+exact ep 网格，并对 MadStree 回传的 Acb 终点球作 Laurent 重构和独立验证。
 """
 
 from __future__ import annotations
 
+from multiprocessing import get_context
+from decimal import Decimal
+from fractions import Fraction
 import json
+import math
+import os
 import sys
 import time
 import traceback
@@ -17,6 +23,9 @@ from typing import Any
 
 
 EVALUATE_SCHEMA = "madstree_flintnde_evaluate_v1"
+EVALUATE_BATCH_SCHEMA = "madstree_flintnde_ep_batch_v1"
+SERIES_CONTROL_SCHEMA = "madstree_flintnde_ep_series_control_v1"
+DEFAULT_PARALLEL_TASK_COUNT = 12
 REQUEST_KEYS = {
     "schema", "backendPackagePath", "masterDigest", "dimension", "segments",
     "pathPlanning", "singularityMode", "boundary",
@@ -202,16 +211,20 @@ def _load_input(path: Path) -> dict[str, Any]:
     return _validate_request(json.loads(path.read_text(encoding="utf-8")))
 
 
-def _acb_record(value: Any, digits: int) -> dict[str, str]:
-    """把 Acb 中点写为稳定的十进制复数记录。"""
+def _acb_record(value: Any, digits: int) -> dict[str, Any]:
+    """同时写出用户可读中点和用于正规化认证的完整 Arb 球。"""
+
+    from flintnde.core import arb_ball_to_json
 
     return {
         "real": value.real.mid().str(digits, radius=False, more=True),
         "imag": value.imag.mid().str(digits, radius=False, more=True),
+        "real_ball": arb_ball_to_json(value.real, digits),
+        "imag_ball": arb_ball_to_json(value.imag, digits),
     }
 
 
-def _point_record(value: Any, digits: int) -> dict[str, str]:
+def _point_record(value: Any, digits: int) -> dict[str, Any]:
     """序列化实际输运节点坐标。"""
 
     return _acb_record(value, digits)
@@ -454,6 +467,7 @@ def _run(data: dict[str, Any]) -> dict[str, Any]:
     )
     return {
         "status": "success", "schema": data["schema"],
+        "workerPid": os.getpid(),
         "executionAction": "plan_and_execute" if data["pathPlanning"] else "execute_user_nodes",
         "masterDigest": data["masterDigest"], "dimension": data["dimension"],
         "backendPackagePath": str(backend_path), "messageLanguage": data["messageLanguage"],
@@ -466,6 +480,267 @@ def _run(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _run_indexed_task(item: tuple[int, dict[str, Any]]) -> tuple[int, dict[str, Any]]:
+    """在独立进程执行一个固定 ep 请求，并保留输入序号。"""
+
+    index, data = item
+    return index, _run(data)
+
+
+def _validate_batch_request(value: Any) -> dict[str, Any]:
+    """验证 MadStree 固定 ep 批量请求和缺省 12 并行合同。"""
+
+    data = _exact_keys(
+        value, {"schema", "parallelTaskCount", "tasks", "messageLanguage"},
+        "ep batch request",
+    )
+    if data["schema"] != EVALUATE_BATCH_SCHEMA:
+        raise ValueError("unsupported MadStree-FlintNDE ep batch schema")
+    parallel_count = _integer(data["parallelTaskCount"], "parallelTaskCount")
+    if data["messageLanguage"] not in {"EN", "CN"}:
+        raise ValueError('messageLanguage must be "EN" or "CN"')
+    if not isinstance(data["tasks"], list) or not data["tasks"]:
+        raise ValueError("ep batch tasks must be a nonempty list")
+    tasks = []
+    for index, task in enumerate(data["tasks"]):
+        item = _exact_keys(task, {"ep", "request"}, f"tasks[{index}]")
+        tasks.append({"ep": item["ep"], "request": _validate_request(item["request"])})
+    return {
+        "schema": data["schema"],
+        "parallelTaskCount": parallel_count,
+        "tasks": tasks,
+        "messageLanguage": data["messageLanguage"],
+    }
+
+
+def _run_batch(data: dict[str, Any]) -> dict[str, Any]:
+    """用有界进程池运行不同 ep；每项隔离 FLINT 上下文并按输入顺序返回。"""
+
+    tasks = data["tasks"]
+    requested = data["parallelTaskCount"]
+    effective = min(requested, len(tasks))
+    payloads = [(index, task["request"]) for index, task in enumerate(tasks)]
+    with get_context("spawn").Pool(
+        processes=effective, maxtasksperchild=1
+    ) as pool:
+        completed = pool.map(_run_indexed_task, payloads, chunksize=1)
+    results = [
+        {"ep": tasks[index]["ep"], "result": result}
+        for index, result in completed
+    ]
+    success = all(item["result"].get("status") == "success" for item in results)
+    language = data["messageLanguage"]
+    message = (
+        f"MadStree/FlintNDE ep task pool used {effective} of requested {requested} "
+        "workers (default 12); queued tasks started automatically as workers finished."
+        if language == "EN" else
+        f"MadStree/FlintNDE 不同 ep 任务池：请求并行数 {requested}，实际并行数 {effective}"
+        "（缺省 12）；任务完成后已自动续交队列。"
+    )
+    return {
+        "status": "success" if success else "failed",
+        "schema": data["schema"],
+        "message": message,
+        "messageLanguage": language,
+        "parallelTaskCountRequested": requested,
+        "parallelTaskCountEffective": effective,
+        "taskCount": len(results),
+        "results": results,
+    }
+
+
+def _validate_series_control_request(value: Any) -> dict[str, Any]:
+    """验证自适应正规化控制请求；每个阶段只接受自己的严格字段集合。"""
+
+    if not isinstance(value, dict) or value.get("schema") != SERIES_CONTROL_SCHEMA:
+        raise ValueError("unsupported MadStree-FlintNDE ep series control schema")
+    action = value.get("action")
+    common = {"schema", "action", "backendPackagePath", "maximumPower", "goalDigits"}
+    expected = {
+        "production_plan": common | {
+            "leadingPower", "sampleSpacing", "validationSampleCount", "validationScale",
+            "maximumSamples", "extraWorkingPrecision", "productionRound",
+            "fitExtraOrder", "fitOrderIncrement", "fitMaximumRounds",
+        },
+        "fit": common | {
+            "leadingPower", "workingPrecisionDigits", "points", "values",
+            "validationPoints", "validationValues", "validationTolerance",
+        },
+    }.get(action)
+    if expected is None:
+        raise ValueError(f"unsupported ep series control action: {action}")
+    data = _exact_keys(value, expected, f"ep series {action} request")
+    _string(data["backendPackagePath"], "backendPackagePath")
+    _integer(data["maximumPower"], "maximumPower", -10**9)
+    _integer(data["goalDigits"], "goalDigits")
+    return data
+
+
+def _fraction_text(value: Fraction) -> str:
+    """把自动网格点写成 Wolfram 和 FLINT 都能精确读取的有理数字符串。"""
+
+    return f"{value.numerator}/{value.denominator}"
+
+
+def _acb_from_ball_record(record: Any, label: str) -> Any:
+    """从 MadStree 求值结果恢复完整 Acb 球，不使用仅供显示的中点。"""
+
+    from flint import acb
+    from flintnde.core import arb_ball_from_json
+
+    item = _exact_keys(
+        record, {"real", "imag", "real_ball", "imag_ball"}, label
+    )
+    return acb(
+        arb_ball_from_json(item["real_ball"], f"{label}.real_ball"),
+        arb_ball_from_json(item["imag_ball"], f"{label}.imag_ball"),
+    )
+
+
+def _series_vectors(records: Any, label: str) -> tuple[Any, ...]:
+    """恢复一组同维 Acb 列矢量。"""
+
+    from flintnde.core import column_vector
+
+    if not isinstance(records, list) or not records:
+        raise ValueError(f"{label} must be a nonempty list")
+    vectors = []
+    for sample_index, vector in enumerate(records):
+        if not isinstance(vector, list) or not vector:
+            raise ValueError(f"{label}[{sample_index}] must be a nonempty vector")
+        vectors.append(column_vector([
+            _acb_from_ball_record(item, f"{label}[{sample_index}][{row}]")
+            for row, item in enumerate(vector)
+        ]))
+    dimension = vectors[0].nrows()
+    if any(vector.nrows() != dimension for vector in vectors):
+        raise ValueError(f"{label} vectors have inconsistent dimensions")
+    return tuple(vectors)
+
+
+def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
+    """按 MadStree 符号证书规划 ep 网格，或重构并验证 Laurent 系数。"""
+
+    _resolve_backend_path(data)
+    from flint import acb
+    from flintnde import configure_working_precision, fit_sampled_series
+    from flintnde.regularization import (
+        AUTOMATIC,
+        _resolve_plan,
+    )
+
+    action = data["action"]
+    maximum_power = data["maximumPower"]
+    goal_digits = data["goalDigits"]
+    if action == "production_plan":
+        leading = _integer(data["leadingPower"], "leadingPower", -10**9)
+        production_round = _integer(data["productionRound"], "productionRound")
+        fit_extra_order = _integer(data["fitExtraOrder"], "fitExtraOrder", 0)
+        fit_order_increment = _integer(
+            data["fitOrderIncrement"], "fitOrderIncrement", 1
+        )
+        fit_maximum_rounds = _integer(
+            data["fitMaximumRounds"], "fitMaximumRounds", 1
+        )
+        if production_round > fit_maximum_rounds:
+            raise ValueError("productionRound exceeds fitMaximumRounds")
+        pole_depth = max(0, -leading)
+        reconstruction_depth = maximum_power - leading
+        initial_count = max(
+            math.ceil(2.5 * reconstruction_depth + pole_depth),
+            reconstruction_depth + 1 + fit_extra_order,
+        )
+        target_count = initial_count + fit_order_increment * (production_round - 1)
+        capacity_count = initial_count + fit_order_increment * (fit_maximum_rounds - 1)
+        maximum_samples = _integer(data["maximumSamples"], "maximumSamples")
+        if target_count > maximum_samples:
+            raise ValueError(
+                f"incremental production needs {target_count} samples, "
+                f"above maximumSamples={maximum_samples}"
+            )
+        capacity_count = min(capacity_count, maximum_samples)
+        alpha = Decimal(pole_depth) / Decimal(4) + Decimal(goal_digits) / Decimal(
+            reconstruction_depth + 1
+        )
+        plan = _resolve_plan(
+            leading_power=leading, maximum_power=maximum_power,
+            goal_digits=goal_digits, sample_points=AUTOMATIC,
+            sample_count=capacity_count,
+            base_sample=AUTOMATIC, sample_spacing=data["sampleSpacing"],
+            working_precision_digits=AUTOMATIC,
+            extra_working_precision=float(data["extraWorkingPrecision"]),
+            transport_order=AUTOMATIC, transport_extra_order=AUTOMATIC,
+            transport_sample_count=AUTOMATIC, transport_extra_sample_count=AUTOMATIC,
+            validation_sample_count=_integer(
+                data["validationSampleCount"], "validationSampleCount"
+            ),
+            validation_points=AUTOMATIC, validation_scale=data["validationScale"],
+            maximum_samples=maximum_samples,
+            rationalize_sample_points=True,
+        )
+        return {
+            "status": "success", "schema": data["schema"], "action": action,
+            "points": [str(item) for item in plan.sample_arguments[:target_count]],
+            "validationPoints": [str(item) for item in plan.validation_arguments],
+            "sampleCount": target_count,
+            "initialSampleCount": initial_count,
+            "capacitySampleCount": capacity_count,
+            "internalMaximumPower": leading + target_count - 1,
+            "workingPrecisionDigits": plan.working_precision_digits,
+            "primaryOrder": plan.transport_order,
+            "referenceOrder": plan.transport_order + plan.transport_extra_order,
+            "targetRelativeError": f"1e-{goal_digits}",
+            "baseSample": plan.base_sample,
+            "alphaEpsilon": plan.alpha_epsilon,
+            "productionRound": production_round,
+        }
+    leading = _integer(data["leadingPower"], "leadingPower", -10**9)
+    precision = _integer(data["workingPrecisionDigits"], "workingPrecisionDigits")
+    configure_working_precision(precision)
+    values = _series_vectors(data["values"], "values")
+    validation_values = _series_vectors(data["validationValues"], "validationValues")
+    from flintnde import SeriesValidationError
+
+    internal_maximum = leading + len(values) - 1
+    result = fit_sampled_series(
+        sample_points=data["points"], sample_values=values,
+        maximum_power=internal_maximum, leading_power=leading,
+        validation_points=data["validationPoints"],
+        validation_values=validation_values,
+        validation_tolerance=None, series_parameter="ep",
+    )
+    tolerance = acb(data["validationTolerance"]).real
+    maximum_residual = acb(
+        result.diagnostics["maximum_validation_relative_residual"]
+    ).real
+    if not maximum_residual < tolerance:
+        return {
+            "status": "success", "schema": data["schema"], "action": action,
+            "fitStatus": "retry",
+            "reason": (
+                f"series validation residual {maximum_residual.str(20)} is not "
+                f"below {tolerance.str(20)}"
+            ),
+            "internalMaximumPower": internal_maximum,
+            "diagnostics": result.diagnostics,
+        }
+    coefficients = {
+        str(power): [_acb_record(vector[row, 0], precision) for row in range(vector.nrows())]
+        for power, vector in zip(result.powers, result.coefficients)
+        if power <= maximum_power
+    }
+    return {
+        "status": "success", "schema": data["schema"], "action": action,
+        "fitStatus": "accepted",
+        "leadingPower": result.leading_power,
+        "maximumPower": result.maximum_power,
+        "internalMaximumPower": internal_maximum,
+        "coefficients": coefficients,
+        "diagnostics": result.diagnostics,
+        "effectiveParameters": result.effective_parameters,
+    }
+
+
 def main() -> int:
     """命令行入口；失败也以 UTF-8 JSON 返回完整原因。"""
 
@@ -474,7 +749,13 @@ def main() -> int:
     input_path = Path(sys.argv[1])
     output_path = Path(sys.argv[2])
     try:
-        result = _run(_load_input(input_path))
+        raw = json.loads(input_path.read_text(encoding="utf-8"))
+        if raw.get("schema") == EVALUATE_BATCH_SCHEMA:
+            result = _run_batch(_validate_batch_request(raw))
+        elif raw.get("schema") == SERIES_CONTROL_SCHEMA:
+            result = _run_series_control(_validate_series_control_request(raw))
+        else:
+            result = _run(_validate_request(raw))
         exit_code = 0
     except Exception as error:  # noqa: BLE001 - CLI 边界必须序列化所有错误
         result = {

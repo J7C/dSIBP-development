@@ -10,7 +10,13 @@
 
 ## Current interface
 
-- `MSEvaluatePath[context, pointSequence, ...]` is the sole numerical entry point.
+- `MSEvaluatePath[context, pointSequence, ...]` evaluates one parameter assignment and path.
+- `MSReconstructEpSeries[context, ep, pointTemplate, MaximumEpPower -> m]` takes only the highest
+  requested power. Before any numerical solve, the symbolic boundary and dlog DE certify the lowest
+  integer power. The initial fit adds two buffer powers; failed validation adds two more powers and
+  computes only new production points while reusing both caches. Three failed rounds stop closed.
+- `ParallelTaskCount -> 12` bounds production and validation process pools. The old public
+  `MSEvaluateEpBatch` is physically removed; the fixed-point batch executor is private.
 - `FlintNDEPathPlanning -> True` (default) asks FlintNDE to plan nodes inside each segment.
   User points covered by one expansion node are evaluated as a bucket: large buckets use
   fast multipoint evaluation through a subproduct/remainder tree and small buckets use the
@@ -19,6 +25,10 @@
   order and never calls the planner. A chain that crosses a pole or exceeds a local convergence
   disk fails explicitly.
 - Bare coordinates are returned; `{coordinate,"tmp"}` is transient. Other labels are rejected.
+- `MSBoundaryData` and `MSEvaluatePath` now default to 200 decimal working digits. Automatic
+  regulator planning also uses 200 digits as its lower bound; an explicit precision still overrides it.
+- Example 06 requests through `ep^0` for a massless three-vertex chain with
+  `a1=a2=a3=1+ep`; its symbolic boundary/DE certificate gives leading power zero.
 
 ## Removed interfaces
 
@@ -34,9 +44,11 @@ ordinary `Needs["MadStree`"]` requires no encoding option from the user.
 
 ## Validation status
 
-- Single-request Python adapter: 4/4 passed.
-- Thirteen Wolfram development scripts passed 184/184 checks; all five examples exited zero.
-- The full Python regression passed 146/146 and Wolfram `Needs["FlintNDE`"]` passed 18/18.
+- The Python adapter passed 8/8 checks. Given certified power `-1`, a synthetic `1/ep+2+3ep`
+  route uses four production points with an internal `ep^2` buffer and recovers pole 1 and finite part 2.
+- Exact Laurent valuation passed 8/8; the real nine-master, nine-branch three-vertex certificate
+  returns `leadingPower=0` before numerical NDE work.
+- The full Python regression passed 158/158 and Wolfram `Needs["FlintNDE`"]` passed 20/20.
   Twenty Python implementation files and fourteen test files are byte-identical between the
   standalone backend and the Vendor copy.
 - The v0.11 independent validation passed 17/17. Across 900 points and three masters, the largest

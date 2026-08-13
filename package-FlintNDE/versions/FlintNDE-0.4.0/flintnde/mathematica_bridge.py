@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from multiprocessing import get_context
 import re
 import sys
 import warnings
@@ -40,6 +41,7 @@ from .transport import transport_path_refined
 
 REQUEST_SCHEMA = "flintnde_mathematica_request_v1"
 RESULT_SCHEMA = "flintnde_mathematica_bridge_v1"
+DEFAULT_PARALLEL_TASK_COUNT = 12
 
 
 def _mma_scalar(text: str) -> Any:
@@ -595,6 +597,52 @@ def _run_execute_request(request: dict[str, Any]) -> dict[str, Any]:
         ]
     return output
 
+
+def _run_evaluate_request(request: dict[str, Any]) -> dict[str, Any]:
+    """对一个固定 ep job 连续执行规划与输运，供有界任务池调用。"""
+
+    plan_request = {
+        "schema": request["schema"],
+        "action": "plan",
+        "system": request["system"],
+        "start": request["start"],
+        "points": request["points"],
+        "workingPrecisionDigits": request["workingPrecisionDigits"],
+        "outputDigits": request["outputDigits"],
+        "messageLanguage": request["messageLanguage"],
+        "singularityMode": request["singularityMode"],
+        "radiusFraction": request["radiusFraction"],
+        "maxStepOverRadius": request["maxStepOverRadius"],
+        "singularityJumpThreshold": request["singularityJumpThreshold"],
+        "matchFraction": request["matchFraction"],
+        "maxSingularityJumps": request["maxSingularityJumps"],
+    }
+    planned = _run_plan_request(plan_request)
+    if planned.get("status") != "complete":
+        return {"ep": request["ep"], "status": "planFailed", "plan": planned}
+    execute_request = {
+        "schema": request["schema"],
+        "action": "execute",
+        "system": request["system"],
+        "initialVector": request["initialVector"],
+        "plannedResult": planned,
+        "workingPrecisionDigits": request["workingPrecisionDigits"],
+        "outputDigits": request["outputDigits"],
+        "primaryOrder": request["primaryOrder"],
+        "referenceOrder": request["referenceOrder"],
+        "targetRelativeError": request["targetRelativeError"],
+        "certificationMode": request["certificationMode"],
+        "radiusFraction": request["radiusFraction"],
+        "messageLanguage": request["messageLanguage"],
+    }
+    executed = _run_execute_request(execute_request)
+    return {
+        "ep": request["ep"],
+        "status": executed.get("status", "error"),
+        "plan": planned,
+        "execution": executed,
+    }
+
 def run_request(request: dict[str, Any]) -> dict[str, Any]:
     """只分发当前 plan 或 execute 请求，不接受其它字段或 action。"""
 
@@ -603,6 +651,16 @@ def run_request(request: dict[str, Any]) -> dict[str, Any]:
     if request.get("schema") != REQUEST_SCHEMA:
         raise ValueError(f"unsupported bridge request schema: {request.get('schema')}")
     action = request.get("action")
+    if action == "ep_batch":
+        require_exact_keys(
+            request,
+            {"schema", "action", "requests", "parallelTaskCount"},
+            "ep batch request",
+        )
+        return run_ep_requests(
+            request["requests"],
+            parallel_task_count=request["parallelTaskCount"],
+        )
     if action == "plan":
         require_exact_keys(
             request,
@@ -648,7 +706,87 @@ def run_request(request: dict[str, Any]) -> dict[str, Any]:
         if request["messageLanguage"] not in {"EN", "CN"}:
             raise ValueError('messageLanguage must be exactly "EN" or "CN"')
         return _run_execute_request(request)
-    raise ValueError('FlintNDE bridge request action must be exactly "plan" or "execute"')
+    if action == "evaluate":
+        require_exact_keys(
+            request,
+            {
+                "schema",
+                "action",
+                "ep",
+                "system",
+                "start",
+                "points",
+                "initialVector",
+                "workingPrecisionDigits",
+                "outputDigits",
+                "primaryOrder",
+                "referenceOrder",
+                "targetRelativeError",
+                "certificationMode",
+                "messageLanguage",
+                "singularityMode",
+                "radiusFraction",
+                "maxStepOverRadius",
+                "singularityJumpThreshold",
+                "matchFraction",
+                "maxSingularityJumps",
+            },
+            "evaluate request",
+        )
+        return _run_evaluate_request(request)
+    raise ValueError(
+        'FlintNDE bridge request action must be exactly "plan", "execute", '
+        '"evaluate", or "ep_batch"'
+    )
+
+
+def _run_indexed_request(item: tuple[int, dict[str, Any]]) -> tuple[int, dict[str, Any]]:
+    """在独立 worker 进程执行一个请求，并保留原始输入序号。"""
+
+    index, request = item
+    return index, run_request(request)
+
+
+def run_ep_requests(
+    requests: list[dict[str, Any]],
+    *,
+    parallel_task_count: int = DEFAULT_PARALLEL_TASK_COUNT,
+) -> dict[str, Any]:
+    """用有界进程池执行互相独立的固定 ep NDE 请求。
+
+    ``parallel_task_count`` 缺省为 12；实际 worker 数严格取请求数与该值的较小者。
+    任务数超过 worker 数时，``ProcessPoolExecutor`` 会在任一任务结束后自动提交队列中的
+    后续任务。独立进程隔离 python-flint 的全局精度和线程上下文，返回结果按输入顺序重排。
+    """
+
+    if not isinstance(requests, list) or not requests:
+        raise ValueError("requests must be a nonempty list")
+    if (
+        isinstance(parallel_task_count, bool)
+        or not isinstance(parallel_task_count, int)
+        or parallel_task_count < 1
+    ):
+        raise ValueError("parallel_task_count must be a positive integer")
+    effective_count = min(parallel_task_count, len(requests))
+    print(
+        "FlintNDE ep task pool: "
+        f"requested={parallel_task_count}, effective={effective_count}; "
+        "default parallel_task_count=12."
+    )
+    payloads = [(index, request) for index, request in enumerate(requests)]
+    with get_context("spawn").Pool(
+        processes=effective_count, maxtasksperchild=1
+    ) as pool:
+        completed = pool.map(_run_indexed_request, payloads, chunksize=1)
+    results = [result for _index, result in completed]
+    return {
+        "schema": "flintnde_ep_batch_v1",
+        "status": "complete",
+        "parallelTaskCountRequested": parallel_task_count,
+        "parallelTaskCountEffective": effective_count,
+        "taskCount": len(results),
+        "results": results,
+    }
 
 
 def _mma_expression(value: Any) -> str:

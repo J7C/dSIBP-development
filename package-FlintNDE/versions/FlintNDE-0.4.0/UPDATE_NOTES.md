@@ -16,6 +16,15 @@
    和逐点算法来源。
 3. 新增公开 `direct_user_point_path`：严格保留用户点顺序，不插点、不删点、不调用规划器；
    用户链端点落在奇点或线段穿过奇点时 fail closed。
+4. 新增不同固定 `ep` 的有界进程池。Python 使用
+   `run_ep_tasks(..., parallel_task_count=12)`，Wolfram 使用
+   `FlintNDEEvaluateEpBatch[..., ParallelTaskCount -> 12]`；缺省上限为 12，实际并发取
+   任务数与上限的较小者，超出上限的任务由程序自动续交。正规化重构的生产和验证样本
+   使用同一选项；固定 exact 有理系统与认证路径会结构化跨进程恢复。
+5. Python `import flintnde`、无参 `configure_working_precision()` 与 Wolfram
+   `FlintNDEPlanPath` / `FlintNDEExecutePath` / `FlintNDEEvaluateEpBatch` 的缺省工作精度统一为
+   200 位十进制精度（697 bit，含 32 guard bits）。正规化自动规划取 200 与原自适应公式的
+   较大者；用户显式指定精度时仍直接采用指定值。
 
 以下能力说明为从 0.3.0 继承且在 0.4.0 继续保留的基线。
 
@@ -71,15 +80,21 @@
 - Python 路径模式只接受 `singularity_mode="avoid"|"singularity_jump"`；Wolfram 只接受
   `"SingularityMode" -> "Avoid"|"SingularityJump"`。缺省均为避开奇点。
 - “折跃”指任何经过中途节点的多点输运；只有显式穿过奇点的局部基连接称为“奇点折跃”。
-- Wolfram 数值主线只有 `FlintNDEPlanPath` / `FlintNDEExecutePath`；JSON bridge 只有显式
-  `action="plan"|"execute"`。执行入口只接受当前计划 schema 和带 Arb 球精度字段的节点。
+- Wolfram 单任务主线为 `FlintNDEPlanPath` / `FlintNDEExecutePath`，不同固定 `ep` 的批量
+  入口为 `FlintNDEEvaluateEpBatch`；JSON bridge 对应
+  `action="plan"|"execute"|"evaluate"|"ep_batch"`。执行入口只接受当前计划 schema
+  和带 Arb 球精度字段的节点。
 - 正则奇点边界使用 `{a,b,C}`；指数型奇点边界只接受 `{phi,a,b,C}`。程序从 DE 独立推导
   exact 指数 sector 并核验 `phi`，不从 `C` 静默猜测指数签名。
+- `reconstruct_series_solution` 要求整数 `leading_power` 及严格
+  `leading_power_certificate`；数值 pilot、`leading_power="automatic"`、pilot 参数和
+  `LeadingPowerDetectionError` 已物理删除。泛型 callable 缺少符号结构时必须由上游认证，
+  不能用有限数值点冒充 Laurent 支撑证明。
 - 0.4.0 保留上述公开合同；依赖和列向量 convention 不变。
 ## 验证状态
 
 - fast/iter 多点求值单元测试与公开直接用户节点测试已通过。
-- 完整 Python 回归 146/146；Wolfram `Needs["FlintNDE`"]` 端到端 18/18。
+- 完整 Python 回归 158/158；Wolfram `Needs["FlintNDE`"]` 端到端 20/20。
 - 独立包与 MadStree v0.11 Vendor 的 20 个 Python 实现文件和 14 个测试文件逐文件同字节。
 - 0.4.0 独立检验：257 点、64 阶 fast/Horner 最大差 `1.96586e-62`，fast 实测快
   1.35474 倍；900 点 planned/direct 共 1800 分量通过闭式解和路线互检，planned 为

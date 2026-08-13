@@ -69,7 +69,7 @@ result = MSEvaluatePath[
   BoundaryScale -> 4,
   RankOrder -> {v1, v2},
   PythonExecutable -> "...",
-  WorkingPrecision -> 40,
+  WorkingPrecision -> 200,
   TransportOrder -> 80,
   ReferenceTransportOrder -> 104,
   TargetRelativeError -> "1e-20",
@@ -79,9 +79,34 @@ result = MSEvaluatePath[
 
 多点只需把第二个参数改为 `{pointP1, pointP2, pointP3}`。MadStree 按输入顺序划分最大连续复仿射单变量段 `x(s)=x0+s v`，每段只拉回一次并把全部 exact 复参数点交给 FlintNDE；MadStree 不规划节点或绕行。裸坐标缺省返回，`{coord,"tmp"}` 是不进入最终保存结果的途经点；其它字符串标签一律拒绝。点结果携带 `coordinate`、`value`、`status` 和 `userIndex`。
 
+共同解析 regulator `ep` 的 Laurent 极限使用：
+
+```wl
+epSeries = MSReconstructEpSeries[
+  context,
+  ep,
+  {{k1 -> -9 I, k2 -> -3 I, k3 -> -5 I, q12 -> 1, q23 -> 2,
+    a1 -> 1 + ep, a2 -> 1 + ep, a3 -> 1 + ep}},
+  MaximumEpPower -> 0,
+  EpGoalDigits -> 20,
+  ParallelTaskCount -> 12
+];
+```
+
+`MaximumEpPower` 是用户需要返回的最高 `ep` 幂；缺省 `0` 表示需要 pole（若存在）及有限项。
+用户不提供任何 `ep` 取值。任何数值 NDE 启动前，程序先从实际符号边界条件与 dlog DE
+认证最低整数幂：检查 `ep=0` 处 DE 无负 Laurent 阶、定义积分边界解析且物理分支合并后
+存在可证明非零的最低系数；正规化参数进入未认证路径坐标或结构无法证明时 fail closed。
+随后按最低幂、最高幂和 `EpGoalDigits` 自动决定生产点、`ep` 尺度、工作精度、输运阶数及
+不参与拟合的独立验证点。内部拟合缺省比用户最高阶多两阶；验证失败时每轮再增加两阶，
+只计算新增生产点，既有生产点和验证点分别缓存复用。最多三轮仍不满足原误差门槛则失败。
+自动工作精度取 200 位与自适应估计的较大者。
+`ParallelTaskCount` 缺省为 12，控制每批独立 `ep` 后端进程；超出部分自动续交。它不同于
+python-flint 单进程内的 `ctx.threads`。
+
 `FlintNDEPathPlanning -> True` 让 FlintNDE 在每段内部规划节点。落在同一节点收敛圆盘内的用户点组成一个 evaluation bucket，并用该节点保存的向量级数做快速多点求值；点数不少于 8 的桶使用子积树/余数树，小桶使用 iterative 算法。`False` 则严格把用户点依次作为节点，不插点、不删点、不调用规划器。不同复仿射段不共享局部系数，因此没有多变量高维 Taylor 球。若一段全部 dlog letters 为常量，拉回连接为零并正常输运。
 
-`SingularityMode -> "Avoid"` 是缺省；用户折线命中奇点时明确拒绝。只有在开启 FlintNDE 规划时才能显式选择 `"SingularityJump"`；其多值分支等价于某条绕行路径，用户必须确认。`MessageLanguage -> "EN"|"CN"` 严格区分大小写，缺省英文。内部 bit 数为 `ceil(WorkingPrecision*log2(10))+32`。
+`SingularityMode -> "Avoid"` 是缺省；用户折线命中奇点时明确拒绝。只有在开启 FlintNDE 规划时才能显式选择 `"SingularityJump"`；其多值分支等价于某条绕行路径，用户必须确认。`MessageLanguage -> "EN"|"CN"` 严格区分大小写，缺省英文。`MSBoundaryData` 与 `MSEvaluatePath` 的 `WorkingPrecision` 缺省为 200 位；显式给值时直接覆盖。内部 bit 数为 `ceil(WorkingPrecision*log2(10))+32`。
 
 `de["masters"]` 是 DE 行列和边界向量顺序的唯一 authority。`MSBoundaryData` 对已闭合的 tree/time-only context 统一生成 nested curve、拉回完整 dlog connection、求 residue，并按 ancestor sectors 解每个 master 的 indicial leading vector。`MSEvaluatePath` 把 exact `{a,b,C}` 分支、全部复仿射段和用户选项放入同一 UTF-8 请求；FlintNDE 在同一进程内完成边界初始化和后续有限段输运。生产代码不调用定义积分或 `NIntegrate`；这些只允许作为独立验证 oracle。
 
@@ -180,8 +205,11 @@ MSExportEvaluationData[result, MSOutputDirectory -> outputDirectory]
 - [03_time_only_cycle_chart.wl](Examples/03_time_only_cycle_chart.wl)：time-only 圈图、共同 theta、contact sector 与全部 strict-rank chart。
 - [04_three_vertex_tree.wl](Examples/04_three_vertex_tree.wl)：三顶点 massless 树图（+++ 顶点结构），后接批量多点求值与 CSV/JSON 导出。
 - [05_massive_three_vertex_tree.wl](Examples/05_massive_three_vertex_tree.wl)：三顶点 massive 树图（+++ 顶点结构、非半整数 nu），后接批量多点求值与 CSV/JSON 导出。
+- [06_massless_three_vertex_ep_regularization.wl](Examples/06_massless_three_vertex_ep_regularization.wl)：
+  三顶点 massless 树的共同时间幂正规化 `a1=a2=a3=1+ep`；用户只要求返回到 `ep^0`，
+  程序在数值 NDE 前由符号边界与 DE 认证最低幂为 `0`，再选择生产/验证点并提取有限项。
 
-五个 examples 在 v0.11 下全部 fresh 运行 `Example PASSED`、退出 `0`。
+六个 examples 在 v0.11 下全部 fresh 运行并退出 `0`；Example 06 自适应检查为 `11/11`。
 
 ## 当前边界
 
@@ -191,4 +219,5 @@ MSExportEvaluationData[result, MSOutputDirectory -> outputDirectory]
 - FlintNDE 输运要求拉回 connection 属于 exact `Q(i)(s)` 或 `Q(i)(t)`。T1 mixed 三顶点的独立 `15 x 15`/`25 x 25` 边界和输运已通过 `24/24`；T2 单顶点三 massive 通过 `12/12`；T3 两顶点 `G++` 的 paper/package basis map、五个边界分支和完整目标向量通过 `18/18`。pure massless 与 triangle time-only 开发检查也使用同一个通用 boundary producer。
 - FlintNDE 0.4.0 保留 exact Lee--Moser、高阶 pole 与奇点折跃能力，并增加按节点覆盖桶的 fast multipoint evaluation 和公开严格用户节点入口。未认证 high-pole、需要 ramification、代数扩域或一般 Stokes connection 的内部点与终点继续 fail closed。
 
-v0.11 当前开发回归为 13 个 Wolfram 脚本 `184/184`、Python adapter `4/4`、Examples 01--05 `5/5`；新版独立验证见版本化任务书与报告。
+v0.11 当前开发回归包含符号 Laurent valuation、真实三顶点最低阶证书及 Python adapter；
+Examples 01--06 `6/6`；新版独立验证见版本化任务书与报告。

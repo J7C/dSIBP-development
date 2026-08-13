@@ -5,6 +5,7 @@
 """
 
 from .core import (
+    DEFAULT_WORKING_PRECISION_DIGITS,
     acb_midpoint_matrix,
     column_vector,
     configure_working_precision,
@@ -39,11 +40,15 @@ from .local_solutions import (
     build_local_solution_basis,
 )
 from .regularization import (
-    LeadingPowerDetectionError,
     SeriesReconstructionResult,
     SeriesValidationError,
     fit_sampled_series,
     reconstruct_series_solution,
+)
+from .parallel import (
+    DEFAULT_PARALLEL_TASK_COUNT,
+    EpTaskBatchResult,
+    run_ep_tasks,
 )
 from .output_layout import OutputLayout, initialize_output_layout
 from .numeric_structure import (
@@ -107,7 +112,10 @@ __all__ = [
     "FrobeniusBoundaryTerm",
     "FiveTermTailDiagnostic",
     "GaussianRational",
-    "LeadingPowerDetectionError",
+    "DEFAULT_PARALLEL_TASK_COUNT",
+    "DEFAULT_WORKING_PRECISION_DIGITS",
+    "EpTaskBatchResult",
+    "run_ep_tasks",
     "LocalExpansion",
     "LocalReductionError",
     "LocalSolutionBasis",

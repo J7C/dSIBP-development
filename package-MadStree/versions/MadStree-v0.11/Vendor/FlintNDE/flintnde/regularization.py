@@ -2,39 +2,46 @@
 
 本模块在多个固定、非零 regulator 样本上复用 ``transport_path_refined``，随后用
 FLINT Acb 方阵插值重构最终解矢量的连续 Laurent 系数。自动样本数、样本尺度和
-工作精度采用 AMFlow 2.0 的经验公式；最低幂 pilot、独立验证和失败门禁由本程序包
-补充。模块不对奇点局部解做多项式回归，也不引入 python-flint 之外的运行依赖。
+工作精度采用 AMFlow 2.0 的经验公式；最低幂必须由调用方根据符号边界与 DE 先行认证，
+独立验证和失败门禁由本程序包补充。模块不对奇点局部解做多项式回归。
 
-实现思路：先用嵌套小参数样本判定最低整数幂，再生成带高阶截断缓冲的生产网格；
-每个样本完整调用同一 NDE 主线，最后在未参与插值的更小尺度上验证返回级数。
+实现思路：先核对调用方提供的最低整数幂，再生成带高阶截断缓冲的生产网格；每个
+样本完整调用同一 NDE 主线，最后在未参与插值的更小尺度上验证内部级数。
+验证失败时只追加新生产点并提高内部拟合阶数，已有生产值和验证值全程复用。
 """
 
 from __future__ import annotations
 
 import math
-import statistics
-import warnings
+import pickle
 from dataclasses import dataclass, replace
 from decimal import Decimal, localcontext
 from fractions import Fraction
+from multiprocessing import get_context
 from pathlib import Path
 from typing import Any, Callable
 
-from flint import acb, acb_mat, arb, fmpq
+from flint import acb, acb_mat, arb, ctx, fmpq
 
 from .boundary import FrobeniusBoundary, frobenius_boundary
-from .core import column_vector, configure_working_precision, exact_rational, vector_norm_inf
-from .singularities import RationalMatrixSystem
+from .core import (
+    DEFAULT_WORKING_PRECISION_DIGITS,
+    arb_ball_from_json,
+    arb_ball_to_json,
+    column_vector,
+    configure_working_precision,
+    exact_rational,
+    vector_norm_inf,
+)
+from .routing import AdaptivePath, adaptive_path_from_json, adaptive_path_to_json
+from .singularities import RationalMatrixSystem, rational_function
 from .systems import AnalyticMatrixSystem
 from .transport import transport_path_refined
+from .parallel import DEFAULT_PARALLEL_TASK_COUNT
 
 
 AUTOMATIC = "automatic"
 MatrixSystem = AnalyticMatrixSystem | RationalMatrixSystem
-
-
-class LeadingPowerDetectionError(ValueError):
-    """表示 pilot 样本不能稳定确定共同的最低整数幂。"""
 
 
 class SeriesValidationError(ValueError):
@@ -46,7 +53,7 @@ class SeriesReconstructionResult:
     """保存返回系数、实际样本、有效参数和全部验证诊断。
 
     ``coefficients[index]`` 对应 ``powers[index]``，每个系数都是与 NDE 解同维的
-    Acb 列向量。``sample_values`` 是生产样本处的完整 NDE 终点值，不包含 pilot。
+    Acb 列向量。``sample_values`` 是生产样本处的完整 NDE 终点值。
     """
 
     series_parameter: str
@@ -281,6 +288,7 @@ def _resolve_plan(
     validation_scale: Any,
     maximum_samples: int,
     rationalize_sample_points: bool,
+    fit_extra_order: int = 0,
 ) -> _ReconstructionPlan:
     """解析生产网格、AMFlow 式精度以及底层 NDE 阶数。"""
 
@@ -290,7 +298,7 @@ def _resolve_plan(
         raise ValueError("maximum_power must not be below the detected leading_power")
     automatic_count = max(
         math.ceil(2.5 * reconstruction_depth + pole_depth),
-        reconstruction_depth + 1,
+        reconstruction_depth + 1 + fit_extra_order,
     )
     resolved_count = _require_automatic_or_integer(
         sample_count, "sample_count", minimum=reconstruction_depth + 1
@@ -356,8 +364,9 @@ def _resolve_plan(
     resolved_precision = _require_automatic_or_integer(
         working_precision_digits, "working_precision_digits", minimum=1
     )
-    precision = resolved_precision or math.ceil(
-        2 * (1 + extra_working_precision) * base_precision
+    precision = resolved_precision or max(
+        DEFAULT_WORKING_PRECISION_DIGITS,
+        math.ceil(2 * (1 + extra_working_precision) * base_precision),
     )
     resolved_order = _require_automatic_or_integer(
         transport_order, "transport_order", minimum=1
@@ -531,205 +540,224 @@ def _solve_sample(
     }
 
 
-def _leading_candidates(
-    values: tuple[acb_mat, ...],
-    ratio: float,
-    tolerance: float,
-) -> tuple[int, list[dict[str, Any]]]:
-    """由各分量相邻模比判定最低整数幂；不稳定或非整数行为 fail closed。"""
+def _solve_sample_job(payload: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
+    """在独立进程重建 FLINT 标量并执行一个固定 regulator 样本。"""
 
-    if len(values) < 3:
-        raise ValueError("pilot_sample_count must be at least three")
-    dimension = values[0].nrows()
-    if any(value.nrows() != dimension or value.ncols() != 1 for value in values):
-        raise ValueError("pilot NDE values have inconsistent dimensions")
-    accepted: list[int] = []
-    diagnostics: list[dict[str, Any]] = []
-    log_ratio = math.log(ratio)
-    for component in range(dimension):
-        entries = [value[component, 0] for value in values]
-        if all(entry.is_zero() for entry in entries):
-            diagnostics.append(
-                {"component": component, "status": "identically-zero-on-pilot"}
+    ctx.prec = payload["working_precision_bits"]
+    DEmatrix, boundary, path = _restore_parallel_inputs(payload["inputs"])
+    value, report = _solve_sample(
+        DEmatrix=DEmatrix,
+        boundary=boundary,
+        path=path,
+        sample_argument=payload["sample_argument"],
+        sample_point=acb(payload["sample_point"]),
+        transport_order=payload["transport_order"],
+        transport_extra_order=payload["transport_extra_order"],
+        transport_sample_count=payload["transport_sample_count"],
+        transport_extra_sample_count=payload["transport_extra_sample_count"],
+        radius_fraction=payload["radius_fraction"],
+        nde_tolerance=arb(payload["nde_tolerance"]),
+    )
+    return _vector_to_strings(value), report
+
+
+def _rational_system_record(system: RationalMatrixSystem) -> dict[str, Any]:
+    """把固定 exact 有理矩阵转换为不含 FLINT 扩展对象的进程记录。"""
+
+    entries = []
+    for row in system.entries:
+        output_row = []
+        for entry in row:
+            numerator, denominator = entry.exact_polynomials()
+            output_row.append(
+                {
+                    "numerator": numerator.records(),
+                    "denominator": denominator.records(),
+                }
             )
-            continue
-        if any(entry.is_zero() or abs(entry).contains(0) for entry in entries):
-            raise LeadingPowerDetectionError(
-                f"component {component} is numerically compatible with zero on the pilot grid"
+        entries.append(output_row)
+    return {
+        "kind": "fixed-rational-system",
+        "entries": entries,
+        "variable_name": system.variable_name,
+        "name": system.name,
+    }
+
+
+def _rational_system_from_record(record: dict[str, Any]) -> RationalMatrixSystem:
+    """在 worker 内恢复固定 exact 有理矩阵。"""
+
+    return RationalMatrixSystem(
+        tuple(
+            tuple(
+                rational_function(entry["numerator"], entry["denominator"])
+                for entry in row
             )
-        estimates = [
-            (
-                float(abs(right).log().mid())
-                - float(abs(left).log().mid())
+            for row in record["entries"]
+        ),
+        variable_name=record["variable_name"],
+        name=record["name"],
+    )
+
+
+def _acb_ball_record(value: acb, decimal_digits: int) -> dict[str, Any]:
+    """把 Acb 球拆成两个可严格恢复的 Arb 球记录。"""
+
+    return {
+        "real": arb_ball_to_json(value.real, decimal_digits),
+        "imag": arb_ball_to_json(value.imag, decimal_digits),
+    }
+
+
+def _acb_ball_from_record(record: dict[str, Any], field_name: str) -> acb:
+    """从进程记录恢复 Acb 球，不把固定边界截断到有限十进制字符串。"""
+
+    return acb(
+        arb_ball_from_json(record["real"], f"{field_name}.real"),
+        arb_ball_from_json(record["imag"], f"{field_name}.imag"),
+    )
+
+
+def _parallel_input_records(DEmatrix: Any, boundary: Any, path: Any) -> dict[str, Any]:
+    """序列化固定 FLINT 输入；顶层工厂保持原对象交给 pickle。"""
+
+    record_digits = math.ceil(int(ctx.prec) / math.log2(10)) + 10
+    system_record = (
+        _rational_system_record(DEmatrix)
+        if isinstance(DEmatrix, RationalMatrixSystem)
+        else {"kind": "factory", "value": DEmatrix}
+    )
+    if isinstance(boundary, acb_mat):
+        boundary_record = {
+            "kind": "fixed-vector",
+            "values": [
+                _acb_ball_record(boundary[row, 0], record_digits)
+                for row in range(boundary.nrows())
+            ],
+        }
+    elif callable(boundary):
+        boundary_record = {"kind": "factory", "value": boundary}
+    elif isinstance(boundary, (list, tuple)) and not any(
+        isinstance(item, dict) for item in boundary
+    ):
+        boundary_record = {
+            "kind": "fixed-vector",
+            "values": [
+                _acb_ball_record(acb(item), record_digits) for item in boundary
+            ],
+        }
+    else:
+        boundary_record = {"kind": "fixed-value", "value": boundary}
+    if isinstance(path, AdaptivePath):
+        if not isinstance(DEmatrix, RationalMatrixSystem):
+            raise TypeError(
+                "a fixed AdaptivePath requires its fixed RationalMatrixSystem in parallel mode"
             )
-            / log_ratio
-            for left, right in zip(entries[:-1], entries[1:])
-        ]
-        center = statistics.median(estimates)
-        candidate = round(center)
-        spread = max(estimates) - min(estimates)
-        distance = max(abs(estimate - candidate) for estimate in estimates)
-        status = "accepted" if spread <= tolerance and distance <= tolerance else "unstable"
-        diagnostics.append(
-            {
-                "component": component,
-                "status": status,
-                "estimates": estimates,
-                "candidate": candidate,
-                "spread": spread,
-                "maximum_integer_distance": distance,
-            }
+        path_record = {
+            "kind": "fixed-adaptive-path",
+            "value": adaptive_path_to_json(path, digits=80),
+        }
+    elif callable(path):
+        path_record = {"kind": "factory", "value": path}
+    elif isinstance(path, list):
+        path_record = {
+            "kind": "fixed-path",
+            "values": [acb(item).str(80) for item in path],
+        }
+    else:
+        path_record = {"kind": "fixed-value", "value": path}
+    return {"system": system_record, "boundary": boundary_record, "path": path_record}
+
+
+def _restore_parallel_inputs(records: dict[str, Any]) -> tuple[Any, Any, Any]:
+    """恢复 worker 所需系统、边界和路径，不在子进程重新规划路径。"""
+
+    system_record = records["system"]
+    DEmatrix = (
+        _rational_system_from_record(system_record)
+        if system_record["kind"] == "fixed-rational-system"
+        else system_record["value"]
+    )
+    boundary_record = records["boundary"]
+    boundary = (
+        column_vector(
+            [
+                _acb_ball_from_record(value, f"boundary[{index}]")
+                for index, value in enumerate(boundary_record["values"])
+            ]
         )
-        if status != "accepted":
-            raise LeadingPowerDetectionError(
-                f"component {component} has unstable/noninteger pilot exponent estimates {estimates}"
-            )
-        accepted.append(candidate)
-    if not accepted:
-        raise LeadingPowerDetectionError("all endpoint components vanish on the pilot grid")
-    return min(accepted), diagnostics
+        if boundary_record["kind"] == "fixed-vector"
+        else boundary_record["value"]
+    )
+    path_record = records["path"]
+    if path_record["kind"] == "fixed-adaptive-path":
+        path = adaptive_path_from_json(DEmatrix, path_record["value"])
+    elif path_record["kind"] == "fixed-path":
+        path = [acb(value) for value in path_record["values"]]
+    else:
+        path = path_record["value"]
+    return DEmatrix, boundary, path
 
 
-def _detect_leading_power(
+def _solve_samples(
     *,
     DEmatrix: Any,
     boundary: Any,
     path: Any,
-    maximum_power: int,
-    goal_digits: int,
-    working_precision_digits: Any,
-    extra_working_precision: float,
-    transport_order: Any,
-    transport_extra_order: Any,
-    transport_sample_count: Any,
-    transport_extra_sample_count: Any,
+    sample_arguments: tuple[Any, ...],
+    sample_points: tuple[acb, ...],
+    transport_order: int,
+    transport_extra_order: int,
+    transport_sample_count: int | None,
+    transport_extra_sample_count: int | None,
     radius_fraction: float,
-    pilot_sample_count: int,
-    pilot_base_sample: Any,
-    pilot_ratio: Any,
-    pilot_max_rounds: int,
-    leading_power_tolerance: Any,
-    guard_bits: int,
-    rationalize_sample_points: bool,
-) -> tuple[int, dict[str, Any]]:
-    """运行可重复的 pilot 网格，并返回全局最低幂及逐分量证据。"""
+    nde_tolerance: arb,
+    parallel_task_count: int,
+) -> tuple[list[acb_mat], list[dict[str, Any]], int]:
+    """按输入顺序求解一组 ep，并返回程序实际使用的 worker 数。"""
 
-    provisional_depth = max(0, maximum_power)
-    provisional_count = max(math.ceil(2.5 * provisional_depth), provisional_depth + 1)
-    pilot_alpha = Decimal(goal_digits) / Decimal(provisional_depth + 1)
-    if pilot_base_sample == AUTOMATIC:
-        base = _power_of_ten_fraction(-pilot_alpha, goal_digits + 30)
-    else:
-        base = _fraction_from_decimal_control(pilot_base_sample, "pilot_base_sample")
-    ratio_fraction = _fraction_from_decimal_control(pilot_ratio, "pilot_ratio")
-    if not 0 < ratio_fraction < 1:
-        raise ValueError("pilot_ratio must lie strictly between zero and one")
-    tolerance = (
-        10 ** (-min(8.0, goal_digits / 4))
-        if leading_power_tolerance == AUTOMATIC
-        else float(leading_power_tolerance)
-    )
-    if tolerance <= 0:
-        raise ValueError("leading_power_tolerance must be positive")
-    provisional_p0 = max(math.ceil(provisional_count * float(pilot_alpha)), 30)
-    precision_override = _require_automatic_or_integer(
-        working_precision_digits, "working_precision_digits", minimum=1
-    )
-    precision = precision_override or math.ceil(
-        2 * (1 + extra_working_precision) * provisional_p0
-    )
-    primary_override = _require_automatic_or_integer(
-        transport_order, "transport_order", minimum=1
-    )
-    primary_order = primary_override or 4 * provisional_p0
-    extra_override = _require_automatic_or_integer(
-        transport_extra_order, "transport_extra_order", minimum=1
-    )
-    extra_order = extra_override or math.ceil(max(50, provisional_p0 / 5))
-    primary_samples = _require_automatic_or_integer(
-        transport_sample_count, "transport_sample_count", minimum=primary_order + 1
-    )
-    reference_samples = _require_automatic_or_integer(
-        transport_extra_sample_count,
-        "transport_extra_sample_count",
-        minimum=primary_order + extra_order + 1,
-    )
-    configure_working_precision(precision, guard_bits)
-    nde_tolerance = arb(f"1e-{min(goal_digits, 8)}")
-    rounds: list[dict[str, Any]] = []
-    current_base = base
-    last_error: LeadingPowerDetectionError | None = None
-    for round_index in range(1, pilot_max_rounds + 1):
-        raw_points = [current_base * (ratio_fraction**index) for index in range(pilot_sample_count)]
-        arguments = tuple(
-            (
-                fmpq(value.numerator, value.denominator)
-                if rationalize_sample_points
-                else acb(value.numerator) / acb(value.denominator)
-            )
-            for value in raw_points
-        )
-        points = tuple(acb(value) for value in arguments)
-        values: list[acb_mat] = []
-        reports: list[dict[str, Any]] = []
-        for argument, point in zip(arguments, points):
-            value, report = _solve_sample(
-                DEmatrix=DEmatrix,
-                boundary=boundary,
-                path=path,
-                sample_argument=argument,
-                sample_point=point,
-                transport_order=primary_order,
-                transport_extra_order=extra_order,
-                transport_sample_count=primary_samples,
-                transport_extra_sample_count=reference_samples,
-                radius_fraction=radius_fraction,
-                nde_tolerance=nde_tolerance,
-            )
-            values.append(value)
-            reports.append(report)
-        try:
-            leading, component_diagnostics = _leading_candidates(
-                tuple(values), float(ratio_fraction), tolerance
-            )
-        except LeadingPowerDetectionError as error:
-            last_error = error
-            rounds.append(
-                {
-                    "round": round_index,
-                    "sample_points": [point.str(50) for point in points],
-                    "status": "retry",
-                    "reason": str(error),
-                    "solves": reports,
-                }
-            )
-            current_base = raw_points[-1] * ratio_fraction
-            continue
-        rounds.append(
-            {
-                "round": round_index,
-                "sample_points": [point.str(50) for point in points],
-                "status": "accepted",
-                "leading_power": leading,
-                "components": component_diagnostics,
-                "solves": reports,
-            }
-        )
-        return leading, {
-            "source": "automatic-pilot",
-            "pilot_sample_count": pilot_sample_count,
-            "pilot_base_sample": str(base),
-            "pilot_ratio": str(ratio_fraction),
-            "pilot_max_rounds": pilot_max_rounds,
-            "leading_power_tolerance": tolerance,
-            "working_precision_digits": precision,
-            "transport_order": primary_order,
-            "transport_extra_order": extra_order,
-            "rounds": rounds,
+    effective_count = min(parallel_task_count, len(sample_arguments))
+    input_records = _parallel_input_records(DEmatrix, boundary, path)
+    payloads = [
+        {
+            "inputs": input_records,
+            "sample_argument": argument,
+            "sample_point": point.str(80),
+            "transport_order": transport_order,
+            "transport_extra_order": transport_extra_order,
+            "transport_sample_count": transport_sample_count,
+            "transport_extra_sample_count": transport_extra_sample_count,
+            "radius_fraction": radius_fraction,
+            "nde_tolerance": nde_tolerance.str(50),
+            "working_precision_bits": int(ctx.prec),
         }
-    raise LeadingPowerDetectionError(
-        f"leading power remained ambiguous after {pilot_max_rounds} pilot rounds: {last_error}"
-    )
+        for argument, point in zip(sample_arguments, sample_points)
+    ]
+    if effective_count == 1:
+        completed = [_solve_sample_job(payload) for payload in payloads]
+        values = [
+            column_vector([acb(entry) for entry in result[0]])
+            for result in completed
+        ]
+        reports = [result[1] for result in completed]
+        return values, reports, effective_count
+    try:
+        pickle.dumps(payloads[0])
+    except Exception as error:
+        raise TypeError(
+            "parallel regulator solves require non-fixed DEmatrix/boundary/path "
+            "factories defined at module top level with pickleable inputs; fixed "
+            "RationalMatrixSystem, ordinary boundary vectors, and paths are serialized "
+            "automatically; use parallel_task_count=1 for local closures or an "
+            "AnalyticMatrixSystem instance"
+        ) from error
+    with get_context("spawn").Pool(
+        processes=effective_count, maxtasksperchild=1
+    ) as pool:
+        completed = pool.map(_solve_sample_job, payloads, chunksize=1)
+    values = [column_vector([acb(entry) for entry in result[0]]) for result in completed]
+    reports = [result[1] for result in completed]
+    return values, reports, effective_count
 
 
 def _fit_coefficient_vectors(
@@ -1045,10 +1073,11 @@ def reconstruct_series_solution(
     boundary: Any,
     path: list[acb] | Callable[[Any, MatrixSystem], list[acb]],
     maximum_power: int,
+    leading_power: int,
+    leading_power_certificate: dict[str, Any],
     series_parameter: str = "ep",
     goal_digits: int = 30,
     sample_points: Any = AUTOMATIC,
-    leading_power: Any = AUTOMATIC,
     sample_count: Any = AUTOMATIC,
     base_sample: Any = AUTOMATIC,
     sample_spacing: Any = 0.01,
@@ -1060,17 +1089,16 @@ def reconstruct_series_solution(
     transport_extra_sample_count: Any = AUTOMATIC,
     radius_fraction: float = 0.60,
     guard_bits: int = 32,
-    pilot_sample_count: int = 4,
-    pilot_base_sample: Any = AUTOMATIC,
-    pilot_ratio: Any = 0.5,
-    pilot_max_rounds: int = 3,
-    leading_power_tolerance: Any = AUTOMATIC,
     validation_sample_count: int = 2,
     validation_points: Any = AUTOMATIC,
     validation_scale: Any = 0.5,
     validation_tolerance: Any = AUTOMATIC,
+    fit_extra_order: int = 2,
+    fit_order_increment: int = 2,
+    fit_max_rounds: int = 3,
     maximum_samples: int = 100,
     rationalize_sample_points: bool = True,
+    parallel_task_count: int = DEFAULT_PARALLEL_TASK_COUNT,
     output_layout: Any | None = None,
     result_name: str = "series_reconstruction",
 ) -> SeriesReconstructionResult:
@@ -1082,21 +1110,32 @@ def reconstruct_series_solution(
     ``frobenius_boundary`` 生成的 exact ``{a,b,C}`` 记录，并由基础输运验证 indicial root、
     最高 log 次数和领头向量相容性。
 
-    返回值包含用户请求到 ``maximum_power`` 的系数；生产插值内部还保留 AMFlow 式
-    高阶缓冲。任一 NDE refinement、leading-power pilot 或独立样本验证失败都会抛出
-    明确异常，不使用最小二乘、伪逆或静默降精度。
+    ``leading_power`` 及其证书必须由调用方在数值求解前从符号边界与 DE 得到；仅有
+    regulator callable 时 FlintNDE 不尝试用数值点猜测结构最低阶。返回值包含用户请求到
+    ``maximum_power`` 的系数；内部拟合缺省至少多两阶，并用
+    这些高阶项在独立点估计截断误差。验证失败时每轮缺省再增加两阶，只求解新增生产
+    点；已有生产点、验证点、容差和数值设置均复用。达到轮数或样本上限仍不满足
+    精度时 fail closed，不使用最小二乘、伪逆或静默降精度。
     """
 
     maximum_power = _require_integer(maximum_power, "maximum_power", minimum=-10**9)
     goal_digits = _require_integer(goal_digits, "goal_digits", minimum=1)
-    pilot_sample_count = _require_integer(
-        pilot_sample_count, "pilot_sample_count", minimum=3
-    )
-    pilot_max_rounds = _require_integer(pilot_max_rounds, "pilot_max_rounds", minimum=1)
     validation_sample_count = _require_integer(
         validation_sample_count, "validation_sample_count", minimum=1
     )
+    fit_extra_order = _require_integer(
+        fit_extra_order, "fit_extra_order", minimum=0
+    )
+    fit_order_increment = _require_integer(
+        fit_order_increment, "fit_order_increment", minimum=1
+    )
+    fit_max_rounds = _require_integer(
+        fit_max_rounds, "fit_max_rounds", minimum=1
+    )
     maximum_samples = _require_integer(maximum_samples, "maximum_samples", minimum=1)
+    parallel_task_count = _require_integer(
+        parallel_task_count, "parallel_task_count", minimum=1
+    )
     guard_bits = _require_integer(guard_bits, "guard_bits", minimum=0)
     if not isinstance(series_parameter, str) or not series_parameter.strip():
         raise ValueError("series_parameter must be a nonempty string")
@@ -1107,82 +1146,66 @@ def reconstruct_series_solution(
     if not isinstance(rationalize_sample_points, bool):
         raise TypeError("rationalize_sample_points must be bool")
 
-    if leading_power == AUTOMATIC:
-        resolved_leading, pilot_diagnostics = _detect_leading_power(
-            DEmatrix=DEmatrix,
-            boundary=boundary,
-            path=path,
-            maximum_power=maximum_power,
-            goal_digits=goal_digits,
-            working_precision_digits=working_precision_digits,
-            extra_working_precision=extra_working_precision,
-            transport_order=transport_order,
-            transport_extra_order=transport_extra_order,
-            transport_sample_count=transport_sample_count,
-            transport_extra_sample_count=transport_extra_sample_count,
-            radius_fraction=radius_fraction,
-            pilot_sample_count=pilot_sample_count,
-            pilot_base_sample=pilot_base_sample,
-            pilot_ratio=pilot_ratio,
-            pilot_max_rounds=pilot_max_rounds,
-            leading_power_tolerance=leading_power_tolerance,
-            guard_bits=guard_bits,
-            rationalize_sample_points=rationalize_sample_points,
+    resolved_leading = _require_integer(
+        leading_power, "leading_power", minimum=-10**9
+    )
+    if not isinstance(leading_power_certificate, dict) or set(leading_power_certificate) != {
+        "status", "leading_power", "method"
+    }:
+        raise ValueError(
+            "leading_power_certificate must contain exactly status, leading_power and method"
         )
-    else:
-        # 显式最低幂仍由完整边界与 DE pilot 审计，但保留用户指定值。
-        detected_leading, detected_pilot = _detect_leading_power(
-            DEmatrix=DEmatrix,
-            boundary=boundary,
-            path=path,
-            maximum_power=maximum_power,
-            goal_digits=goal_digits,
-            working_precision_digits=working_precision_digits,
-            extra_working_precision=extra_working_precision,
-            transport_order=transport_order,
-            transport_extra_order=transport_extra_order,
-            transport_sample_count=transport_sample_count,
-            transport_extra_sample_count=transport_extra_sample_count,
-            radius_fraction=radius_fraction,
-            pilot_sample_count=pilot_sample_count,
-            pilot_base_sample=pilot_base_sample,
-            pilot_ratio=pilot_ratio,
-            pilot_max_rounds=pilot_max_rounds,
-            leading_power_tolerance=leading_power_tolerance,
-            guard_bits=guard_bits,
-            rationalize_sample_points=rationalize_sample_points,
-        )
-        resolved_leading = _require_integer(
-            leading_power, "leading_power", minimum=-10**9
-        )
-        coverage_status = (
-            "omits-detected-leading-powers"
-            if resolved_leading > detected_leading
-            else "covers-detected-leading-power"
-        )
-        if resolved_leading > detected_leading:
-            warnings.warn(
-                f"user leading_power={resolved_leading} is higher than the "
-                f"boundary+DE pilot value {detected_leading}; powers "
-                f"{detected_leading}..{resolved_leading - 1} will be omitted",
-                UserWarning,
-                stacklevel=2,
-            )
-        pilot_diagnostics = {
-            "source": "user",
-            "leading_power": resolved_leading,
-            "pilot_skipped": False,
-            "detected_leading_power": detected_leading,
-            "coverage_status": coverage_status,
-            "detection": detected_pilot,
-        }
+    if leading_power_certificate["status"] != "certified":
+        raise ValueError("leading_power_certificate.status must be 'certified'")
+    certified_power = _require_integer(
+        leading_power_certificate["leading_power"],
+        "leading_power_certificate.leading_power",
+        minimum=-10**9,
+    )
+    if certified_power != resolved_leading:
+        raise ValueError("leading_power does not match leading_power_certificate")
+    if not isinstance(leading_power_certificate["method"], str) or not leading_power_certificate[
+        "method"
+    ].strip():
+        raise ValueError("leading_power_certificate.method must be a nonempty string")
 
-    plan = _resolve_plan(
+    requested_coefficient_count = maximum_power - resolved_leading + 1
+    if sample_points == AUTOMATIC:
+        empirical_count = max(
+            math.ceil(
+                2.5 * (maximum_power - resolved_leading)
+                + max(0, -resolved_leading)
+            ),
+            requested_coefficient_count + fit_extra_order,
+        )
+        initial_count = (
+            empirical_count
+            if sample_count == AUTOMATIC
+            else _require_integer(
+                sample_count,
+                "sample_count",
+                minimum=requested_coefficient_count + fit_extra_order,
+            )
+        )
+        capacity_count = min(
+            maximum_samples,
+            initial_count + fit_order_increment * (fit_max_rounds - 1),
+        )
+        if initial_count > maximum_samples:
+            raise ValueError(
+                f"automatic production needs {initial_count} samples, "
+                f"above maximum_samples={maximum_samples}"
+            )
+    else:
+        initial_count = None
+        capacity_count = sample_count
+
+    capacity_plan = _resolve_plan(
         leading_power=resolved_leading,
         maximum_power=maximum_power,
         goal_digits=goal_digits,
         sample_points=sample_points,
-        sample_count=sample_count,
+        sample_count=capacity_count,
         base_sample=base_sample,
         sample_spacing=sample_spacing,
         working_precision_digits=working_precision_digits,
@@ -1196,7 +1219,17 @@ def reconstruct_series_solution(
         validation_scale=validation_scale,
         maximum_samples=maximum_samples,
         rationalize_sample_points=rationalize_sample_points,
+        fit_extra_order=fit_extra_order,
     )
+    if sample_points == AUTOMATIC:
+        plan = replace(
+            capacity_plan,
+            sample_arguments=capacity_plan.sample_arguments[:initial_count],
+            sample_points=capacity_plan.sample_points[:initial_count],
+            sample_count=initial_count,
+        )
+    else:
+        plan = capacity_plan
     configure_working_precision(plan.working_precision_digits, guard_bits)
     tolerance = (
         arb(f"1e-{goal_digits}")
@@ -1206,94 +1239,165 @@ def reconstruct_series_solution(
     if tolerance <= 0:
         raise ValueError("validation_tolerance must be positive")
 
+    # 验证点只求解一次并保存在独立缓存；它们从不进入 Vandermonde 拟合矩阵。
+    validation_actual_values, validation_solve_reports, validation_parallel_count = _solve_samples(
+        DEmatrix=DEmatrix,
+        boundary=boundary,
+        path=path,
+        sample_arguments=plan.validation_arguments,
+        sample_points=plan.validation_points,
+        transport_order=plan.transport_order,
+        transport_extra_order=plan.transport_extra_order,
+        transport_sample_count=plan.transport_sample_count,
+        transport_extra_sample_count=plan.transport_extra_sample_count,
+        radius_fraction=radius_fraction,
+        nde_tolerance=tolerance,
+        parallel_task_count=parallel_task_count,
+    )
     production_values: list[acb_mat] = []
     production_reports: list[dict[str, Any]] = []
-    for argument, point in zip(plan.sample_arguments, plan.sample_points):
-        value, report = _solve_sample(
-            DEmatrix=DEmatrix,
-            boundary=boundary,
-            path=path,
-            sample_argument=argument,
-            sample_point=point,
-            transport_order=plan.transport_order,
-            transport_extra_order=plan.transport_extra_order,
-            transport_sample_count=plan.transport_sample_count,
-            transport_extra_sample_count=plan.transport_extra_sample_count,
-            radius_fraction=radius_fraction,
-            nde_tolerance=tolerance,
-        )
-        production_values.append(value)
-        production_reports.append(report)
-
-    internal_coefficients = _fit_coefficient_vectors(
-        plan.sample_points, tuple(production_values), resolved_leading
-    )
-    returned_count = maximum_power - resolved_leading + 1
-    returned_coefficients = internal_coefficients[:returned_count]
-
-    validation_values: list[acb_mat] = []
+    expansion_history: list[dict[str, Any]] = []
+    production_parallel_counts: list[int] = []
+    validation_values = [acb_mat(value) for value in validation_actual_values]
+    accepted = False
     validation_reports: list[dict[str, Any]] = []
-    for argument, point in zip(plan.validation_arguments, plan.validation_points):
-        actual, solve_report = _solve_sample(
-            DEmatrix=DEmatrix,
-            boundary=boundary,
-            path=path,
-            sample_argument=argument,
-            sample_point=point,
-            transport_order=plan.transport_order,
-            transport_extra_order=plan.transport_extra_order,
-            transport_sample_count=plan.transport_sample_count,
-            transport_extra_sample_count=plan.transport_extra_sample_count,
-            radius_fraction=radius_fraction,
-            nde_tolerance=tolerance,
+    internal_coefficients: tuple[acb_mat, ...] = ()
+    current_count = 0
+    final_plan = plan
+    for round_index in range(1, fit_max_rounds + 1):
+        target_count = (
+            plan.sample_count
+            if sample_points != AUTOMATIC
+            else min(
+                capacity_plan.sample_count,
+                plan.sample_count + fit_order_increment * (round_index - 1),
+            )
         )
-        predicted = _evaluate_coefficients(returned_coefficients, resolved_leading, point)
-        residual = _relative_vector_residual(predicted, actual)
-        validation_values.append(actual)
-        validation_reports.append(
+        new_arguments = capacity_plan.sample_arguments[current_count:target_count]
+        new_points = capacity_plan.sample_points[current_count:target_count]
+        if new_arguments:
+            new_values, new_reports, effective_parallel = _solve_samples(
+                DEmatrix=DEmatrix,
+                boundary=boundary,
+                path=path,
+                sample_arguments=new_arguments,
+                sample_points=new_points,
+                transport_order=capacity_plan.transport_order,
+                transport_extra_order=capacity_plan.transport_extra_order,
+                transport_sample_count=capacity_plan.transport_sample_count,
+                transport_extra_sample_count=capacity_plan.transport_extra_sample_count,
+                radius_fraction=radius_fraction,
+                nde_tolerance=tolerance,
+                parallel_task_count=parallel_task_count,
+            )
+            production_values.extend(new_values)
+            production_reports.extend(new_reports)
+            production_parallel_counts.append(effective_parallel)
+        current_count = target_count
+        current_points = capacity_plan.sample_points[:current_count]
+        internal_coefficients = _fit_coefficient_vectors(
+            current_points, tuple(production_values), resolved_leading
+        )
+        validation_reports = []
+        residuals: list[arb] = []
+        for point, actual, solve_report in zip(
+            capacity_plan.validation_points,
+            validation_values,
+            validation_solve_reports,
+        ):
+            predicted = _evaluate_coefficients(
+                internal_coefficients, resolved_leading, point
+            )
+            residual = _relative_vector_residual(predicted, actual)
+            residuals.append(residual)
+            validation_reports.append(
+                {
+                    **solve_report,
+                    "predicted": _vector_to_strings(predicted),
+                    "series_relative_residual": residual.str(30),
+                    "passed": bool(residual < tolerance),
+                }
+            )
+        accepted = all(residual < tolerance for residual in residuals)
+        expansion_history.append(
             {
-                **solve_report,
-                "predicted": _vector_to_strings(predicted),
-                "series_relative_residual": residual.str(30),
-                "passed": bool(residual < tolerance),
+                "round": round_index,
+                "internal_maximum_power": resolved_leading + current_count - 1,
+                "new_production_sample_count": len(new_arguments),
+                "reused_production_sample_count": current_count - len(new_arguments),
+                "reused_validation_sample_count": (
+                    0 if round_index == 1 else len(validation_values)
+                ),
+                "maximum_validation_relative_residual": max(residuals).str(30),
+                "passed": accepted,
             }
         )
-        if not residual < tolerance:
-            raise SeriesValidationError(
-                f"series validation failed at {point.str(30)}: residual "
-                f"{residual.str(20)} is not below {tolerance.str(20)}"
-            )
+        final_plan = replace(
+            capacity_plan,
+            sample_arguments=capacity_plan.sample_arguments[:current_count],
+            sample_points=current_points,
+            sample_count=current_count,
+        )
+        if accepted:
+            break
+        if sample_points != AUTOMATIC or current_count >= capacity_plan.sample_count:
+            break
 
-    internal_maximum = resolved_leading + plan.sample_count - 1
+    if not accepted:
+        last_residual = expansion_history[-1]["maximum_validation_relative_residual"]
+        raise SeriesValidationError(
+            "series validation remained above tolerance after incremental fitting "
+            f"through internal power {resolved_leading + current_count - 1}: "
+            f"maximum residual {last_residual}, tolerance {tolerance.str(20)}"
+        )
+
+    returned_count = requested_coefficient_count
+    returned_coefficients = internal_coefficients[:returned_count]
+    internal_maximum = resolved_leading + final_plan.sample_count - 1
     effective_parameters = {
         "goal_digits": goal_digits,
-        "sample_source": plan.source,
-        "sample_count": plan.sample_count,
-        "base_sample": plan.base_sample,
+        "sample_source": final_plan.source,
+        "sample_count": final_plan.sample_count,
+        "initial_sample_count": plan.sample_count,
+        "base_sample": final_plan.base_sample,
         "sample_spacing": str(sample_spacing),
-        "alpha_epsilon": plan.alpha_epsilon,
-        "base_precision_digits": plan.base_precision_digits,
-        "working_precision_digits": plan.working_precision_digits,
+        "alpha_epsilon": final_plan.alpha_epsilon,
+        "base_precision_digits": final_plan.base_precision_digits,
+        "working_precision_digits": final_plan.working_precision_digits,
         "extra_working_precision": extra_working_precision,
-        "transport_order": plan.transport_order,
-        "transport_extra_order": plan.transport_extra_order,
-        "transport_sample_count": plan.transport_sample_count or AUTOMATIC,
-        "transport_extra_sample_count": plan.transport_extra_sample_count or AUTOMATIC,
+        "transport_order": final_plan.transport_order,
+        "transport_extra_order": final_plan.transport_extra_order,
+        "transport_sample_count": final_plan.transport_sample_count or AUTOMATIC,
+        "transport_extra_sample_count": final_plan.transport_extra_sample_count or AUTOMATIC,
         "radius_fraction": radius_fraction,
         "guard_bits": guard_bits,
-        "validation_source": plan.validation_source,
-        "validation_sample_count": len(plan.validation_points),
+        "validation_source": final_plan.validation_source,
+        "validation_sample_count": len(final_plan.validation_points),
         "validation_scale": (
             str(validation_scale) if validation_points == AUTOMATIC else None
         ),
         "validation_tolerance": tolerance.str(30),
         "maximum_samples": maximum_samples,
+        "fit_extra_order": fit_extra_order,
+        "fit_order_increment": fit_order_increment,
+        "fit_max_rounds": fit_max_rounds,
+        "fit_rounds_used": len(expansion_history),
         "rationalize_sample_points": rationalize_sample_points,
+        "parallel_task_count_requested": parallel_task_count,
+        "production_parallel_task_count_effective": max(production_parallel_counts),
+        "validation_parallel_task_count_effective": validation_parallel_count,
     }
     diagnostics = {
-        "pilot": pilot_diagnostics,
+        "leading_power_certificate": dict(leading_power_certificate),
         "production_solves": production_reports,
         "validation_solves": validation_reports,
+        "fit_expansion_history": expansion_history,
+        "production_values_reused": sum(
+            item["reused_production_sample_count"] for item in expansion_history[1:]
+        ),
+        "validation_values_reused": (
+            len(validation_values) * max(0, len(expansion_history) - 1)
+        ),
         "internal_buffer_powers": internal_maximum - maximum_power,
         "interpolation": "square Acb Vandermonde with all production samples",
         "least_squares_used": False,
@@ -1306,9 +1410,9 @@ def reconstruct_series_solution(
         resolved_leading,
         maximum_power,
         internal_maximum,
-        plan.sample_points,
+        final_plan.sample_points,
         tuple(acb_mat(value) for value in production_values),
-        plan.validation_points,
+        final_plan.validation_points,
         tuple(acb_mat(value) for value in validation_values),
         effective_parameters,
         diagnostics,

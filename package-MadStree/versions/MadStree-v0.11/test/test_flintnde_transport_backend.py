@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import importlib.util
+import importlib
 import sys
 import unittest
 from pathlib import Path
@@ -19,15 +19,11 @@ VENDOR_ROOT = VERSION_ROOT / "Vendor" / "FlintNDE"
 
 
 def _load_adapter() -> ModuleType:
-    """从当前版本路径加载 adapter。"""
+    """按真实模块名加载 adapter，使 Windows worker 可以重新导入任务函数。"""
 
+    sys.path.insert(0, str(VERSION_ROOT / "Backend"))
     sys.path.insert(0, str(VENDOR_ROOT))
-    spec = importlib.util.spec_from_file_location("madstree_v011_adapter", BACKEND_FILE)
-    if spec is None or spec.loader is None:
-        raise RuntimeError("cannot load MadStree v0.11 adapter")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return importlib.import_module("flintnde_transport")
 
 
 ADAPTER = _load_adapter()
@@ -127,6 +123,130 @@ class SingleRequestAdapterTest(unittest.TestCase):
         extra["serializedPlan"] = {}
         with self.assertRaisesRegex(ValueError, "unexpected"):
             ADAPTER._validate_request(extra)
+
+
+class EpBatchAdapterTest(unittest.TestCase):
+    """检查不同 ep 请求由有界进程池自动续交并保持输入顺序。"""
+
+    def test_default_count_is_capped_by_task_count(self) -> None:
+        raw = {
+            "schema": ADAPTER.EVALUATE_BATCH_SCHEMA,
+            "parallelTaskCount": ADAPTER.DEFAULT_PARALLEL_TASK_COUNT,
+            "messageLanguage": "CN",
+            "tasks": [
+                {"ep": ep, "request": _request(True)} for ep in ("1/5", "1/4", "1/3")
+            ],
+        }
+        result = ADAPTER._run_batch(ADAPTER._validate_batch_request(raw))
+        self.assertEqual(result["parallelTaskCountRequested"], 12)
+        self.assertEqual(result["parallelTaskCountEffective"], 3)
+        self.assertEqual([item["ep"] for item in result["results"]], ["1/5", "1/4", "1/3"])
+        self.assertTrue(all(item["result"]["status"] == "success" for item in result["results"]))
+
+    def test_queue_runs_all_tasks_above_parallel_limit(self) -> None:
+        values = [f"1/{value}" for value in range(3, 9)]
+        raw = {
+            "schema": ADAPTER.EVALUATE_BATCH_SCHEMA,
+            "parallelTaskCount": 2,
+            "messageLanguage": "EN",
+            "tasks": [{"ep": ep, "request": _request(False)} for ep in values],
+        }
+        result = ADAPTER._run_batch(ADAPTER._validate_batch_request(raw))
+        self.assertEqual(result["parallelTaskCountEffective"], 2)
+        self.assertEqual([item["ep"] for item in result["results"]], values)
+        self.assertEqual(
+            len({item["result"]["workerPid"] for item in result["results"]}),
+            len(values),
+        )
+
+    def test_serial_limit_still_isolates_each_ep_worker(self) -> None:
+        """并行上限一只限制同时运行数，每个 ep 仍使用新 worker。"""
+
+        values = ["1/5", "1/4", "1/3"]
+        raw = {
+            "schema": ADAPTER.EVALUATE_BATCH_SCHEMA,
+            "parallelTaskCount": 1,
+            "messageLanguage": "EN",
+            "tasks": [{"ep": ep, "request": _request(False)} for ep in values],
+        }
+        result = ADAPTER._run_batch(ADAPTER._validate_batch_request(raw))
+        self.assertEqual(result["parallelTaskCountEffective"], 1)
+        self.assertEqual([item["ep"] for item in result["results"]], values)
+        self.assertEqual(
+            len({item["result"]["workerPid"] for item in result["results"]}),
+            len(values),
+        )
+
+
+class EpSeriesControlTest(unittest.TestCase):
+    """检查符号证书给定最低幂后的自适应规划和严格 Laurent 拟合。"""
+
+    @staticmethod
+    def _control(action: str, **payload: object) -> dict[str, object]:
+        """建立当前唯一的自适应正规化控制请求。"""
+
+        return {
+            "schema": ADAPTER.SERIES_CONTROL_SCHEMA,
+            "action": action,
+            "backendPackagePath": str(VENDOR_ROOT),
+            "maximumPower": 0,
+            "goalDigits": 12,
+            **payload,
+        }
+
+    def test_certified_pole_plan_and_finite_part_fit(self) -> None:
+        """接收已认证的 -1 最低阶，并用独立点认证 pole 与有限项。"""
+
+        from flint import acb
+        from flintnde import configure_working_precision
+
+        plan = ADAPTER._run_series_control(
+            ADAPTER._validate_series_control_request(self._control(
+                "production_plan", leadingPower=-1, sampleSpacing="0.01",
+                validationSampleCount=2, validationScale="0.5", maximumSamples=100,
+                extraWorkingPrecision=0.0, productionRound=1,
+                fitExtraOrder=2, fitOrderIncrement=2, fitMaximumRounds=3,
+            ))
+        )
+        self.assertEqual(plan["sampleCount"], 4)
+        self.assertEqual(plan["internalMaximumPower"], 2)
+        self.assertGreaterEqual(plan["workingPrecisionDigits"], 200)
+        self.assertTrue(set(plan["points"]).isdisjoint(plan["validationPoints"]))
+        expanded_plan = ADAPTER._run_series_control(
+            ADAPTER._validate_series_control_request(self._control(
+                "production_plan", leadingPower=-1, sampleSpacing="0.01",
+                validationSampleCount=2, validationScale="0.5", maximumSamples=100,
+                extraWorkingPrecision=0.0, productionRound=2,
+                fitExtraOrder=2, fitOrderIncrement=2, fitMaximumRounds=3,
+            ))
+        )
+        self.assertEqual(expanded_plan["sampleCount"], 6)
+        self.assertEqual(expanded_plan["points"][:4], plan["points"])
+        self.assertEqual(expanded_plan["validationPoints"], plan["validationPoints"])
+        self.assertEqual(
+            expanded_plan["workingPrecisionDigits"], plan["workingPrecisionDigits"]
+        )
+        configure_working_precision(plan["workingPrecisionDigits"])
+        production_points = [acb(point) for point in plan["points"]]
+        validation_points = [acb(point) for point in plan["validationPoints"]]
+        production_values = [[ADAPTER._acb_record(1 / point + 2 + 3 * point, 80)]
+                             for point in production_points]
+        validation_values = [[ADAPTER._acb_record(1 / point + 2 + 3 * point, 80)]
+                             for point in validation_points]
+        fitted = ADAPTER._run_series_control(
+            ADAPTER._validate_series_control_request(self._control(
+                "fit", leadingPower=-1,
+                workingPrecisionDigits=plan["workingPrecisionDigits"],
+                points=plan["points"], values=production_values,
+                validationPoints=plan["validationPoints"],
+                validationValues=validation_values, validationTolerance="1e-12",
+            ))
+        )
+        pole = acb(fitted["coefficients"]["-1"][0]["real"])
+        finite = acb(fitted["coefficients"]["0"][0]["real"])
+        self.assertLess(float(abs(pole - 1).mid()), 1.0e-20)
+        self.assertLess(float(abs(finite - 2).mid()), 1.0e-20)
+        self.assertTrue(all(item["passed"] for item in fitted["diagnostics"]["validation_samples"]))
 
 
 if __name__ == "__main__":
