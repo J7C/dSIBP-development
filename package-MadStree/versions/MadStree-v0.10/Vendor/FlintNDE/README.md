@@ -31,7 +31,9 @@ Wolfram 模式只接受 `"Avoid"` / `"SingularityJump"`。
 
 路径生成和执行是两个既有阶段，不另设 `AutoPlan` 一类开关：
 
-- `plan_transport_path(...)` 或 `FlintNDEPlanPath[...]` 接收原始点并产生完整计划；
+- `plan_transport_path(...)` 或 `FlintNDEPlanPath[...]` 接收同一单变量复参数平面中的
+  原始点序列并产生完整计划；当前节点收敛圆盘内的多个复点共享该节点的解系数，不要求
+  这些点位于同一条实线段上。不同单变量拉回应分别规划，不能跨拉回共享局部系数；
 - `transport_planned_path_refined(...)` 或 `FlintNDEExecutePath[...]` 只恢复并执行该计划，
   不再次调用规划器；
 - 缺省为避开奇点模式。直线段命中内部奇点时返回奇点及对应线段诊断；只有显式选择

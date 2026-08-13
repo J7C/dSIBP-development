@@ -119,17 +119,31 @@ class LookaheadPlanningTest(unittest.TestCase):
         self.assertEqual(len(plan.nodes), 2)
         self.assertEqual(plan.report["covered_sample_count"], 8)
 
-    def test_bent_polyline_forces_a_vertex_node(self) -> None:
+    def test_complex_plane_turn_reuses_one_node_patch(self) -> None:
+        """同一复参数平面的转角点可由一个无奇点收敛圆盘 dense 求值。"""
+
         system = _far_pole_system()
-        plan = plan_transport_path(
-            system, acb(0), [acb("1/2"), acb("1/2") + acb(0, "3/10")]
-        )
-        # 拐点不可被共线步覆盖：起点、拐点、终点三个节点
-        self.assertEqual(len(plan.nodes), 3)
+        turn = acb("1/2")
+        target = acb("1/2") + acb(0, "3/10")
+        plan = plan_transport_path(system, acb(0), [turn, target])
+
+        self.assertEqual(len(plan.nodes), 2)
+        self.assertEqual(plan.report["covered_sample_count"], 1)
         result = transport_planned_path(
             system, column_vector([1, 1]), plan, order=48
         )
-        expected = _far_pole_closed_form(acb("1/2") + acb(0, "3/10"))
+        dense = result[3]["sample_results"]
+        self.assertEqual(len(dense), 1)
+        self.assertEqual(dense[0]["user_point_index"], 0)
+        self.assertLess(
+            float(
+                relative_difference_inf(
+                    dense[0]["value"], _far_pole_closed_form(turn)
+                ).mid()
+            ),
+            1.0e-40,
+        )
+        expected = _far_pole_closed_form(target)
         self.assertLess(
             float(relative_difference_inf(result[0][-1], expected).mid()), 1.0e-40
         )

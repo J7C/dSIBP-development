@@ -1453,8 +1453,13 @@ The positive-prefactor context only replaces the paper parameters in these formu
 
 \texttt{MSGeneratePath} first builds a FlintNDE plan from $t=0$ to a finite matching point
 for every exact regular-singular boundary branch. It then plans the user-supplied
-multivariable polyline on the MadStree side and pulls each affine segment back to a
-one-variable matrix DE. \texttt{MSEvaluatePlannedPath} executes these stored plans directly:
+multivariable polyline on the MadStree side, partitions the input order into maximal
+consecutive complex-affine one-variable plane groups $x(s)=x_0+s v$, and pulls each group
+back only once. All exact complex parameter points are passed to FlintNDE. Points in one
+node convergence disk are evaluated from that node's cached solution coefficients; distinct
+groups inherit only the value at their common point and never share local coefficients, so
+no multivariable high-dimensional Taylor ball is constructed.
+\texttt{MSEvaluatePlannedPath} executes these stored plans directly:
 at the finite matching point it restores physical weights such as Gamma factors, sums the
 branches, and continues to the user's ordinary points without replanning. A single
 project-relative configuration variable controls the backend location; run files and the

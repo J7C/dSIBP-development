@@ -1454,8 +1454,11 @@ $N_s$ 是 sector normalization，$\Phi_s$ 是已初始化的 massive-contact pha
 正 prefactor context 只把这些公式中的论文参数统一换成 \texttt{formulaNu}$=-|\nu|$。上述五维结果现在只是式 \eqref{eq:generic-sector-boundary-component}--\eqref{eq:generic-sector-indicial-vector} 的一个检查例，不是生产分派；一般不等 time powers 直接读取各 component 自身的 $A_{sC}$。实正物理动量的 massive pinch normalization 固定为式 \eqref{eq:paper-two-vertex-child-normalization} 的 $-4\ii k_s^{-2\nu_1-1}/\pi$，不能把形式符号 $(-k_s)^{-2\nu_1-1}$ 交给 Mathematica 主支。
 
 \texttt{MSGeneratePath} 先为 exact 正则奇点边界的每个分支建立从 $t=0$ 到有限匹配点的
-FlintNDE 计划，再在 MadStree 侧规划用户给出的多变量折线，并把每个仿射段拉回为单变量矩阵
-DE。\texttt{MSEvaluatePlannedPath} 直接执行这些已保存计划：它在有限匹配点乘回 Gamma 等物理
+FlintNDE 计划，再在 MadStree 侧按输入顺序把用户点划分为最大连续复仿射单变量平面组
+$x(s)=x_0+s v$，每组只拉回一次单变量矩阵 DE，并把全部 exact 复参数点交给 FlintNDE。
+组内落在同一节点收敛圆盘的点由该节点缓存的解系数生成；不同组只在公共点继承数值向量，
+不共享局部系数，因而没有构造多变量高维 Taylor 球。\texttt{MSEvaluatePlannedPath} 直接执行
+这些已保存计划：它在有限匹配点乘回 Gamma 等物理
 权重并求和，然后继续输运到用户普通点，不重新规划路径。后端位置由相对项目根目录的单一配置
 变量控制；运行文件与 Python cache 写入调用脚本目录的 \texttt{results\_temp/}，不写 package
 源码目录。

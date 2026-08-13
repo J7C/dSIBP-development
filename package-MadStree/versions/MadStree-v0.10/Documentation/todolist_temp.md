@@ -1,5 +1,17 @@
 # 通用多 sector 边界实现清单
 
+## v0.10 同复直线分组与组内 dense output 修订（源码与开发测试已完成）
+
+- [x] 实现连续复仿射共线分组、组内 exact 参数化和转角断组。
+- [x] 每组一次调用 FlintNDE，并传入全部组内用户参数点。
+- [x] 保存 node snapshot / dense sample 到 userIndex 的完整映射。
+- [x] 执行时按映射重建 saved、tmp、重复点和 LO 到达值，不重新规划。
+- [x] 增加 900 点二维复格点开发测试：固定 x1 的 300 个复数 x2 点识别为同一复平面组。
+- [x] 新建 v0.10 独立验证任务书，要求 900 点与逐点基线比较，并同步中英文交付文档。
+- [x] 运行 adapter、路径专项、受影响 Wolfram 回归和 Git hygiene。
+
+独立验证任务书尚未执行；其 900 点准确性和 cold-cache 计时结果不得记为已验证。
+
 ## v0.10 路径规划与 FlintNDE 同步修订（已完成）
 
 - [x] `MSGeneratePath` 完成多变量共线点合并、仿射拉回、plan-only 后端调用并把节点、奇点折跃和 sample 路由写入计划变量。

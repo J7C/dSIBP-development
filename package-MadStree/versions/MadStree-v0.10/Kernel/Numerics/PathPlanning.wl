@@ -1,17 +1,16 @@
 (* ::Package:: *)
 
 (***
-File: PathPlanning.wl
-Purpose: Two-phase polyline workflow. MSGeneratePath plans the chained affine transport path through the user points and returns the plan; MSEvaluatePlannedPath executes only that stored plan.
-Scope: Bare coordinates are saved, {coordinate,"tmp"} marks a transient waypoint, and {coordinate,"lo"} requests singular leading-order data. SingularityMode is the only singularity policy, and execution never replans the user path.
+文件：PathPlanning.wl
+用途：实现两阶段多点路径工作流。MSGeneratePath 对用户点的连续复仿射组进行规划并返回计划；MSEvaluatePlannedPath 只执行已保存计划。
+范围：裸坐标为保存点，{coordinate,"tmp"} 是临时途经点，{coordinate,"lo"} 请求奇点领头阶数据。SingularityMode 是唯一奇点策略，执行阶段绝不重新规划。
 ***)
 
 (* ::Chapter:: *)
-(* User point input format *)
+(* 用户点输入格式 *)
 
-(* A user point is either bare rules (saved by default) or {rules,tag} with
-   tag "tmp" or "lo". Any other string tag is rejected; "lo" requests the
-   leading-order record of a singular-locus point instead of a value. *)
+(* 用户点可为缺省保存的裸规则，或带 "tmp"/"lo" 标签的 {rules,tag}。
+   其它字符串标签一律拒绝；"lo" 返回奇点轨迹点的领头阶记录而不是有限数值。 *)
 msPathPointNormalize[entry_, userIndex_Integer] := Module[{rules, tag},
   Which[
     MatchQ[entry, {_, "tmp" | "lo"}],
@@ -48,7 +47,7 @@ $msPlannedPathKeys = {
 
 (* 计划对象必须逐字段符合当前 schema；缺字段和多余字段同样拒绝。 *)
 MSPlannedPathQ[expression_] := AssociationQ[expression] &&
-  Lookup[expression, "schema", None] === "madstree_planned_path_v2" &&
+  Lookup[expression, "schema", None] === "madstree_planned_path_v3" &&
   Sort[Keys[expression]] === Sort[$msPlannedPathKeys];
 
 
@@ -341,8 +340,8 @@ msSegmentPoleScan[
 ];
 
 
-(* Builds one planned segment: the serialized letter records for the backend
-   plus the exact pole scan used for the planning report. *)
+(* 为 LO 到达路径等单目标请求构造独立计划段；普通多点输运使用下方的
+   msPlanPathGroup。 *)
 msPlanPathSegment[de_Association, fromRules_List, toRules_List] := Module[
   {parameter, affine, poles},
   parameter = Unique["msSegmentParameter"];
@@ -355,6 +354,225 @@ msPlanPathSegment[de_Association, fromRules_List, toRules_List] := Module[
     "poles" -> poles,
     "startRules" -> fromRules,
     "targetRules" -> toRules
+  |>
+];
+
+
+(* ::Chapter:: *)
+(* 连续复仿射单变量分组 *)
+
+(* 坐标差向量按 exact 复数处理。两个差向量复线性相关即属于同一个
+   x(s)=x0+s v 平面；比例允许为任意复数，不能退化为实共线判定。 *)
+msPathCoordinateDifference[fromRules_List, toRules_List, symbols_List] :=
+  Together[(msRuleValue[#, toRules] - msRuleValue[#, fromRules]) & /@ symbols];
+
+msPathExactZeroQ[value_] := TrueQ[Together[RootReduce[value]] === 0];
+
+msPathZeroDifferenceQ[difference_List] :=
+  And @@ (msPathExactZeroQ /@ difference);
+
+msPathComplexDirectionParameter[direction_List, difference_List] := Module[
+  {pivot, parameter},
+  pivot = FirstPosition[
+    msPathExactZeroQ /@ direction,
+    False,
+    Missing["Absent"]
+  ];
+  If[pivot === Missing["Absent"],
+    Return[Failure["ZeroAffineDirection", <||>]]
+  ];
+  parameter = Together[difference[[First[pivot]]]/direction[[First[pivot]]]];
+  If[
+    And @@ (
+      msPathExactZeroQ /@
+        (Together /@ (difference - parameter direction))
+    ),
+    parameter,
+    Failure["DifferentComplexAffinePlane", <||>]
+  ]
+];
+
+
+(* 按输入顺序划分最大连续复仿射组。转角前的最后一点同时作为下一组
+   anchor；公共用户点也作为下一组 s=0 点，保证组间只继承数值向量而不共享局部级数。 *)
+msPathAffineGroups[chain_List, symbols_List] := Module[
+  {groups = {}, start = 1, direction = None, position, difference, parameter},
+  Do[
+    difference = msPathCoordinateDifference[
+      chain[[start, "coordinate"]],
+      chain[[position, "coordinate"]],
+      symbols
+    ];
+    If[direction === None,
+      If[! msPathZeroDifferenceQ[difference], direction = difference];
+      Continue[]
+    ];
+    parameter = msPathComplexDirectionParameter[direction, difference];
+    If[Head[parameter] === Failure,
+      AppendTo[groups, <|
+        "anchor" -> chain[[start]],
+        "points" -> chain[[
+          If[chain[[start, "userIndex"]] === 0, start + 1, start] ;;
+            position - 1
+        ]]
+      |>];
+      start = position - 1;
+      direction = msPathCoordinateDifference[
+        chain[[start, "coordinate"]],
+        chain[[position, "coordinate"]],
+        symbols
+      ];
+      If[msPathZeroDifferenceQ[direction], direction = None]
+    ],
+    {position, 2, Length[chain]}
+  ];
+  AppendTo[groups, <|
+    "anchor" -> chain[[start]],
+    "points" -> chain[[
+      If[chain[[start, "userIndex"]] === 0, start + 1, start] ;;
+        Length[chain]
+    ]]
+  |>];
+  groups
+];
+
+
+msComplexSegmentDistance[point_, start_, target_] := Module[
+  {direction, normSquared, projection},
+  direction = target - start;
+  normSquared = ComplexExpand[Re[direction Conjugate[direction]]];
+  If[TrueQ[PossibleZeroQ[normSquared]], Return[Abs[point - start]]];
+  projection = Together[
+    ComplexExpand[Re[(point - start) Conjugate[direction]]]/normSquared
+  ];
+  projection = Max[0, Min[1, projection]];
+  Abs[point - (start + projection direction)]
+];
+
+
+(* 对组内相邻用户点形成的复参数折线逐边扫描极点；onSegment 仍表示
+   极点位于某一条实际直线边上，而 dense output 可在同一收敛圆盘内离边求值。 *)
+msGroupPoleScan[
+  de_Association,
+  pathRules_List,
+  constantRules_List,
+  parameter_Symbol,
+  pointParameters_List,
+  fromUserIndex_Integer,
+  userIndices_List
+] := Module[
+  {results = {}, along, alpha, beta, poleParameter, edge, edgeStart, edgeTarget,
+   edgeDirection, edgeRatio, onSegment, edgeFromIndex},
+  Do[
+    along = Simplify[letter /. pathRules /. constantRules];
+    If[! PolynomialQ[along, parameter] || Exponent[along, parameter] > 1,
+      Return[Failure[
+        "FlintNDEExactPathRequired",
+        <|"reason" -> "dlog letter is not affine with Q(i) data along the group",
+          "letter" -> letter|>
+      ]]
+    ];
+    alpha = Together[along /. parameter -> 0];
+    beta = Together[Coefficient[along, parameter, 1]];
+    Which[
+      beta === 0 && alpha === 0,
+        Return[Failure[
+          "SegmentOnSingularHyperplane",
+          <|"letter" -> letter,
+            "reason" -> "the whole affine group lies on the letter hyperplane"|>
+        ]],
+      beta === 0,
+        Null,
+      True,
+        poleParameter = Together[-alpha/beta];
+        Do[
+          edgeStart = If[edge === 1, 0, pointParameters[[edge - 1]]];
+          edgeTarget = pointParameters[[edge]];
+          edgeDirection = Together[edgeTarget - edgeStart];
+          edgeRatio = If[
+            TrueQ[PossibleZeroQ[edgeDirection]],
+            Missing["ZeroLengthEdge"],
+            Together[(poleParameter - edgeStart)/edgeDirection]
+          ];
+          onSegment = Head[edgeRatio] =!= Missing &&
+            TrueQ[PossibleZeroQ[Im[ComplexExpand[edgeRatio]]]] &&
+            Quiet[TrueQ[0 < Re[ComplexExpand[edgeRatio]] < 1], Less::nord];
+          edgeFromIndex = If[edge === 1, fromUserIndex, userIndices[[edge - 1]]];
+          AppendTo[results, <|
+            "letter" -> ToString[letter, InputForm],
+            "poleParameter" -> ToString[poleParameter, InputForm],
+            "onSegment" -> onSegment,
+            "polePathDistance" ->
+              msComplexSegmentDistance[poleParameter, edgeStart, edgeTarget],
+            "fromUserIndex" -> edgeFromIndex,
+            "toUserIndex" -> userIndices[[edge]]
+          |>],
+          {edge, Length[pointParameters]}
+        ]
+    ],
+    {letter, de["letters"]}
+  ];
+  results
+];
+
+
+(* 每组只拉回一次 DE。首个非重合用户点定义方向并取参数 1；其余点
+   用 exact 复比例参数化。全重合组使用非零虚拟参数保持可执行零连接。 *)
+msPlanPathGroup[de_Association, group_Association] := Module[
+  {parameter, anchor, points, differences, directionPosition, direction,
+   directionTarget, affine, pointParameters, parameterFailure, poles, records},
+  parameter = Unique["msGroupParameter"];
+  anchor = group["anchor"];
+  points = group["points"];
+  differences = msPathCoordinateDifference[
+    anchor["coordinate"], #["coordinate"], de["kinematicSymbols"]
+  ] & /@ points;
+  directionPosition = FirstPosition[
+    differences,
+    difference_ /; ! msPathZeroDifferenceQ[difference],
+    Missing["Absent"]
+  ];
+  If[directionPosition === Missing["Absent"],
+    directionTarget = First[points]["coordinate"];
+    pointParameters = Range[Length[points]],
+    direction = differences[[First[directionPosition]]];
+    directionTarget = points[[First[directionPosition], "coordinate"]];
+    pointParameters = Map[
+      If[
+        msPathZeroDifferenceQ[#],
+        0,
+        msPathComplexDirectionParameter[direction, #]
+      ] &,
+      differences
+    ];
+    parameterFailure = FirstCase[pointParameters, _Failure, None];
+    If[parameterFailure =!= None, Return[parameterFailure]]
+  ];
+  affine = msAffineLetterData[
+    de, anchor["coordinate"], directionTarget, parameter
+  ];
+  If[Head[affine] === Failure, Return[affine]];
+  records = msGaussianRationalString /@ pointParameters;
+  If[MemberQ[records, $Failed],
+    Return[Failure[
+      "FlintNDEExactPathRequired",
+      <|"reason" -> "group parameters are not exact Gaussian rationals"|>
+    ]]
+  ];
+  poles = msGroupPoleScan[
+    de, affine["pathRules"], affine["constantRules"], parameter,
+    pointParameters, anchor["userIndex"], points[[All, "userIndex"]]
+  ];
+  If[Head[poles] === Failure, Return[poles]];
+  <|
+    "letters" -> affine["letterRecords"],
+    "poles" -> poles,
+    "startRules" -> anchor["coordinate"],
+    "targetRules" -> Last[points]["coordinate"],
+    "pointParameters" -> records,
+    "fromUserIndex" -> anchor["userIndex"],
+    "toUserIndex" -> Last[points]["userIndex"],
+    "userIndices" -> points[[All, "userIndex"]]
   |>
 ];
 
@@ -435,7 +653,7 @@ MSGeneratePath[
 ] := Module[
   {de, points, normalizationFailure, completenessFailures, letters, removal,
    keptPoints, removedPoints, reconnections, firstRules, boundary, anchorRules,
-   chain, segments, segmentFailure, singularSegments, pairs, messages,
+   chain, affineGroups, segments, segmentFailure, singularSegments, pairs, messages,
     distances, minimumDistance, singularityMode, workingPrecision, unknownOptions,
    requiredSymbols, segmentIndex, path, notice, messageLanguage,
    leadingOrderPoints, offLocusLeadingOrder, leadingOrderRequests,
@@ -529,51 +747,50 @@ MSGeneratePath[
     ]
   ];
   If[Head[leadingOrderRequests] === Failure, Return[leadingOrderRequests]];
+  affineGroups = msPathAffineGroups[chain, de["kinematicSymbols"]];
   segments = {};
   Do[
-    segmentFailure = msPlanPathSegment[
-      de,
-      chain[[segmentIndex]]["coordinate"],
-      chain[[segmentIndex + 1]]["coordinate"]
-    ];
+    segmentFailure = msPlanPathGroup[de, affineGroups[[segmentIndex]]];
     If[Head[segmentFailure] === Failure, Return[segmentFailure]];
     AppendTo[
       segments,
-      Join[
-        segmentFailure,
-        <|
-          "segmentIndex" -> segmentIndex,
-          "fromUserIndex" -> chain[[segmentIndex]]["userIndex"],
-          "toUserIndex" -> chain[[segmentIndex + 1]]["userIndex"]
-        |>
-      ]
+      Append[segmentFailure, "segmentIndex" -> segmentIndex]
     ],
-    {segmentIndex, Length[chain] - 1}
+    {segmentIndex, Length[affineGroups]}
   ];
   singularSegments = Select[
     segments,
     AnyTrue[#poles, TrueQ[#onSegment] &] &
   ];
   If[singularityMode === "Avoid" && singularSegments =!= {},
-    pairs = Map[
-      Function[
-        segment,
-        {
-          First[
-            Select[
-              chain,
-              #[["userIndex"]] === segment["fromUserIndex"] &
+    pairs = DeleteDuplicates[
+      Flatten[
+        Map[
+          Function[segment,
+            Map[
+              Function[pole,
+                {
+                  First[
+                    Select[
+                      chain,
+                      #[["userIndex"]] === pole["fromUserIndex"] &
+                    ]
+                  ][["coordinate"]],
+                  First[
+                    Select[
+                      chain,
+                      #[["userIndex"]] === pole["toUserIndex"] &
+                    ]
+                  ][["coordinate"]]
+                }
+              ],
+              Select[segment["poles"], TrueQ[#onSegment] &]
             ]
-          ][["coordinate"]],
-          First[
-            Select[
-              chain,
-              #[["userIndex"]] === segment["toUserIndex"] &
-            ]
-          ][["coordinate"]]
-        }
-      ],
-      singularSegments
+          ],
+          singularSegments
+        ],
+        1
+      ]
     ];
     notice = msLocalizedPathText[
       messageLanguage,
@@ -658,15 +875,15 @@ MSGeneratePath[
   segmentInputs = Map[
     <|
       "start" -> "0",
-      "target" -> "1",
+      "points" -> #["pointParameters"],
       "letters" -> #["letters"],
       "fromUserIndex" -> #["fromUserIndex"],
-      "toUserIndex" -> #["toUserIndex"]
+      "userIndices" -> #["userIndices"]
     |> &,
     segments
   ];
   planningInput = <|
-    "schema" -> "madstree_flintnde_polyline_plan_v1",
+    "schema" -> "madstree_flintnde_polyline_plan_v2",
     "backendPackagePath" -> configuration["resolvedPath"],
     "masterDigest" -> de["masterDigest"],
     "dimension" -> de["masterCount"],
@@ -715,7 +932,10 @@ MSGeneratePath[
       #1,
       "flintNDEPlan" -> KeyTake[
         #2,
-        {"segmentIndex", "serializedPlan", "planReport", "jumpSpecs"}
+        {
+          "segmentIndex", "serializedPlan", "pointAssignments",
+          "planReport", "jumpSpecs"
+        }
       ]
     ] &,
     {segments, plannedSegments}
@@ -743,7 +963,7 @@ MSGeneratePath[
   Print[notice];
   AppendTo[messages, notice];
   path = <|
-    "schema" -> "madstree_planned_path_v2",
+    "schema" -> "madstree_planned_path_v3",
     "status" -> "planned",
     "masterDigest" -> de["masterDigest"],
     "boundaryData" -> boundary,
@@ -799,17 +1019,26 @@ MSGeneratePath[___] := Failure[
    requests carry their LO record instead of a value (values diverge at the
    singular locus and exact evaluation stays refused). *)
 msPolylinePointResults[path_Association, imported_Association, leadingOrderResults_List] := Module[
-  {kept, removed, endpointValues, results, loLookup},
+  {kept, removed, pointValues, valueLookup, results, loLookup},
   kept = Select[path["pathChain"], #tag =!= "boundaryAnchor" &];
   removed = path["removedPoints"];
-  endpointValues = Lookup[#, "endpointValues"] & /@ imported["segments"];
-  results = MapIndexed[
-    Function[{point, position},
+  pointValues = Flatten[
+    Lookup[#, "pointValues", {}] & /@ Lookup[imported, "segments", {}]
+  ];
+  valueLookup = Association[
+    #[["userIndex"]] -> msParseFlintVector[#["values"]] & /@ pointValues
+  ];
+  results = Map[
+    Function[point,
       <|
         "coordinate" -> point["coordinate"],
         "userIndex" -> point["userIndex"],
         "status" -> If[point["tag"] === "saved", "saved", "transient"],
-        "value" -> msParseFlintVector[endpointValues[[First[position]]]]
+        "value" -> Lookup[
+          valueLookup,
+          point["userIndex"],
+          Missing["PlannedPointValueAbsent"]
+        ]
       |>
     ],
     kept
@@ -855,35 +1084,32 @@ msExecuteLeadingOrderRequests[
   targetRelativeError_String,
   messageLanguage_String
 ] := Module[{
-  endpointValues, chain, requests, fromUserIndex, fromPosition, fromValue,
+  pointValues, valueLookup, requests, fromUserIndex, fromValue,
   inputData, loImported, results = {}
 },
   requests = Lookup[path, "leadingOrderRequests", {}];
   If[requests === {}, Return[{}]];
-  endpointValues = Lookup[#, "endpointValues"] & /@
-    Lookup[imported, "segments", {}];
-  chain = Lookup[path, "pathChain", {}];
+  pointValues = Flatten[
+    Lookup[#, "pointValues", {}] & /@ Lookup[imported, "segments", {}]
+  ];
+  valueLookup = Association[
+    #[["userIndex"]] -> msParseFlintVector[#["values"]] & /@ pointValues
+  ];
   Do[
     fromUserIndex = Lookup[
       Lookup[request, "arrival", <||>], "fromUserIndex", Missing["Absent"]
     ];
-    (* 只让条件模式检查路径点 Association；否则 FirstPosition 会继续匹配
-       Association 内部的 Rule，并触发 Rule::argr。 *)
-    fromPosition = FirstPosition[
-      chain,
-      point_Association /;
-        Lookup[point, "userIndex", Missing["Absent"]] === fromUserIndex,
-      Missing["Absent"]
+    fromValue = If[
+      fromUserIndex === 0,
+      initialVector,
+      Lookup[valueLookup, fromUserIndex, Missing["Absent"]]
     ];
-    If[fromPosition === Missing["Absent"],
+    If[fromValue === Missing["Absent"],
       Return[Failure[
         "LeadingOrderArrivalValueMissing",
-        <|"userIndex" -> request["userIndex"]|>
+        <|"userIndex" -> request["userIndex"],
+          "arrivalUserIndex" -> fromUserIndex|>
       ]]
-    ];
-    fromValue = If[First[fromPosition] === 1,
-      initialVector,
-      msParseFlintVector[endpointValues[[First[fromPosition] - 1]]]
     ];
     inputData = <|
       "schema" -> "madstree_flintnde_leading_order_execute_v1",
@@ -981,8 +1207,8 @@ msPolylineSingularityReport[path_Association, imported_Association] := Module[
         Function[pole,
           <|
             "segmentIndex" -> segment["segmentIndex"],
-            "fromUserIndex" -> segment["fromUserIndex"],
-            "toUserIndex" -> segment["toUserIndex"],
+            "fromUserIndex" -> pole["fromUserIndex"],
+            "toUserIndex" -> pole["toUserIndex"],
             "letter" -> pole["letter"],
             "poleParameter" -> pole["poleParameter"]
           |>
@@ -1120,7 +1346,7 @@ MSEvaluatePlannedPath[
   segmentInputs = Map[
     <|
       "start" -> "0",
-      "target" -> "1",
+      "points" -> #["pointParameters"],
       "letters" -> #["letters"],
       "plan" -> Lookup[
         Lookup[#, "flintNDEPlan", <||>],
@@ -1128,7 +1354,7 @@ MSEvaluatePlannedPath[
         Missing["Absent"]
       ],
       "fromUserIndex" -> #["fromUserIndex"],
-      "toUserIndex" -> #["toUserIndex"]
+      "userIndices" -> #["userIndices"]
     |> &,
     path["segments"]
   ];
@@ -1139,7 +1365,7 @@ MSEvaluatePlannedPath[
     ]]
   ];
   inputData = <|
-    "schema" -> "madstree_flintnde_polyline_execute_v1",
+    "schema" -> "madstree_flintnde_polyline_execute_v2",
     "backendPackagePath" -> configuration["resolvedPath"],
     "masterDigest" -> de["masterDigest"],
     "dimension" -> de["masterCount"],

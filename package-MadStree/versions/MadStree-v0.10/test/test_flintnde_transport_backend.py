@@ -57,16 +57,20 @@ def _letter(alpha: str, beta: str, residue: str) -> dict[str, object]:
 def _segment(
     letter: dict[str, object],
     *,
+    points: list[dict[str, str]] | None = None,
+    user_indices: list[int] | None = None,
     plan: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    """构造含明确用户点索引的一段仿射拉回。"""
+    """构造含完整组内复参数和全局用户索引的仿射拉回。"""
 
+    group_points = [_q("1")] if points is None else points
+    indices = [1] if user_indices is None else user_indices
     record: dict[str, object] = {
         "start": "0",
-        "target": "1",
+        "points": group_points,
         "letters": [letter],
         "fromUserIndex": 0,
-        "toUserIndex": 1,
+        "userIndices": indices,
     }
     if plan is not None:
         record["plan"] = plan
@@ -276,6 +280,42 @@ def test_polyline_execute_uses_stored_plan_without_replanning(
         Decimal("0.5"),
         abs=Decimal("1e-25"),
     )
+    assert executed["segments"][0]["pointValues"][0]["userIndex"] == 1
+    assert executed["segments"][0]["pointValues"][0]["source"] == "node_snapshot"
+
+
+def test_complex_plane_dense_output_maps_every_user_index() -> None:
+    """同一复参数平面内的非实共线点须共享节点系数并完整返回。"""
+
+    letter = _letter("20", "1", "1")
+    points = [_q("1"), _q("1", "1/10"), _q("2")]
+    indices = [11, 12, 13]
+    request = _plan_request(letter=letter)
+    request["segments"] = [
+        _segment(letter, points=points, user_indices=indices)
+    ]
+    planned = ADAPTER._run(request)
+
+    assert planned["status"] == "success"
+    assignments = planned["segments"][0]["pointAssignments"]
+    assert [item["userIndex"] for item in assignments] == indices
+    assert any(item["source"] != "node_snapshot" for item in assignments)
+
+    execute = _execute_request(planned, letter=letter)
+    execute["segments"] = [
+        _segment(
+            letter,
+            points=points,
+            user_indices=indices,
+            plan=planned["segments"][0]["serializedPlan"],
+        )
+    ]
+    executed = ADAPTER._run(execute)
+
+    point_values = executed["segments"][0]["pointValues"]
+    assert [item["userIndex"] for item in point_values] == indices
+    assert len(point_values) == 3
+    assert all(len(item["values"]) == 1 for item in point_values)
 
 
 def test_constant_letters_form_an_executable_zero_connection() -> None:

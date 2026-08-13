@@ -83,14 +83,14 @@ result = MSEvaluatePlannedPath[
 ];
 ```
 
-多点折线只需把第二个参数改为 `{pointP1, pointP2, pointP3}`。`MSGeneratePath` 只规划并返回完整路径；`MSEvaluatePlannedPath` 只执行该计划，执行阶段不会重新规划。`MSPlannedPathQ` 用于判断对象是否为有效计划。
+多点折线只需把第二个参数改为 `{pointP1, pointP2, pointP3}`。`MSGeneratePath` 先按输入顺序划分最大连续复仿射单变量平面组 `x(s)=x0+s v`，每组只拉回一次并把全部 exact 复参数点交给 FlintNDE；`MSEvaluatePlannedPath` 只执行已保存计划，执行阶段不会重新规划。`MSPlannedPathQ` 用于判断对象是否为有效计划。
 
 用户点序列中裸坐标缺省保存；`{coord, "tmp"}` 标记不进入最终保存结果的途经点；`{coord, "lo"}` 请求沿到达方向反解的奇点领头阶记录。其它字符串标签一律拒绝。点结果成对携带 `coordinate`、`value`、`status` 和 `userIndex`；落在奇异超平面上的用户点会被剔除，并在 `"removedPoints"` 与 `"reconnections"` 中报告用户序号和重连方式。
 
 任何经过中途节点的多点输运都称为“折跃”；只有显式穿过奇点并用局部基连接两侧匹配点时才称为“奇点折跃”。`SingularityMode -> "Avoid"` 是缺省模式：相邻用户点连线命中奇点时返回 `"Singular Path Pair"` 与问题点对。只有显式选择 `SingularityMode -> "SingularityJump"` 才允许奇点折跃；程序会建立入射/出射匹配并前瞻后续用户点。奇点折跃选择的多值分支等价于某条绕行路径，用户必须自行确认。`MessageLanguage -> "EN"|"CN"` 严格区分大小写，缺省英文。
 
 计划保存 `WorkingPrecision` 和完整后端 `serializedPlan`。内部 bit 数为 `ceil(WorkingPrecision*log2(10))+32`，例如 70、100 位分别使用 265、365 bit，更高精度继续按同一公式增长；线段投影、匹配比例、旋转因子和 winding/monodromy 均使用当前 Arb 精度。若执行精度高于规划精度，程序拒绝并要求按目标精度重新运行 `MSGeneratePath`，因为低精度序列化节点不能补回信息。
-每一仿射段都在 MadStree 侧拉回为单变量连接。若该段所有 dlog letters 都是常量，则其导数全部为零，后端构造无有限极点的零连接并正常输运；“没有极点”不是拒绝该段的理由。
+每个复仿射组都在 MadStree 侧拉回为单变量连接。同组用户点可以分布在复参数平面内；只要落在某节点的收敛圆盘内，就由该节点缓存的解系数生成，不要求再次实共线。不同组只在公共点继承数值向量，绝不共享局部系数，因此没有构造多变量高维 Taylor 球。若组内所有 dlog letters 都是常量，则其导数全部为零，后端构造无有限极点的零连接并正常输运。
 
 `de["masters"]` 是 DE 行列和边界向量顺序的唯一 authority。`MSBoundaryData` 对已闭合的 tree/time-only context 统一从 sector DAG、component base powers、slot registry、normalization 和 strict time rank 生成 nested curve，拉回完整 dlog connection，求 residue，并按 ancestor sectors 解每个 master 的 indicial leading vector；单顶点 massiveExternal 也走同一通用路线（2411.03088 Sec.3.3 显式级数仅保留为测试对照基准，不进生产路径）。`MSGeneratePath` 保存 exact `{a,b,C}` 分支对应的奇点边界计划；`MSEvaluatePlannedPath` 直接执行该计划，从正则奇点输运到有限匹配点，再继续到用户目标普通点。生产代码不调用定义积分或 `NIntegrate`；这些只允许作为独立验证 oracle。
 

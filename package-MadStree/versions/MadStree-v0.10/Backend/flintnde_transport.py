@@ -19,8 +19,8 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-POLYLINE_PLAN_SCHEMA = "madstree_flintnde_polyline_plan_v1"
-POLYLINE_EXECUTE_SCHEMA = "madstree_flintnde_polyline_execute_v1"
+POLYLINE_PLAN_SCHEMA = "madstree_flintnde_polyline_plan_v2"
+POLYLINE_EXECUTE_SCHEMA = "madstree_flintnde_polyline_execute_v2"
 LEADING_ORDER_PLAN_SCHEMA = "madstree_flintnde_leading_order_plan_v1"
 LEADING_ORDER_EXECUTE_SCHEMA = "madstree_flintnde_leading_order_execute_v1"
 SINGULAR_BOUNDARY_PLAN_SCHEMA = "madstree_flintnde_singular_boundary_plan_v1"
@@ -244,14 +244,29 @@ def _validate_segment(
 ) -> None:
     """验证一段 MadStree 仿射拉回及其可选执行计划。"""
 
-    expected = {"start", "target", "letters", "fromUserIndex", "toUserIndex"}
+    expected = {"start", "points", "letters", "fromUserIndex", "userIndices"}
     if execute:
         expected = expected | {"plan"}
     item = _require_exact_keys(record, expected, label)
     _require_string(item["start"], f"{label}.start")
-    _require_string(item["target"], f"{label}.target")
     _require_integer(item["fromUserIndex"], f"{label}.fromUserIndex", minimum=0)
-    _require_integer(item["toUserIndex"], f"{label}.toUserIndex", minimum=1)
+    points = item["points"]
+    user_indices = item["userIndices"]
+    if not isinstance(points, list) or not points:
+        raise ValueError(f"{label}.points must be a nonempty list")
+    if not isinstance(user_indices, list) or len(user_indices) != len(points):
+        raise ValueError(
+            f"{label}.userIndices must have the same nonzero length as points"
+        )
+    for index, point in enumerate(points):
+        _validate_gaussian_record(point, f"{label}.points[{index}]")
+        _require_integer(
+            user_indices[index],
+            f"{label}.userIndices[{index}]",
+            minimum=1,
+        )
+    if len(set(user_indices)) != len(user_indices):
+        raise ValueError(f"{label}.userIndices must be distinct within a group")
     _validate_letters(item["letters"], dimension, f"{label}.letters")
     if execute and not isinstance(item["plan"], dict):
         raise TypeError(f"{label}.plan must be a serialized FlintNDE plan object")
@@ -423,6 +438,91 @@ def _point_record(value: Any, digits: int) -> dict[str, str]:
     return _acb_record(value, digits)
 
 
+def _planned_point_assignments(
+    plan: Any,
+    points: list[Any],
+    user_indices: list[int],
+) -> list[dict[str, Any]]:
+    """把每个组内用户点唯一映射到节点快照或 dense-output assignment。"""
+
+    sample_by_index = {
+        int(item["user_point_index"]): item
+        for item in plan.sample_assignments
+        if item["user_point_index"] is not None
+    }
+    assignments: list[dict[str, Any]] = []
+    for local_index, (point, user_index) in enumerate(zip(points, user_indices)):
+        sample = sample_by_index.get(local_index)
+        if sample is not None:
+            assignments.append(
+                {
+                    "userIndex": user_index,
+                    "localPointIndex": local_index,
+                    "source": str(sample["source"]),
+                    "nodeIndex": None,
+                    "segmentIndex": int(sample["segment_index"]),
+                }
+            )
+            continue
+        matching_nodes = [
+            node_index
+            for node_index, node in enumerate(plan.nodes)
+            if abs(node - point).contains(0)
+        ]
+        if not matching_nodes:
+            raise ValueError(
+                f"user point {user_index} is absent from both node snapshots "
+                "and dense-output assignments"
+            )
+        assignments.append(
+            {
+                "userIndex": user_index,
+                "localPointIndex": local_index,
+                "source": "node_snapshot",
+                "nodeIndex": matching_nodes[-1],
+                "segmentIndex": None,
+            }
+        )
+    return assignments
+
+
+def _executed_point_values(
+    result: dict[str, Any],
+    assignments: list[dict[str, Any]],
+    digits: int,
+    dimension: int,
+) -> list[dict[str, Any]]:
+    """按规划映射合并节点快照和 dense output，完整返回该组用户点值。"""
+
+    sample_by_index = {
+        int(item["user_point_index"]): item
+        for item in result["sample_results"]
+        if item["user_point_index"] is not None
+    }
+    records: list[dict[str, Any]] = []
+    for assignment in assignments:
+        local_index = int(assignment["localPointIndex"])
+        node_index = assignment["nodeIndex"]
+        if node_index is None:
+            if local_index not in sample_by_index:
+                raise ValueError(
+                    f"dense-output value for local point {local_index} is missing"
+                )
+            vector = sample_by_index[local_index]["value"]
+        else:
+            vector = result["reference_snapshots"][int(node_index)]
+        records.append(
+            {
+                "userIndex": int(assignment["userIndex"]),
+                "localPointIndex": local_index,
+                "source": assignment["source"],
+                "values": [
+                    _acb_record(vector[row, 0], digits) for row in range(dimension)
+                ],
+            }
+        )
+    return records
+
 
 def _nearest_integer_ball(value: Any, label: str) -> int:
     """从 Arb 小区间认证唯一最近整数；区间含混时拒绝猜测分支。"""
@@ -538,8 +638,8 @@ def _polyline_segment_system(
     acb: Any,
     acb_mat: Any,
     gaussian_rational: Any,
-) -> tuple[Any, Any, Any]:
-    """重建一段 dlog 拉回系统，并拒绝位于端点的极点。"""
+) -> tuple[Any, Any, list[Any]]:
+    """重建一个复仿射组的 dlog 拉回系统，并拒绝用户点处的极点。"""
 
     system = _letters_to_partial_fraction_system(
         segment["letters"],
@@ -550,17 +650,19 @@ def _polyline_segment_system(
         gaussian_rational,
     )
     start = gaussian_rational(segment["start"]).to_acb()
-    target = gaussian_rational(segment["target"]).to_acb()
+    points = [gaussian_rational(point).to_acb() for point in segment["points"]]
     for pole in system.singularities:
         if (pole - start).contains(0):
             raise ValueError(
                 f"segment {segment_index} anchor coincides with a dlog letter pole"
             )
-        if (pole - target).contains(0):
-            raise ValueError(
-                f"segment {segment_index} target coincides with a dlog letter pole"
-            )
-    return system, start, target
+        for local_index, point in enumerate(points):
+            if (pole - point).contains(0):
+                raise ValueError(
+                    f"segment {segment_index} user point {local_index} "
+                    "coincides with a dlog letter pole"
+                )
+    return system, start, points
 
 
 def _run_polyline_plan(data: dict[str, Any]) -> dict[str, Any]:
@@ -584,7 +686,7 @@ def _run_polyline_plan(data: dict[str, Any]) -> dict[str, Any]:
 
     planned_segments: list[dict[str, Any]] = []
     for segment_index, segment in enumerate(data["segments"]):
-        system, start_point, target_point = _polyline_segment_system(
+        system, start_point, target_points = _polyline_segment_system(
             data,
             segment,
             segment_index,
@@ -597,7 +699,7 @@ def _run_polyline_plan(data: dict[str, Any]) -> dict[str, Any]:
             plan = plan_transport_path(
                 system,
                 start_point,
-                [target_point],
+                target_points,
                 singularity_mode=singularity_mode,
                 message_language=message_language,
             )
@@ -615,10 +717,16 @@ def _run_polyline_plan(data: dict[str, Any]) -> dict[str, Any]:
                     for first, second in error.singular_path_pairs
                 ],
             }
+        point_assignments = _planned_point_assignments(
+            plan,
+            target_points,
+            [int(index) for index in segment["userIndices"]],
+        )
         planned_segments.append(
             {
                 "segmentIndex": segment_index,
                 "serializedPlan": planned_path_to_json(plan, digits=digits),
+                "pointAssignments": point_assignments,
                 "planReport": plan.report,
                 "jumpSpecs": [
                     {
@@ -704,7 +812,7 @@ def _run_polyline_execute(data: dict[str, Any]) -> dict[str, Any]:
     all_targets_met = True
     actual_certification_modes: list[str] = []
     for segment_index, segment in enumerate(segments):
-        system, start, target = _polyline_segment_system(
+        system, start, points = _polyline_segment_system(
             data,
             segment,
             segment_index,
@@ -728,8 +836,15 @@ def _run_polyline_execute(data: dict[str, Any]) -> dict[str, Any]:
             )
         if not abs(plan.nodes[0] - start).contains(0):
             raise ValueError(f"segment {segment_index} plan start does not match its system")
-        if not abs(plan.nodes[-1] - target).contains(0):
-            raise ValueError(f"segment {segment_index} plan target does not match its system")
+        if not abs(plan.nodes[-1] - points[-1]).contains(0):
+            raise ValueError(
+                f"segment {segment_index} final plan node does not match its final user point"
+            )
+        point_assignments = _planned_point_assignments(
+            plan,
+            points,
+            [int(index) for index in segment["userIndices"]],
+        )
 
         result = transport_planned_path_refined(
             system,
@@ -770,6 +885,13 @@ def _run_polyline_execute(data: dict[str, Any]) -> dict[str, Any]:
                     True
                     if result["target_relative_error_met"] is None
                     else bool(result["target_relative_error_met"])
+                ),
+                "pointAssignments": point_assignments,
+                "pointValues": _executed_point_values(
+                    result,
+                    point_assignments,
+                    digits,
+                    dimension,
                 ),
                 "endpointValues": [
                     _acb_record(vector[row, 0], digits) for row in range(dimension)

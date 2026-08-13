@@ -17,8 +17,10 @@
    只有 exact 恒等重构和全部有限极点一阶等门禁通过时才使用快速递推；高阶极点与一般
    有理矩阵继续走通用 `RationalMatrixSystem` 路线或按既有能力 fail closed。该特化不要求
    dlog 输入，也不限制通用 DE 接口。
-3. **规划与执行分离**：`plan_transport_path`/Wolfram `FlintNDEPlanPath` 从原始点生成
-   可序列化计划；`transport_planned_path_refined`/Wolfram `FlintNDEExecutePath`
+3. **规划与执行分离和复平面 dense output**：`plan_transport_path`/Wolfram
+   `FlintNDEPlanPath` 从同一单变量复参数平面的原始点生成可序列化计划。当前节点
+   收敛圆盘内的多个复点共享节点解系数，不再要求这些点实共线；不同单变量拉回不得
+   共享局部系数。`transport_planned_path_refined`/Wolfram `FlintNDEExecutePath`
    只恢复并执行已有计划，不再次规划。没有新增重复的“是否自动规划”选项。
 4. **缺省避开奇点**：Python 的通用 routing 使用
    `singularity_mode="avoid"` 和 Wolfram 的 `"SingularityMode" -> "Avoid"` 均为缺省。

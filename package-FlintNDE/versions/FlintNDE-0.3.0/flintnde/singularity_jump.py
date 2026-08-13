@@ -5,8 +5,9 @@
 - ``plan_transport_path``：从起点与用户点序列整体规划输运节点。规划分两步：
   先做奇点节点化——线段穿过（或以用户阈值接近）某极点时，把该极点选为奇点折跃
   支点，在线段上放入射/出射匹配点；再沿折线做前瞻节点选择——从当前节点向后
-  按用户顺序检查，到哪一个为止的用户点都落在本节点一步可达范围且仍在同一
-  直线上，取最后一个做下一节点，步内覆盖的用户点成为该步的求值点。
+  按用户顺序检查调用方已放入同一个单变量复参数平面的点，到哪一个为止都落在
+  本节点一步可达范围，取最后一个做下一节点，步内覆盖的用户点成为该步的求值点；
+  不要求这些复参数点额外落在同一条实直线上。
 - ``SingularityJumpBasis``：``PartialFractionSystem`` 简单极点的数值幂对数局部基。
   留数可对角化且无共振时构造 ``Y_j(t)=t^{λ_j}Σ a_n t^n`` 型基本解组；结构
   不确定（缺陷留数、共振、特征向量矩阵奇异、残差超限）时一律 fail closed，
@@ -845,37 +846,6 @@ def _plan_singularity_jump_segments(
     return jumps, messages, minimum_path_distance
 
 
-def _collinear_on_step(current: acb, candidate: acb, interior: acb) -> bool:
-    """用 Arb 球几何判断内部点是否落在 ``current->candidate`` 线段上。"""
-
-    direction = candidate - current
-    length_squared = (
-        direction.real * direction.real + direction.imag * direction.imag
-    )
-    if length_squared.contains(0):
-        return False
-    offset = interior - current
-    parameter = (
-        offset.real * direction.real + offset.imag * direction.imag
-    ) / length_squared
-    parameter_midpoint = parameter.mid()
-    tolerance = arb(str(_COLLINEARITY_TOLERANCE))
-    if parameter_midpoint < -tolerance or parameter_midpoint > arb(1) + tolerance:
-        return False
-    projected = current + direction * acb(parameter)
-    ball_allowance = (
-        interior.real.rad()
-        + interior.imag.rad()
-        + current.real.rad()
-        + current.imag.rad()
-        + candidate.real.rad()
-        + candidate.imag.rad()
-    )
-    separation = abs(interior - projected)
-    return separation.contains(0) or separation < (
-        tolerance * abs(direction) + arb(2) * ball_allowance
-    )
-
 def _plan_node_walk(
     system: AnalyticMatrixSystem | PartialFractionSystem,
     chain: list[acb],
@@ -886,7 +856,7 @@ def _plan_node_walk(
 
     前瞻规则：从当前节点向后按用户顺序检查途经点，到哪一个为止都在本节点一步
     可达范围（``radius_fraction`` 倍最近奇点距离再乘规划安全系数）且与当前节点
-    共线，取最后一个做下一节点；被跨过的用户点成为该步的求值点。奇点折跃入射/出射
+    复参数平面内可共享系数，取最后一个做下一节点；被跨过的用户点成为该步的求值点。奇点折跃入射/出射
     匹配点是不可跨越的必经点。一步够不到最近必经点时沿其方向插入中间节点。
     """
 
@@ -952,18 +922,14 @@ def _plan_node_walk(
                 if all(must_pass[item][1] == "user" for item in range(position, scan)):
                     best = scan
                 break
-            interior_ok = True
-            for item in range(position, scan):
-                interior_point, interior_kind, _interior_spec, _index = must_pass[item]
-                if interior_kind != "user":
-                    interior_ok = False
-                    break
-                if abs(interior_point - current).contains(0):
-                    continue
-                if not _collinear_on_step(current, point, interior_point):
-                    interior_ok = False
-                    break
-            if not interior_ok:
+            # points 已属于调用方声明的同一个复参数平面。只要候选点与
+            # 其前面的用户点都落在当前 Taylor 收敛圆盘内，就可共享本节点
+            # 系数；复平面内不要求这些求值点再落在同一条实线段上。奇点折跃
+            # 匹配点仍是不可跨越的必经点。
+            if any(
+                must_pass[item][1] != "user"
+                for item in range(position, scan)
+            ):
                 break
             best = scan
             scan += 1

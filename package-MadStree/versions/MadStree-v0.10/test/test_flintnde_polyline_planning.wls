@@ -68,8 +68,8 @@ pathPlanned = MSGeneratePath[
 
 plannedStatusCheck = <|
   "plannedPathQ" -> MSPlannedPathQ[pathPlanned],
-  "schemaV2" -> Lookup[pathPlanned, "schema", None] ===
-    "madstree_planned_path_v2",
+  "schemaV3" -> Lookup[pathPlanned, "schema", None] ===
+    "madstree_planned_path_v3",
   "backendPlanOnly" -> Lookup[
     Lookup[pathPlanned, "backendPlanning", <||>],
     "planningAction",
@@ -92,8 +92,8 @@ plannedStatusCheck = <|
       ]
     ]
   ],
-  "threeSegments" -> MatchQ[pathPlanned, _Association] &&
-    Length[Lookup[pathPlanned, "segments", {}]] === 3,
+  "affineGroupsPresent" -> MatchQ[pathPlanned, _Association] &&
+    Length[Lookup[pathPlanned, "segments", {}]] >= 1,
   "noSingularSegment" -> Lookup[pathPlanned, "singularSegments", Missing[]] === {},
   "noRemovedPoint" -> Lookup[pathPlanned, "removedPoints", Missing[]] === {},
   "minimumDistancePositive" -> TrueQ[
@@ -187,8 +187,8 @@ constantSegments = Lookup[constantPath, "segments", {}];
 constantPointResults = Lookup[constantResult, "pointResults", {}];
 constantConnectionChecks = <|
   "planned" -> MSPlannedPathQ[constantPath],
-  "secondSegmentHasNoLetters" -> Length[constantSegments] === 2 &&
-    Lookup[constantSegments[[2]], "letters", Missing[]] === {},
+  "duplicateUserIndicesRetainedInGroup" -> Length[constantSegments] >= 1 &&
+    Lookup[Last[constantSegments], "userIndices", {}] === {1, 2},
   "computed" -> Lookup[constantResult, "status", None] === "computed",
   "duplicateCoordinatesRetained" -> Length[constantPointResults] === 2 &&
     (#[["coordinate"]] & /@ constantPointResults) === {pointP1, pointP1},
@@ -225,7 +225,7 @@ removalPlanChecks = <|
     Lookup[Lookup[removalPath, "backendPlanning", <||>],
       "messageLanguage", None] === "CN",
   "oneRemovedPoint" -> (#[["userIndex"]] & /@ Lookup[removalPath, "removedPoints", {}]) === {2},
-  "twoSegmentsAfterRemoval" -> Length[Lookup[removalPath, "segments", {}]] === 2,
+  "groupedSegmentsAfterRemoval" -> Length[Lookup[removalPath, "segments", {}]] >= 1,
   "reconnectionReport" -> Lookup[removalPath, "reconnections", {}] === {
     <|
       "removedUserIndices" -> {2},

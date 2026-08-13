@@ -403,7 +403,7 @@ Det[M0[C]] proportional to Product[kappa[C,s], s].
 
 每段拉回系统由 MadStree 构造后交给 FlintNDE。若全部 dlog letters 在该段均为常量，其导数全为零，合法系统就是无有限极点的零连接。FlintNDE 的工作位数按 `ceil(WorkingPrecision*log2(10))+32` 设置；70、100 位分别为 265、365 bit，更高精度按同一公式增长。线段投影、匹配比例、旋转因子和 winding/monodromy 均保持当前 Arb 精度。计划保存规划精度，执行要求更高精度时必须重新规划。
 
-FlintNDE 的位置只由 `$MSFlintNDERelativePath` 定义，缺省为版本目录内的 `Vendor/FlintNDE`（与独立 FlintNDE 0.3.0 同版本同步）；`MSSetFlintNDERelativePath` 可显式覆盖。adapter 只接受六个现行 schema：`madstree_flintnde_polyline_plan_v1`、`madstree_flintnde_polyline_execute_v1`、`madstree_flintnde_leading_order_plan_v1`、`madstree_flintnde_leading_order_execute_v1`、`madstree_flintnde_singular_boundary_plan_v1` 和 `madstree_flintnde_singular_boundary_execute_v1`。临时 JSON 写入调用脚本目录的 `results_temp/`；成功后删除。Python cache 由 Git 忽略，版本源码目录不接收用户结果。`MSRuntimeDirectory` 的绝对路径直接展开，相对路径相对调用脚本目录解析。
+FlintNDE 的位置只由 `$MSFlintNDERelativePath` 定义，缺省为版本目录内的 `Vendor/FlintNDE`（与独立 FlintNDE 0.3.0 同版本同步）；`MSSetFlintNDERelativePath` 可显式覆盖。adapter 只接受六个现行 schema：`madstree_flintnde_polyline_plan_v2`、`madstree_flintnde_polyline_execute_v2`、`madstree_flintnde_leading_order_plan_v1`、`madstree_flintnde_leading_order_execute_v1`、`madstree_flintnde_singular_boundary_plan_v1` 和 `madstree_flintnde_singular_boundary_execute_v1`。临时 JSON 写入调用脚本目录的 `results_temp/`；成功后删除。Python cache 由 Git 忽略，版本源码目录不接收用户结果。`MSRuntimeDirectory` 的绝对路径直接展开，相对路径相对调用脚本目录解析。
 自动入口不猜测额外的 late-time 常数；它严格使用初始化时固定的 Hankel/SK branch、sector normalization 和论文 endpoint coefficients。手动入口未给 boundary data 时仍返回结构化 `Missing["BoundaryData"]`。dlog/chart 未认证、late-time 指数不衰减、拉回奇点非 exact/Fuchsian 或 FlintNDE capability preflight 失败时均 fail closed；能力边界不再用图名或固定维数描述。
 
 ## 12. 模块与公开接口
@@ -513,6 +513,24 @@ package-MadStree/versions/MadStree-v0.10/
 4. mixed 三顶点链：同一 massless slot同时进入两端 `M0`，sector DAG 和多级 contact 自动终止。
 5. H->h->H：正/负 prefactor 下局部矩阵恒等；全 sector 状态向量在 massive 支持子集的 round trip residual 为零；`MSIntegral` 重载明确 fail closed。
 6. dlog：矩阵维数等于 master 数；sector offsets 无间隙；非对角块只指向严格 lower sector；`omegaPotential` 对所有 `Log[letter]` 的 residual 为零。
+
+### Phase H：连续同复直线分组与组内 dense output
+
+- [x] 以多变量坐标向量的 exact 复线性相关为判据，把输入顺序中的连续点划为最大复仿射直线组；
+  两点总能定义起始方向，后续点不共线时在前一公共端点断组。
+- [x] 每组选择一个非零方向并求 exact 复参数 s_i；只构造一次 x(s)=x0+s v 的 dlog 拉回，
+  将全部 s_i 一次性交给 FlintNDE。
+- [x] 保存每个 userIndex 对应的 node snapshot 或 dense sample assignment。执行期只恢复计划，
+  节点点取 snapshot，非节点点由对应节点缓存系数求值。
+- [x] 不同复直线组不共享 Taylor/Frobenius 系数；避奇点和显式奇点折跃均沿各组的单变量
+  复平面处理，转角处继承数值向量后重新拉回。
+- [x] 开发测试和独立验证任务书使用 3*3*100=900 点二维复格点：固定 x1 时连续输入全部 300 个
+  复数 x2 点且让不同实部序号依次出现。每个固定 x1 应识别为一个 x2 复平面组，不能按
+  固定虚部拆成三条实直线；开发测试认证分组结构，任务书要求独立验证再与逐点单段输运
+  比较准确性和总时间，当前尚未产生该独立验证报告。
+
+验收：同线组数、实际节点、每节点覆盖 user indices 和 source（node/dense sample）均可审计；
+900 点结果按 userIndex 完整返回，且执行不重新规划。
 
 ## 15. 明确未认证项
 

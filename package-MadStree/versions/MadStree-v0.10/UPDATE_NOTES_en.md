@@ -33,10 +33,12 @@
    is outside, one admissible step is taken towards it before ordinary planning resumes. A
    singularity jump chooses a multivalued branch equivalent to one detour path, which the
    user must confirm.
-4. **Collinear points and cached evaluation**: consecutive collinear points need not become
-   polyline vertices. User points in one Taylor patch share cached solution-polynomial
-   coefficients. Coefficient reuse is distinct from Horner evaluation; Horner is only the
-   nested multiplication rule used for each polynomial value.
+4. **Complex-affine groups and cached evaluation**: exact complex-linear dependence partitions
+   the input into maximal consecutive `x(s)=x0+s v` groups, each pulled back once. Complex
+   parameter points in one Taylor convergence disk share the node solution coefficients and
+   need not be real-collinear; node and dense values are both returned by `userIndex`.
+   Different groups inherit only their common-point value and never share local coefficients,
+   so no multivariable Taylor ball is constructed.
 5. **Singular-locus points and LO**: bare coordinates are saved by default,
    `{coord,"tmp"}` is a transient waypoint, and `{coord,"lo"}` requests the
    arrival-direction LO. Singular-locus points are removed and reconnections are reported.
