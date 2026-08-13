@@ -20,4 +20,4 @@
 - [x] 增加 Python/Wolfram 回归，记录扩阶历史、新增点数和复用点数。
 - [x] 补全三包手册典型例子及 MadStree/FlintNDE 正规化拟合 example。
 - [x] 编译并目检 PDF，完成 UTF-8、Vendor 与 Git hygiene 门禁。
-- [ ] 核对远端分歧，提交并推送 main；成功后回填根进度表。
+- [x] 核对远端分歧，提交并推送 main；功能提交为 `2285d0d`。
