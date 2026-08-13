@@ -45,9 +45,13 @@ from flintnde.transport import (  # noqa: E402
 
 
 DECIMAL_DIGITS = 60
-TRANSPORT_ORDER = 48
+TRANSPORT_ORDER = 64
 ERROR_GATE = 1.0e-28
 MULTIPOINT_ERROR_GATE = 1.0e-50
+GRID_STEP_NUMERATOR = 9
+GRID_STEP_DENOMINATOR = 20
+MIN_USER_VALUES_PER_SEGMENT = 3
+MAX_USER_VALUES_PER_SEGMENT = 20
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -56,6 +60,7 @@ def write_json(path: Path, payload: Any) -> None:
     path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
 
 
@@ -105,10 +110,12 @@ def closed_form(point: acb) -> acb_mat:
 
 
 def make_grid() -> list[acb]:
-    """构造 30x30 蛇形复网格。"""
+    """构造间距 9/20 的 30x30 蛇形复网格，避免单展开盘覆盖全部点。"""
 
-    xs = [acb(index) / acb(10) for index in range(1, 31)]
-    ys = [acb(-29 + 2 * index) / acb(20) for index in range(30)]
+    # 必须在 configure_working_precision 之后构造 Acb 步长，不能在模块加载期固化低精度球。
+    grid_step = acb(GRID_STEP_NUMERATOR) / acb(GRID_STEP_DENOMINATOR)
+    xs = [grid_step * acb(index) for index in range(1, 31)]
+    ys = [grid_step * acb(-29 + 2 * index) / acb(2) for index in range(30)]
     points: list[acb] = []
     for row_index, y in enumerate(ys):
         row = xs if row_index % 2 == 0 else list(reversed(xs))
@@ -227,6 +234,77 @@ def dense_algorithm_counts(reports: list[dict[str, Any]]) -> dict[str, Any]:
     return {"bucket_counts": algorithm_buckets, "point_counts": algorithm_points}
 
 
+def segment_user_value_distribution(points: list[acb], plan: Any) -> dict[str, Any]:
+    """统计每个输运段承担的用户值；插入的纯输运节点不计作用户值。"""
+
+    segment_count = len(plan.nodes) - 1
+    dense_counts = [0] * segment_count
+    for assignment in plan.sample_assignments:
+        dense_counts[int(assignment["segment_index"])] += 1
+
+    endpoint_counts = [0] * segment_count
+    assigned_user_indices = {
+        int(assignment["user_point_index"])
+        for assignment in plan.sample_assignments
+        if assignment["user_point_index"] is not None
+    }
+    for user_index, point in enumerate(points):
+        if user_index in assigned_user_indices:
+            continue
+        matches = [
+            segment_index
+            for segment_index, node in enumerate(plan.nodes[1:])
+            if abs(node - point).contains(0)
+        ]
+        if len(matches) != 1:
+            raise RuntimeError(
+                f"user point {user_index} maps to {len(matches)} segment endpoints"
+            )
+        endpoint_counts[matches[0]] += 1
+
+    counts = [dense + endpoint for dense, endpoint in zip(dense_counts, endpoint_counts)]
+    if sum(counts) != len(points):
+        raise RuntimeError("per-segment user-value counts do not sum to the input point count")
+    user_bearing_counts = [count for count in counts if count > 0]
+    if not user_bearing_counts:
+        raise RuntimeError("planned route has no user-bearing segments")
+    sorted_counts = sorted(user_bearing_counts)
+    histogram: dict[str, int] = {}
+    for count in counts:
+        key = str(count)
+        histogram[key] = histogram.get(key, 0) + 1
+    exceptions = [
+        {
+            "segment_index": index,
+            "user_value_count": count,
+            "is_final_segment": index == segment_count - 1,
+        }
+        for index, count in enumerate(counts)
+        if count > 0
+        and not MIN_USER_VALUES_PER_SEGMENT <= count <= MAX_USER_VALUES_PER_SEGMENT
+    ]
+    return {
+        "definition": "dense sample count plus user points coincident with the segment endpoint",
+        "counts": counts,
+        "pure_transport_segment_indices": [
+            index for index, count in enumerate(counts) if count == 0
+        ],
+        "user_bearing_segment_count": len(user_bearing_counts),
+        "dense_counts": dense_counts,
+        "endpoint_user_counts": endpoint_counts,
+        "minimum": sorted_counts[0],
+        "median": sorted_counts[len(sorted_counts) // 2],
+        "mean": sum(user_bearing_counts) / len(user_bearing_counts),
+        "maximum": sorted_counts[-1],
+        "histogram": histogram,
+        "exceptions": exceptions,
+        "all_user_bearing_segments_between_3_and_20": all(
+            MIN_USER_VALUES_PER_SEGMENT <= count <= MAX_USER_VALUES_PER_SEGMENT
+            for count in user_bearing_counts
+        ),
+    }
+
+
 def run_transport_routes(points: list[acb]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """在同一系统/点/初值/精度下运行 planned dense fast 与 direct user-node 路线。"""
 
@@ -244,6 +322,7 @@ def run_transport_routes(points: list[acb]) -> tuple[list[dict[str, Any]], dict[
     planned_values = recover_planned_values(
         points, planned_plan, planned_result[0], planned_result[3]["sample_results"]
     )
+    planned_distribution = segment_user_value_distribution(points, planned_plan)
 
     sentinel_calls = 0
     original_planner = singularity_jump_module.plan_transport_path
@@ -319,6 +398,7 @@ def run_transport_routes(points: list[acb]) -> tuple[list[dict[str, Any]], dict[
             "result_sample_count": len(planned_result[3]["sample_results"]),
             "node_coordinates": [point_text(point) for point in planned_plan.nodes],
             "dense_algorithms": dense_algorithm_counts(planned_result[1]),
+            "user_values_per_segment": planned_distribution,
             "plan_report": planned_plan.report,
         },
         "direct_user_point_path": {
@@ -342,6 +422,10 @@ def run_transport_routes(points: list[acb]) -> tuple[list[dict[str, Any]], dict[
             "all_component_errors_below_gate": all(
                 value < ERROR_GATE
                 for value in planned_closed_errors + direct_closed_errors + route_errors
+            ),
+            "planned_segment_coverage_gate": (
+                planned_distribution["all_user_bearing_segments_between_3_and_20"]
+                and not planned_distribution["exceptions"]
             ),
         },
     }
@@ -389,7 +473,9 @@ def make_report(summary: dict[str, Any]) -> str:
     direct = transport["direct_user_point_path"]
     comparison = transport["comparison"]
     fail_closed = summary["direct_fail_closed"]
-    nodes = " -> ".join(planned["node_coordinates"])
+    distribution = planned["user_values_per_segment"]
+    first_node = planned["node_coordinates"][0]
+    final_node = planned["node_coordinates"][-1]
     return f"""# FlintNDE 0.4.0 独立检验报告
 
 日期：2026-08-13
@@ -421,20 +507,29 @@ Horner；900 点输运 expected 是脚本直接计算的闭式解。执行均为
 ## 900 点 Planned 与 Direct
 
 系统为 `dY/dz=diag(1/(z-20),-2/(z+20))Y`、`Y(0)=(1,1)^T`；闭式解为
-`Y1=1-z/20`、`Y2=(20/(z+20))^2`。两路线使用相同 30x30 蛇形点序、初值、60 位精度、
-48 阶和单进程。
+`Y1=1-z/20`、`Y2=(20/(z+20))^2`。30x30 蛇形网格的实部和虚部相邻间距均为
+`9/20=0.45`；两路线使用相同点序、初值、60 位精度、
+{summary['configuration']['transport_order']} 阶和单进程。
 
 Route P 实际节点 {planned['node_count']} 个、段 {planned['segment_count']} 条，覆盖
-{planned['covered_sample_count']} 个 dense 点。节点链为：
+{planned['covered_sample_count']} 个 dense 点。完整节点链保存在 `results/summary.json`；首尾为：
 
 ```text
-{nodes}
+{first_node} -> ... -> {final_node}
 ```
 
 其算法桶数为 `{json.dumps(planned['dense_algorithms']['bucket_counts'], ensure_ascii=False)}`，
 对应点数为 `{json.dumps(planned['dense_algorithms']['point_counts'], ensure_ascii=False)}`。
-这说明 900 个蛇形 waypoint 在当前远极点系统中被一个起点展开盘覆盖，实际只执行一个普通段，
-其余 899 点由一个 fast multipoint 桶求值。
+
+逐段“承担用户值数”严格定义为该段的 dense samples 加恰好命中该段终点的用户点；纯输运
+插入节点不计作用户值。分布 min/median/mean/max =
+{distribution['minimum']}/{distribution['median']}/{distribution['mean']:.6f}/{distribution['maximum']}，
+直方图为 `{json.dumps(distribution['histogram'], ensure_ascii=False, sort_keys=True)}`。纯输运桥段为
+`{json.dumps(distribution['pure_transport_segment_indices'])}`；其余
+{distribution['user_bearing_segment_count']} 个承担用户值的段全部包含 3--20 点：
+`{distribution['all_user_bearing_segments_between_3_and_20']}`，例外为
+`{json.dumps(distribution['exceptions'], ensure_ascii=False)}`。这避免了原小网格由一个展开盘覆盖
+全部 900 点的极端情形，同时保留多个 fast multipoint 桶检验批量求值。
 
 Route D 由 `direct_user_point_path` 构造，实际节点 {direct['node_count']} 个、段
 {direct['segment_count']} 条、coverage {direct['covered_sample_count']}；节点序列与
@@ -448,6 +543,10 @@ Route D 由 `direct_user_point_path` 构造，实际节点 {direct['node_count']
 
 direct/planned backend wall time 为 **{comparison['direct_over_planned_backend_ratio']:.3f}x**，总墙钟
 为 **{comparison['direct_over_planned_total_ratio']:.3f}x**。
+
+这里 backend wall 是 `transport_planned_path` 内部返回的墙钟，只覆盖局部级数、输运和 dense
+求值；total wall 还包括 planned 路线的规划或 direct 路线的节点链构造，但两者均在已启动的
+同一 Python 进程内，不含 Python 进程启动。
 
 ## 全点全分量互检
 
@@ -512,9 +611,9 @@ def main() -> None:
             multipoint["algorithm"] == "fast",
             multipoint["all_component_errors_below_gate"],
             planned["node_count"] >= 2,
-            planned["covered_sample_count"] == 899,
+            sum(planned["user_values_per_segment"]["counts"]) == 900,
             planned["dense_algorithms"]["bucket_counts"].get("fast", 0) >= 1,
-            planned["dense_algorithms"]["point_counts"].get("fast", 0) == 899,
+            comparison["planned_segment_coverage_gate"],
             direct["node_count"] == 901,
             direct["segment_count"] == 900,
             direct["covered_sample_count"] == 0,
@@ -544,6 +643,12 @@ def main() -> None:
             "multipoint_error_gate": MULTIPOINT_ERROR_GATE,
             "grid_shape": [30, 30],
             "grid_order": "row-wise snake path",
+            "grid_step_exact": "9/20",
+            "grid_step_decimal": 0.45,
+            "planned_user_values_per_segment_gate": [
+                MIN_USER_VALUES_PER_SEGMENT,
+                MAX_USER_VALUES_PER_SEGMENT,
+            ],
         },
         "source_sha256": {
             "flintnde_init_py": sha256(VERSION_ROOT / "flintnde" / "__init__.py"),
@@ -556,7 +661,7 @@ def main() -> None:
         "overall_passed": overall_passed,
     }
     write_json(SUMMARY_PATH, summary)
-    REPORT_PATH.write_text(make_report(summary), encoding="utf-8")
+    REPORT_PATH.write_text(make_report(summary), encoding="utf-8", newline="\n")
 
     for path in (SUMMARY_PATH, REPORT_PATH):
         raw = path.read_bytes()

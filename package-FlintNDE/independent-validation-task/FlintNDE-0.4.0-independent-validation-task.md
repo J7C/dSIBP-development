@@ -40,12 +40,18 @@ dY/dz = diag(1/(z-20), -2/(z+20)) Y,  Y(0)=(1,1)^T,
 Y1(z)=1-z/20,  Y2(z)=(20/(z+20))^2.
 ```
 
-网格为 `x=1/10,...,30/10` 与 `y=-29/20,-27/20,...,29/20` 的 30x30 笛卡尔积，
-按逐行蛇形顺序提交，共 900 个互异复点。两条路线固定：60 位十进制、参考阶 48、单进程。
+网格为 `x=9/20,...,270/20` 与 `y=-261/40,-243/40,...,261/40` 的 30x30 笛卡尔积，
+即实部、虚部相邻点间距均为 `9/20=0.45`；按逐行蛇形顺序提交，共 900 个互异复点。
+间距不作为算法输入调参，而是用于避免原小网格被一个起点展开盘全部覆盖。两条路线固定：
+60 位十进制、输运阶 64、单进程。阶数扫描表明 60 阶的 direct 900 段累计误差略高于
+`1e-28` 门限，64 阶才稳定通过；两条路线必须使用相同阶数。
 
-- Route P：`plan_transport_path` 后 `transport_planned_path(order=48)`；记录 planner wall time、
-  backend 返回 wall time、总 wall time、节点、段数、覆盖数和每段 dense 算法/点数。
-- Route D：`direct_user_point_path` 后 `transport_planned_path(order=48)`；在构造和执行期间把
+- Route P：`plan_transport_path` 后 `transport_planned_path(order=64)`；记录 planner wall time、
+  backend 返回 wall time、总 wall time、节点、段数、覆盖数和每段 dense 算法/点数。逐段统计
+  dense sample 和恰好命中该段终点的用户点，定义二者之和为该段承担的用户值数；自动插入且
+  不承担用户值的纯输运桥段单列。所有承担用户值的段必须包含 3--20 个用户值，并报告
+  min/median/mean/max、直方图、纯输运段和例外段。
+- Route D：`direct_user_point_path` 后 `transport_planned_path(order=64)`；在构造和执行期间把
   `singularity_jump.plan_transport_path` 替换成报错 sentinel。节点必须严格等于
   `[start,*user_points]`，sample assignment 必须为空，planner sentinel 调用次数必须为 0。
 
