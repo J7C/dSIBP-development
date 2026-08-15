@@ -117,7 +117,7 @@ $dSIBPPackageRoot = DirectoryName[DirectoryName[$InputFileName]];
 $dSIBPVersion = "021.0";
 
 (* ::Chapter:: *)
-(*å»ç»åæä»¶ç§æå®ç°*)
+(*冻结单文件私有实现*)
 
 (* ::Package:: *)
 (* 本模块为 018 提供图论与动量声明审计。它不生成 IBP，只把 topology 的结构圈数、

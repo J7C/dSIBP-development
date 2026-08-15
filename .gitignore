@@ -48,10 +48,11 @@ codex-independent-benchmark/todolist_temp.md
 **/result/
 **/temp/
 
-# MadStree independent validation retains only the lightweight machine-readable summary.
+# MadStree independent validation retains the summary and complete pointwise evidence.
 !package-MadStree/independent-validation/**/results/
 package-MadStree/independent-validation/**/results/*
 !package-MadStree/independent-validation/**/results/summary.wl
+!package-MadStree/independent-validation/**/results/evidence.json
 
 # FlintNDE independent validation retains its summary and serialized grouped plan.
 !package-FlintNDE/independent-validation/**/results/

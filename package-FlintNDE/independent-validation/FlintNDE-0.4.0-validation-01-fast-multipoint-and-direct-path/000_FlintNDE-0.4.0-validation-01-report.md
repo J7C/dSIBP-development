@@ -1,6 +1,6 @@
 # FlintNDE 0.4.0 独立检验报告
 
-日期：2026-08-13
+日期：2026-08-15
 对象：`versions/FlintNDE-0.4.0/` 当前实际源码
 结论：**通过**
 
@@ -10,6 +10,7 @@
 Horner；900 点输运 expected 是脚本直接计算的闭式解。执行均为单进程，工作精度
 60 位十进制（实际
 232 bits）。
+runner 在数值计算前删除本任务旧 `results/`、旧报告和 validation cache；删除失败会直接终止。
 
 ## 单节点覆盖桶：Fast 与 Horner
 
@@ -19,10 +20,10 @@ Horner；900 点输运 expected 是脚本直接计算的闭式解。执行均为
 
 | route | points | components | wall time | 最大逐分量绝对差 | status |
 | --- | ---: | ---: | ---: | ---: | --- |
-| fast subproduct/remainder tree | 257 | 2 | 0.011392 s | 1.965860e-62 | passed |
-| iterative Horner oracle | 257 | 2 | 0.014979 s | oracle | passed |
+| fast subproduct/remainder tree | 257 | 2 | 0.011853 s | 1.965860e-62 | passed |
+| iterative Horner oracle | 257 | 2 | 0.015514 s | oracle | passed |
 
-当前实测 Horner/fast 为 1.315x。复杂度模型：逐点 Horner
+当前实测 Horner/fast 为 1.309x。复杂度模型：逐点 Horner
 是 `O(n*m)` 标量操作；基于快速多项式算术的子积树/余数树约为 `O(M(n) log(m))`，当
 `m~n` 时常写为 `O(M(n) log(n))`。倍率只描述当前主机 case，不是复杂度证明。
 
@@ -60,11 +61,11 @@ Route D 由 `direct_user_point_path` 构造，实际节点 901 个、段
 
 | route | nodes | coverage | backend wall | total wall | algorithm |
 | --- | ---: | ---: | ---: | ---: | --- |
-| planned dense fast | 128 | 774 | 0.177104 s | 0.192402 s | fast buckets=20 |
-| direct user nodes | 901 | 0 | 0.976846 s | 0.989916 s | dense none; 900 ordinary segments |
+| planned dense fast | 128 | 774 | 0.184063 s | 0.200582 s | fast buckets=20 |
+| direct user nodes | 901 | 0 | 1.013356 s | 1.027013 s | dense none; 900 ordinary segments |
 
-direct/planned backend wall time 为 **5.516x**，总墙钟
-为 **5.145x**。
+direct/planned backend wall time 为 **5.505x**，总墙钟
+为 **5.120x**。
 
 这里 backend wall 是 `transport_planned_path` 内部返回的墙钟，只覆盖局部级数、输运和 dense
 求值；total wall 还包括 planned 路线的规划或 direct 路线的节点链构造，但两者均在已启动的

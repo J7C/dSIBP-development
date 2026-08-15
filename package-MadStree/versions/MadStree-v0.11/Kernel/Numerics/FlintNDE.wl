@@ -65,17 +65,6 @@ msComplexDecimalRecord[value_?NumericQ, digits_Integer] := <|
   "imag" -> msDecimalString[Im[N[value, digits]], digits]
 |>;
 
-(* On Windows the WolframScript kernel keeps the RunProcess symbol but does not execute it; Run returns an equally reliable exit code. *)
-msCommandArgument[value_] := Module[{text = ToString[value]},
-  If[StringContainsQ[text, WhitespaceCharacter],
-    "\"" <> StringReplace[text, "\"" -> "\\\""] <> "\"",
-    text
-  ]
-];
-
-msCommandString[arguments_List] := StringRiffle[msCommandArgument /@ arguments, " "];
-
-
 (* ::Chapter:: *)
 (* Build the one-dimensional system along the affine kinematic path *)
 
@@ -261,21 +250,14 @@ msResolvePythonExecutable[Automatic] := With[{override = Quiet[Environment["MADS
 ];
 
 
-(* Truncate captured backend output so failure messages stay readable. *)
-msBackendLogTail[file_String] := Module[{text},
-  If[! FileExistsQ[file], Return["<no backend output captured>"]];
-  text = Import[file, "Text", CharacterEncoding -> "UTF-8"];
-  If[StringLength[text] > 2000, "..." <> StringTake[text, -2000], text]
-];
-
-
 (* 短 token 只负责运行文件去重；独立 helper 允许回归测试固定写入目标。 *)
 msFlintNDECreateToken[] := StringTake[StringDelete[CreateUUID[], "-"], 16];
 
 
 msExecuteFlintNDEAdapter[inputData_Association, pythonExecutable_, runtimeDirectory_String] := Module[
   {cacheDirectory, cacheFile, cached, transportDirectory, identifier, inputFile,
-   adapterFile, logFile, command, commandText, process, imported, logTail,
+   adapterFile, logFile, command, processResult, exitCode, standardOutput,
+   standardError, logText, logTail, process, imported, launchFailure,
    pathFailure, inputWrite},
   cacheFile = msFlintNDECacheFile[runtimeDirectory, inputData];
   cacheDirectory = DirectoryName[cacheFile];
@@ -315,17 +297,47 @@ msExecuteFlintNDEAdapter[inputData_Association, pythonExecutable_, runtimeDirect
     inputFile,
     cacheFile
   };
-  commandText = "set PYTHONIOENCODING=utf-8&& " <> msCommandString[command] <>
-    " > " <> msCommandArgument[logFile] <> " 2>&1";
+  (* 参数列表启动不经过 shell；stdout/stderr 由 Wolfram 捕获后写入 UTF-8 日志。 *)
+  launchFailure = False;
+  processResult = Quiet@Check[
+    RunProcess[command, All, ProcessDirectory -> $MadStreePackageDirectory],
+    launchFailure = True;
+    $Failed
+  ];
+  If[AssociationQ[processResult],
+    exitCode = Lookup[processResult, "ExitCode", $Failed];
+    standardOutput = Lookup[processResult, "StandardOutput", ""];
+    standardError = Lookup[processResult, "StandardError", ""],
+    launchFailure = True;
+    exitCode = $Failed;
+    standardOutput = "";
+    standardError = ""
+  ];
+  logText = StringRiffle[
+    Select[{standardOutput, standardError}, StringLength[#] > 0 &],
+    "\n"
+  ];
+  Quiet@Check[Export[logFile, logText, "Text", CharacterEncoding -> "UTF-8"], Null];
+  logTail = If[
+    StringLength[logText] > 2000,
+    "..." <> StringTake[logText, -2000],
+    If[StringLength[logText] > 0, logText, "<no backend output captured>"]
+  ];
   process = <|
-    "ExitCode" -> Run[commandText],
+    "ExitCode" -> exitCode,
     "Command" -> command,
+    "WorkingDirectory" -> $MadStreePackageDirectory,
+    "StandardOutput" -> standardOutput,
+    "StandardError" -> standardError,
     "runtimeDirectory" -> runtimeDirectory,
     "inputFile" -> inputFile,
     "cacheFile" -> cacheFile,
     "logFile" -> logFile
   |>;
-  logTail = msBackendLogTail[logFile];
+  If[launchFailure,
+    Message[MSEvaluatePath::backendLaunchFailed, pythonExecutable, logTail];
+    Return[Failure["FlintNDELaunchFailed", <|"process" -> process, "stderr" -> logTail|>]]
+  ];
   If[! FileExistsQ[cacheFile],
     If[StringContainsQ[logTail, Alternatives[
         "No module named 'flint'", "No module named \"flint\"", "ModuleNotFoundError: No module named 'flint'"

@@ -190,6 +190,9 @@ results_temp/
 ```
 
 `MSRuntimeDirectory -> path` 的显式路径就是运行根本身；绝对路径直接使用，相对路径相对当前调用脚本目录解析，不依赖进程工作目录，也不会再次追加 `results_temp`。Windows 下在目录创建和 Python 启动前检查完整 cache/input/log 路径；超过安全上限时独立返回 `RuntimePathTooLong` 及实际长度。`RuntimeInputWriteFailed`、`PythonFlintUnavailable`、`FlintNDELaunchFailed`、`FlintNDEOutputMissing` 和 `FlintNDEOutputInvalid` 保持互斥故障边界。成功结果缓存键同时包含请求内容以及 `Backend/flintnde_transport.py`、Vendor `pyproject.toml` 和排序后的 `flintnde/*.py` 的 SHA-256，因此当前版本原位修复后不会误复用与源码身份不匹配的计划。Python 按缺省规则在相应 package 旁建立 `__pycache__/`，该目录及 `*.pyc` 已由 Git 忽略。除这些调用侧缓存外，程序包源码目录不接收运行产物。
+MadStree adapter 与 Vendor Wolfram bridge 均通过参数列表 `RunProcess` 启动 Python，不经过
+shell `Run`、命令引号拼接或重定向，也不提供重试 fallback；连续调用的 Windows DLL 初始化
+回归由当前数值门禁和 Vendor `25/25` 接口测试共同覆盖。
 
 裸用户点结果保存在 `MSEvaluatePath` 返回值的 `"saved"` 记录中；`"tmp"` 点只参与输运。可用
 
@@ -211,7 +214,8 @@ MSExportEvaluationData[result, MSOutputDirectory -> outputDirectory]
   三顶点 massless 树的共同时间幂正规化 `a1=a2=a3=1+ep`；用户只要求返回到 `ep^0`，
   程序在数值 NDE 前由符号边界与 DE 认证最低幂为 `0`，再选择生产/验证点并提取有限项。
 
-六个 examples 在 v0.11 下全部 fresh 运行并退出 `0`；Example 06 自适应检查为 `11/11`。
+六个 examples 已在删除既有 `results/` 与 `results_temp/` 后全部 fresh 运行并退出 `0`；
+Example 06 自适应检查为 `13/13`，使用 3 个生产点、2 个独立验证点且 `cacheHit=False`。
 
 ## 当前边界
 

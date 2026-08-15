@@ -245,24 +245,14 @@ flintNDEEncode[value_Real] := ToString[value, InputForm];
 flintNDEEncode[value_] := value;
 
 
-(* Run 在当前 Wolfram 安装与 MadStree 中均可用；参数只在含空白时加引号，
-   日志重定向仍使用同一转义函数，避免空格路径截断。 *)
-flintNDECommandArgument[value_] := Module[{text = ToString[value]},
-  If[StringContainsQ[text, WhitespaceCharacter],
-    "\"" <> StringReplace[text, "\"" -> "\\\""] <> "\"",
-    text
-  ]
-];
-flintNDECommandString[arguments_List] :=
-  StringRiffle[flintNDECommandArgument /@ arguments, " "];
 flintNDEInvoke[
   request_Association,
   pythonOption_,
   workDirectoryOption_
 ] := Module[
   {python, workDirectory, bridgeDirectory, requestFile, outputFile, logFile, token, command,
-    commandText, previousDirectory, exitCode, logText, process, result,
-    directoryFailure, pathFailure, requestWrite, outputLoad},
+    processResult, exitCode, standardOutput, standardError, logText, process, result,
+    launchFailure, pathFailure, requestWrite, outputLoad},
   python = flintNDEResolvePython[pythonOption];
   If[Head[python] === Failure, Return[python]];
   workDirectory = flintNDEResolveWorkDirectory[workDirectoryOption];
@@ -295,26 +285,32 @@ flintNDEInvoke[
     requestFile,
     outputFile
   };
-  commandText = flintNDECommandString[command] <> " > " <>
-    flintNDECommandArgument[logFile] <> " 2>&1";
-  previousDirectory = Directory[];
-  directoryFailure = False;
-  exitCode = Quiet@Check[
-    SetDirectory[$FlintNDEVersionDirectory];
-    Run[commandText],
-    directoryFailure = True;
+  (* 参数列表启动不经过 shell；连续加载 FLINT DLL 时不保留旧 Run/重定向入口。 *)
+  launchFailure = False;
+  processResult = Quiet@Check[
+    RunProcess[command, All, ProcessDirectory -> $FlintNDEVersionDirectory],
+    launchFailure = True;
     $Failed
   ];
-  Quiet@Check[SetDirectory[previousDirectory], Null];
-  logText = If[FileExistsQ[logFile], Import[logFile, "Text"], ""];
+  If[AssociationQ[processResult],
+    exitCode = Lookup[processResult, "ExitCode", $Failed];
+    standardOutput = Lookup[processResult, "StandardOutput", ""];
+    standardError = Lookup[processResult, "StandardError", ""],
+    launchFailure = True;
+    exitCode = $Failed;
+    standardOutput = "";
+    standardError = ""
+  ];
+  logText = StringRiffle[Select[{standardOutput, standardError}, StringLength[#] > 0 &], "\n"];
+  Quiet@Check[Export[logFile, logText, "Text", CharacterEncoding -> "UTF-8"], Null];
   process = <|
     "ExitCode" -> exitCode,
     "Command" -> command,
     "WorkingDirectory" -> $FlintNDEVersionDirectory,
-    "StandardOutput" -> logText,
-    "StandardError" -> logText
+    "StandardOutput" -> standardOutput,
+    "StandardError" -> standardError
   |>;
-  If[directoryFailure,
+  If[launchFailure,
     Return[Failure["BridgeLaunchFailed", <|"process" -> process|>]]
   ];
   If[! FileExistsQ[outputFile],

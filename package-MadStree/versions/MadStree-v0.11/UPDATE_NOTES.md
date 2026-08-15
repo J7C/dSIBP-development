@@ -42,6 +42,9 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
   `RuntimePathTooLong`；输入写入、缺少 `python-flint`、后端启动、后端无输出和输出损坏
   分别返回独立错误，不再用安装提示覆盖真实路径错误。
 - `MadStree package loaded` 只在 16 个模块文件及其代表性定义全部通过后打印。
+- MadStree adapter 与 Vendor FlintNDE Wolfram bridge 均删除 shell `Run` launcher、引号 helper
+  和重定向，改用参数列表 `RunProcess`；修复连续 Python/FLINT 启动的 Windows
+  `0xC0000142`，不增加重试 fallback。
 - `MSExportEvaluationData` 消费 `MSEvaluatePath` 的逐点结果和逐段 refinement 信息。
   任一请求格式写出失败时返回 `EvaluationExportFailed`，不能因另一格式已写出而返回
   `"written"`。
@@ -61,9 +64,11 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
 - Laurent valuation 8/8；真实 9 主积分、9 边界分支三顶点结构证书得到 `leadingPower=0`。
 - 完整 Python 回归 162/162，Wolfram `Needs["FlintNDE`"]` 25/25；MadStree 浅层目录与导出
   门禁 10/10。独立包与 Vendor 的 42 个非缓存交付文件逐文件 SHA-256 一致。
-- v0.11 独立验证 17/17：900 点乘 3 masters 全分量互检，最大绝对差 `5.8262e-43`；
+- v0.11 独立验证 18/18：runner 先删除旧结果/runtime/报告并检查唯一 `results_temp` 根；
+  900 点乘 3 masters 全分量互检，最大绝对差 `5.8262e-43`；
   自动规划路线 894 点进入 6 个 fast 桶，端到端与后端分别比严格用户节点路线快
-  2.5269 倍和 4.5128 倍。报告位于
+  `2.5431` 倍和 `4.8023` 倍。报告、summary 和完整逐点 evidence 均按 UTF-8/LF 写出；runner 在当前 Windows
+  `wolframscript -file` 下恢复可严格 UTF-8 往返的源码文本段，中文标题与内容无乱码。报告位于
   `independent-validation/MadStree-v0.11-validation-01-flintnde-planned-vs-user-nodes/`。
 - 中英文手册均经 XeLaTeX/BibTeX 构建，日志无未定义引用，首页和数值接口页目检通过。
 

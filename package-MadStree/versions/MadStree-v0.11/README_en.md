@@ -186,6 +186,7 @@ results_temp/
 ```
 
 An explicit `MSRuntimeDirectory -> path` denotes the runtime root itself. Absolute paths are used directly and relative paths are resolved against the calling script directory; MadStree does not append another `results_temp`. On Windows, complete cache/input/log paths are checked before directory creation or Python launch. An overlong path returns `RuntimePathTooLong` with its actual length. `RuntimeInputWriteFailed`, `PythonFlintUnavailable`, `FlintNDELaunchFailed`, `FlintNDEOutputMissing`, and `FlintNDEOutputInvalid` retain distinct failure boundaries. A successful-result cache key includes both the request and SHA-256 identities of `Backend/flintnde_transport.py`, the Vendor `pyproject.toml`, and sorted `flintnde/*.py`; an in-place source fix therefore cannot reuse a plan with a different source identity. Apart from caller-side caches, the package source directory never receives run artifacts.
+Both the MadStree adapter and the Vendor Wolfram bridge launch Python with argument-list `RunProcess`; shell `Run`, quoting helpers, redirection, and retry fallbacks do not exist. Current numerical gates and the Vendor `25/25` interface regression cover repeated Windows DLL initialization.
 
 Bare user points are returned under the `"saved"` records of `MSEvaluatePath`; `"tmp"` points participate only in transport. Export saved points with
 
@@ -205,7 +206,7 @@ The full formulas, the massless `4 -> 2` quotient, contact shifts and the top-to
 - [05_massive_three_vertex_tree.wl](Examples/05_massive_three_vertex_tree.wl): three-vertex massive tree with the `+++` vertex structure and non-half-integer nu, followed by a batch multi-point evaluation with CSV/JSON export.
 - [06_massless_three_vertex_ep_regularization.wl](Examples/06_massless_three_vertex_ep_regularization.wl): a massless three-vertex chain with `a1=a2=a3=1+ep`; the symbolic boundary and DE certify leading power zero before numerical NDE work, after which the program selects production/validation points and extracts the finite part.
 
-All six examples passed fresh v0.11 runs with `Example PASSED` and exit code `0`.
+After deleting the existing `results/` and `results_temp/` trees, all six examples passed fresh v0.11 runs with `Example PASSED` and exit code `0`. Example 06 passed `13/13` checks with three production points, two independent validation points, and no cache hit.
 
 ## Current boundaries
 

@@ -1,6 +1,6 @@
 {
   "schema": "flintnde_0_4_0_independent_validation_v1",
-  "date": "2026-08-13",
+  "date": "2026-08-15",
   "target": "package-FlintNDE/versions/FlintNDE-0.4.0",
   "environment": {
     "python": "3.13.2 (main, Feb 12 2025, 14:49:53) [MSC v.1942 64 bit (AMD64)]",
@@ -28,9 +28,18 @@
     ]
   },
   "source_sha256": {
-    "flintnde_init_py": "5c9f8a65521e30c8227d2f68ddbcc3addbdca60101f68fa209b042b87c4963ef",
+    "validation_runner_py": "b6f379b5fda6bdcceb3b7b66881ff9627ad0d613c379228239985e7803e322a3",
+    "flintnde_init_py": "ebd3e0de94a5936d9a64a8a7fbed71fd895bb572ebebda514e02e573e0ee7d7c",
     "transport_py": "d27586e97f519ec02f38613b777b5717f9091df721f374b39ff76949c1affcb7",
     "singularity_jump_py": "be1eb8fbcc551d96179d58f528dfabf4e5628960c6a44aaddc579935d36226d2"
+  },
+  "fresh_run": {
+    "cleanup_before_numerical_evaluation": true,
+    "deleted_targets": [
+      "results/",
+      "000_FlintNDE-0.4.0-validation-01-report.md",
+      "__pycache__/"
+    ]
   },
   "fast_multipoint_oracle": {
     "algorithm": "fast",
@@ -40,9 +49,9 @@
     "polynomial_degree": 64,
     "point_count": 257,
     "component_count": 2,
-    "fast_seconds": 0.011391799984266981,
-    "horner_seconds": 0.01497889999882318,
-    "horner_over_fast_ratio": 1.314884392239179,
+    "fast_seconds": 0.01185290003195405,
+    "horner_seconds": 0.015513800026383251,
+    "horner_over_fast_ratio": 1.308861121291822,
     "complexity": {
       "horner": "O(n*m) scalar operations for degree n at m points",
       "fast": "about O(M(n)*log(m)) with fast polynomial arithmetic; O(M(n)*log(n)) when m is comparable to n"
@@ -4176,9 +4185,9 @@
       "parallel": "single process"
     },
     "planned_dense_fast": {
-      "planning_seconds": 0.015289099974324927,
-      "backend_wall_seconds": 0.17710430000443012,
-      "total_wall_seconds": 0.19240189998527057,
+      "planning_seconds": 0.01650800002971664,
+      "backend_wall_seconds": 0.18406290002167225,
+      "total_wall_seconds": 0.20058220002101734,
       "node_count": 128,
       "segment_count": 127,
       "covered_sample_count": 774,
@@ -4889,9 +4898,9 @@
       }
     },
     "direct_user_point_path": {
-      "construction_seconds": 0.013058000011369586,
-      "backend_wall_seconds": 0.9768462999782059,
-      "total_wall_seconds": 0.989916099992115,
+      "construction_seconds": 0.013642699981573969,
+      "backend_wall_seconds": 1.0133555000065826,
+      "total_wall_seconds": 1.0270130999851972,
       "node_count": 901,
       "segment_count": 900,
       "covered_sample_count": 0,
@@ -4908,8 +4917,8 @@
       }
     },
     "comparison": {
-      "direct_over_planned_backend_ratio": 5.5156554637790896,
-      "direct_over_planned_total_ratio": 5.145043266557652,
+      "direct_over_planned_backend_ratio": 5.5054848091998245,
+      "direct_over_planned_total_ratio": 5.120160711556584,
       "planned_vs_closed_max_component_absolute_error": 5.105921301738498e-41,
       "direct_vs_closed_max_component_absolute_error": 1.8962763079925317e-30,
       "planned_vs_direct_max_component_absolute_error": 1.8962763079416705e-30,

@@ -39,6 +39,8 @@ Wolfram 入口的 `"WorkDirectory"` 明确表示临时运行根本身；`Automat
 Windows 完整路径超过传统 Win32/Wolfram 安全上限时，程序在写文件和启动 Python 前独立返回
 `RuntimePathTooLong`。`RuntimeInputWriteFailed`、`PythonFlintUnavailable`、
 `BridgeLaunchFailed` 和 `BridgeOutputMissing` 分别保留真实故障边界。
+Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼接或重定向；连续调用不会
+保留旧 `Run` launcher、引号转义 helper 或兼容 fallback。
 
 - 一般解析矩阵在普通点的 Cauchy--DFT Taylor 系数重建与高精度输运；
 - exact Q(i)(x) 矩阵逐元约分、有限/无穷远奇点发现与命名路径规划；
@@ -52,6 +54,8 @@ Windows 完整路径超过传统 Win32/Wolfram 安全上限时，程序在写文
 
 - `versions/FlintNDE-0.4.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
 - `examples/`：通过顶部路径变量加载程序包的示例；
+- `independent-validation-task/`：版本化独立检验任务书；
+- `independent-validation/`：会先清除自身旧结果再 fresh 运行的独立 runner、summary 和报告；
 - `Documentation/`：论文源文件、论文结构和发布路线规划；
 - `../参考资料（文献、笔记、代码）/FlintNDE_ref/`：程序包论文与算法使用的外部参考资料。
 
@@ -65,12 +69,13 @@ Windows 完整路径超过传统 Win32/Wolfram 安全上限时，程序在写文
 当前版本不依赖 BlackHoleQNM 的 IBP、积分族或运行配置。QNM 只作为一个独立的
 二阶常微分方程示例放在 `examples/`，不进入程序包本体接口。
 
-公开 examples 还包括 `ep_parallel.py` 和 `ep_parallel_mathematica.wl`。两者分别展示 Python
-`run_ep_tasks(..., parallel_task_count=12)` 与 Wolfram
+公开目录实际保留七个 examples：QNM 双端匹配、正则奇点 `{a,b,C}` 保存、指数型奇点
+`{phi,a,b,C}` 保存/复用、Python 固定 `ep` 并行、自适应 Laurent 重构、Wolfram 固定 `ep`
+并行和 Wolfram exact 矩阵接口。`ep_parallel.py` 与 `ep_parallel_mathematica.wl` 分别展示
+`run_ep_tasks(..., parallel_task_count=12)` 与
 `FlintNDEEvaluateEpBatch[..., ParallelTaskCount -> 12]`：缺省最多并行 12 个独立固定 `ep`
 任务，实际并发为该值与任务数的较小者，超出的任务在 worker 完成后自动续交。这个任务级
-选项不同于单进程 python-flint `ctx.threads`。原有三个 examples 覆盖 QNM 双端匹配、正则
-奇点 `{a,b,C}` 保存及指数型奇点 `{phi,a,b,C}` 保存/复用。
+选项不同于单进程 python-flint `ctx.threads`。
 
 用户环境要求有三项：Python 3.10 或更高版本、`python-flint>=0.6` 和 `sympy>=1.12`。安装发布的
 wheel、从源码普通安装以及开发者可编辑安装分别为

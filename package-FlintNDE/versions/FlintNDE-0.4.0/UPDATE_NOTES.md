@@ -61,6 +61,9 @@
    `results_temp/`，其下使用 `bridge/` 和短 token 文件名。Windows 完整路径超过 259 字符时
    在任何写入和 Python 启动前返回 `RuntimePathTooLong`。输入写入、缺少 `python-flint`、
    bridge 启动失败、无输出和输出损坏均保留独立错误标签。
+9. **无 shell 的 Wolfram launcher**：物理删除 `Run` 命令字符串、引号转义和日志重定向
+   helper，改用参数列表 `RunProcess` 与显式 `ProcessDirectory`。这修复了 Windows 下同一
+   Wolfram kernel 连续加载 FLINT DLL 时可复现的 `0xC0000142` 启动失败，不增加重试或 fallback。
 
 ## 精度与认证修复
 
@@ -101,12 +104,12 @@
 - 完整 Python 回归 162/162；Wolfram `Needs["FlintNDE`"]` 端到端 25/25，其中新增 4 项覆盖
   浅层目录、259/260 字符边界及 Python 前置输入写入失败。
 - 独立包与 MadStree v0.11 Vendor 的 42 个非缓存交付文件逐文件 SHA-256 一致。
-- 0.4.0 独立检验：257 点、64 阶 fast/Horner 最大差 `1.96586e-62`，fast 实测快
-  1.35474 倍；900 点 planned/direct 共 1800 分量通过闭式解和路线互检，planned 为
-  2 节点且 fast 覆盖 899 点，direct 为 901 节点且 planner sentinel 为 0，后端耗时比
-  12.9751 倍。报告位于
+- 0.4.0 独立检验：257 点、64 阶 fast/Horner 最大差 `1.96586e-62`；900 点 planned/direct
+  共 1800 分量通过闭式解和路线互检，planned 为 128 节点、覆盖 774 个 dense 点，direct
+  为 901 节点且 planner sentinel 为 0；本轮 direct/planned 后端与总墙钟比为
+  `5.505/5.120`。runner 在计算前删除旧结果和报告。报告位于
   `independent-validation/FlintNDE-0.4.0-validation-01-fast-multipoint-and-direct-path/`。
-- 三个仓库 examples 均从 0.4.0 路径 fresh 执行；正式 PDF 经 XeLaTeX/BibTeX 构建，
+- 七个仓库 examples 均在删除旧 `results/`/`results_temp/` 后从 0.4.0 路径 fresh 执行；正式 PDF 经 XeLaTeX/BibTeX 构建，
   日志无未定义引用，抽查页目检通过。
 
 ## 已知限制

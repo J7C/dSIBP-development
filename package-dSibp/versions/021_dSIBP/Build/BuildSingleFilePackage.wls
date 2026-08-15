@@ -68,6 +68,7 @@ If[Head[firstGet] === Missing,
 
 loaderPrefix = StringTrim[StringTake[loaderSource, firstGet - 1]];
 moduleSources = Import[#, "Text", CharacterEncoding -> "UTF-8"] & /@ modulePaths;
+privateImplementationTitle = FromCharacterCode[{20923, 32467, 21333, 25991, 20214, 31169, 26377, 23454, 29616}];
 
 If[! FreeQ[moduleSources, $Failed],
  Print["ERROR: 至少一个 021 模块无法读取。"];
@@ -76,7 +77,7 @@ If[! FreeQ[moduleSources, $Failed],
 
 singleFileSource = StringRiffle[
    Join[
-    {loaderPrefix, "(* ::Chapter:: *)\n(*冻结单文件私有实现*)"},
+    {loaderPrefix, "(* ::Chapter:: *)\n(*" <> privateImplementationTitle <> "*)"},
     StringTrim /@ moduleSources,
     {"End[];\nEndPackage[];\n"}
     ],

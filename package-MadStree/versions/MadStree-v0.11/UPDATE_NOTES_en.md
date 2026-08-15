@@ -51,6 +51,9 @@ directory creation or Python launch; paths longer than 259 characters return the
 and invalid output retain distinct error tags. The loaded notice is printed only after all sixteen
 module files and representative definitions pass their contracts. A partial CSV/JSON export can
 no longer return `"written"`.
+Both the MadStree adapter and the Vendor FlintNDE Wolfram bridge remove shell `Run` launchers,
+quoting helpers, and redirection in favor of argument-list `RunProcess`. This fixes the reproducible
+Windows `0xC0000142` failure under consecutive Python/FLINT launches without adding retries or a fallback.
 
 ## Validation status
 
@@ -61,10 +64,13 @@ no longer return `"written"`.
 - The full Python regression passed 162/162, Wolfram `Needs["FlintNDE`"]` passed 25/25, and the
   MadStree shallow-runtime/export gate passed 10/10. All 42 non-cache delivery files are
   SHA-256-identical between the standalone backend and the Vendor copy.
-- The v0.11 independent validation passed 17/17. Across 900 points and three masters, the largest
+- The v0.11 independent validation passed 18/18 after deleting its old results, runtime, and report
+  and checking the unique validation-local `results_temp` root. Across 900 points and three masters, the largest
   componentwise absolute difference was `5.8262e-43`; 894 points entered six fast buckets. The
-  planned route was 2.5269 times faster end to end and 4.5128 times faster in backend time than
-  the strict user-node route.
+  planned route was 2.5431 times faster end to end and 4.8023 times faster in backend time than
+  the strict user-node route. The report, summary, and full pointwise evidence are UTF-8/LF; under the current Windows
+  `wolframscript -file`, the runner restores only source-text runs that round-trip strictly as UTF-8,
+  so its Chinese title and content remain readable.
 - Both manuals passed XeLaTeX/BibTeX builds with no undefined references; the title and numerical
   interface pages passed visual inspection.
 

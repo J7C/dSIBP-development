@@ -85,6 +85,8 @@ bridge 文件位于其 `bridge/` 子目录，文件名为短 token。Windows 下
 输入写入失败、缺少 `python-flint`、Python bridge 启动失败和零退出但无输出分别返回
 `RuntimeInputWriteFailed`、`PythonFlintUnavailable`、`BridgeLaunchFailed` 和
 `BridgeOutputMissing`。
+bridge 使用参数列表 `RunProcess` 和显式 `ProcessDirectory`，stdout/stderr 由 Wolfram 捕获后写入
+短日志；不经过 shell 命令拼接、重定向或旧 launcher fallback。
 
 显式已知的 `P(x)+Sum R_j/(x-p_j)` 也可用 `FlintNDEPartialFractionSystem` 构造；这不是
 要求用户预提取奇点，`FlintNDERationalSystem` 仍会自动发现并选择路线。

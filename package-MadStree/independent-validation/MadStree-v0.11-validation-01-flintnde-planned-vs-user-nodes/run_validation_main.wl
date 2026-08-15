@@ -12,8 +12,7 @@
 validationRoot = DirectoryName[$InputFileName];
 madStreeRoot = ExpandFileName@FileNameJoin[{validationRoot, "..", "..", "versions", "MadStree-v0.11"}];
 kernelRoot = FileNameJoin[{madStreeRoot, "Kernel"}];
-repositoryRoot = ExpandFileName@FileNameJoin[{validationRoot, "..", "..", ".."}];
-runtimeRoot = FileNameJoin[{repositoryRoot, ".madstree-v011-validation-runtime", CreateUUID[]}];
+runtimeRoot = FileNameJoin[{validationRoot, "results_temp"}];
 runtimeA = FileNameJoin[{runtimeRoot, "route-a"}];
 runtimeB = FileNameJoin[{runtimeRoot, "route-b"}];
 resultsRoot = FileNameJoin[{validationRoot, "results"}];
@@ -31,8 +30,54 @@ boundaryScale = 15;
 boundarySeriesOrder = 24;
 strictNodeMaximumPoleRatio = 0.31838634237934677799885386319704520539;
 
+(* fresh 门禁：旧中间目录、最终结果或报告删除失败时立即停止，禁止复用或混写。 *)
+Scan[
+  Function[path,
+    If[DirectoryQ[path],
+      Quiet@Check[DeleteDirectory[path, DeleteContents -> True], $Failed];
+      If[DirectoryQ[path], Print["fresh cleanup failed: ", path]; Exit[1]]
+    ]
+  ],
+  {runtimeRoot, resultsRoot}
+];
+If[FileExistsQ[reportFile],
+  Quiet@Check[DeleteFile[reportFile], $Failed];
+  If[FileExistsQ[reportFile], Print["fresh cleanup failed: ", reportFile]; Exit[1]]
+];
 Scan[If[! DirectoryQ[#], CreateDirectory[#, CreateIntermediateDirectories -> True]] &, {resultsRoot, runtimeA, runtimeB}];
 SetEnvironment["PYTHONDONTWRITEBYTECODE" -> "1"];
+
+
+(* 直接写 UTF-8/LF，避免 Windows 文本导出把 CR 留成 Git 尾随空白。 *)
+writeUTF8LF[path_String, text_String] := Module[{stream, normalized},
+  normalized = StringReplace[text, {"\r\n" -> "\n", "\r" -> "\n"}];
+  stream = OpenWrite[path, BinaryFormat -> True];
+  If[stream === $Failed, Return[$Failed]];
+  BinaryWrite[stream, ToCharacterCode[normalized, "UTF-8"], "Byte"];
+  Close[stream]
+];
+
+
+(* Windows wolframscript -file 可能先按单字节代码页解析 UTF-8 源码；这里只恢复能严格
+   UTF-8 往返的低字节段，已正确解析的 Unicode 和用户路径保持不变。 *)
+restoreUTF8SourceText[text_String] := StringJoin@Map[
+  Function[group,
+    Module[{part, codes, decoded},
+      part = StringJoin[group];
+      If[
+        AllTrue[ToCharacterCode[part], # <= 255 &],
+        codes = ToCharacterCode[part, "ISOLatin1"];
+        decoded = Quiet@Check[FromCharacterCode[codes, "UTF-8"], $Failed];
+        If[StringQ[decoded] && ToCharacterCode[decoded, "UTF-8"] === codes, decoded, part],
+        part
+      ]
+    ]
+  ],
+  SplitBy[
+    Characters[text],
+    Function[character, First[ToCharacterCode[character]] <= 255]
+  ]
+];
 
 
 (* ::Chapter:: *)
@@ -236,6 +281,7 @@ checks = <|
   "routeBOnlyNodes" -> Lookup[algorithmsB, "node", 0] === 904 && Total[Values@KeyDrop[algorithmsB, "node"]] === 0,
   "directUserNodeContract" -> directNodeContract,
   "madStreeDidNotPlanNodes" -> outerHasNoNodes,
+  "runtimeRootContract" -> DirectoryName[runtimeRoot] === validationRoot && FileNameTake[runtimeRoot] === "results_temp",
   "coldSeparateProcesses" -> ! TrueQ[routeA[["flintNDE", "cacheHit"]]] && ! TrueQ[routeB[["flintNDE", "cacheHit"]]] &&
     routeA[["flintNDE", "process", "ExitCode"]] === 0 && routeB[["flintNDE", "process", "ExitCode"]] === 0,
   "allTargetsMet" -> TrueQ[routeA[["flintNDE", "targetRelativeErrorMet"]]] && TrueQ[routeB[["flintNDE", "targetRelativeErrorMet"]]],
@@ -252,11 +298,19 @@ status = If[passedCount === Length[checks], "passed", "failed"];
 evidence = <|
   "schema" -> "madstree_v0.11_planned_vs_user_nodes_validation_v1",
   "status" -> status,
-  "commit" -> commit,
+  "baselineCommit" -> commit,
   "digests" -> <|
     "MadStreeKernelSHA256" -> sha256[FileNameJoin[{madStreeRoot, "Kernel", "MadStree.wl"}]],
+    "flintNDEModuleSHA256" -> sha256[FileNameJoin[{madStreeRoot, "Kernel", "Numerics", "FlintNDE.wl"}]],
     "adapterSHA256" -> sha256[FileNameJoin[{madStreeRoot, "Backend", "flintnde_transport.py"}]],
-    "vendorFlintNDETreeSHA256" -> flintTreeDigest[vendorRoot]
+    "vendorFlintNDETreeSHA256" -> flintTreeDigest[vendorRoot],
+    "validationRunnerSHA256" -> sha256[FileNameJoin[{validationRoot, "run_validation_main.wl"}]]
+  |>,
+  "freshRun" -> <|
+    "cleanupBeforeNumericalEvaluation" -> True,
+    "deletedTargets" -> {"results/", "results_temp/", FileNameTake[reportFile]},
+    "runtimeRoot" -> runtimeRoot,
+    "repositoryRootRuntimeUsed" -> False
   |>,
   "convention" -> <|
     "columnVector" -> "Y'=A(s)Y",
@@ -326,10 +380,13 @@ evidence = <|
   |>,
   "checks" -> checks
 |>;
-Export[evidenceFile, evidence, "RawJSON"];
+If[writeUTF8LF[evidenceFile, ExportString[evidence, "RawJSON"] <> "\n"] === $Failed,
+  Print["evidence write failed: ", evidenceFile]; Exit[1]
+];
 
 summary = <|
-  "status" -> status, "commit" -> commit, "digests" -> evidence["digests"],
+  "status" -> status, "baselineCommit" -> evidence["baselineCommit"], "digests" -> evidence["digests"],
+  "freshRun" -> evidence["freshRun"],
   "convention" -> evidence["convention"],
   "input" -> KeyDrop[evidence["input"], "exactCoordinates"],
   "routeA" -> <|"timing" -> timingA, "algorithmCounts" -> algorithmsA,
@@ -343,7 +400,9 @@ summary = <|
   "checks" -> checks, "passedCount" -> passedCount, "totalCount" -> Length[checks],
   "evidenceFile" -> evidenceFile
 |>;
-Export[summaryFile, ToString[summary, InputForm] <> "\n", "Text", CharacterEncoding -> "UTF-8"];
+If[writeUTF8LF[summaryFile, ToString[summary, InputForm] <> "\n"] === $Failed,
+  Print["summary write failed: ", summaryFile]; Exit[1]
+];
 
 segmentRows = MapThread[
   "| " <> ToString[#1["segmentIndex"]] <> " | " <>
@@ -356,10 +415,12 @@ segmentRows = MapThread[
 report = StringRiffle[{
   "# MadStree v0.11 独立验证 01：FlintNDE 自动规划与严格用户节点",
   "",
-  "- 日期：2026-08-13",
+  "- 日期：" <> DateString[{"Year", "-", "Month", "-", "Day"}],
   "- 状态：`" <> status <> "`（" <> ToString[passedCount] <> "/" <> ToString[Length[checks]] <> "）",
-  "- commit：`" <> commit <> "`",
-  "- MadStree/adapter/FlintNDE tree SHA-256：`" <> StringRiffle[Values[evidence["digests"]], "` / `"] <> "`。",
+  "- Git baseline commit（运行时工作树源码由下列 SHA-256 标识）：`" <>
+    evidence["baselineCommit"] <> "`",
+  "- MadStree kernel/numerical module/adapter/FlintNDE tree/validation runner SHA-256：`" <>
+    StringRiffle[Values[evidence["digests"]], "` / `"] <> "`。",
   "- 约定：`Y'=A(s)Y`；master/normalization 见 `results/summary.wl`；boundaryKind=`" <>
     evidence[["convention", "boundaryKind"]] <> "`，seriesOrder=" <> ToString[evidence[["convention", "boundarySeriesOrder"]]] <>
     "，Hankel branch=`" <> evidence[["convention", "HankelBranch"]] <> "`。",
@@ -367,6 +428,8 @@ report = StringRiffle[{
     ToString[evidence[["convention", "normalization"]], InputForm] <> "`。",
   "",
   "## 输入与职责边界",
+  "",
+  "runner 在数值计算前删除本任务旧 `results/`、`results_temp/` 和旧报告；删除失败会直接退出。运行根固定为验证目录下唯一的 `results_temp/`，不读取仓库根旧 runtime。",
   "",
   "exact 900 点：`k1=-900 I+a/10`、`k2=-30 I+n/10+I m/10`、`q=1,a1=a2=1`，a/n/m 顺序。工作精度 40 位，边界和普通点输运主/参考阶 64/88，目标相对误差 `1e-18`。共同 BoundaryScale=15、seriesOrder=24；阻尼基数 30 给出 matching anchor `k1=-900 I,k2=-30 I`。exact 拉回极点预审的最大 `step/nearest-pole-distance=0.3183863423793468<0.60`；Route B 的正式成功执行和实际节点链构成黑盒复核。全部用户点避开 dlog 奇点；边界是正则奇点 Frobenius 起点，实际 transformed boundary path、convergenceRatio 和 physical anchor 见 JSON。",
   "",
@@ -408,7 +471,10 @@ report = StringRiffle[{
   "",
   If[status === "passed", "本任务通过。", "本任务失败；失败键见 `results/summary.wl`，不得据此认证 v0.11。"]
 }, "\n"];
-Export[reportFile, report, "Text", CharacterEncoding -> "UTF-8"];
+report = restoreUTF8SourceText[report];
+If[writeUTF8LF[reportFile, report <> "\n"] === $Failed,
+  Print["report write failed: ", reportFile]; Exit[1]
+];
 
 If[DirectoryQ[runtimeRoot], DeleteDirectory[runtimeRoot, DeleteContents -> True]];
 Print["MadStree v0.11 independent validation: ", passedCount, "/", Length[checks], " ", status];

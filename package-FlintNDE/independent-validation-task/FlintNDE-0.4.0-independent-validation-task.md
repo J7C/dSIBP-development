@@ -15,7 +15,8 @@
    wall time，并对所有点所有分量同时做路线互检及闭式解 oracle。
 3. `direct_user_point_path` 不调用 planner；直接节点路径穿过奇点必须 fail closed。
 
-不得修改程序包源码，不得读取旧报告或旧 summary 生成 expected。
+不得修改程序包源码，不得读取旧报告或旧 summary 生成 expected。runner 必须在数值计算前
+物理删除本任务旧 `results/`、旧报告和 validation cache；任一删除失败即停止，不允许混写。
 
 ## 2. Fast Multipoint 独立桶
 
@@ -68,7 +69,7 @@ Y1(z)=1-z/20,  Y2(z)=(20/(z+20))^2.
 目录：`independent-validation/FlintNDE-0.4.0-validation-01-fast-multipoint-and-direct-path/`
 
 - `run_validation.py`：唯一 runner；所有文本读写显式 `encoding="utf-8"`。
-- `results/summary.json`：环境、0.4.0 源码 SHA-256、配置、节点/coverage/算法计数、耗时、
+- `results/summary.json`：环境、runner 与 0.4.0 源码 SHA-256、fresh 清理记录、配置、节点/coverage/算法计数、耗时、
   fast/Horner 全分量差以及 900 点两分量三方差。
 - `000_FlintNDE-0.4.0-validation-01-report.md`：自包含中文报告。
 

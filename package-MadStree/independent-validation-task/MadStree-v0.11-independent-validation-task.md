@@ -28,7 +28,9 @@ matching anchor 正好是 `k1=-900 I,k2=-30 I`。独立 exact 极点距离预审
 两条路线必须使用同一 context、点序、`BoundaryScale`、`BoundarySeriesOrder`、`RankOrder`、
 工作精度、主阶、参考阶、目标误差、奇点模式、消息语言和 Python executable。每条路线各自从
 空 runtime 启动，只调用一次 `MSEvaluatePath`，因此各自只产生一个 Python adapter 进程；禁止
-跨路线复用 cache。边界成本不得从任一路线中扣除。
+跨路线复用 cache。边界成本不得从任一路线中扣除。runner 必须在数值计算前物理删除本任务
+旧 `results/`、旧 `results_temp/` 和旧报告；运行根只允许是验证目录下的 `results_temp/`，
+删除失败或发现仓库根旧 runtime 时立即停止，不提供旧路径兼容读取。
 
 ## 3. 两条路线
 
@@ -41,7 +43,7 @@ matching anchor 正好是 `k1=-900 I,k2=-30 I`。独立 exact 极点距离预审
 
 ## 4. 必须保存的证据
 
-- commit、MadStree 主入口 SHA-256、adapter SHA-256、Vendor FlintNDE 源码树 digest；
+- commit、验证 runner SHA-256、MadStree 主入口 SHA-256、adapter SHA-256、Vendor FlintNDE 源码树 digest；
 - 900 个 exact 物理坐标、master 顺序、normalization、Hankel branch 和 dlog convention；
 - 两路线实际段数、每段物理起终点、userIndices、FlintNDE 参数节点链、节点数和覆盖统计；
 - Route A 每个 assignment bucket 的覆盖数、算法和 userIndices，以及 fast bucket 的最小规模；
@@ -59,4 +61,5 @@ matching anchor 正好是 `k1=-900 I,k2=-30 I`。独立 exact 极点距离预审
 - A/B 各自产生一个 cold Python 进程，边界初始化各执行一次；
 - 报告诚实给出性能结果，不预设自动规划一定更快；
 - `run_validation.wls` 自动生成 `000_...report.md`、`results/summary.wl` 和完整轻量 JSON；
-  全部文本 UTF-8 无 BOM。运行结束删除 `results_temp/`、cache 与 Python bytecode。
+  完整逐点证据固定为 `results/evidence.json` 并随报告保留；全部文本 UTF-8 无 BOM。运行结束
+  删除 `results_temp/`、cache 与 Python bytecode。

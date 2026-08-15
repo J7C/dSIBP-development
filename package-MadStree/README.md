@@ -49,7 +49,8 @@ fail closed，不用终点数值 pilot 猜测。随后自动决定生产点、�
 
 MadStree 只按输入顺序识别最大连续复仿射单变量段 `x(s)=x0+s v`，并对每段拉回一次
 dlog DE。它不选择输运节点、不构造绕行，也不保存路径计划。全部段和边界数据在一次
-Python 进程中交给 FlintNDE。
+Python 进程中交给 FlintNDE。Wolfram 侧以参数列表 `RunProcess` 启动该进程，不经过 shell
+命令拼接、引号 helper 或重定向，也不提供重试 fallback。
 
 `MSBoundaryData` 与 `MSEvaluatePath` 的 `WorkingPrecision` 缺省均为 200 位。用户显式传入
 其它正整数时按该值覆盖；内部 bit 数为 `ceil(WorkingPrecision*log2(10))+32`。
@@ -72,8 +73,13 @@ Python 进程中交给 FlintNDE。
 - `independent-validation-task/`：版本化独立验证任务书。
 - `independent-validation/`：独立 runner、正式轻量结果和自动报告。
 
+当前独立 runner 在数值计算前物理删除本任务旧 `results/`、`results_temp/` 和旧报告；删除失败
+立即退出。它不读取仓库根旧 runtime，也不提供旧目录或旧 schema 的兼容入口。
+
 `MSRuntimeDirectory -> Automatic` 把运行根设为调用脚本旁的 `results_temp/`；显式路径直接
 表示运行根本身，不再由 MadStree 重复追加 `results_temp`。临时输入/日志位于 `nde/`，成功
 cache 位于 `cache/`；正式结果由调用者写入 `results/`，不写入程序包源码目录。
 Windows 完整路径过长时在 Python 启动前独立返回 `RuntimePathTooLong`，并给出实际路径长度；
 输入写入、缺少 `python-flint`、后端启动和后端无输出分别使用不同错误标签。
+内嵌 FlintNDE Wolfram bridge 使用参数列表 `RunProcess`，不保留 shell `Run` launcher、命令
+引号 helper、重定向或失败重试 fallback。

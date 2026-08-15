@@ -4,7 +4,7 @@
 源码，也不读取项目外其它代码包。发布用户应先安装 `FlintNDE`，随后在任意调用目录直接
 `import flintnde`；路径变量只服务于尚未安装的仓库内开发示例。
 
-当前保留六个典型示例：
+当前保留七个典型示例：
 
 - `qnm_2x2.py`：统一 `u` 的 exact 2x2 一阶系统。分别从字面量 horizon `1` 和
   infinity `"inf"` 的 `{a,b,C}` 边界出发，输运到公共匹配点并检查另一端的禁戒分量；
@@ -18,6 +18,8 @@
   个外层进程。FlintNDE 不从数值样本猜最低阶。
 - `ep_parallel_mathematica.wl`：Wolfram 入口使用
   `ParallelTaskCount -> 12`（缺省）运行相同的固定 `ep` 并行合同。
+- `mathematica_interface_example.wl`：Wolfram 入口从 exact 有理矩阵构造系统，显式规划并执行
+  普通点路径，与闭式解比较，并把正式结果写入 example 自身的 `results/`。
 
 运行：
 

@@ -13,6 +13,7 @@ import platform
 import shutil
 import sys
 import time
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -478,7 +479,7 @@ def make_report(summary: dict[str, Any]) -> str:
     final_node = planned["node_coordinates"][-1]
     return f"""# FlintNDE 0.4.0 独立检验报告
 
-日期：2026-08-13
+日期：{summary['date']}
 对象：`versions/FlintNDE-0.4.0/` 当前实际源码
 结论：**{'通过' if summary['overall_passed'] else '未通过'}**
 
@@ -488,6 +489,7 @@ def make_report(summary: dict[str, Any]) -> str:
 Horner；900 点输运 expected 是脚本直接计算的闭式解。执行均为单进程，工作精度
 {summary['configuration']['working_precision_digits']} 位十进制（实际
 {summary['configuration']['working_precision_bits']} bits）。
+runner 在数值计算前删除本任务旧 `results/`、旧报告和 validation cache；删除失败会直接终止。
 
 ## 单节点覆盖桶：Fast 与 Horner
 
@@ -591,10 +593,21 @@ def clean_generated_cache() -> list[str]:
     return removed
 
 
+def prepare_fresh_outputs() -> None:
+    """删除本任务全部旧结果；任一删除失败都由异常终止运行。"""
+
+    clean_generated_cache()
+    if RESULTS_DIR.exists():
+        shutil.rmtree(RESULTS_DIR)
+    if REPORT_PATH.exists():
+        REPORT_PATH.unlink()
+    RESULTS_DIR.mkdir(parents=True)
+
+
 def main() -> None:
     """执行全部 0.4.0 独立门禁、生成证据并清理 cache。"""
 
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    prepare_fresh_outputs()
     configured_bits = configure_working_precision(DECIMAL_DIGITS, 32)
     points = make_grid()
     if len(points) != 900 or len({point_text(point, 60) for point in points}) != 900:
@@ -626,7 +639,7 @@ def main() -> None:
     )
     summary = {
         "schema": "flintnde_0_4_0_independent_validation_v1",
-        "date": "2026-08-13",
+        "date": date.today().isoformat(),
         "target": "package-FlintNDE/versions/FlintNDE-0.4.0",
         "environment": {
             "python": sys.version.replace("\n", " "),
@@ -651,9 +664,14 @@ def main() -> None:
             ],
         },
         "source_sha256": {
+            "validation_runner_py": sha256(Path(__file__).resolve()),
             "flintnde_init_py": sha256(VERSION_ROOT / "flintnde" / "__init__.py"),
             "transport_py": sha256(VERSION_ROOT / "flintnde" / "transport.py"),
             "singularity_jump_py": sha256(VERSION_ROOT / "flintnde" / "singularity_jump.py"),
+        },
+        "fresh_run": {
+            "cleanup_before_numerical_evaluation": True,
+            "deleted_targets": ["results/", REPORT_PATH.name, "__pycache__/"],
         },
         "fast_multipoint_oracle": multipoint,
         "transport_900_points": {**transport_metrics, "point_records": transport_records},
