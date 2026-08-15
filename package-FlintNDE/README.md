@@ -34,6 +34,12 @@ Python 使用 `import flintnde`。Wolfram Language 把版本根加入 `$Path` �
 `Needs["FlintNDE`"]`，使用 `FlintNDERationalSystem`、`FlintNDEPlanPath` 和
 `FlintNDEExecutePath`。
 
+Wolfram 入口的 `"WorkDirectory"` 明确表示临时运行根本身；`Automatic` 使用当前调用目录下
+的 `results_temp/`，接口只在其下追加 `bridge/`，不重复追加任务名或第二层 `results_temp`。
+Windows 完整路径超过传统 Win32/Wolfram 安全上限时，程序在写文件和启动 Python 前独立返回
+`RuntimePathTooLong`。`RuntimeInputWriteFailed`、`PythonFlintUnavailable`、
+`BridgeLaunchFailed` 和 `BridgeOutputMissing` 分别保留真实故障边界。
+
 - 一般解析矩阵在普通点的 Cauchy--DFT Taylor 系数重建与高精度输运；
 - exact Q(i)(x) 矩阵逐元约分、有限/无穷远奇点发现与命名路径规划；
 - 正则奇点的矩阵 indicial equation、Jordan/resonance gate 与 power-log 局部基；
@@ -78,8 +84,9 @@ python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.4.0
 前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint` 与 `sympy`。
 
 0.4.0 当前聚焦回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
-Arb 路径 round-trip、fast multipoint、严格用户节点和精度拒绝；Python `unittest discover` 158/158 通过，
-Wolfram `Needs["FlintNDE`"]` 端到端检查 20/20 通过。完整验证结果以
+Arb 路径 round-trip、fast multipoint、严格用户节点、精度拒绝和运行路径门禁；Python
+`unittest discover` 162/162 通过，Wolfram `Needs["FlintNDE`"]` 端到端检查现扩展到 25 项。
+完整验证结果以
 `versions/FlintNDE-0.4.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
 
 2026-08-13 的 0.4.0 独立检验检查 257 点 fast/Horner 单节点桶和 30x30 复网格。

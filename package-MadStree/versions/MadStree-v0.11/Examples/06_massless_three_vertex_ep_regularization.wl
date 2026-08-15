@@ -8,7 +8,7 @@
 并行：ParallelTaskCount 缺省为 12；生产与独立验证任务都由有界进程池自动调度，
       任务多于并行上限时自动续交，不需要用户提供或手动分批 ep 取值。批量基准可在
       wolframscript 命令末尾传入一个正整数覆盖本例请求值，普通用户直接修改参数行即可。
-输出：运行产物写入本 example 目录下 results_temp，不写入程序包源码模块目录。
+输出：运行产物由缺省目录合同写入本 example 目录下 results_temp，不写入程序包源码模块目录。
 ***)
 
 (* ::Chapter:: *)
@@ -20,7 +20,11 @@ AppendTo[$Path, FileNameJoin[{packageRoot, "Kernel"}]];
 Needs["MadStree`"];
 
 (* 用户可修改：缺省并行上限是 12；命令行末尾正整数只用于重复基准。 *)
-epParallelOverrideText = Last[$ScriptCommandLine];
+epParallelOverrideText = If[
+  ListQ[$ScriptCommandLine] && Length[$ScriptCommandLine] >= 2,
+  Last[$ScriptCommandLine],
+  ""
+];
 epParallelOverrideQ = StringQ[epParallelOverrideText] &&
   StringMatchQ[epParallelOverrideText, DigitCharacter ..] &&
   ToExpression[epParallelOverrideText] >= 1;
@@ -31,14 +35,6 @@ epParallelTaskCount = If[
 ];
 maximumEpPower = 0;
 epGoalDigits = 12;
-runtimeDirectory = FileNameJoin[{
-  exampleDirectory, "results_temp",
-  If[
-    epParallelOverrideQ,
-    "massless_three_vertex_ep_regularization_workers_" <> epParallelOverrideText,
-    "massless_three_vertex_ep_regularization"
-  ]
-}];
 
 
 (* ::Chapter:: *)
@@ -81,7 +77,7 @@ epPointTemplate = {{
   BoundarySeriesOrder -> 24,
   RankOrder -> {v1, v2, v3},
   MessageLanguage -> "CN",
-  MSRuntimeDirectory -> runtimeDirectory
+  MSRuntimeDirectory -> Automatic
 ]];
 
 If[Head[epSeries] === Failure,

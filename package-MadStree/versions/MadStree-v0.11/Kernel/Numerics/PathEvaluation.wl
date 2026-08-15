@@ -370,6 +370,8 @@ MSEvaluatePath[
   ];
   runtimeDirectory = msResolveRuntimeDirectory[OptionValue[MSRuntimeDirectory]];
   If[Head[runtimeDirectory] === Failure, Return[runtimeDirectory]];
+  failure = msRuntimePathLengthFailure[{runtimeDirectory}];
+  If[Head[failure] === Failure, Return[failure]];
   If[msEnsureDirectory[runtimeDirectory] === $Failed,
     Return[Failure["RuntimeDirectoryCreationFailed", <|"path" -> runtimeDirectory|>]]
   ];
@@ -510,6 +512,8 @@ msPrepareEpEvaluationTask[
   ];
   runtimeDirectory = msResolveRuntimeDirectory[optionValues[MSRuntimeDirectory]];
   If[Head[runtimeDirectory] === Failure, Return[runtimeDirectory]];
+  failure = msRuntimePathLengthFailure[{runtimeDirectory}];
+  If[Head[failure] === Failure, Return[failure]];
   If[msEnsureDirectory[runtimeDirectory] === $Failed,
     Return[Failure["RuntimeDirectoryCreationFailed", <|"path" -> runtimeDirectory|>]]
   ];
@@ -997,7 +1001,7 @@ MSReconstructEpSeries[
   pointTemplate_List,
   opts : OptionsPattern[]
 ] := Module[
-  {unknownOptions, maximumPower, goalDigits, parallelCount, baseOptions, configuration,
+  {unknownOptions, maximumPower, goalDigits, parallelCount, baseOptions, configuration, failure,
    runtimeDirectory, pythonExecutable, supportCertificate,
    leadingPower, fitExtraOrder, fitOrderIncrement,
    fitMaximumRounds,
@@ -1064,6 +1068,8 @@ MSReconstructEpSeries[
   ];
   runtimeDirectory = msResolveRuntimeDirectory[baseOptions[MSRuntimeDirectory]];
   If[Head[runtimeDirectory] === Failure, Return[runtimeDirectory]];
+  failure = msRuntimePathLengthFailure[{runtimeDirectory}];
+  If[Head[failure] === Failure, Return[failure]];
   If[msEnsureDirectory[runtimeDirectory] === $Failed,
     Return[Failure["RuntimeDirectoryCreationFailed", <|"path" -> runtimeDirectory|>]]
   ];

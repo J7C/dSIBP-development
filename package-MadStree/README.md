@@ -72,5 +72,8 @@ Python 进程中交给 FlintNDE。
 - `independent-validation-task/`：版本化独立验证任务书。
 - `independent-validation/`：独立 runner、正式轻量结果和自动报告。
 
-运行 JSON、日志和 cache 写入调用脚本所在目录的 `results_temp/`；正式结果由调用者写入
-`results/`，不写入程序包源码目录。
+`MSRuntimeDirectory -> Automatic` 把运行根设为调用脚本旁的 `results_temp/`；显式路径直接
+表示运行根本身，不再由 MadStree 重复追加 `results_temp`。临时输入/日志位于 `nde/`，成功
+cache 位于 `cache/`；正式结果由调用者写入 `results/`，不写入程序包源码目录。
+Windows 完整路径过长时在 Python 启动前独立返回 `RuntimePathTooLong`，并给出实际路径长度；
+输入写入、缺少 `python-flint`、后端启动和后端无输出分别使用不同错误标签。

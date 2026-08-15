@@ -10,9 +10,7 @@ exampleDirectory = DirectoryName[$InputFileName];
 versionDirectory = ExpandFileName[FileNameJoin[{
   exampleDirectory, "..", "versions", "FlintNDE-0.4.0"
 }]];
-runtimeDirectory = FileNameJoin[{
-  exampleDirectory, "results_temp", "ep_parallel_mathematica"
-}];
+runtimeDirectory = FileNameJoin[{exampleDirectory, "results_temp"}];
 PrependTo[$Path, versionDirectory];
 Needs["FlintNDE`"];
 
@@ -35,8 +33,8 @@ jobs = Map[
 
 batch = FlintNDEEvaluateEpBatch[
   jobs,
-  ParallelTaskCount -> epParallelTaskCount,
-  MessageLanguage -> "CN",
+  FlintNDE`ParallelTaskCount -> epParallelTaskCount,
+  FlintNDE`MessageLanguage -> "CN",
   "WorkDirectory" -> runtimeDirectory,
   "WorkingPrecisionDigits" -> 60,
   "OutputDigits" -> 40,
@@ -54,7 +52,7 @@ values = First[#1["execution", "referenceFinalVector"]] & /@ batch["results"];
 maximumDifference = Max[Abs[values - N[2^epValues, 40]]];
 checks = <|
   "defaultParallelTaskCount" ->
-    MemberQ[Options[FlintNDEEvaluateEpBatch], ParallelTaskCount -> 12],
+    MemberQ[Options[FlintNDEEvaluateEpBatch], FlintNDE`ParallelTaskCount -> 12],
   "effectiveParallelTaskCount" ->
     batch["parallelTaskCountEffective"] === Min[epParallelTaskCount, Length[epValues]],
   "inputOrder" -> Lookup[batch["results"], "ep"] === epValues,

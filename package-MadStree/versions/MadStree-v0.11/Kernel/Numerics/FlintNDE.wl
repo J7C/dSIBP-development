@@ -161,8 +161,8 @@ msAffineLetterData[
 (* ::Chapter:: *)
 (* Python backend invocation *)
 
-(* By default the calling script directory is used; notebooks or interactive sessions without an input file fall back to the current working directory. *)
-msDefaultRuntimeDirectory[] := msRuntimeDirectory[];
+(* 缺省临时目录只追加一次 results_temp；显式 MSRuntimeDirectory 则直接表示临时目录本身。 *)
+msDefaultRuntimeDirectory[] := FileNameJoin[{msRuntimeDirectory[], "results_temp"}];
 
 
 msResolveRuntimeDirectory[Automatic] := msDefaultRuntimeDirectory[];
@@ -228,9 +228,9 @@ msFlintNDEBackendSourceIdentity[inputData_Association] := Module[{
 ];
 
 
-(* 后端成功输出缓存在调用脚本旁的 flintnde_cache/<digest>/。缓存键包含
+(* 后端成功输出缓存在临时目录的 cache/<digest>.json。缓存键包含
    去除保存目录后的请求和后端源码身份；失败输出永不作为缓存命中。 *)
-msFlintNDECacheDirectory[runtimeDirectory_String, inputData_Association] := Module[{
+msFlintNDECacheFile[runtimeDirectory_String, inputData_Association] := Module[{
   stablePayload, sourceIdentity, digest
 },
   sourceIdentity = msFlintNDEBackendSourceIdentity[inputData];
@@ -241,7 +241,7 @@ msFlintNDECacheDirectory[runtimeDirectory_String, inputData_Association] := Modu
   digest = IntegerString[
     Hash[ExportString[stablePayload, "RawJSON"], "SHA256"], 16, 64
   ];
-  FileNameJoin[{runtimeDirectory, "flintnde_cache", digest}]
+  FileNameJoin[{runtimeDirectory, "cache", digest <> ".json"}]
 ];
 
 
@@ -269,32 +269,46 @@ msBackendLogTail[file_String] := Module[{text},
 ];
 
 
+(* 短 token 只负责运行文件去重；独立 helper 允许回归测试固定写入目标。 *)
+msFlintNDECreateToken[] := StringTake[StringDelete[CreateUUID[], "-"], 16];
+
+
 msExecuteFlintNDEAdapter[inputData_Association, pythonExecutable_, runtimeDirectory_String] := Module[
   {cacheDirectory, cacheFile, cached, transportDirectory, identifier, inputFile,
-   adapterFile, logFile, command, commandText, process, imported, logTail},
-  cacheDirectory = msFlintNDECacheDirectory[runtimeDirectory, inputData];
-  cacheFile = FileNameJoin[{cacheDirectory, "backend_output.json"}];
+   adapterFile, logFile, command, commandText, process, imported, logTail,
+   pathFailure, inputWrite},
+  cacheFile = msFlintNDECacheFile[runtimeDirectory, inputData];
+  cacheDirectory = DirectoryName[cacheFile];
+  transportDirectory = FileNameJoin[{runtimeDirectory, "nde"}];
+  identifier = msFlintNDECreateToken[];
+  inputFile = FileNameJoin[{transportDirectory, "i-" <> identifier <> ".json"}];
+  (* Backend stdout/stderr is captured so a failed launch reports the actual
+     Python error instead of leaving it on the console. *)
+  logFile = FileNameJoin[{transportDirectory, "l-" <> identifier <> ".txt"}];
+  adapterFile = FileNameJoin[{$MadStreePackageDirectory, "Backend", "flintnde_transport.py"}];
+  pathFailure = msRuntimePathLengthFailure[{
+    runtimeDirectory, cacheDirectory, cacheFile, transportDirectory, inputFile, logFile
+  }];
+  If[Head[pathFailure] === Failure, Return[pathFailure]];
   If[FileExistsQ[cacheFile],
-    cached = Import[cacheFile, "RawJSON"];
+    cached = Quiet@Check[Import[cacheFile, "RawJSON"], $Failed];
     If[AssociationQ[cached] && Lookup[cached, "status", None] === "success",
       Return[Join[cached, <|"cacheHit" -> True, "cacheDirectory" -> cacheDirectory|>]]
     ]
   ];
-  If[! DirectoryQ[cacheDirectory],
-    CreateDirectory[cacheDirectory, CreateIntermediateDirectories -> True]
+  If[msEnsureDirectory[cacheDirectory] === $Failed,
+    Return[Failure["RuntimeDirectoryCreationFailed", <|"path" -> cacheDirectory|>]]
   ];
-  transportDirectory = FileNameJoin[{runtimeDirectory, "results_temp", "flintnde_transport"}];
-  If[! DirectoryQ[transportDirectory],
-    CreateDirectory[transportDirectory, CreateIntermediateDirectories -> True]
+  If[msEnsureDirectory[transportDirectory] === $Failed,
+    Return[Failure["RuntimeDirectoryCreationFailed", <|"path" -> transportDirectory|>]]
   ];
-  identifier = CreateUUID[];
-  inputFile = FileNameJoin[{transportDirectory, "madstree-flintnde-input-" <> identifier <> ".json"}];
-  (* Backend stdout/stderr is captured so a failed launch reports the actual
-     Python error instead of leaving it on the console. *)
-  logFile = FileNameJoin[{transportDirectory, "madstree-flintnde-log-" <> identifier <> ".txt"}];
-  adapterFile = FileNameJoin[{$MadStreePackageDirectory, "Backend", "flintnde_transport.py"}];
   (* v0.11 唯一 evaluate schema 的字段集合由 Python 端严格校验。 *)
-  Export[inputFile, inputData, "RawJSON"];
+  inputWrite = Quiet@Check[Export[inputFile, inputData, "RawJSON"], $Failed];
+  If[inputWrite === $Failed || ! FileExistsQ[inputFile],
+    Return[Failure["RuntimeInputWriteFailed", <|
+      "path" -> inputFile, "pathLength" -> StringLength[inputFile]
+    |>]]
+  ];
   command = {
     pythonExecutable,
     adapterFile,
@@ -313,10 +327,25 @@ msExecuteFlintNDEAdapter[inputData_Association, pythonExecutable_, runtimeDirect
   |>;
   logTail = msBackendLogTail[logFile];
   If[! FileExistsQ[cacheFile],
-    Message[MSEvaluatePath::backendLaunchFailed, pythonExecutable, logTail];
-    Return[Failure["FlintNDEProcessFailed", <|"process" -> process, "stderr" -> logTail|>]]
+    If[StringContainsQ[logTail, Alternatives[
+        "No module named 'flint'", "No module named \"flint\"", "ModuleNotFoundError: No module named 'flint'"
+      ]],
+      Message[MSEvaluatePath::pythonFlintMissing, pythonExecutable, logTail];
+      Return[Failure["PythonFlintUnavailable", <|"process" -> process, "stderr" -> logTail|>]]
+    ];
+    If[process["ExitCode"] =!= 0,
+      Message[MSEvaluatePath::backendLaunchFailed, pythonExecutable, logTail];
+      Return[Failure["FlintNDELaunchFailed", <|"process" -> process, "stderr" -> logTail|>]]
+    ];
+    Message[MSEvaluatePath::backendOutputMissing, pythonExecutable, logTail];
+    Return[Failure["FlintNDEOutputMissing", <|"process" -> process, "stderr" -> logTail|>]]
   ];
-  imported = Import[cacheFile, "RawJSON"];
+  imported = Quiet@Check[Import[cacheFile, "RawJSON"], $Failed];
+  If[! AssociationQ[imported],
+    Return[Failure["FlintNDEOutputInvalid", <|
+      "process" -> process, "outputFile" -> cacheFile, "stderr" -> logTail
+    |>]]
+  ];
   (* A structured refusal (no-singularity mode found a pole on the polyline,
      or the leading-order local basis cannot be built, e.g. resonance) is an
      outcome, not a backend failure: it is returned verbatim with cacheHit

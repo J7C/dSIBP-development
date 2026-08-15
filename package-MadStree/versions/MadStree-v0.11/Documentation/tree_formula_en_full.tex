@@ -1458,9 +1458,15 @@ plans, and transports in one process. With planning enabled, points covered by o
 node form an evaluation bucket: large buckets use subproduct/remainder-tree fast multipoint
 evaluation and small buckets use the iterative algorithm. With planning disabled, every user
 point is a transport node. Distinct segments never share local coefficients. A single
-project-relative configuration variable controls the backend location; run files and the
-Python cache are written under \texttt{results\_temp/} in the calling script's directory,
-not in the package source tree.
+project-relative configuration variable controls the backend location.
+\texttt{MSRuntimeDirectory} denotes the temporary runtime root itself; \texttt{Automatic}
+creates one \texttt{results\_temp/} next to the calling script, with short \texttt{nde/} and
+\texttt{cache/} children, never in the package source tree. On Windows, complete cache,
+input, and log paths are checked before directory creation or Python launch. Paths longer
+than 259 characters return the separate \texttt{RuntimePathTooLong} failure. Input writes,
+missing \texttt{python-flint}, launch failures, missing output, and invalid output retain
+distinct tags. CSV/JSON export returns \texttt{"written"} only when every requested format
+has been written successfully.
 
 Every multipoint transport through intermediate nodes is a jump; only an explicit crossing
 of a singularity through a local-basis connection is a singularity jump.

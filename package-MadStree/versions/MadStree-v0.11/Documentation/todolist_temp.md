@@ -1,5 +1,9 @@
 # MadStree v0.11 单阶段数值接口清单
 
+- [x] 将运行目录重构为单一调用根目录下的 `results_temp/{nde,cache,bridge}` 浅结构。
+- [x] 路径过长单独返回 `RuntimePathTooLong`，文件写入和后端错误不得混报。
+- [x] 修复 Notebook 参数、公共导出和 package-loaded 成功门禁并完成聚焦回归。
+
 - [x] 删除 MadStree 路径规划模块、两阶段公开入口、计划对象和旧 schema。
 - [x] 实现最大连续复仿射单变量段识别，每段只拉回一次 dlog DE。
 - [x] 用 `FlintNDEPathPlanning -> True|False` 控制 FlintNDE 段内自动规划或严格用户节点。

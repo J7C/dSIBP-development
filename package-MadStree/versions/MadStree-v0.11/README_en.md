@@ -177,13 +177,15 @@ MSSetFlintNDERelativePath[FileNameJoin[{"new-name", "code", "package"}]]
 
 Paths are always relative to the current MadStree version directory; if Vendor is renamed or moved later, only this item changes. `MSNumericalSystem` remains the low-level entry for users who supply their own boundary vectors.
 
-Transient JSON produced by automatic MMA calls is written by default to the calling script directory:
+The default runtime root for automatic MMA calls is the single `results_temp/` next to the calling script:
 
 ```text
-results_temp/flintnde_transport/
+results_temp/
+  nde/    # current request input and log
+  cache/  # successful JSON cache keyed by request and backend source identity
 ```
 
-`MSRuntimeDirectory -> path` selects another caller directory explicitly: absolute paths are used directly and relative paths are resolved against the calling script directory, independent of the process working directory. On success the transient JSON files are deleted automatically; on failure the input/output paths are kept for diagnostics. A successful-result cache key includes both the request and SHA-256 identities of `Backend/flintnde_transport.py`, the Vendor `pyproject.toml`, and sorted `flintnde/*.py`; an in-place source fix therefore cannot reuse a plan with a different source identity. Python creates `__pycache__/` next to the relevant package by default; the directory and `*.pyc` are ignored by Git and can be reused under the same Python version and source state. Apart from caller-side caches, the package source directory never receives run artifacts.
+An explicit `MSRuntimeDirectory -> path` denotes the runtime root itself. Absolute paths are used directly and relative paths are resolved against the calling script directory; MadStree does not append another `results_temp`. On Windows, complete cache/input/log paths are checked before directory creation or Python launch. An overlong path returns `RuntimePathTooLong` with its actual length. `RuntimeInputWriteFailed`, `PythonFlintUnavailable`, `FlintNDELaunchFailed`, `FlintNDEOutputMissing`, and `FlintNDEOutputInvalid` retain distinct failure boundaries. A successful-result cache key includes both the request and SHA-256 identities of `Backend/flintnde_transport.py`, the Vendor `pyproject.toml`, and sorted `flintnde/*.py`; an in-place source fix therefore cannot reuse a plan with a different source identity. Apart from caller-side caches, the package source directory never receives run artifacts.
 
 Bare user points are returned under the `"saved"` records of `MSEvaluatePath`; `"tmp"` points participate only in transport. Export saved points with
 
@@ -191,7 +193,7 @@ Bare user points are returned under the `"saved"` records of `MSEvaluatePath`; `
 MSExportEvaluationData[result, MSOutputDirectory -> outputDirectory]
 ```
 
-to produce CSV/JSON. Singular leading data, removed singular points, and transient points are excluded from the ordinary-point export. Runtime JSON, logs, and backend caches live under the caller's `results_temp/`, while durable exports live under the caller-selected `results/`; package source directories receive no runtime products.
+to produce CSV/JSON. If any requested format fails, the function returns `EvaluationExportFailed` and never reports the whole export as `"written"`; an overlong target remains a separate `RuntimePathTooLong`. Singular leading data, removed singular points, and transient points are excluded from the ordinary-point export. Durable exports live under the caller-selected `results/`; package source directories receive no runtime products.
 The full formulas, the massless `4 -> 2` quotient, contact shifts and the top-to-sub dlog derivation are in [Documentation/tree_formula.pdf](Documentation/tree_formula.pdf).
 
 ## Examples

@@ -406,7 +406,7 @@ Det[M0[C]] proportional to Product[kappa[C,s], s].
 
 每段拉回系统由 MadStree 构造后交给 FlintNDE。`FlintNDEPathPlanning -> True` 使后端规划节点，并把同一节点覆盖的用户点组成 evaluation bucket；大桶用子积树/余数树快速多点求值，小桶用 iterative 算法。`False` 严格把用户点作为节点且不调用规划器。若全部 dlog letters 在该段均为常量，其导数全为零，合法系统就是无有限极点的零连接。
 
-FlintNDE 的位置只由 `$MSFlintNDERelativePath` 定义，缺省为版本目录内的 `Vendor/FlintNDE`（与独立 FlintNDE 0.4.0 同步）；`MSSetFlintNDERelativePath` 可显式覆盖。adapter 只接受当前单请求 schema `madstree_flintnde_evaluate_v1`。临时 JSON 写入调用脚本目录的 `results_temp/`；成功后删除。Python cache 由 Git 忽略，版本源码目录不接收用户结果。
+FlintNDE 的位置只由 `$MSFlintNDERelativePath` 定义，缺省为版本目录内的 `Vendor/FlintNDE`（与独立 FlintNDE 0.4.0 同步）；`MSSetFlintNDERelativePath` 可显式覆盖。adapter 只接受当前单请求 schema `madstree_flintnde_evaluate_v1`。`MSRuntimeDirectory` 明确表示临时运行根本身；`Automatic` 解析为调用脚本旁唯一的 `results_temp/`，内部只追加 `nde/` 和 `cache/`。Windows 完整路径在目录创建和 Python 启动前检查；超过 259 字符时独立返回 `RuntimePathTooLong`。输入写入、缺少 `python-flint`、启动失败、无输出和损坏输出分别 fail closed。版本源码目录不接收用户结果。
 自动入口不猜测额外的 late-time 常数；它严格使用初始化时固定的 Hankel/SK branch、sector normalization 和论文 endpoint coefficients。手动入口未给 boundary data 时仍返回结构化 `Missing["BoundaryData"]`。dlog/chart 未认证、late-time 指数不衰减、拉回奇点非 exact/Fuchsian 或 FlintNDE capability preflight 失败时均 fail closed；能力边界不再用图名或固定维数描述。
 
 ## 12. 模块与公开接口

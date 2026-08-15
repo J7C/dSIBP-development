@@ -148,8 +148,42 @@ unknownExecuteOption = FlintNDEExecutePath[
   "UnexpectedOption" -> True
 ];
 
+
+(* ::Chapter:: *)
+(*浅层目录与 Python 前置错误门禁*)
+
+automaticWorkDirectory = FlintNDE`Private`flintNDEResolveWorkDirectory[Automatic];
+length259Result = FlintNDE`Private`flintNDEPathLengthFailure[{
+  StringJoin[ConstantArray["x", 259]]
+}];
+length260Result = FlintNDE`Private`flintNDEPathLengthFailure[{
+  StringJoin[ConstantArray["x", 260]]
+}];
+inputFailureRuntime = FileNameJoin[{runtimeDirectory, "input-write"}];
+inputConflict = FileNameJoin[{inputFailureRuntime, "bridge", "i-fixed.json"}];
+If[! DirectoryQ[inputConflict],
+  CreateDirectory[inputConflict, CreateIntermediateDirectories -> True]
+];
+inputWriteFailure = Block[{
+    FlintNDE`Private`flintNDECreateToken = Function["fixed"]
+  },
+  FlintNDE`Private`flintNDEInvoke[
+    <|"schema" -> "write-gate-test"|>,
+    "PYTHON_MUST_NOT_RUN",
+    inputFailureRuntime
+  ]
+];
+
 checks = <|
   "needsVersion" -> $FlintNDEVersion === "0.4.0",
+  "automaticWorkDirectoryShallow" ->
+    FileNameTake[automaticWorkDirectory] === "results_temp" &&
+    Count[FileNameSplit[automaticWorkDirectory], "results_temp"] === 1,
+  "length259Accepted" -> length259Result === None,
+  "length260Separated" ->
+    MatchQ[length260Result, Failure["RuntimePathTooLong", _Association]],
+  "inputWriteFailsBeforePython" ->
+    MatchQ[inputWriteFailure, Failure["RuntimeInputWriteFailed", _Association]],
   "strictMessageLanguage" ->
     MatchQ[badLanguage, Failure["InvalidMessageLanguage", _Association]],
   "strictSingularityModes" ->

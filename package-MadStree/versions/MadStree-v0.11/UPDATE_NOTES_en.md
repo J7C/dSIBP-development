@@ -42,15 +42,25 @@ All affine segments, exact pullbacks, boundary data, and options enter one Pytho
 single UTF-8 JSON request. Backend logs and Wolfram package loads also use explicit UTF-8;
 ordinary `Needs["MadStree`"]` requires no encoding option from the user.
 
+`MSRuntimeDirectory` now denotes the temporary runtime root itself. `Automatic` creates one
+`results_temp/` next to the calling script, with fixed `nde/` and `cache/` children. Example 06
+no longer builds a long task-specific runtime path, and direct Notebook execution no longer calls
+`Last` on an empty `$ScriptCommandLine`. On Windows, every complete runtime path is checked before
+directory creation or Python launch; paths longer than 259 characters return the separate
+`RuntimePathTooLong` failure. Input writes, missing python-flint, launch failures, missing output,
+and invalid output retain distinct error tags. The loaded notice is printed only after all sixteen
+module files and representative definitions pass their contracts. A partial CSV/JSON export can
+no longer return `"written"`.
+
 ## Validation status
 
 - The Python adapter passed 8/8 checks. Given certified power `-1`, a synthetic `1/ep+2+3ep`
   route uses four production points with an internal `ep^2` buffer and recovers pole 1 and finite part 2.
 - Exact Laurent valuation passed 8/8; the real nine-master, nine-branch three-vertex certificate
   returns `leadingPower=0` before numerical NDE work.
-- The full Python regression passed 158/158 and Wolfram `Needs["FlintNDE`"]` passed 20/20.
-  Twenty Python implementation files and fourteen test files are byte-identical between the
-  standalone backend and the Vendor copy.
+- The full Python regression passed 162/162, Wolfram `Needs["FlintNDE`"]` passed 25/25, and the
+  MadStree shallow-runtime/export gate passed 10/10. All 42 non-cache delivery files are
+  SHA-256-identical between the standalone backend and the Vendor copy.
 - The v0.11 independent validation passed 17/17. Across 900 points and three masters, the largest
   componentwise absolute difference was `5.8262e-43`; 894 points entered six fast buckets. The
   planned route was 2.5269 times faster end to end and 4.5128 times faster in backend time than

@@ -57,6 +57,10 @@
    `Mathematica/FlintNDE.wl` 支持 `Needs["FlintNDE`"]`。公开构造器包括
    `FlintNDERationalSystem`、`FlintNDEPartialFractionSystem`，两阶段入口为
    `FlintNDEPlanPath` 与 `FlintNDEExecutePath`。
+8. **浅层 Wolfram 运行目录**：`"WorkDirectory"` 表示运行根本身；`Automatic` 只建立一次
+   `results_temp/`，其下使用 `bridge/` 和短 token 文件名。Windows 完整路径超过 259 字符时
+   在任何写入和 Python 启动前返回 `RuntimePathTooLong`。输入写入、缺少 `python-flint`、
+   bridge 启动失败、无输出和输出损坏均保留独立错误标签。
 
 ## 精度与认证修复
 
@@ -94,8 +98,9 @@
 ## 验证状态
 
 - fast/iter 多点求值单元测试与公开直接用户节点测试已通过。
-- 完整 Python 回归 158/158；Wolfram `Needs["FlintNDE`"]` 端到端 20/20。
-- 独立包与 MadStree v0.11 Vendor 的 20 个 Python 实现文件和 14 个测试文件逐文件同字节。
+- 完整 Python 回归 162/162；Wolfram `Needs["FlintNDE`"]` 端到端 25/25，其中新增 4 项覆盖
+  浅层目录、259/260 字符边界及 Python 前置输入写入失败。
+- 独立包与 MadStree v0.11 Vendor 的 42 个非缓存交付文件逐文件 SHA-256 一致。
 - 0.4.0 独立检验：257 点、64 阶 fast/Horner 最大差 `1.96586e-62`，fast 实测快
   1.35474 倍；900 点 planned/direct 共 1800 分量通过闭式解和路线互检，planned 为
   2 节点且 fast 覆盖 899 点，direct 为 901 节点且 planner sentinel 为 0，后端耗时比

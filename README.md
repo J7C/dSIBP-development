@@ -123,14 +123,18 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 ## 输出位置
 
 - dSIBP 只生成关系与后端输入；外部 reduction 工作区由调用方管理。
-- MadStree 调用 FlintNDE 的临时 JSON 和 Python cache 位于调用脚本旁的 `results_temp/`；保存点进入调用目录的 `results/`。
+- MadStree 调用 FlintNDE 的临时输入/日志位于调用脚本旁的 `results_temp/nde/`，成功 cache 位于
+  `results_temp/cache/`；FlintNDE Wolfram bridge 使用 `results_temp/bridge/`。保存点进入调用目录的 `results/`。
 - FlintNDE 的正式结果位于调用脚本旁的 `results/<run_name>/`；路径 `save` 文件也可由 `save_output_directory` 指定到调用者目录。
 - package 源码目录不接收用户运行产物。开发测试使用 `test/results_test/` 或 `results_temp/`。
+
+Windows 下在任何目录创建或 Python 启动前检查完整运行文件路径；超过传统 Win32/Wolfram
+安全上限时独立返回 `RuntimePathTooLong`，不会误报成缺少 `python-flint`。仓库宜放在较浅目录。
 
 ## 文档与验证
 
 - dSIBP：`package-dSibp/Documentation/`、`package-dSibp/independent-benchmark/`、`package-dSibp/000-report/`。
-- MadStree：`package-MadStree/versions/MadStree-v0.10/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
+- MadStree：`package-MadStree/versions/MadStree-v0.11/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
 - FlintNDE：`package-FlintNDE/Documentation/`、版本 README、`check_*` 与 `test/`。
 
 验证报告只证明其记录的版本、路径和范围。旧实现历史保留在 Git history 和进度归档中，不在根 README 重复维护。

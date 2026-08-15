@@ -35,7 +35,16 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
 - 正则奇点 `{a,b,C}` 边界初始化与后续有限段输运在同一后端进程完成。
 - 后端输入、输出、日志及 Wolfram 包内加载显式使用 UTF-8；普通 `Needs["MadStree`"]`
   不需要用户额外指定编码。
+- `MSRuntimeDirectory` 现在明确表示临时运行根本身；`Automatic` 只在调用脚本旁建立一次
+  `results_temp/`，其下固定使用 `nde/` 和 `cache/`。Example 06 不再拼接长任务目录，
+  Notebook 直接运行也不再对空 `$ScriptCommandLine` 调用 `Last`。
+- Windows 完整路径在目录创建和 Python 启动前检查。超过 259 字符时单独返回
+  `RuntimePathTooLong`；输入写入、缺少 `python-flint`、后端启动、后端无输出和输出损坏
+  分别返回独立错误，不再用安装提示覆盖真实路径错误。
+- `MadStree package loaded` 只在 16 个模块文件及其代表性定义全部通过后打印。
 - `MSExportEvaluationData` 消费 `MSEvaluatePath` 的逐点结果和逐段 refinement 信息。
+  任一请求格式写出失败时返回 `EvaluationExportFailed`，不能因另一格式已写出而返回
+  `"written"`。
 - 新增 `MSReconstructEpSeries[context,ep,pointTemplate,MaximumEpPower->m]`。用户不提供 `ep` 点；
   数值 NDE 前由符号边界条件与 dlog DE 自动认证最低整数幂，程序再确定生产/验证 exact 点、
   内部缓冲幂、工作精度和输运阶数。缺省额外拟合两阶；验证失败每轮再增加两阶，只计算
@@ -50,8 +59,8 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
 - Python adapter：8/8 通过；接收已认证 `-1` 后使用 4 个生产点、内部拟合至 `ep^2`，
   并恢复人工 `1/ep+2+3ep` 的 pole `1` 与 finite part `2`。
 - Laurent valuation 8/8；真实 9 主积分、9 边界分支三顶点结构证书得到 `leadingPower=0`。
-- 完整 Python 回归 158/158，Wolfram `Needs["FlintNDE`"]` 20/20；独立包与 Vendor 的
-  20 个 Python 实现文件和 14 个测试文件逐文件同字节。
+- 完整 Python 回归 162/162，Wolfram `Needs["FlintNDE`"]` 25/25；MadStree 浅层目录与导出
+  门禁 10/10。独立包与 Vendor 的 42 个非缓存交付文件逐文件 SHA-256 一致。
 - v0.11 独立验证 17/17：900 点乘 3 masters 全分量互检，最大绝对差 `5.8262e-43`；
   自动规划路线 894 点进入 6 个 fast 桶，端到端与后端分别比严格用户节点路线快
   2.5269 倍和 4.5128 倍。报告位于

@@ -28,6 +28,9 @@ SingularityMode::usage =
 FlintNDEBridgeError::usage = "FlintNDEBridgeError represents a Python bridge failure.";
 
 FlintNDEBridgeError::error = "FlintNDE bridge failure: `1`";
+FlintNDEBridgeError::pythonFlintMissing = "Python started but cannot import python-flint: `1`";
+FlintNDEBridgeError::launchFailed = "The Python bridge could not be launched: `1`";
+FlintNDEBridgeError::outputMissing = "The Python bridge exited without creating its output file: `1`";
 
 
 Begin["`Private`"];
@@ -51,13 +54,35 @@ flintNDEResolvePython[other_] := Failure[
 ];
 
 
-flintNDEResolveWorkDirectory[Automatic] := FileNameJoin[
-  {Directory[], "results_temp", "flintnde_bridge"}
-];
+flintNDEResolveWorkDirectory[Automatic] := FileNameJoin[{Directory[], "results_temp"}];
 flintNDEResolveWorkDirectory[path_String] := ExpandFileName[path];
 flintNDEResolveWorkDirectory[other_] := Failure[
   "InvalidWorkDirectory",
   <|"value" -> other|>
+];
+
+
+(* 短 token 只负责运行文件去重；独立 helper 允许测试在不启动 Python 的情况下固定写入目标。 *)
+flintNDECreateToken[] := StringTake[StringDelete[CreateUUID[], "-"], 16];
+
+
+(* ::Section:: *)
+(*Windows 安全路径门禁*)
+
+(* 路径过长在任何目录创建或 Python 启动前独立返回，不与 bridge 错误混合。 *)
+flintNDEPathLengthFailure[paths_List] := Module[{maximum = 259, strings, overlong, longest},
+  If[$OperatingSystem =!= "Windows", Return[None]];
+  strings = Select[paths, StringQ];
+  overlong = Select[strings, StringLength[#] > maximum &];
+  If[overlong === {}, Return[None]];
+  longest = First@MaximalBy[overlong, StringLength];
+  Failure["RuntimePathTooLong", <|
+    "path" -> longest,
+    "pathLength" -> StringLength[longest],
+    "safeMaximum" -> maximum,
+    "suggestion" ->
+      "请通过 WorkDirectory 指定更短的临时运行目录；该错误发生在 Python 启动之前。"
+  |>]
 ];
 
 
@@ -235,24 +260,34 @@ flintNDEInvoke[
   pythonOption_,
   workDirectoryOption_
 ] := Module[
-  {python, workDirectory, requestFile, outputFile, logFile, token, command,
-   commandText, previousDirectory, exitCode, logText, process, result,
-   directoryFailure},
+  {python, workDirectory, bridgeDirectory, requestFile, outputFile, logFile, token, command,
+    commandText, previousDirectory, exitCode, logText, process, result,
+    directoryFailure, pathFailure, requestWrite, outputLoad},
   python = flintNDEResolvePython[pythonOption];
   If[Head[python] === Failure, Return[python]];
   workDirectory = flintNDEResolveWorkDirectory[workDirectoryOption];
   If[Head[workDirectory] === Failure, Return[workDirectory]];
-  If[! DirectoryQ[workDirectory],
+  bridgeDirectory = FileNameJoin[{workDirectory, "bridge"}];
+  token = flintNDECreateToken[];
+  requestFile = FileNameJoin[{bridgeDirectory, "i-" <> token <> ".json"}];
+  outputFile = FileNameJoin[{bridgeDirectory, "o-" <> token <> ".m"}];
+  logFile = FileNameJoin[{bridgeDirectory, "l-" <> token <> ".txt"}];
+  pathFailure = flintNDEPathLengthFailure[{
+    workDirectory, bridgeDirectory, requestFile, outputFile, logFile
+  }];
+  If[Head[pathFailure] === Failure, Return[pathFailure]];
+  If[! DirectoryQ[bridgeDirectory],
     Quiet@Check[
-      CreateDirectory[workDirectory, CreateIntermediateDirectories -> True],
-      Return[Failure["WorkDirectoryCreationFailed", <|"path" -> workDirectory|>]]
+      CreateDirectory[bridgeDirectory, CreateIntermediateDirectories -> True],
+      Return[Failure["WorkDirectoryCreationFailed", <|"path" -> bridgeDirectory|>]]
     ]
   ];
-  token = CreateUUID["flintnde-"];
-  requestFile = FileNameJoin[{workDirectory, token <> "-request.json"}];
-  outputFile = FileNameJoin[{workDirectory, token <> "-result.m"}];
-  logFile = FileNameJoin[{workDirectory, token <> "-bridge.log"}];
-  Export[requestFile, flintNDEEncode[request], "JSON"];
+  requestWrite = Quiet@Check[Export[requestFile, flintNDEEncode[request], "JSON"], $Failed];
+  If[requestWrite === $Failed || ! FileExistsQ[requestFile],
+    Return[Failure["RuntimeInputWriteFailed", <|
+      "path" -> requestFile, "pathLength" -> StringLength[requestFile]
+    |>]]
+  ];
   command = {
     python,
     "-m",
@@ -283,14 +318,31 @@ flintNDEInvoke[
     Return[Failure["BridgeLaunchFailed", <|"process" -> process|>]]
   ];
   If[! FileExistsQ[outputFile],
-    Message[FlintNDEBridgeError::error, process["StandardError"]];
-    Return[Failure[
-      "BridgeOutputMissing",
-      <|"process" -> process, "requestFile" -> requestFile|>
-    ]]
+    If[StringContainsQ[logText, Alternatives[
+        "No module named 'flint'", "No module named \"flint\"",
+        "ModuleNotFoundError: No module named 'flint'"
+      ]],
+      Message[FlintNDEBridgeError::pythonFlintMissing, logText];
+      Return[Failure["PythonFlintUnavailable", <|
+        "process" -> process, "requestFile" -> requestFile
+      |>]]
+    ];
+    If[exitCode =!= 0,
+      Message[FlintNDEBridgeError::launchFailed, logText];
+      Return[Failure["BridgeLaunchFailed", <|
+        "process" -> process, "requestFile" -> requestFile
+      |>]]
+    ];
+    Message[FlintNDEBridgeError::outputMissing, logText];
+    Return[Failure["BridgeOutputMissing", <|
+      "process" -> process, "requestFile" -> requestFile
+    |>]]
   ];
   Clear[Global`FlintNDEBridgeResult];
-  Get[outputFile, CharacterEncoding -> "UTF-8"];
+  outputLoad = Quiet@Check[Get[outputFile, CharacterEncoding -> "UTF-8"], $Failed];
+  If[outputLoad === $Failed,
+    Return[Failure["BridgeOutputInvalid", <|"path" -> outputFile, "process" -> process|>]]
+  ];
   result = Global`FlintNDEBridgeResult;
   Quiet[DeleteFile /@ Select[{requestFile, outputFile, logFile}, FileExistsQ]];
   Clear[Global`FlintNDEBridgeResult];

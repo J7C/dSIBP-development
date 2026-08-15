@@ -39,7 +39,7 @@ MSBlowupCoordinate::usage = "MSBlowupCoordinate[i] is the i-th local coordinate 
 MSDampingEnergy::usage = "MSDampingEnergy[v] denotes the internal positive damping energy K_v=i phaseSign_v k0_v of vertex v.";
 MSFlintNDEConfiguration::usage = "MSFlintNDEConfiguration[] returns the current version directory, the built-in FlintNDE relative path and availability.";
 MSSetFlintNDERelativePath::usage = "MSSetFlintNDERelativePath[path] changes the single version-directory-relative path to the FlintNDE package.";
-MSRuntimeDirectory::usage = "MSRuntimeDirectory specifies the root directory for MadStree/FlintNDE runtime products; by default it is the calling script's directory.";
+MSRuntimeDirectory::usage = "MSRuntimeDirectory specifies the temporary runtime directory used by MadStree/FlintNDE. Automatic writes below results_temp in the calling script directory; an explicit path is used directly.";
 MessageLanguage::usage = "MessageLanguage selects the language of runtime notices and diagnostics; the default is \"EN\" and \"CN\" selects Chinese.";
 SingularityMode::usage = "SingularityMode selects path treatment: \"Avoid\" (default) refuses a user segment that crosses a singularity, while \"SingularityJump\" explicitly permits a singularity jump whose multivalued branch must be confirmed by the user.";
 FlintNDEPathPlanning::usage = "FlintNDEPathPlanning controls whether FlintNDE automatically plans nodes inside each MadStree affine segment. True (default) enables planning and fast dense multipoint evaluation; False uses the supplied user points strictly as transport nodes.";
@@ -71,8 +71,12 @@ MSContactMaps::nosector = "Sector `1` not found.";
 MSRecurrenceStep::badint = "Integral does not match the context: `1`.";
 MSReduce::cycle = "Iterative reduction detected a repeated state: `1`.";
 MSConvertBasis::unsupported = "This basis transformation is not implemented: `1`.";
-MSEvaluatePath::backendLaunchFailed = "FlintNDE backend produced no output under Python command `1`. Captured backend output tail: `2`. Install python-flint for that interpreter, or point PythonExecutable or MADSTREE_PYTHON at an interpreter that has python-flint.";
+MSEvaluatePath::backendLaunchFailed = "FlintNDE backend could not be launched under Python command `1`. Captured backend output tail: `2`.";
+MSEvaluatePath::pythonFlintMissing = "Python command `1` started but cannot import python-flint. Captured backend output tail: `2`.";
+MSEvaluatePath::backendOutputMissing = "FlintNDE backend exited without creating its output file under Python command `1`. Captured backend output tail: `2`.";
 MSEvaluatePath::backendRunFailed = "FlintNDE backend returned a non-success status under Python command `1`. Backend error: `2`.";
+MadStree::moduleLoadFailed = "MadStree module failed to load: `1`. The package was not loaded.";
+MadStree::moduleContractMissing = "MadStree module did not provide its required definition: `1` (`2`). The package was not loaded.";
 
 
 (* ::Chapter:: *)
@@ -83,29 +87,64 @@ Begin["`Private`"];
 $MadStreeVersion = "0.11";
 $MadStreeKernelDirectory = DirectoryName[$InputFileName];
 
-Scan[
-  Get[
-    FileNameJoin[{$MadStreeKernelDirectory, #}],
-    CharacterEncoding -> "UTF-8"
-  ] &,
-  {
-    "Core/Paths.wl",
-    "Core/Conventions.wl",
-    "Core/Topology.wl",
-    "Core/Sectors.wl",
-    "Core/VertexFamily.wl",
-    "Core/Representation.wl",
-    "Formula/TensorAtoms.wl",
-    "Formula/Recurrence.wl",
-    "DE/DLog.wl",
-    "Core/Artifacts.wl",
-    "Numerics/Configuration.wl",
-    "Numerics/Boundary.wl",
-    "Numerics/Numerics.wl",
-    "Numerics/FlintNDE.wl",
-    "Numerics/PathEvaluation.wl",
-    "Numerics/ExportEvaluation.wl"
-  }
+$MadStreeModuleContracts = {
+  "Core/Paths.wl" -> "MadStree`Private`msRuntimeDirectory",
+  "Core/Conventions.wl" -> "MadStree`Private`msHTohMatrix",
+  "Core/Topology.wl" -> "MadStree`Private`msInputSchemaIssues",
+  "Core/Sectors.wl" -> "MadStree`MSInitTree",
+  "Core/VertexFamily.wl" -> "MadStree`MSInitVertexFamily",
+  "Core/Representation.wl" -> "MadStree`Private`msIntegralData",
+  "Formula/TensorAtoms.wl" -> "MadStree`Private`msKroneckerAll",
+  "Formula/Recurrence.wl" -> "MadStree`Private`msLineById",
+  "DE/DLog.wl" -> "MadStree`MSDLogDE",
+  "Core/Artifacts.wl" -> "MadStree`MSFormulaData",
+  "Numerics/Configuration.wl" -> "MadStree`MSFlintNDEConfiguration",
+  "Numerics/Boundary.wl" -> "MadStree`MSBoundaryData",
+  "Numerics/Numerics.wl" -> "MadStree`MSNumericalSystem",
+  "Numerics/FlintNDE.wl" -> "MadStree`Private`msExecuteFlintNDEAdapter",
+  "Numerics/PathEvaluation.wl" -> "MadStree`MSEvaluatePath",
+  "Numerics/ExportEvaluation.wl" -> "MadStree`MSExportEvaluationData"
+};
+$MadStreeDefinitionPresentQ[symbolName_String] := TrueQ@ToExpression[
+  symbolName,
+  InputForm,
+  Function[symbol, Length[DownValues[symbol]] > 0, HoldAll]
+];
+$MadStreeModuleLoadFailure = Catch[
+  Scan[
+    Function[moduleContract,
+      If[Check[
+          Get[
+            FileNameJoin[{$MadStreeKernelDirectory, First[moduleContract]}],
+            CharacterEncoding -> "UTF-8"
+          ],
+          $Failed
+        ] === $Failed,
+        Throw[Failure["ModuleLoadFailed", <|"module" -> First[moduleContract]|>]]
+      ];
+      If[! $MadStreeDefinitionPresentQ[Last[moduleContract]],
+        Throw[Failure["ModuleContractMissing", <|
+          "module" -> First[moduleContract],
+          "symbol" -> Last[moduleContract]
+        |>]]
+      ]
+    ],
+    $MadStreeModuleContracts
+  ];
+  None
+];
+If[Head[$MadStreeModuleLoadFailure] === Failure,
+  If[$MadStreeModuleLoadFailure[[1]] === "ModuleContractMissing",
+    Message[
+      MadStree::moduleContractMissing,
+      $MadStreeModuleLoadFailure["module"],
+      $MadStreeModuleLoadFailure["symbol"]
+    ],
+    Message[MadStree::moduleLoadFailed, $MadStreeModuleLoadFailure["module"]]
+  ];
+  End[];
+  EndPackage[];
+  Abort[]
 ];
 
 

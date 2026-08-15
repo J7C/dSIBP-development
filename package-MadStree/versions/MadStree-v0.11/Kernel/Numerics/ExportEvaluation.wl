@@ -67,7 +67,8 @@ MSExportEvaluationData[
 ] := Module[
   {pointRecords, points, results, outputDirectory, formats, digits, variableSymbols,
    masterCount, header, rows, jsonPayload, csvFile, jsonFile, statuses,
-   relativeDifferences, metQ, files},
+    relativeDifferences, metQ, files, writeResults, failedFiles, writtenFiles,
+    pathFailure},
   If[Lookup[evaluation, "status", None] =!= "computed",
     Return[Failure[
       "ComputedEvaluationRequired",
@@ -95,9 +96,6 @@ MSExportEvaluationData[
 
   outputDirectory = msExportResolveDirectory[OptionValue[MSOutputDirectory]];
   If[Head[outputDirectory] === Failure, Return[outputDirectory]];
-  If[msEnsureDirectory[outputDirectory] === $Failed,
-    Return[Failure["OutputDirectoryCreationFailed", <|"path" -> outputDirectory|>]]
-  ];
 
   digits = OptionValue[SignificantDigits];
   If[! IntegerQ[digits] || digits < 2,
@@ -165,9 +163,10 @@ MSExportEvaluationData[
     If[MemberQ[formats, "CSV"], {csvFile}, {}],
     If[MemberQ[formats, "JSON"], {jsonFile}, {}]
   ];
-
-  If[MemberQ[formats, "CSV"],
-    Export[csvFile, Prepend[rows, header], "CSV"]
+  pathFailure = msRuntimePathLengthFailure[Prepend[files, outputDirectory]];
+  If[Head[pathFailure] === Failure, Return[pathFailure]];
+  If[msEnsureDirectory[outputDirectory] === $Failed,
+    Return[Failure["OutputDirectoryCreationFailed", <|"path" -> outputDirectory|>]]
   ];
 
   jsonPayload = <|
@@ -193,14 +192,34 @@ MSExportEvaluationData[
     "relativeDifferenceInf" -> relativeDifferences,
     "targetRelativeErrorMet" -> metQ
   |>;
-  If[MemberQ[formats, "JSON"],
-    Export[jsonFile, jsonPayload, "JSON"]
+  writeResults = Association@DeleteCases[{
+    If[MemberQ[formats, "CSV"],
+      csvFile -> Quiet@Check[Export[csvFile, Prepend[rows, header], "CSV"], $Failed],
+      Nothing
+    ],
+    If[MemberQ[formats, "JSON"],
+      jsonFile -> Quiet@Check[Export[jsonFile, jsonPayload, "JSON"], $Failed],
+      Nothing
+    ]
+  }, Nothing];
+  failedFiles = Select[
+    Keys[writeResults],
+    Lookup[writeResults, #] === $Failed || ! FileExistsQ[#] &
+  ];
+  writtenFiles = Select[Keys[writeResults], FileExistsQ];
+  If[failedFiles =!= {},
+    Return[Failure["EvaluationExportFailed", <|
+      "outputDirectory" -> outputDirectory,
+      "writtenFiles" -> writtenFiles,
+      "failedFiles" -> failedFiles,
+      "pathLengths" -> AssociationMap[StringLength, Keys[writeResults]]
+    |>]]
   ];
 
   <|
     "status" -> "written",
     "outputDirectory" -> outputDirectory,
-    "files" -> files,
+    "files" -> writtenFiles,
     "formats" -> formats,
     "pointCount" -> Length[points],
     "masterCount" -> masterCount

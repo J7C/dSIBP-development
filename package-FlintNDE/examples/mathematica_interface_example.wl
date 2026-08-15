@@ -11,9 +11,7 @@ exampleDirectory = DirectoryName[$InputFileName];
 versionDirectory = ExpandFileName[FileNameJoin[{
   exampleDirectory, "..", "versions", "FlintNDE-0.4.0"
 }]];
-runtimeDirectory = FileNameJoin[{
-  exampleDirectory, "results_temp", "mathematica_interface_example"
-}];
+runtimeDirectory = FileNameJoin[{exampleDirectory, "results_temp"}];
 resultDirectory = FileNameJoin[{
   exampleDirectory, "results", "mathematica_interface_example"
 }];
@@ -42,15 +40,15 @@ plan = FlintNDEPlanPath[
   system,
   0,
   {1/4, 1/2},
-  "SingularityMode" -> "Avoid",
-  MessageLanguage -> "EN",
+  FlintNDE`SingularityMode -> "Avoid",
+  FlintNDE`MessageLanguage -> "EN",
   "WorkDirectory" -> runtimeDirectory,
   "WorkingPrecisionDigits" -> 80,
   "OutputDigits" -> 40
 ];
 
 If[! AssociationQ[plan] || Lookup[plan, "status", "error"] =!= "complete",
-  Print["mathematica_interface_example: FAILED while planning"];
+  Print["mathematica_interface_example: FAILED while planning: ", InputForm[plan]];
   Exit[1]
 ];
 
@@ -65,7 +63,7 @@ result = FlintNDEExecutePath[
   system,
   {1, 1},
   plan,
-  MessageLanguage -> "EN",
+  FlintNDE`MessageLanguage -> "EN",
   "WorkDirectory" -> runtimeDirectory,
   "WorkingPrecisionDigits" -> 80,
   "OutputDigits" -> 40,
@@ -75,7 +73,7 @@ result = FlintNDEExecutePath[
 ];
 
 If[! AssociationQ[result] || Lookup[result, "status", "error"] =!= "complete",
-  Print["mathematica_interface_example: FAILED while executing"];
+  Print["mathematica_interface_example: FAILED while executing: ", InputForm[result]];
   Exit[1]
 ];
 

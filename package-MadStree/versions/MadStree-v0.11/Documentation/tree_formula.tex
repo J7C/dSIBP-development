@@ -1459,8 +1459,12 @@ $x(s)=x_0+s v$，每段只拉回一次单变量矩阵 DE，并把全部 exact �
 可选路径规划和输运。开启规划时，同一展开节点覆盖的点组成 evaluation bucket：大桶通过
 子积树/余数树快速多点求值，小桶使用 iterative 算法；关闭规划时用户点严格作为节点。
 不同段不共享局部系数，因而没有构造多变量高维 Taylor 球。后端位置由相对项目根目录的单一配置
-变量控制；运行文件与 Python cache 写入调用脚本目录的 \texttt{results\_temp/}，不写 package
-源码目录。
+变量控制。\texttt{MSRuntimeDirectory} 表示临时运行根本身；\texttt{Automatic} 只在调用脚本旁
+建立一次 \texttt{results\_temp/}，内部短目录为 \texttt{nde/} 和 \texttt{cache/}，不写 package
+源码目录。Windows 下在创建目录和启动 Python 前检查完整 cache、input 与 log 路径；超过 259
+字符时单独返回 \texttt{RuntimePathTooLong}。输入写入、缺少 \texttt{python-flint}、启动失败、
+无输出和损坏输出使用不同 Failure 标签。普通点 CSV/JSON 导出只有在全部请求格式写出成功时才
+返回 \texttt{"written"}。
 
 任何经过中途节点的多点输运都称为折跃；只有显式穿过奇点并用局部基连接两侧匹配点时才称为
 奇点折跃。\texttt{SingularityMode -> "Avoid"} 是缺省模式：相邻用户点连线命中奇点时返回

@@ -181,13 +181,15 @@ MSSetFlintNDERelativePath[FileNameJoin[{"new-name", "code", "package"}]]
 
 路径始终相对当前 MadStree 版本目录；Vendor 此后改名或移动时只改这一项。`MSNumericalSystem` 保留为用户自行提供边界向量时的低层入口。
 
-MMA 自动调用产生的临时 JSON 缺省写入调用脚本目录：
+MMA 自动调用的运行根缺省是调用脚本旁唯一的 `results_temp/`：
 
 ```text
-results_temp/flintnde_transport/
+results_temp/
+  nde/    # 当前请求输入与日志
+  cache/  # 按请求和后端源码身份命名的成功 JSON cache
 ```
 
-可用 `MSRuntimeDirectory -> path` 显式指定其它调用者目录：绝对路径直接使用，相对路径相对当前调用脚本目录解析，不依赖进程工作目录。成功后临时 JSON 自动删除；失败时保留输入、输出路径供诊断。成功结果缓存键同时包含请求内容以及 `Backend/flintnde_transport.py`、Vendor `pyproject.toml` 和排序后的 `flintnde/*.py` 的 SHA-256，因此当前版本原位修复后不会误复用与源码身份不匹配的计划。Python 按缺省规则在相应 package 旁建立 `__pycache__/`，该目录及 `*.pyc` 已由 Git 忽略，可在同一 Python 版本和源码状态下复用。除这些调用侧缓存外，程序包源码目录不接收运行产物。
+`MSRuntimeDirectory -> path` 的显式路径就是运行根本身；绝对路径直接使用，相对路径相对当前调用脚本目录解析，不依赖进程工作目录，也不会再次追加 `results_temp`。Windows 下在目录创建和 Python 启动前检查完整 cache/input/log 路径；超过安全上限时独立返回 `RuntimePathTooLong` 及实际长度。`RuntimeInputWriteFailed`、`PythonFlintUnavailable`、`FlintNDELaunchFailed`、`FlintNDEOutputMissing` 和 `FlintNDEOutputInvalid` 保持互斥故障边界。成功结果缓存键同时包含请求内容以及 `Backend/flintnde_transport.py`、Vendor `pyproject.toml` 和排序后的 `flintnde/*.py` 的 SHA-256，因此当前版本原位修复后不会误复用与源码身份不匹配的计划。Python 按缺省规则在相应 package 旁建立 `__pycache__/`，该目录及 `*.pyc` 已由 Git 忽略。除这些调用侧缓存外，程序包源码目录不接收运行产物。
 
 裸用户点结果保存在 `MSEvaluatePath` 返回值的 `"saved"` 记录中；`"tmp"` 点只参与输运。可用
 
@@ -195,7 +197,7 @@ results_temp/flintnde_transport/
 MSExportEvaluationData[result, MSOutputDirectory -> outputDirectory]
 ```
 
-把已保存普通点导出为 CSV/JSON。临时点不进入普通点导出。运行时 JSON、日志和后端 cache 位于调用脚本目录的 `results_temp/`，正式导出位于调用方指定的 `results/`；程序包源码目录不接收运行产物。
+把已保存普通点导出为 CSV/JSON。任一请求格式写出失败时返回 `EvaluationExportFailed`，不会因另一格式已写出而声称整体 `"written"`；路径过长仍单独返回 `RuntimePathTooLong`。临时点不进入普通点导出。正式导出位于调用方指定的 `results/`；程序包源码目录不接收运行产物。
 完整公式、massless `4 -> 2` quotient、contact shift 与 top-to-sub dlog 推导见 [Documentation/tree_formula.pdf](Documentation/tree_formula.pdf)。
 
 ## Examples

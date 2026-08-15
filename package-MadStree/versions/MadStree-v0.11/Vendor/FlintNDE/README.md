@@ -79,6 +79,13 @@ result = FlintNDEExecutePath[
 ];
 ```
 
+`"WorkDirectory"` 表示临时运行根本身。`Automatic` 使用当前目录下唯一的 `results_temp/`，
+bridge 文件位于其 `bridge/` 子目录，文件名为短 token。Windows 下先检查所有完整路径；超过
+传统 Win32/Wolfram 安全上限时返回 `RuntimePathTooLong`，不会继续启动 Python。
+输入写入失败、缺少 `python-flint`、Python bridge 启动失败和零退出但无输出分别返回
+`RuntimeInputWriteFailed`、`PythonFlintUnavailable`、`BridgeLaunchFailed` 和
+`BridgeOutputMissing`。
+
 显式已知的 `P(x)+Sum R_j/(x-p_j)` 也可用 `FlintNDEPartialFractionSystem` 构造；这不是
 要求用户预提取奇点，`FlintNDERationalSystem` 仍会自动发现并选择路线。
 
@@ -695,11 +702,11 @@ dimension * 10^(-precision_digits)
 python -m unittest discover -s tests -v
 ```
 
-2026-08-14 fresh 结果为 `unittest discover 162/162`；
-Wolfram `Needs["FlintNDE`"]` 端到端检查为 `21/21`。验证覆盖一般有理矩阵、任意次数
+2026-08-15 fresh 结果为 `unittest discover 162/162`；
+Wolfram `Needs["FlintNDE`"]` 端到端检查为 `25/25`。验证覆盖一般有理矩阵、任意次数
 多项式加简单极点的内部特化、缺省避开奇点、显式奇点折跃、严格消息语言、计划序列化
-精度和执行期不重规划，并覆盖 fast multipoint、严格用户节点、符号最低阶证书门禁、
-增量扩阶与缓存复用。独立包与 MadStree v0.11 Vendor 的 42 个非缓存交付文件逐文件
+精度、执行期不重规划、浅层目录和 Python 前置路径/写入门禁，并覆盖 fast multipoint、
+严格用户节点、符号最低阶证书门禁、增量扩阶与缓存复用。独立包与 MadStree v0.11 Vendor 的 42 个非缓存交付文件逐文件
 SHA-256 一致。
 
 完整安装方式、普通点输运、正则奇点、显式数值路线、正规化重建及全部公开参数见

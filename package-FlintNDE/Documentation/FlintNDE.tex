@@ -322,6 +322,18 @@ The planning default is \texttt{"SingularityMode" -> "Avoid"}; explicit
 mode values.  Messages use English by default and
 \texttt{MessageLanguage -> "CN"} selects Chinese.
 
+The Wolfram option \texttt{"WorkDirectory"} denotes the temporary runtime root itself.
+Its \texttt{Automatic} value creates one \texttt{results\_temp/} below the current calling
+directory, and the interface adds only a short \texttt{bridge/} child with 16-hex-token file
+names.  It never appends a second \texttt{results\_temp} or a long task-specific directory.
+On Windows, all complete request, output, and log paths are checked before any file write or
+Python launch.  A path longer than 259 characters returns
+\texttt{RuntimePathTooLong} with the actual path and length.  Request write failure,
+missing \texttt{python-flint}, bridge launch failure, zero-exit missing output, and invalid
+output are reported separately as \texttt{RuntimeInputWriteFailed},
+\texttt{PythonFlintUnavailable}, \texttt{BridgeLaunchFailed},
+\texttt{BridgeOutputMissing}, and \texttt{BridgeOutputInvalid}.
+
 Independent fixed-regulator jobs use
 \texttt{FlintNDE}\allowbreak\texttt{EvaluateEpBatch}, with the option
 \texttt{Parallel}\allowbreak\texttt{TaskCount -> 12}.  The default upper bound is 12 worker processes; the

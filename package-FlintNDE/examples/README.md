@@ -32,6 +32,9 @@ python ep_series_reconstruction.py
 wolframscript -file ep_parallel_mathematica.wl
 ```
 
+两个 Wolfram 示例都把 `"WorkDirectory"` 指向 example 目录下唯一的 `results_temp/`；程序内部
+只追加短的 `bridge/` 和 16 位 token 文件名。用户若显式改目录，所给路径同样表示运行根本身。
+
 正式摘要写入 `results/qnm_2x2/summary/qnm_2x2_summary.json`；初始化布局说明写入
 `results/qnm_2x2/configuration/output_layout.json`。两条路径均由调用脚本传入
 `__file__` 后通过 package 公共接口生成，不依赖启动时的工作目录。
