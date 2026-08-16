@@ -226,6 +226,21 @@ class EpSeriesControlTest(unittest.TestCase):
         self.assertEqual(
             expanded_plan["workingPrecisionDigits"], plan["workingPrecisionDigits"]
         )
+        custom_plan = ADAPTER._run_series_control(
+            ADAPTER._validate_series_control_request(self._control(
+                "production_plan", leadingPower=-1, sampleSpacing="0.01",
+                validationSampleCount=2, validationScale="0.5", maximumSamples=100,
+                extraWorkingPrecision=0.0, productionRound=1,
+                fitExtraOrder=2, fitOrderIncrement=2, fitMaximumRounds=3,
+                samplePoints=["1/10", "9/100", "2/25", "7/100", "3/50", "1/20"],
+                validationPoints=["1/25", "3/100"],
+                initialInternalMaximumPower=2,
+            ))
+        )
+        self.assertEqual(custom_plan["points"], ["1/10", "9/100", "2/25", "7/100"])
+        self.assertEqual(custom_plan["validationPoints"], ["1/25", "3/100"])
+        self.assertEqual(custom_plan["capacitySampleCount"], 6)
+        self.assertEqual(custom_plan["unusedCandidateCount"], 2)
         configure_working_precision(plan["workingPrecisionDigits"])
         production_points = [acb(point) for point in plan["points"]]
         validation_points = [acb(point) for point in plan["validationPoints"]]

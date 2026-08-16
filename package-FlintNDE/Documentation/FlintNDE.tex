@@ -1135,6 +1135,15 @@ boundary-and-DE analysis.  Missing certificates, automatic leading powers, and i
 integers fail before any NDE solve.  MadStree produces this certificate automatically from its
 physical boundary and dlog DE; FlintNDE remains independent of those physical data structures.
 
+An explicit \texttt{sample\_points} sequence is an ordered production candidate pool.  It may
+contain more values than the current square interpolation needs: the first round consumes only
+the required prefix, and a failed validation round consumes later candidates without recomputing
+previous solves.  The optional \texttt{initial\_internal\_maximum\_power} fixes the highest power
+included in that first square system.  Once an explicit pool is exhausted, reconstruction fails
+closed instead of generating a regulator value outside the user-approved range.  To bound the
+complete run, including checks, the user must also provide an explicit disjoint
+\texttt{validation\_points} sequence.
+
 Let the certified global leading power be $n_{\min}$, let the user request the absolute
 highest power $m$, and define
 \begin{equation}
@@ -1228,11 +1237,13 @@ series_result = reconstruct_series_solution(
     radius_fraction=0.60,
     guard_bits=32,
     validation_sample_count=2,
+    validation_points="automatic",
     validation_scale=0.5,
     validation_tolerance="automatic",
     maximum_samples=100,
     rationalize_sample_points=True,
     fit_extra_order=2,
+    initial_internal_maximum_power="automatic",
     fit_order_increment=2,
     fit_max_rounds=3,
     parallel_task_count=12,
@@ -1891,10 +1902,12 @@ loop. \\
 \texttt{goal\_digits=30} & Positive requested decimal accuracy $g$ used by the automatic
 sampling, working-precision, and validation rules. \\
 \texttt{sample\_points="automatic"} & Automatic uses Eq.~\eqref{eq:ndes-series-reconstruction-default}
-and the rationalized one-percent grid.  An explicit sequence bypasses automatic production
-point generation but not validation. \\
-\texttt{sample\_count="automatic"} & Number $N_{\mathrm fit}$ of production interpolation
-points.  It must cover at least the powers $n_{\min},\ldots,m$. \\
+and the rationalized one-percent grid.  An explicit ordered sequence is a candidate pool:
+each round consumes only the prefix needed by its current internal highest power, reuses earlier
+values, and never generates a point after the pool is exhausted. \\
+\texttt{sample\_count="automatic"} & Automatic production interpolation count.  With explicit
+\texttt{sample\_points}, an explicit count must equal the total candidate-pool length; it is not
+the number consumed in the first round. \\
 \texttt{base\_sample="automatic"} & Production scale $\eps_0$; automatic means
 $10^{-\alpha_\eps}$ from Eq.~\eqref{eq:ndes-series-reconstruction-default}. \\
 \texttt{sample\_spacing=0.01} & Relative spacing $\delta$ in
@@ -1919,6 +1932,10 @@ ordinary-point Cauchy radius. \\
 precision to the global FLINT context. \\
 \texttt{validation\_sample\_count=2} & Number $N_{\mathrm check}$ of solves excluded from the
 interpolation and reserved for a posteriori residual checks. \\
+\texttt{validation\_points=}
+\newline\texttt{"automatic"} & Optional explicit independent grid.  These values never enter
+the fit and must be disjoint from the whole production candidate pool.  Supply both explicit
+production and validation grids to restrict every regulator solve to a user-approved range. \\
 \texttt{validation\_scale=0.5} & Scale of the independent validation grid relative to the
 production grid. \\
 \texttt{validation\_tolerance=}\newline\texttt{"automatic"} & Relative residual tolerance; automatic targets
@@ -1928,6 +1945,15 @@ cap.  Validation evaluations are reported separately. \\
 \texttt{rationalize\_sample\_points=True} & Convert automatically generated decimal scales
 and spacings to exact rational regulator values before each NDE solve.  False passes Acb
 samples to the factories instead. \\
+\texttt{fit\_extra\_order=2} & Minimum automatic first-round buffer above the requested highest
+power.  It retains its previous meaning when the initial internal power is automatic. \\
+\texttt{initial\_internal\_}
+\newline\texttt{maximum\_power="automatic"} & Optional absolute first-round internal highest
+power $q\ge m$.  With certified leading power $n_{\min}$, the first round requires exactly
+$q-n_{\min}+1$ production candidates; insufficient capacity fails before any NDE solve. \\
+\texttt{fit\_order\_increment=2} & Additional candidates consumed after each failed validation
+round.  Previously computed production and validation values remain cached. \\
+\texttt{fit\_max\_rounds=3} & Maximum number of fit/validation rounds before closed failure. \\
 \texttt{parallel\_task\_count=12} & Maximum number of independent fixed-regulator worker
 processes.  The effective count is \texttt{min(parallel\_task\_count, number of samples)};
 queued samples start automatically as workers finish.  Fixed exact rational systems, ordinary

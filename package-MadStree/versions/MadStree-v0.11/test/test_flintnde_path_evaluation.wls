@@ -69,6 +69,24 @@ badDirectJump = MSEvaluatePath[
 ];
 
 oldPositionalEpPower = MSReconstructEpSeries[context, ep, points, 0];
+badEpSamplePoints = MSReconstructEpSeries[
+  context, ep, First[points],
+  EpSamplePoints -> {1/10, 1/10}
+];
+badEpMachineSample = MSReconstructEpSeries[
+  context, ep, First[points],
+  EpSamplePoints -> {0.1, 1/20}
+];
+badEpPointOverlap = MSReconstructEpSeries[
+  context, ep, First[points],
+  EpSamplePoints -> {1/10, 1/20},
+  EpValidationPoints -> {1/20, 1/30}
+];
+badEpInitialPower = MSReconstructEpSeries[
+  context, ep, First[points],
+  MaximumEpPower -> 1,
+  EpInitialInternalMaximumPower -> 0
+];
 
 plannedValues = Lookup[Lookup[planned, "pointResults", {}], "value"];
 directValues = Lookup[Lookup[direct, "pointResults", {}], "value"];
@@ -98,9 +116,24 @@ checks = <|
   "adaptiveEpSeriesPublic" -> NameQ["MadStree`MSReconstructEpSeries"],
   "oldPositionalEpPowerRejected" ->
     MatchQ[oldPositionalEpPower, Failure["InvalidEpSeriesArguments", _]],
+  "duplicateEpCandidatesRejected" ->
+    MatchQ[badEpSamplePoints,
+      Failure["EpSamplePointsExactDistinctNonzeroListRequired", _]],
+  "machineEpCandidateRejected" ->
+    MatchQ[badEpMachineSample,
+      Failure["EpSamplePointsExactDistinctNonzeroListRequired", _]],
+  "productionValidationOverlapRejected" ->
+    MatchQ[badEpPointOverlap,
+      Failure["EpProductionAndValidationPointsMustBeDisjoint", _]],
+  "initialInternalPowerRangeChecked" ->
+    MatchQ[badEpInitialPower, Failure["EpInitialInternalMaximumPowerRequired", _]],
   "adaptiveEpSeriesDefaults" ->
     MemberQ[Options[MSReconstructEpSeries], MaximumEpPower -> 0] &&
     MemberQ[Options[MSReconstructEpSeries], EpGoalDigits -> 20] &&
+    MemberQ[Options[MSReconstructEpSeries], EpSamplePoints -> Automatic] &&
+    MemberQ[Options[MSReconstructEpSeries], EpValidationPoints -> Automatic] &&
+    MemberQ[Options[MSReconstructEpSeries],
+      EpInitialInternalMaximumPower -> Automatic] &&
     MemberQ[Options[MSReconstructEpSeries], ParallelTaskCount -> 12],
   "defaultWorkingPrecision" ->
     MemberQ[Options[MSBoundaryData], WorkingPrecision -> 200] &&

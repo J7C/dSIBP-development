@@ -556,12 +556,13 @@ def _validate_series_control_request(value: Any) -> dict[str, Any]:
         raise ValueError("unsupported MadStree-FlintNDE ep series control schema")
     action = value.get("action")
     common = {"schema", "action", "backendPackagePath", "maximumPower", "goalDigits"}
-    expected = {
-        "production_plan": common | {
+    production_base = common | {
             "leadingPower", "sampleSpacing", "validationSampleCount", "validationScale",
             "maximumSamples", "extraWorkingPrecision", "productionRound",
             "fitExtraOrder", "fitOrderIncrement", "fitMaximumRounds",
-        },
+        }
+    expected = {
+        "production_plan": production_base,
         "fit": common | {
             "leadingPower", "workingPrecisionDigits", "points", "values",
             "validationPoints", "validationValues", "validationTolerance",
@@ -569,7 +570,18 @@ def _validate_series_control_request(value: Any) -> dict[str, Any]:
     }.get(action)
     if expected is None:
         raise ValueError(f"unsupported ep series control action: {action}")
-    data = _exact_keys(value, expected, f"ep series {action} request")
+    if action == "production_plan":
+        optional = {
+            "samplePoints", "validationPoints", "initialInternalMaximumPower"
+        }
+        actual = set(value)
+        if not production_base <= actual or not actual <= production_base | optional:
+            raise ValueError(
+                "ep series production_plan request has unexpected or missing fields"
+            )
+        data = dict(value)
+    else:
+        data = _exact_keys(value, expected, f"ep series {action} request")
     _string(data["backendPackagePath"], "backendPackagePath")
     _integer(data["maximumPower"], "maximumPower", -10**9)
     _integer(data["goalDigits"], "goalDigits")
@@ -646,12 +658,39 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("productionRound exceeds fitMaximumRounds")
         pole_depth = max(0, -leading)
         reconstruction_depth = maximum_power - leading
-        initial_count = max(
+        automatic_initial_count = max(
             math.ceil(2.5 * reconstruction_depth + pole_depth),
             reconstruction_depth + 1 + fit_extra_order,
         )
+        initial_internal_maximum = data.get("initialInternalMaximumPower")
+        if initial_internal_maximum is None:
+            initial_count = automatic_initial_count
+        else:
+            initial_internal_maximum = _integer(
+                initial_internal_maximum, "initialInternalMaximumPower", maximum_power
+            )
+            initial_count = initial_internal_maximum - leading + 1
         target_count = initial_count + fit_order_increment * (production_round - 1)
-        capacity_count = initial_count + fit_order_increment * (fit_maximum_rounds - 1)
+        explicit_points = data.get("samplePoints")
+        explicit_validation_points = data.get("validationPoints")
+        if explicit_points is not None:
+            if not isinstance(explicit_points, list) or not explicit_points:
+                raise ValueError("samplePoints must be a nonempty list")
+            capacity_count = len(explicit_points)
+            if initial_internal_maximum is not None and initial_count > capacity_count:
+                raise ValueError(
+                    f"samplePoints has {capacity_count} candidates but first-round internal "
+                    f"power {initial_internal_maximum} requires {initial_count}"
+                )
+            initial_count = min(initial_count, capacity_count)
+            if initial_count < reconstruction_depth + 1:
+                raise ValueError("samplePoints do not cover the requested regulator powers")
+            target_count = min(
+                capacity_count,
+                initial_count + fit_order_increment * (production_round - 1),
+            )
+        else:
+            capacity_count = initial_count + fit_order_increment * (fit_maximum_rounds - 1)
         maximum_samples = _integer(data["maximumSamples"], "maximumSamples")
         if target_count > maximum_samples:
             raise ValueError(
@@ -664,7 +703,8 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
         )
         plan = _resolve_plan(
             leading_power=leading, maximum_power=maximum_power,
-            goal_digits=goal_digits, sample_points=AUTOMATIC,
+            goal_digits=goal_digits,
+            sample_points=(explicit_points if explicit_points is not None else AUTOMATIC),
             sample_count=capacity_count,
             base_sample=AUTOMATIC, sample_spacing=data["sampleSpacing"],
             working_precision_digits=AUTOMATIC,
@@ -674,7 +714,12 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
             validation_sample_count=_integer(
                 data["validationSampleCount"], "validationSampleCount"
             ),
-            validation_points=AUTOMATIC, validation_scale=data["validationScale"],
+            validation_points=(
+                explicit_validation_points
+                if explicit_validation_points is not None
+                else AUTOMATIC
+            ),
+            validation_scale=data["validationScale"],
             maximum_samples=maximum_samples,
             rationalize_sample_points=True,
         )
@@ -685,6 +730,7 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
             "sampleCount": target_count,
             "initialSampleCount": initial_count,
             "capacitySampleCount": capacity_count,
+            "unusedCandidateCount": capacity_count - target_count,
             "internalMaximumPower": leading + target_count - 1,
             "workingPrecisionDigits": plan.working_precision_digits,
             "primaryOrder": plan.transport_order,

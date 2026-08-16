@@ -29,7 +29,7 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
      Arb 球序列化、规划精度门禁及 Wolfram `Needs["FlintNDE`"]` 入口。
 3. Core function II: semi-analytic regulator-series reconstruction
    - 第二张总流程图只把基础 NDE 作为一个模块；单独给上游符号最低阶证书、
-     AMFlow-inspired production plan、Acb 方阵插值和独立样本验证。
+      AMFlow-inspired production plan、显式冗余候选池的增量消费、Acb 方阵插值和独立样本验证。
 4. Installation and dependencies
    - 只声明 Python `>=3.10` 与 `python-flint>=0.6`；说明 wheel、源码安装和任意目录调用。
 5. Examples
@@ -49,7 +49,8 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
       最小项和当前 Stokes fail-closed 边界；
    - 明确 Moser 模块限于 exact Q(i)(x)、有限局部变量和无 ramification 的 meromorphic
      gauge；一般 formal block decoupling、代数扩域、ramification 与 Stokes 数据继续 fail closed；
-   - regulator 重构的 AMFlow 误差公式、通用化参数选择、完整公开接口表与 connection matrix。
+   - regulator 重构的 AMFlow 误差公式、通用化参数选择、用户限制取值范围时的候选池耗尽门禁、
+     完整公开接口表与 connection matrix。
 7. Software status and outlook
    - 记录已实现边界、16 维 Q(i)(k) 验证、高阶 pole 单元交叉验证和仍 fail-closed 的
      一般 Katz/Levelt--Turrittin/Stokes 路线；

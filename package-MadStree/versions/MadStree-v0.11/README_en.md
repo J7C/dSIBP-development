@@ -87,13 +87,21 @@ epSeries = MSReconstructEpSeries[
 ```
 
 `MaximumEpPower` is the highest requested power; its default `0` asks for poles, if present,
-and the finite part. Users do not supply `ep` samples. Before any numerical NDE solve, the actual
+and the finite part. By default users do not supply `ep` samples. Before any numerical NDE solve, the actual
 symbolic boundary condition and dlog DE certify the lowest integer power. A negative DE Laurent
 power, a non-Laurent boundary, or an unproved leading coefficient fails closed. The fit initially
 includes two powers above the user maximum; failed independent validation adds two powers per round,
 solves only new production points, and reuses separate production/validation caches. Three failed
 rounds stop without relaxing the tolerance. `ParallelTaskCount` defaults to 12 and controls outer
 process parallelism, not python-flint's in-process `ctx.threads` setting.
+
+To restrict every regulator value to a user-approved range, set `EpSamplePoints -> {...}` and
+`EpValidationPoints -> {...}` explicitly. The former is an ordered production candidate pool and
+may contain surplus points. With `EpInitialInternalMaximumPower -> q`, the first round consumes only
+the prefix required to fit through `ep^q`; failed validation incrementally consumes later candidates
+while reusing cached values. Validation points never enter the fit and must be disjoint from the
+whole production pool. Exhaustion fails closed without generating an out-of-range point. All three
+options default to `Automatic`, so the default call and backend schema are unchanged.
 
 `WorkingPrecision` defaults to 200 decimal digits for both `MSBoundaryData` and `MSEvaluatePath`.
 An explicit positive integer overrides the default; the backend uses

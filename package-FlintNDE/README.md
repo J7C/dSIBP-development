@@ -48,7 +48,8 @@ Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼
 - 高阶 pole 的 exact Lee--Moser projector-balance 降阶、可严格解耦 sector 的
   指数乘 power-log 局部基、可复用 `{phi,a,b,C}` 边界保存，以及单重不同主导根二阶 pole
   的起点形式渐近基；
-- 正规化参数的自动采样、以 200 位为最低值的工作精度规划和 Laurent 幂级数解重构。
+- 正规化参数的自动采样、以 200 位为最低值的工作精度规划和 Laurent 幂级数解重构；显式
+  取值可作为有序冗余候选池按拟合精度增量消费，候选耗尽时不会越界自动生成新点。
 
 目录分工：
 
@@ -90,7 +91,7 @@ python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.4.0
 
 0.4.0 当前聚焦回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
 Arb 路径 round-trip、fast multipoint、严格用户节点、精度拒绝和运行路径门禁；Python
-`unittest discover` 162/162 通过，Wolfram `Needs["FlintNDE`"]` 端到端检查现扩展到 25 项。
+`unittest discover` 165/165 通过，Wolfram `Needs["FlintNDE`"]` 端到端检查为 25/25。
 完整验证结果以
 `versions/FlintNDE-0.4.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
 

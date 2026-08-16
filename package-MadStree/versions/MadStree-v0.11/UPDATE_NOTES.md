@@ -52,6 +52,9 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
   数值 NDE 前由符号边界条件与 dlog DE 自动认证最低整数幂，程序再确定生产/验证 exact 点、
   内部缓冲幂、工作精度和输运阶数。缺省额外拟合两阶；验证失败每轮再增加两阶，只计算
   新增生产点并复用两类旧点，最多三轮仍失败则关闭失败。
+- 新增显式 `EpSamplePoints`、`EpValidationPoints` 与 `EpInitialInternalMaximumPower`。生产点列表
+  是可冗余的有序候选池，每轮只消费所需前缀；池耗尽时不生成范围外点。三个选项缺省均为
+  `Automatic`，缺省 adapter JSON 保持原字段集合。
 - `ParallelTaskCount -> 12` 控制生产和验证批次的外层进程上限，超额任务自动续交。
 - 物理删除旧公开 `MSEvaluateEpBatch`；固定点批量器仅作为私有阶段执行器，不保留 wrapper。
 - Example 06 的真实无质量三顶点共同正规化 `a1=a2=a3=1+ep` 只指定最高阶 `0`，
@@ -62,7 +65,7 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
 - Python adapter：8/8 通过；接收已认证 `-1` 后使用 4 个生产点、内部拟合至 `ep^2`，
   并恢复人工 `1/ep+2+3ep` 的 pole `1` 与 finite part `2`。
 - Laurent valuation 8/8；真实 9 主积分、9 边界分支三顶点结构证书得到 `leadingPower=0`。
-- 完整 Python 回归 162/162，Wolfram `Needs["FlintNDE`"]` 25/25；MadStree 浅层目录与导出
+- 完整 Python 回归 165/165，Wolfram `Needs["FlintNDE`"]` 25/25；MadStree 浅层目录与导出
   门禁 10/10。独立包与 Vendor 的 42 个非缓存交付文件逐文件 SHA-256 一致。
 - v0.11 独立验证 18/18：runner 先删除旧结果/runtime/报告并检查唯一 `results_temp` 根；
   900 点乘 3 masters 全分量互检，最大绝对差 `5.8262e-43`；

@@ -2,8 +2,9 @@
 
 本例的零矩阵 DE 保持边界值不变；符号边界
 ``1/ep + 2 + 3 ep + 4 ep^2 + 5 ep^3 + 6 ep^4`` 明确认证最低阶为 -1。
-FlintNDE 只消费该证书，不从数值样本猜最低阶。用户只请求有限项，内部缺省多拟合
-两阶；首轮独立验证失败时再追加两阶且复用已有生产点和验证点。
+FlintNDE 只消费该证书，不从数值样本猜最低阶。用户只请求有限项，本例提供冗余的
+生产候选池和独立验证点，并把首轮内部最高幂设为 2。首轮只计算所需候选前缀；独立
+验证失败时再追加两点且复用已有生产点和验证点，绝不取用户池外的 regulator 值。
 
 并行：``parallel_task_count`` 缺省为 12；实际进程数自动取任务数与 12 的较小者。
 Windows 多进程要求 DE、边界和路径工厂都定义在模块顶层。
@@ -58,6 +59,10 @@ def fixed_path(_ep: fmpq, _system: AnalyticMatrixSystem) -> list[acb]:
 def main() -> None:
     """重构 pole 与有限项，并检查增量扩阶和缓存复用诊断。"""
 
+    production_candidates = (
+        "1/10", "9/100", "2/25", "7/100", "3/50", "1/20", "1/25"
+    )
+    validation_points = ("3/100", "1/50")
     result = reconstruct_series_solution(
         DEmatrix=zero_system,
         boundary=laurent_boundary,
@@ -70,7 +75,9 @@ def main() -> None:
             "method": "analytic-example-boundary-and-zero-DE",
         },
         goal_digits=12,
-        base_sample="0.1",
+        sample_points=production_candidates,
+        validation_points=validation_points,
+        initial_internal_maximum_power=2,
         validation_tolerance="1e-20",
         transport_order=4,
         transport_extra_order=2,
@@ -91,6 +98,13 @@ def main() -> None:
             and item["reused_validation_sample_count"] > 0
             for item in history[1:]
         ),
+        "candidate_prefix_only":
+            result.effective_parameters["sample_candidate_count"] == 7
+            and result.effective_parameters["unused_sample_candidate_count"] == 1,
+        "user_range_respected": all(
+            any(abs(point - acb(candidate)).contains(0) for candidate in production_candidates)
+            for point in result.sample_points
+        ),
         "default_parallel_limit":
             result.effective_parameters["parallel_task_count_requested"] == 12,
     }
@@ -100,6 +114,8 @@ def main() -> None:
     print(f"pole coefficient: {pole.str(30)}")
     print(f"finite part: {finite_part.str(30)}")
     print(f"fit expansion history: {history}")
+    print(f"production candidates: {production_candidates}")
+    print(f"used production points: {tuple(point.str(20) for point in result.sample_points)}")
     print(f"checks: {checks}")
     if not all(checks.values()):
         raise SystemExit(1)

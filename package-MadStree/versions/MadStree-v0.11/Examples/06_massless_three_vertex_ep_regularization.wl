@@ -4,7 +4,8 @@
 文件：06_massless_three_vertex_ep_regularization.wl
 用途：演示真实无质量三顶点树图的共同时间幂解析正规化 a1=a2=a3=1+ep；
       用户只指定需要返回到 ep^0，程序在数值 NDE 前从符号边界与 dlog DE 认证最低幂，
-      再选择 exact ep 点并重构 Laurent 系数。
+      再选择 exact ep 点并重构 Laurent 系数。用户也可提供冗余生产候选池、独立验证点
+      和首轮内部最高幂；程序只按每轮所需点数消费候选前缀并复用既有结果。
 并行：ParallelTaskCount 缺省为 12；生产与独立验证任务都由有界进程池自动调度，
       任务多于并行上限时自动续交，不需要用户提供或手动分批 ep 取值。批量基准可在
       wolframscript 命令末尾传入一个正整数覆盖本例请求值，普通用户直接修改参数行即可。
@@ -35,6 +36,13 @@ epParallelTaskCount = If[
 ];
 maximumEpPower = 0;
 epGoalDigits = 12;
+useCustomEpGrid = False;
+epProductionCandidates = {
+  10/10^13, 9/10^13, 8/10^13, 7/10^13, 6/10^13,
+  5/10^13, 4/10^13, 3/10^13, 2/10^13, 1/10^13
+};
+epValidationCandidates = {9/10^14, 8/10^14};
+epInitialInternalMaximumPower = 2;
 
 
 (* ::Chapter:: *)
@@ -71,6 +79,13 @@ epPointTemplate = {{
   epPointTemplate,
   MaximumEpPower -> maximumEpPower,
   EpGoalDigits -> epGoalDigits,
+  EpSamplePoints -> If[useCustomEpGrid, epProductionCandidates, Automatic],
+  EpValidationPoints -> If[useCustomEpGrid, epValidationCandidates, Automatic],
+  EpInitialInternalMaximumPower -> If[
+    useCustomEpGrid,
+    epInitialInternalMaximumPower,
+    Automatic
+  ],
   ParallelTaskCount -> epParallelTaskCount,
   FlintNDEPathPlanning -> True,
   BoundaryScale -> 4,
@@ -97,7 +112,11 @@ checks = <|
     ({a1, a2, a3} /. First[epPointTemplate]) === ConstantArray[1 + ep, 3],
   "defaultParallelCountDocumented" ->
     MemberQ[Options[MSReconstructEpSeries], ParallelTaskCount -> 12] &&
-    MemberQ[Options[MSReconstructEpSeries], MaximumEpPower -> 0],
+    MemberQ[Options[MSReconstructEpSeries], MaximumEpPower -> 0] &&
+    MemberQ[Options[MSReconstructEpSeries], EpSamplePoints -> Automatic] &&
+    MemberQ[Options[MSReconstructEpSeries], EpValidationPoints -> Automatic] &&
+    MemberQ[Options[MSReconstructEpSeries],
+      EpInitialInternalMaximumPower -> Automatic],
   "requestedFinitePart" -> maximumEpPower === 0 &&
     epSeries["maximumPower"] === 0 && KeyExistsQ[epSeries["coefficients"], 0],
   "symbolicSupportCertifiedBeforeNDE" ->
@@ -115,6 +134,12 @@ checks = <|
       "boundaryDefinitionAnalyticAtEpZeroQ"]],
   "automaticProductionGrid" -> Length[epSeries["productionEpValues"]] >=
     epSeries["maximumPower"] - epSeries["leadingPower"] + 1,
+  "customCandidatePoolRespected" -> If[
+    useCustomEpGrid,
+    SubsetQ[epSeries["productionEpValues"], epProductionCandidates] &&
+      epSeries["productionEpCandidateValues"] === epProductionCandidates,
+    epSeries["productionEpCandidateValues"] === Automatic
+  ],
   "independentValidationGrid" -> Length[epSeries["validationEpValues"]] >= 1 &&
     Intersection[epSeries["productionEpValues"], epSeries["validationEpValues"]] === {},
   "validationPassed" -> AllTrue[epSeries["validation"], TrueQ[#["passed"]] &],

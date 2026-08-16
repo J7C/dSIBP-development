@@ -895,6 +895,9 @@ Options[MSReconstructEpSeries] = DeleteDuplicatesBy[
       EpGoalDigits -> 20,
       MaximumEpPower -> 0,
       EpFitExtraOrder -> 2,
+      EpSamplePoints -> Automatic,
+      EpValidationPoints -> Automatic,
+      EpInitialInternalMaximumPower -> Automatic,
       EpFitOrderIncrement -> 2,
       EpFitMaximumRounds -> 3,
       ParallelTaskCount -> 12,
@@ -1003,7 +1006,9 @@ MSReconstructEpSeries[
 ] := Module[
   {unknownOptions, maximumPower, goalDigits, parallelCount, baseOptions, configuration, failure,
    runtimeDirectory, pythonExecutable, supportCertificate,
-   leadingPower, fitExtraOrder, fitOrderIncrement,
+    leadingPower, fitExtraOrder, samplePoints, validationPoints,
+    initialInternalMaximumPower,
+    fitOrderIncrement,
    fitMaximumRounds,
    productionHistory = {}, productionPlan, productionOptions,
    productionCache = <||>, productionEvaluationCache = <||>,
@@ -1023,6 +1028,9 @@ MSReconstructEpSeries[
   ];
   goalDigits = OptionValue[EpGoalDigits];
   fitExtraOrder = OptionValue[EpFitExtraOrder];
+  samplePoints = OptionValue[EpSamplePoints];
+  validationPoints = OptionValue[EpValidationPoints];
+  initialInternalMaximumPower = OptionValue[EpInitialInternalMaximumPower];
   fitOrderIncrement = OptionValue[EpFitOrderIncrement];
   fitMaximumRounds = OptionValue[EpFitMaximumRounds];
   parallelCount = OptionValue[ParallelTaskCount];
@@ -1036,6 +1044,36 @@ MSReconstructEpSeries[
   If[! IntegerQ[fitExtraOrder] || fitExtraOrder < 0,
     Return[Failure["EpFitExtraOrderNonNegativeIntegerRequired",
       <|"value" -> fitExtraOrder, "default" -> 2|>]]
+  ];
+  If[
+    samplePoints =!= Automatic &&
+      (! ListQ[samplePoints] || samplePoints === {} ||
+       ! AllTrue[samplePoints, NumericQ[#] && FreeQ[#, _Real] && ! TrueQ[# === 0] &] ||
+       Length[DeleteDuplicates[samplePoints]] =!= Length[samplePoints]),
+    Return[Failure["EpSamplePointsExactDistinctNonzeroListRequired",
+      <|"value" -> samplePoints, "default" -> Automatic|>]]
+  ];
+  If[
+    validationPoints =!= Automatic &&
+      (! ListQ[validationPoints] || validationPoints === {} ||
+       ! AllTrue[validationPoints, NumericQ[#] && FreeQ[#, _Real] && ! TrueQ[# === 0] &] ||
+       Length[DeleteDuplicates[validationPoints]] =!= Length[validationPoints]),
+    Return[Failure["EpValidationPointsExactDistinctNonzeroListRequired",
+      <|"value" -> validationPoints, "default" -> Automatic|>]]
+  ];
+  If[
+    samplePoints =!= Automatic && validationPoints =!= Automatic &&
+      ! DisjointQ[samplePoints, validationPoints],
+    Return[Failure["EpProductionAndValidationPointsMustBeDisjoint",
+      <|"productionPoints" -> samplePoints,
+        "validationPoints" -> validationPoints|>]]
+  ];
+  If[
+    initialInternalMaximumPower =!= Automatic &&
+      (! IntegerQ[initialInternalMaximumPower] || initialInternalMaximumPower < maximumPower),
+    Return[Failure["EpInitialInternalMaximumPowerRequired",
+      <|"value" -> initialInternalMaximumPower,
+        "minimum" -> maximumPower, "default" -> Automatic|>]]
   ];
   If[! IntegerQ[fitOrderIncrement] || fitOrderIncrement < 1,
     Return[Failure["EpFitOrderIncrementPositiveIntegerRequired",
@@ -1088,7 +1126,7 @@ MSReconstructEpSeries[
   Do[
     productionPlan = msEpSeriesControl[
       "production_plan",
-      <|"maximumPower" -> maximumPower, "goalDigits" -> goalDigits,
+      Join[<|"maximumPower" -> maximumPower, "goalDigits" -> goalDigits,
         "leadingPower" -> leadingPower, "sampleSpacing" -> "0.01",
         "validationSampleCount" -> 2, "validationScale" -> "0.5",
         "maximumSamples" -> 100, "extraWorkingPrecision" -> 0.,
@@ -1096,6 +1134,13 @@ MSReconstructEpSeries[
         "fitExtraOrder" -> fitExtraOrder,
         "fitOrderIncrement" -> fitOrderIncrement,
         "fitMaximumRounds" -> fitMaximumRounds|>,
+        If[samplePoints === Automatic, <||>,
+          <|"samplePoints" -> (ToString[#, InputForm] & /@ samplePoints)|>],
+        If[validationPoints === Automatic, <||>,
+          <|"validationPoints" -> (ToString[#, InputForm] & /@ validationPoints)|>],
+        If[initialInternalMaximumPower === Automatic, <||>,
+          <|"initialInternalMaximumPower" -> initialInternalMaximumPower|>]
+      ],
       configuration, pythonExecutable, runtimeDirectory
     ];
     If[Head[productionPlan] === Failure, Return[productionPlan]];
@@ -1196,13 +1241,16 @@ MSReconstructEpSeries[
     messageLanguage,
     "MadStree reconstructed ep powers " <> ToString[leadingPower] <> " through " <>
       ToString[maximumPower] <> " with " <> ToString[Length[productionStrings]] <>
-      " automatic production points and " <>
+      If[samplePoints === Automatic, " automatic production points and ",
+        " production points selected from the user candidate pool and "] <>
       ToString[Length[productionPlan["validationPoints"]]] <>
       " independent validation points; the ep worker limit was " <>
       ToString[parallelCount] <> " (default 12).",
     "MadStree 已自适应重构 ep^" <> ToString[leadingPower] <> " 至 ep^" <>
       ToString[maximumPower] <> "；程序自动使用 " <> ToString[Length[productionStrings]] <>
-      " 个生产点和 " <> ToString[Length[productionPlan["validationPoints"]]] <>
+      " 个" <> If[samplePoints === Automatic, "自动生产点和 ",
+        "从用户候选池选出的生产点和 "] <>
+      ToString[Length[productionPlan["validationPoints"]]] <>
       " 个独立验证点，ep 任务并行上限为 " <> ToString[parallelCount] <>
       "（缺省 12）。"
   ]];
@@ -1219,6 +1267,11 @@ MSReconstructEpSeries[
     "poleCoefficients" -> KeySelect[coefficients, # < 0 &],
     "finitePart" -> Lookup[coefficients, 0, Missing["NotRequested"]],
     "productionEpValues" -> (ToExpression /@ productionPlan["points"]),
+    "productionEpCandidateValues" -> If[
+      samplePoints === Automatic,
+      Automatic,
+      samplePoints
+    ],
     "validationEpValues" -> (ToExpression /@ productionPlan["validationPoints"]),
     "laurentSupportCertificate" -> supportCertificate,
     "productionHistory" -> productionHistory,

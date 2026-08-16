@@ -1514,6 +1514,14 @@ $1/\epsilon$ 项。
 也不从头重算缓存。不同 $\epsilon$ 任务由 \texttt{ParallelTaskCount -> 12} 的缺省外层进程池
 调度；实际并发取任务数与上限的较小者。
 
+缺省调用仍不含任何 regulator 数值点。若用户需要限制全部取值范围，可用
+\texttt{EpSamplePoints -> \{...\}} 提供有序生产候选池，并以
+\texttt{EpValidationPoints -> \{...\}} 提供与整个生产池分离的独立验证点。候选池可以冗余；
+\texttt{EpInitialInternalMaximumPower -> $q$} 指定首轮内部最高幂后，首轮只消费拟合
+$n_{\min},\ldots,q$ 所需的 $q-n_{\min}+1$ 个候选点，失败扩阶才顺序消费后续点。候选耗尽时
+明确失败，绝不在用户范围外自动生成新点。三个选项缺省均为 \texttt{Automatic}，因此原缺省
+调用和 adapter JSON 字段集合不变。
+
 用户点只接受裸坐标或 \texttt{\{coordinate,}\allowbreak\texttt{"tmp"\}}；前者缺省保存，后者是临时途经点。
 普通保存点在 \texttt{MSEvaluatePath} 返回值中携带坐标、完整主积分向量、状态和用户序号；使用
 \texttt{MSExportEvaluationData[result,}\allowbreak\texttt{ MSOutputDirectory -> outputDirectory]} 导出 CSV/JSON。

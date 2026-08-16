@@ -25,3 +25,5 @@
 - [x] 补全三包手册典型例子及 MadStree/FlintNDE 正规化拟合 example。
 - [x] 编译并目检 PDF，完成 UTF-8、Vendor 与 Git hygiene 门禁。
 - [x] 核对远端分歧，提交并推送 main；功能提交为 `2285d0d`。
+- [x] 增加显式 regulator 冗余候选池、首轮内部最高幂与候选耗尽门禁。
+- [x] 保持三个新选项为 `Automatic`，验证缺省 adapter schema 不增加字段。

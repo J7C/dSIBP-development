@@ -222,6 +222,10 @@ series_result = reconstruct_series_solution(
     validation_points="automatic",
     validation_scale=0.5,
     validation_tolerance="automatic",
+    fit_extra_order=2,
+    initial_internal_maximum_power="automatic",
+    fit_order_increment=2,
+    fit_max_rounds=3,
     maximum_samples=100,
     rationalize_sample_points=True,
     parallel_task_count=12,
@@ -268,17 +272,24 @@ working_precision_digits = max(200, ceil(2 (1 + extra_working_precision) p0))
 ```
 
 其中 200 是缺省自动规划下限；若用户显式给出 `working_precision_digits`，则直接采用用户值。
-全部 `N_fit` 个生产点用于一个 Acb 方阵插值，内部拟合到
+自动路线首轮使用全部 `N_fit` 个生产点做 Acb 方阵插值，内部拟合到
 `n_min + N_fit - 1`，只把 `n_min..maximum_power` 返回用户；不使用最小二乘或伪逆。
 `transport_order=4*p0`，`transport_extra_order=ceil(max(50,p0/5))`，后者作为参考链增加的
 阶数。`transport_sample_count` 和 `transport_extra_sample_count` 分别覆盖两条 Cauchy--DFT
 链的圆周点数；`"automatic"` 继续使用基础输运的 `max(32,2*order)`。
 
+显式 `sample_points` 是按给定顺序消费的生产候选池，而不是要求首轮全部使用。若显式给出
+`initial_internal_maximum_power=q`，首轮恰取前 `q-n_min+1` 个候选点；缺省仍按上述自动公式，
+但候选池较短且足以覆盖用户要求时使用整个候选池。验证失败后每轮按
+`fit_order_increment` 从剩余候选中增加点并复用所有旧值；候选池耗尽即明确失败，绝不生成
+池外取值。`sample_count` 与显式候选池同时给出时必须等于候选总数。
+
 独立验证点缺省位于生产网格的 `validation_scale` 倍尺度；也可用字符串、`fmpq` 或 `acb`
 序列显式传入 `validation_points`。验证点完全不参与插值；NDE 主/参考链以及
 返回截断级数都必须通过 `validation_tolerance`，缺省为 `10^(-goal_digits)`，否则抛出
 `SeriesValidationError`。显式 `sample_points` 应使用字符串、`fmpq` 或 `acb`，不接受会掩盖
-输入精度的 Python `float/complex`。`rationalize_sample_points=False` 会让自动生产和
+输入精度的 Python `float/complex`；显式 `validation_points` 必须与整个生产候选池分离。若要严格限制 regulator
+取值范围，应同时显式给出 `sample_points` 和 `validation_points`。`rationalize_sample_points=False` 会让自动生产和
 验证点以 Acb 而非 `fmpq` 传给工厂。
 
 结果的 `powers` 与 `coefficients` 一一对应；`coefficient(power)` 取单阶系数矢量，
@@ -704,7 +715,7 @@ dimension * 10^(-precision_digits)
 python -m unittest discover -s tests -v
 ```
 
-2026-08-15 fresh 结果为 `unittest discover 162/162`；
+2026-08-16 fresh 结果为 `unittest discover 165/165`；
 Wolfram `Needs["FlintNDE`"]` 端到端检查为 `25/25`。验证覆盖一般有理矩阵、任意次数
 多项式加简单极点的内部特化、缺省避开奇点、显式奇点折跃、严格消息语言、计划序列化
 精度、执行期不重规划、浅层目录和 Python 前置路径/写入门禁，并覆盖 fast multipoint、

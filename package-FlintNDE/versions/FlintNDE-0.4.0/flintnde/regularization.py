@@ -1094,6 +1094,7 @@ def reconstruct_series_solution(
     validation_scale: Any = 0.5,
     validation_tolerance: Any = AUTOMATIC,
     fit_extra_order: int = 2,
+    initial_internal_maximum_power: Any = AUTOMATIC,
     fit_order_increment: int = 2,
     fit_max_rounds: int = 3,
     maximum_samples: int = 100,
@@ -1116,6 +1117,11 @@ def reconstruct_series_solution(
     这些高阶项在独立点估计截断误差。验证失败时每轮缺省再增加两阶，只求解新增生产
     点；已有生产点、验证点、容差和数值设置均复用。达到轮数或样本上限仍不满足
     精度时 fail closed，不使用最小二乘、伪逆或静默降精度。
+
+    显式 ``sample_points`` 是有序候选池：首轮只消费当前内部最高幂所需的前缀，验证
+    失败后再从剩余候选点增量取用，绝不生成池外点。``initial_internal_maximum_power``
+    可显式指定首轮内部最高幂；缺省保持原自动规则。候选池比缺省首轮点数更短时，仍按
+    其完整长度拟合，只要足以覆盖用户请求的系数。
     """
 
     maximum_power = _require_integer(maximum_power, "maximum_power", minimum=-10**9)
@@ -1125,6 +1131,11 @@ def reconstruct_series_solution(
     )
     fit_extra_order = _require_integer(
         fit_extra_order, "fit_extra_order", minimum=0
+    )
+    resolved_initial_internal_maximum = _require_automatic_or_integer(
+        initial_internal_maximum_power,
+        "initial_internal_maximum_power",
+        minimum=maximum_power,
     )
     fit_order_increment = _require_integer(
         fit_order_increment, "fit_order_increment", minimum=1
@@ -1170,16 +1181,30 @@ def reconstruct_series_solution(
         raise ValueError("leading_power_certificate.method must be a nonempty string")
 
     requested_coefficient_count = maximum_power - resolved_leading + 1
+    empirical_count = max(
+        math.ceil(
+            2.5 * (maximum_power - resolved_leading)
+            + max(0, -resolved_leading)
+        ),
+        requested_coefficient_count + fit_extra_order,
+    )
+    requested_initial_count = (
+        empirical_count
+        if resolved_initial_internal_maximum is None
+        else resolved_initial_internal_maximum - resolved_leading + 1
+    )
     if sample_points == AUTOMATIC:
-        empirical_count = max(
-            math.ceil(
-                2.5 * (maximum_power - resolved_leading)
-                + max(0, -resolved_leading)
-            ),
-            requested_coefficient_count + fit_extra_order,
-        )
+        if (
+            resolved_initial_internal_maximum is not None
+            and sample_count != AUTOMATIC
+            and sample_count != requested_initial_count
+        ):
+            raise ValueError(
+                "sample_count must match the count required by "
+                "initial_internal_maximum_power"
+            )
         initial_count = (
-            empirical_count
+            requested_initial_count
             if sample_count == AUTOMATIC
             else _require_integer(
                 sample_count,
@@ -1197,8 +1222,30 @@ def reconstruct_series_solution(
                 f"above maximum_samples={maximum_samples}"
             )
     else:
-        initial_count = None
-        capacity_count = sample_count
+        if not isinstance(sample_points, (list, tuple)) or not sample_points:
+            raise TypeError('sample_points must be "automatic" or a nonempty sequence')
+        candidate_count = len(sample_points)
+        if sample_count != AUTOMATIC:
+            explicit_count = _require_integer(
+                sample_count, "sample_count", minimum=requested_coefficient_count
+            )
+            if explicit_count != candidate_count:
+                raise ValueError("sample_count must equal the explicit sample_points length")
+        if (
+            resolved_initial_internal_maximum is not None
+            and requested_initial_count > candidate_count
+        ):
+            raise ValueError(
+                "explicit sample_points candidate pool has "
+                f"{candidate_count} points but initial_internal_maximum_power="
+                f"{resolved_initial_internal_maximum} requires {requested_initial_count}"
+            )
+        initial_count = min(requested_initial_count, candidate_count)
+        if initial_count < requested_coefficient_count:
+            raise ValueError(
+                "explicit sample_points candidate pool does not cover the requested powers"
+            )
+        capacity_count = candidate_count
 
     capacity_plan = _resolve_plan(
         leading_power=resolved_leading,
@@ -1221,15 +1268,12 @@ def reconstruct_series_solution(
         rationalize_sample_points=rationalize_sample_points,
         fit_extra_order=fit_extra_order,
     )
-    if sample_points == AUTOMATIC:
-        plan = replace(
-            capacity_plan,
-            sample_arguments=capacity_plan.sample_arguments[:initial_count],
-            sample_points=capacity_plan.sample_points[:initial_count],
-            sample_count=initial_count,
-        )
-    else:
-        plan = capacity_plan
+    plan = replace(
+        capacity_plan,
+        sample_arguments=capacity_plan.sample_arguments[:initial_count],
+        sample_points=capacity_plan.sample_points[:initial_count],
+        sample_count=initial_count,
+    )
     configure_working_precision(plan.working_precision_digits, guard_bits)
     tolerance = (
         arb(f"1e-{goal_digits}")
@@ -1265,13 +1309,9 @@ def reconstruct_series_solution(
     current_count = 0
     final_plan = plan
     for round_index in range(1, fit_max_rounds + 1):
-        target_count = (
-            plan.sample_count
-            if sample_points != AUTOMATIC
-            else min(
-                capacity_plan.sample_count,
-                plan.sample_count + fit_order_increment * (round_index - 1),
-            )
+        target_count = min(
+            capacity_plan.sample_count,
+            plan.sample_count + fit_order_increment * (round_index - 1),
         )
         new_arguments = capacity_plan.sample_arguments[current_count:target_count]
         new_points = capacity_plan.sample_points[current_count:target_count]
@@ -1340,15 +1380,21 @@ def reconstruct_series_solution(
         )
         if accepted:
             break
-        if sample_points != AUTOMATIC or current_count >= capacity_plan.sample_count:
+        if current_count >= capacity_plan.sample_count:
             break
 
     if not accepted:
         last_residual = expansion_history[-1]["maximum_validation_relative_residual"]
+        exhaustion = (
+            "; explicit sample_points candidate pool exhausted without generating points "
+            "outside the user-supplied range"
+            if sample_points != AUTOMATIC and current_count >= capacity_plan.sample_count
+            else ""
+        )
         raise SeriesValidationError(
             "series validation remained above tolerance after incremental fitting "
             f"through internal power {resolved_leading + current_count - 1}: "
-            f"maximum residual {last_residual}, tolerance {tolerance.str(20)}"
+            f"maximum residual {last_residual}, tolerance {tolerance.str(20)}{exhaustion}"
         )
 
     returned_count = requested_coefficient_count
@@ -1359,6 +1405,8 @@ def reconstruct_series_solution(
         "sample_source": final_plan.source,
         "sample_count": final_plan.sample_count,
         "initial_sample_count": plan.sample_count,
+        "sample_candidate_count": capacity_plan.sample_count,
+        "unused_sample_candidate_count": capacity_plan.sample_count - final_plan.sample_count,
         "base_sample": final_plan.base_sample,
         "sample_spacing": str(sample_spacing),
         "alpha_epsilon": final_plan.alpha_epsilon,
@@ -1379,6 +1427,11 @@ def reconstruct_series_solution(
         "validation_tolerance": tolerance.str(30),
         "maximum_samples": maximum_samples,
         "fit_extra_order": fit_extra_order,
+        "initial_internal_maximum_power_requested": (
+            initial_internal_maximum_power
+            if initial_internal_maximum_power != AUTOMATIC
+            else AUTOMATIC
+        ),
         "fit_order_increment": fit_order_increment,
         "fit_max_rounds": fit_max_rounds,
         "fit_rounds_used": len(expansion_history),

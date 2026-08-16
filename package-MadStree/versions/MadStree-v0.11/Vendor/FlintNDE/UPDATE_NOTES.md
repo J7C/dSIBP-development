@@ -25,6 +25,10 @@
    `FlintNDEPlanPath` / `FlintNDEExecutePath` / `FlintNDEEvaluateEpBatch` 的缺省工作精度统一为
    200 位十进制精度（697 bit，含 32 guard bits）。正规化自动规划取 200 与原自适应公式的
    较大者；用户显式指定精度时仍直接采用指定值。
+6. `reconstruct_series_solution` 的显式 `sample_points` 现可作为冗余有序候选池；新增
+   `initial_internal_maximum_power` 控制首轮内部最高 regulator 幂。每轮只消费所需前缀，
+   验证失败后复用旧值并增量取点，候选池耗尽时 fail closed，绝不生成用户范围外取值。
+   新参数缺省为 `"automatic"`，未显式配置时输入格式、自动采样公式和结果保持不变。
 
 以下能力说明为从 0.3.0 继承且在 0.4.0 继续保留的基线。
 
@@ -101,7 +105,7 @@
 ## 验证状态
 
 - fast/iter 多点求值单元测试与公开直接用户节点测试已通过。
-- 完整 Python 回归 162/162；Wolfram `Needs["FlintNDE`"]` 端到端 25/25，其中新增 4 项覆盖
+- 完整 Python 回归 165/165；Wolfram `Needs["FlintNDE`"]` 端到端 25/25，其中新增 4 项覆盖
   浅层目录、259/260 字符边界及 Python 前置输入写入失败。
 - 独立包与 MadStree v0.11 Vendor 的 42 个非缓存交付文件逐文件 SHA-256 一致。
 - 0.4.0 独立检验：257 点、64 阶 fast/Horner 最大差 `1.96586e-62`；900 点 planned/direct

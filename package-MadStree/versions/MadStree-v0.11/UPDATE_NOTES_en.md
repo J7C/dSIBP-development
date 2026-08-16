@@ -15,6 +15,10 @@
   requested power. Before any numerical solve, the symbolic boundary and dlog DE certify the lowest
   integer power. The initial fit adds two buffer powers; failed validation adds two more powers and
   computes only new production points while reusing both caches. Three failed rounds stop closed.
+- Explicit `EpSamplePoints`, `EpValidationPoints`, and `EpInitialInternalMaximumPower` optionally
+  provide an ordered surplus production pool, a separate validation grid, and the first-round
+  internal power. Only the required prefix is consumed; exhaustion never generates an out-of-range
+  value. All three default to `Automatic`, preserving the default adapter JSON field set.
 - `ParallelTaskCount -> 12` bounds production and validation process pools. The old public
   `MSEvaluateEpBatch` is physically removed; the fixed-point batch executor is private.
 - `FlintNDEPathPlanning -> True` (default) asks FlintNDE to plan nodes inside each segment.
@@ -61,7 +65,7 @@ Windows `0xC0000142` failure under consecutive Python/FLINT launches without add
   route uses four production points with an internal `ep^2` buffer and recovers pole 1 and finite part 2.
 - Exact Laurent valuation passed 8/8; the real nine-master, nine-branch three-vertex certificate
   returns `leadingPower=0` before numerical NDE work.
-- The full Python regression passed 162/162, Wolfram `Needs["FlintNDE`"]` passed 25/25, and the
+- The full Python regression passed 165/165, Wolfram `Needs["FlintNDE`"]` passed 25/25, and the
   MadStree shallow-runtime/export gate passed 10/10. All 42 non-cache delivery files are
   SHA-256-identical between the standalone backend and the Vendor copy.
 - The v0.11 independent validation passed 18/18 after deleting its old results, runtime, and report

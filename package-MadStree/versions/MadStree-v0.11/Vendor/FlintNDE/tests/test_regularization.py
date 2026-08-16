@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from fractions import Fraction
 from pathlib import Path
 
 from flint import acb, acb_mat, ctx, fmpq
@@ -169,6 +170,112 @@ class SeriesReconstructionTest(unittest.TestCase):
                 for production in result.sample_points
             )
         )
+
+    def test_explicit_redundant_candidates_are_consumed_incrementally(self) -> None:
+        """显式候选池首轮只取所需前缀，失败后复用旧值并追加池内点。"""
+
+        received: list[str] = []
+
+        def quartic_boundary(ep: fmpq) -> list[acb]:
+            received.append(str(ep))
+            regulator = acb(ep)
+            return [acb(1) + regulator + regulator**2 + regulator**3 + regulator**4]
+
+        candidates = ("0.10", "0.09", "0.08", "0.07", "0.06", "0.05")
+        result = reconstruct_series_solution(
+            DEmatrix=zero_system(1),
+            boundary=quartic_boundary,
+            path=[acb(0), acb(1)],
+            maximum_power=0,
+            leading_power=0,
+            leading_power_certificate=support_certificate(0),
+            goal_digits=8,
+            sample_points=candidates,
+            validation_points=("0.04", "0.03"),
+            initial_internal_maximum_power=2,
+            fit_order_increment=2,
+            fit_max_rounds=2,
+            working_precision_digits=80,
+            transport_order=4,
+            transport_extra_order=2,
+            validation_tolerance="1e-20",
+            parallel_task_count=1,
+        )
+
+        history = result.diagnostics["fit_expansion_history"]
+        self.assertEqual([item["new_production_sample_count"] for item in history], [3, 2])
+        self.assertEqual(history[1]["reused_production_sample_count"], 3)
+        self.assertTrue(all(
+            abs(point - acb(expected)).contains(0)
+            for point, expected in zip(result.sample_points, candidates[:5])
+        ))
+        self.assertEqual(result.effective_parameters["sample_candidate_count"], 6)
+        self.assertEqual(result.effective_parameters["unused_sample_candidate_count"], 1)
+        self.assertEqual(len(received), 7)
+        self.assertEqual(len(received), len(set(received)))
+        self.assertNotIn(str(Fraction(candidates[-1])), received)
+
+    def test_explicit_candidate_exhaustion_never_generates_out_of_pool_points(self) -> None:
+        """候选池不足以达到精度时必须明确失败，且只调用用户列出的点。"""
+
+        received: list[str] = []
+
+        def exponential_boundary(ep: fmpq) -> list[acb]:
+            received.append(str(ep))
+            return [acb(ep).exp()]
+
+        candidates = ("0.10", "0.09", "0.08", "0.07")
+        validation = ("0.04", "0.03")
+        with self.assertRaisesRegex(
+            SeriesValidationError, "explicit sample_points candidate pool exhausted"
+        ):
+            reconstruct_series_solution(
+                DEmatrix=zero_system(1),
+                boundary=exponential_boundary,
+                path=[acb(0), acb(1)],
+                maximum_power=0,
+                leading_power=0,
+                leading_power_certificate=support_certificate(0),
+                goal_digits=8,
+                sample_points=candidates,
+                validation_points=validation,
+                initial_internal_maximum_power=1,
+                fit_order_increment=2,
+                fit_max_rounds=3,
+                working_precision_digits=80,
+                transport_order=4,
+                transport_extra_order=2,
+                validation_tolerance="1e-40",
+                parallel_task_count=1,
+            )
+        self.assertEqual(
+            set(received),
+            {str(Fraction(point)) for point in candidates + validation},
+        )
+
+    def test_explicit_initial_internal_power_requires_sufficient_capacity(self) -> None:
+        """显式首轮内部最高幂不得被不足的候选池或冲突 sample_count 静默降低。"""
+
+        common = dict(
+            DEmatrix=zero_system(1), boundary=lambda ep: [acb(1)],
+            path=[acb(0), acb(1)], maximum_power=0, leading_power=0,
+            leading_power_certificate=support_certificate(0), goal_digits=8,
+            validation_points=("0.04",), working_precision_digits=60,
+            transport_order=4, transport_extra_order=2, parallel_task_count=1,
+        )
+        with self.assertRaisesRegex(ValueError, "requires 4"):
+            reconstruct_series_solution(
+                **common,
+                sample_points=("0.10", "0.09", "0.08"),
+                initial_internal_maximum_power=3,
+            )
+        with self.assertRaisesRegex(ValueError, "sample_count must match"):
+            reconstruct_series_solution(
+                **common,
+                sample_points="automatic",
+                sample_count=3,
+                initial_internal_maximum_power=3,
+            )
 
     def test_fit_round_limit_fails_closed_without_relaxing_tolerance(self) -> None:
         """达到扩阶轮数仍未通过时必须保持原容差并关闭失败。"""

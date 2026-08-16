@@ -94,7 +94,7 @@ epSeries = MSReconstructEpSeries[
 ```
 
 `MaximumEpPower` 是用户需要返回的最高 `ep` 幂；缺省 `0` 表示需要 pole（若存在）及有限项。
-用户不提供任何 `ep` 取值。任何数值 NDE 启动前，程序先从实际符号边界条件与 dlog DE
+缺省时用户不提供任何 `ep` 取值。任何数值 NDE 启动前，程序先从实际符号边界条件与 dlog DE
 认证最低整数幂：检查 `ep=0` 处 DE 无负 Laurent 阶、定义积分边界解析且物理分支合并后
 存在可证明非零的最低系数；正规化参数进入未认证路径坐标或结构无法证明时 fail closed。
 随后按最低幂、最高幂和 `EpGoalDigits` 自动决定生产点、`ep` 尺度、工作精度、输运阶数及
@@ -103,6 +103,13 @@ epSeries = MSReconstructEpSeries[
 自动工作精度取 200 位与自适应估计的较大者。
 `ParallelTaskCount` 缺省为 12，控制每批独立 `ep` 后端进程；超出部分自动续交。它不同于
 python-flint 单进程内的 `ctx.threads`。
+
+若需把所有取值限制在用户认可范围，可显式给出 `EpSamplePoints -> {...}` 与
+`EpValidationPoints -> {...}`。前者是有序生产候选池，可以多于首轮所需点数；设置
+`EpInitialInternalMaximumPower -> q` 后，首轮只取拟合到 `ep^q` 所需的前缀，验证失败才从
+剩余候选中增量取点并复用旧值。验证点从不参与拟合且必须与整个生产候选池分离；候选耗尽
+即失败，不会自动越出用户范围。三个新选项缺省均为 `Automatic`，因此缺省调用及后端输入
+schema 不变。
 
 `FlintNDEPathPlanning -> True` 让 FlintNDE 在每段内部规划节点。落在同一节点收敛圆盘内的用户点组成一个 evaluation bucket，并用该节点保存的向量级数做快速多点求值；点数不少于 8 的桶使用子积树/余数树，小桶使用 iterative 算法。`False` 则严格把用户点依次作为节点，不插点、不删点、不调用规划器。不同复仿射段不共享局部系数，因此没有多变量高维 Taylor 球。若一段全部 dlog letters 为常量，拉回连接为零并正常输运。
 

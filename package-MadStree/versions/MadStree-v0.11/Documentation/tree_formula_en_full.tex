@@ -1531,6 +1531,16 @@ least squares is not substituted, and caches are not discarded.  Independent reg
 use an outer process pool with default \texttt{ParallelTaskCount -> 12}; the effective count is
 the smaller of this limit and the number of tasks.
 
+The default call still contains no regulator values.  To restrict every solve to an approved
+range, \texttt{EpSamplePoints -> \{...\}} supplies an ordered production candidate pool and
+\texttt{EpValidationPoints -> \{...\}} supplies an independent grid disjoint from that whole
+pool.  The pool may be redundant.  With
+\texttt{EpInitialInternalMaximumPower -> $q$}, the first round consumes exactly the
+$q-n_{\min}+1$ candidates required for powers $n_{\min},\ldots,q$; later candidates are consumed
+only after failed validation.  Pool exhaustion fails closed and never creates an out-of-range
+value.  All three options default to \texttt{Automatic}, preserving the original default call and
+adapter JSON field set.
+
 User points are bare coordinates or \texttt{\{coordinate,"tmp"\}}; the former are saved and
 the latter are transient waypoints. Ordinary saved points in the \texttt{MSEvaluatePath} result
 carry coordinates, the full master-integral vector, status, and user index. Use

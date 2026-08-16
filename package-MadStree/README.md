@@ -39,10 +39,13 @@ series = MSReconstructEpSeries[
 ];
 ```
 
-`MaximumEpPower -> 0` 表示返回到 `ep^0`。用户不提供 `ep` 取值；任何数值 NDE 启动前，
+`MaximumEpPower -> 0` 表示返回到 `ep^0`。缺省时用户不提供 `ep` 取值；任何数值 NDE 启动前，
 程序从实际符号边界条件与 dlog DE 自动认证最低整数幂，并把证书交给后续采样规划。DE 含负
 `ep` 阶、边界不是有限 Laurent 型、最低阶系数无法证明非零或路径坐标依赖 `ep` 时均
 fail closed，不用终点数值 pilot 猜测。随后自动决定生产点、独立验证点、工作精度和输运阶数；
+也可显式用 `EpSamplePoints` 提供冗余有序生产候选池、用 `EpValidationPoints` 固定独立验证点，
+并以 `EpInitialInternalMaximumPower` 指定首轮内部最高幂。程序只按需增量消费候选点并复用旧值，
+候选耗尽即失败，不会越出用户给定范围；三个选项缺省均为 `Automatic`，不改变缺省输入格式。
 内部缺省多拟合两阶，验证失败时每轮再增加两阶，只求解新增生产点并复用既有生产/验证缓存。
 自动工作精度不低于 200 位。`ParallelTaskCount` 缺省为 12，是不同 `ep` 的外层进程上限，
 不是单个 Python 进程内的 `ctx.threads`。
