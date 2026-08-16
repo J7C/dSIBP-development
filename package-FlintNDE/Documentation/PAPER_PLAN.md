@@ -29,7 +29,8 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
      Arb 球序列化、规划精度门禁及 Wolfram `Needs["FlintNDE`"]` 入口。
 3. Core function II: semi-analytic regulator-series reconstruction
    - 第二张总流程图只把基础 NDE 作为一个模块；单独给上游符号最低阶证书、
-      AMFlow-inspired production plan、显式冗余候选池的增量消费、Acb 方阵插值和独立样本验证。
+      AMFlow-inspired production plan、显式冗余候选池的增量消费、开复角域内最多三条均匀
+      射线、Acb 方阵插值和独立样本验证；说明未达精度时保留当前系数但撤销精度认证。
 4. Installation and dependencies
    - 只声明 Python `>=3.10` 与 `python-flint>=0.6`；说明 wheel、源码安装和任意目录调用。
 5. Examples

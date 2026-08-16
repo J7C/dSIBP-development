@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import math
 import pickle
+import warnings
 from dataclasses import dataclass, replace
 from decimal import Decimal, localcontext
 from fractions import Fraction
@@ -239,6 +240,53 @@ def _automatic_grid(
     return tuple(arguments), tuple(points)
 
 
+def _angle_range_texts(value: Any) -> tuple[str, str] | None:
+    """解析自动采样的复角域；普通浮点只作为区域边界控制量。"""
+
+    if value == AUTOMATIC:
+        return None
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        raise TypeError('sample_angle_range must be "automatic" or a two-item sequence')
+    if any(isinstance(item, bool) or isinstance(item, complex) for item in value):
+        raise TypeError("sample_angle_range endpoints must be finite real angles in radians")
+    texts = tuple(str(item) for item in value)
+    try:
+        bounds = tuple(arb(text) for text in texts)
+    except (TypeError, ValueError) as error:
+        raise TypeError(
+            "sample_angle_range endpoints must be finite real angles in radians"
+        ) from error
+    if not all(bound.is_finite() for bound in bounds):
+        raise ValueError("sample_angle_range endpoints must be finite")
+    if not bounds[0] < bounds[1]:
+        raise ValueError("sample_angle_range must define a nonempty open angle interval")
+    return texts
+
+
+def _rotate_automatic_grid(
+    radii: tuple[acb, ...],
+    angle_range: tuple[str, str],
+) -> tuple[tuple[acb, ...], tuple[acb, ...]]:
+    """在开角域内部均匀选至多三条射线，并循环分配自动模长。"""
+
+    lower = arb(angle_range[0])
+    upper = arb(angle_range[1])
+    width = upper - lower
+    angle_count = min(3, len(radii))
+    angles = tuple(
+        lower + width * arb(index) / arb(angle_count + 1)
+        for index in range(1, angle_count + 1)
+    )
+    points: list[acb] = []
+    for index, radius in enumerate(radii, start=1):
+        theta = angles[(index - 1) % angle_count]
+        point = acb(radius) * acb(0, theta).exp()
+        points.append(point)
+    resolved = tuple(points)
+    _require_distinct_points(resolved, "automatic angle-range sample_points")
+    return resolved, resolved
+
+
 def _point_alpha(points: tuple[acb, ...]) -> float:
     """由最大生产样本模估计 ``-log10(r)``，供自定义网格精度规划。"""
 
@@ -274,6 +322,7 @@ def _resolve_plan(
     maximum_power: int,
     goal_digits: int,
     sample_points: Any,
+    sample_angle_range: Any = AUTOMATIC,
     sample_count: Any,
     base_sample: Any,
     sample_spacing: Any,
@@ -303,6 +352,10 @@ def _resolve_plan(
     resolved_count = _require_automatic_or_integer(
         sample_count, "sample_count", minimum=reconstruction_depth + 1
     )
+
+    angle_range = _angle_range_texts(sample_angle_range)
+    if sample_points != AUTOMATIC and angle_range is not None:
+        raise ValueError("sample_angle_range cannot be combined with explicit sample_points")
 
     if sample_points == AUTOMATIC:
         count = automatic_count if resolved_count is None else resolved_count
@@ -368,6 +421,14 @@ def _resolve_plan(
         DEFAULT_WORKING_PRECISION_DIGITS,
         math.ceil(2 * (1 + extra_working_precision) * base_precision),
     )
+    if sample_points == AUTOMATIC and angle_range is not None:
+        old_precision = ctx.prec
+        try:
+            ctx.prec = max(old_precision, math.ceil(precision * math.log2(10)) + 32)
+            arguments, points = _rotate_automatic_grid(points, angle_range)
+        finally:
+            ctx.prec = old_precision
+        source = "automatic-angle-range"
     resolved_order = _require_automatic_or_integer(
         transport_order, "transport_order", minimum=1
     )
@@ -540,17 +601,27 @@ def _solve_sample(
     }
 
 
-def _solve_sample_job(payload: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
+def _solve_sample_job(payload: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
     """在独立进程重建 FLINT 标量并执行一个固定 regulator 样本。"""
 
     ctx.prec = payload["working_precision_bits"]
     DEmatrix, boundary, path = _restore_parallel_inputs(payload["inputs"])
+    sample_argument = payload["sample_argument"]
+    if isinstance(sample_argument, dict) and sample_argument.get("kind") == "acb-ball":
+        sample_argument = _acb_ball_from_record(
+            sample_argument["value"], "sample_argument"
+        )
+    sample_point = payload["sample_point"]
+    if isinstance(sample_point, dict) and sample_point.get("kind") == "acb-ball":
+        sample_point = _acb_ball_from_record(sample_point["value"], "sample_point")
+    else:
+        sample_point = acb(sample_point)
     value, report = _solve_sample(
         DEmatrix=DEmatrix,
         boundary=boundary,
         path=path,
-        sample_argument=payload["sample_argument"],
-        sample_point=acb(payload["sample_point"]),
+        sample_argument=sample_argument,
+        sample_point=sample_point,
         transport_order=payload["transport_order"],
         transport_extra_order=payload["transport_extra_order"],
         transport_sample_count=payload["transport_sample_count"],
@@ -558,7 +629,16 @@ def _solve_sample_job(payload: dict[str, Any]) -> tuple[list[str], dict[str, Any
         radius_fraction=payload["radius_fraction"],
         nde_tolerance=arb(payload["nde_tolerance"]),
     )
-    return _vector_to_strings(value), report
+    record_digits = math.ceil(int(ctx.prec) / math.log2(10)) + 10
+    values = []
+    for row in range(value.nrows()):
+        entry = value[row, 0]
+        values.append(
+            entry.str(50)
+            if entry.imag.is_zero()
+            else {"kind": "acb-ball", "value": _acb_ball_record(entry, record_digits)}
+        )
+    return values, report
 
 
 def _rational_system_record(system: RationalMatrixSystem) -> dict[str, Any]:
@@ -718,11 +798,20 @@ def _solve_samples(
 
     effective_count = min(parallel_task_count, len(sample_arguments))
     input_records = _parallel_input_records(DEmatrix, boundary, path)
+    record_digits = math.ceil(int(ctx.prec) / math.log2(10)) + 10
     payloads = [
         {
             "inputs": input_records,
-            "sample_argument": argument,
-            "sample_point": point.str(80),
+            "sample_argument": (
+                {"kind": "acb-ball", "value": _acb_ball_record(argument, record_digits)}
+                if isinstance(argument, acb)
+                else argument
+            ),
+            "sample_point": (
+                point.str(record_digits)
+                if point.imag.is_zero()
+                else {"kind": "acb-ball", "value": _acb_ball_record(point, record_digits)}
+            ),
             "transport_order": transport_order,
             "transport_extra_order": transport_extra_order,
             "transport_sample_count": transport_sample_count,
@@ -736,7 +825,14 @@ def _solve_samples(
     if effective_count == 1:
         completed = [_solve_sample_job(payload) for payload in payloads]
         values = [
-            column_vector([acb(entry) for entry in result[0]])
+            column_vector([
+                (
+                    _acb_ball_from_record(entry["value"], f"worker_value[{row}]")
+                    if isinstance(entry, dict) and entry.get("kind") == "acb-ball"
+                    else acb(entry)
+                )
+                for row, entry in enumerate(result[0])
+            ])
             for result in completed
         ]
         reports = [result[1] for result in completed]
@@ -755,7 +851,17 @@ def _solve_samples(
         processes=effective_count, maxtasksperchild=1
     ) as pool:
         completed = pool.map(_solve_sample_job, payloads, chunksize=1)
-    values = [column_vector([acb(entry) for entry in result[0]]) for result in completed]
+    values = [
+        column_vector([
+            (
+                _acb_ball_from_record(entry["value"], f"worker_value[{row}]")
+                if isinstance(entry, dict) and entry.get("kind") == "acb-ball"
+                else acb(entry)
+            )
+            for row, entry in enumerate(result[0])
+        ])
+        for result in completed
+    ]
     reports = [result[1] for result in completed]
     return values, reports, effective_count
 
@@ -1078,6 +1184,7 @@ def reconstruct_series_solution(
     series_parameter: str = "ep",
     goal_digits: int = 30,
     sample_points: Any = AUTOMATIC,
+    sample_angle_range: Any = AUTOMATIC,
     sample_count: Any = AUTOMATIC,
     base_sample: Any = AUTOMATIC,
     sample_spacing: Any = 0.01,
@@ -1116,12 +1223,18 @@ def reconstruct_series_solution(
     ``maximum_power`` 的系数；内部拟合缺省至少多两阶，并用
     这些高阶项在独立点估计截断误差。验证失败时每轮缺省再增加两阶，只求解新增生产
     点；已有生产点、验证点、容差和数值设置均复用。达到轮数或样本上限仍不满足
-    精度时 fail closed，不使用最小二乘、伪逆或静默降精度。
+    精度时返回当前最佳系数并显式标记未达到目标精度，不使用最小二乘、伪逆或静默
+    降精度。
 
     显式 ``sample_points`` 是有序候选池：首轮只消费当前内部最高幂所需的前缀，验证
     失败后再从剩余候选点增量取用，绝不生成池外点。``initial_internal_maximum_power``
     可显式指定首轮内部最高幂；缺省保持原自动规则。候选池比缺省首轮点数更短时，仍按
     其完整长度拟合，只要足以覆盖用户请求的系数。
+
+    ``sample_angle_range=(theta_min, theta_max)`` 以弧度限制自动样本的复角度。模长仍由
+    原 AMFlow 式精度策略自动决定且不设置模长上限；角域视为开区间，程序在内部均匀
+    选择至多三条射线并循环分配样本，因此不会刻意贴近边界。缺省 ``automatic`` 严格
+    保留原正实轴网格。
     """
 
     maximum_power = _require_integer(maximum_power, "maximum_power", minimum=-10**9)
@@ -1156,6 +1269,8 @@ def reconstruct_series_solution(
         raise ValueError("radius_fraction must lie strictly between zero and one")
     if not isinstance(rationalize_sample_points, bool):
         raise TypeError("rationalize_sample_points must be bool")
+    if sample_points != AUTOMATIC and sample_angle_range != AUTOMATIC:
+        raise ValueError("sample_angle_range cannot be combined with explicit sample_points")
 
     resolved_leading = _require_integer(
         leading_power, "leading_power", minimum=-10**9
@@ -1252,6 +1367,7 @@ def reconstruct_series_solution(
         maximum_power=maximum_power,
         goal_digits=goal_digits,
         sample_points=sample_points,
+        sample_angle_range=sample_angle_range,
         sample_count=capacity_count,
         base_sample=base_sample,
         sample_spacing=sample_spacing,
@@ -1383,19 +1499,29 @@ def reconstruct_series_solution(
         if current_count >= capacity_plan.sample_count:
             break
 
+    precision_failure_reason = None
+    precision_warning = None
     if not accepted:
         last_residual = expansion_history[-1]["maximum_validation_relative_residual"]
-        exhaustion = (
-            "; explicit sample_points candidate pool exhausted without generating points "
-            "outside the user-supplied range"
-            if sample_points != AUTOMATIC and current_count >= capacity_plan.sample_count
-            else ""
-        )
-        raise SeriesValidationError(
+        if sample_points != AUTOMATIC and current_count >= capacity_plan.sample_count:
+            precision_failure_reason = "candidate_pool_exhausted"
+            detail = (
+                "the explicit sample_points candidate pool was exhausted; no points "
+                "outside the user-supplied pool were generated"
+            )
+        elif current_count >= maximum_samples:
+            precision_failure_reason = "maximum_samples_reached"
+            detail = f"maximum_samples={maximum_samples} was reached"
+        else:
+            precision_failure_reason = "fit_round_limit_reached"
+            detail = f"fit_max_rounds={fit_max_rounds} was reached"
+        precision_warning = (
             "series validation remained above tolerance after incremental fitting "
             f"through internal power {resolved_leading + current_count - 1}: "
-            f"maximum residual {last_residual}, tolerance {tolerance.str(20)}{exhaustion}"
+            f"maximum residual {last_residual}, tolerance {tolerance.str(20)}; {detail}. "
+            "Returning the current best coefficients without precision certification."
         )
+        warnings.warn(precision_warning, RuntimeWarning, stacklevel=2)
 
     returned_count = requested_coefficient_count
     returned_coefficients = internal_coefficients[:returned_count]
@@ -1409,6 +1535,9 @@ def reconstruct_series_solution(
         "unused_sample_candidate_count": capacity_plan.sample_count - final_plan.sample_count,
         "base_sample": final_plan.base_sample,
         "sample_spacing": str(sample_spacing),
+        "sample_angle_range": (
+            AUTOMATIC if sample_angle_range == AUTOMATIC else list(_angle_range_texts(sample_angle_range))
+        ),
         "alpha_epsilon": final_plan.alpha_epsilon,
         "base_precision_digits": final_plan.base_precision_digits,
         "working_precision_digits": final_plan.working_precision_digits,
@@ -1439,6 +1568,8 @@ def reconstruct_series_solution(
         "parallel_task_count_requested": parallel_task_count,
         "production_parallel_task_count_effective": max(production_parallel_counts),
         "validation_parallel_task_count_effective": validation_parallel_count,
+        "precision_target_met": accepted,
+        "precision_failure_reason": precision_failure_reason,
     }
     diagnostics = {
         "leading_power_certificate": dict(leading_power_certificate),
@@ -1454,6 +1585,9 @@ def reconstruct_series_solution(
         "internal_buffer_powers": internal_maximum - maximum_power,
         "interpolation": "square Acb Vandermonde with all production samples",
         "least_squares_used": False,
+        "precision_target_met": accepted,
+        "precision_failure_reason": precision_failure_reason,
+        "precision_warning": precision_warning,
     }
     powers = tuple(range(resolved_leading, maximum_power + 1))
     result = SeriesReconstructionResult(

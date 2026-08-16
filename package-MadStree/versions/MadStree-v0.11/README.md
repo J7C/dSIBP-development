@@ -99,7 +99,9 @@ epSeries = MSReconstructEpSeries[
 存在可证明非零的最低系数；正规化参数进入未认证路径坐标或结构无法证明时 fail closed。
 随后按最低幂、最高幂和 `EpGoalDigits` 自动决定生产点、`ep` 尺度、工作精度、输运阶数及
 不参与拟合的独立验证点。内部拟合缺省比用户最高阶多两阶；验证失败时每轮再增加两阶，
-只计算新增生产点，既有生产点和验证点分别缓存复用。最多三轮仍不满足原误差门槛则失败。
+只计算新增生产点，既有生产点和验证点分别缓存复用。最多三轮仍不满足原误差门槛时返回
+当前最佳系数，并用 `status -> "computed_with_warning"`、`precisionTargetMet -> False` 和
+结构化原因明确撤销精度认证。
 自动工作精度取 200 位与自适应估计的较大者。
 `ParallelTaskCount` 缺省为 12，控制每批独立 `ep` 后端进程；超出部分自动续交。它不同于
 python-flint 单进程内的 `ctx.threads`。
@@ -108,8 +110,14 @@ python-flint 单进程内的 `ctx.threads`。
 `EpValidationPoints -> {...}`。前者是有序生产候选池，可以多于首轮所需点数；设置
 `EpInitialInternalMaximumPower -> q` 后，首轮只取拟合到 `ep^q` 所需的前缀，验证失败才从
 剩余候选中增量取点并复用旧值。验证点从不参与拟合且必须与整个生产候选池分离；候选耗尽
-即失败，不会自动越出用户范围。三个新选项缺省均为 `Automatic`，因此缺省调用及后端输入
-schema 不变。
+不会自动越出用户范围，结果原因是 `candidate_pool_exhausted`。
+
+另一种自动入口是 `EpSampleAngleRange -> {thetaMin,thetaMax}`，单位为弧度并按开区间解释，
+不能与显式 `EpSamplePoints` 同时使用。程序在内部均匀选择最多三条射线，不取边界；模长仍由
+pole 深度、`EpGoalDigits` 和拟合阶数自动决定，没有模长上限选项。自动验证点保持角度并缩小
+模长。为满足 MadStree exact dlog 拉回合同，adapter 把高精度生成的复点转为 exact
+Gaussian-rational 后再求值。上述选项缺省均为 `Automatic`，因此缺省调用及后端输入 schema
+不变。
 
 `FlintNDEPathPlanning -> True` 让 FlintNDE 在每段内部规划节点。落在同一节点收敛圆盘内的用户点组成一个 evaluation bucket，并用该节点保存的向量级数做快速多点求值；点数不少于 8 的桶使用子积树/余数树，小桶使用 iterative 算法。`False` 则严格把用户点依次作为节点，不插点、不删点、不调用规划器。不同复仿射段不共享局部系数，因此没有多变量高维 Taylor 球。若一段全部 dlog letters 为常量，拉回连接为零并正常输运。
 

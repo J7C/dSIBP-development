@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import math
 import tempfile
 import unittest
 from fractions import Fraction
@@ -120,6 +121,48 @@ class SeriesReconstructionTest(unittest.TestCase):
             len(result.diagnostics["validation_solves"]), 2
         )
 
+    def test_automatic_angle_range_preserves_radius_strategy(self) -> None:
+        """角域只改变相位，生产和验证模长继续使用原自动策略。"""
+
+        result = reconstruct_series_solution(
+            DEmatrix=zero_system(1),
+            boundary=lambda ep: [acb(1) + acb(ep)],
+            path=[acb(0), acb(1)],
+            maximum_power=1,
+            leading_power=0,
+            leading_power_certificate=support_certificate(0),
+            goal_digits=8,
+            sample_angle_range=("-1.0", "1.0"),
+            base_sample="0.01",
+            transport_order=4,
+            transport_extra_order=2,
+            validation_tolerance="1e-12",
+            parallel_task_count=1,
+        )
+
+        angles = [
+            math.atan2(float(point.imag.mid()), float(point.real.mid()))
+            for point in result.sample_points
+        ]
+        self.assertTrue(all(-1.0 < angle < 1.0 for angle in angles))
+        self.assertEqual(
+            {round(angle, 12) for angle in angles}, {-0.5, 0.0, 0.5}
+        )
+        for index, point in enumerate(result.sample_points, start=1):
+            self.assertAlmostEqual(
+                float(abs(point).mid()), 0.01 * (1 + 0.01 * index), places=14
+            )
+        for validation, production in zip(
+            result.validation_points, result.sample_points
+        ):
+            self.assertAlmostEqual(
+                float(abs(validation).mid()), 0.5 * float(abs(production).mid()), places=14
+            )
+        self.assertEqual(
+            result.effective_parameters["sample_source"], "automatic-angle-range"
+        )
+        self.assertTrue(result.effective_parameters["precision_target_met"])
+
     def test_validation_failure_expands_fit_and_reuses_all_solved_points(self) -> None:
         """首轮截断失败后只追加两点，既有生产点和独立验证点均不得重算。"""
 
@@ -216,7 +259,7 @@ class SeriesReconstructionTest(unittest.TestCase):
         self.assertNotIn(str(Fraction(candidates[-1])), received)
 
     def test_explicit_candidate_exhaustion_never_generates_out_of_pool_points(self) -> None:
-        """候选池不足以达到精度时必须明确失败，且只调用用户列出的点。"""
+        """候选池不足时返回最佳结果和明确警告，且只调用用户列出的点。"""
 
         received: list[str] = []
 
@@ -226,10 +269,8 @@ class SeriesReconstructionTest(unittest.TestCase):
 
         candidates = ("0.10", "0.09", "0.08", "0.07")
         validation = ("0.04", "0.03")
-        with self.assertRaisesRegex(
-            SeriesValidationError, "explicit sample_points candidate pool exhausted"
-        ):
-            reconstruct_series_solution(
+        with self.assertWarnsRegex(RuntimeWarning, "candidate pool was exhausted"):
+            result = reconstruct_series_solution(
                 DEmatrix=zero_system(1),
                 boundary=exponential_boundary,
                 path=[acb(0), acb(1)],
@@ -248,6 +289,13 @@ class SeriesReconstructionTest(unittest.TestCase):
                 validation_tolerance="1e-40",
                 parallel_task_count=1,
             )
+        self.assertFalse(result.effective_parameters["precision_target_met"])
+        self.assertEqual(
+            result.effective_parameters["precision_failure_reason"],
+            "candidate_pool_exhausted",
+        )
+        self.assertEqual(result.powers, (0,))
+        self.assertEqual(len(result.coefficients), 1)
         self.assertEqual(
             set(received),
             {str(Fraction(point)) for point in candidates + validation},
@@ -277,8 +325,8 @@ class SeriesReconstructionTest(unittest.TestCase):
                 initial_internal_maximum_power=3,
             )
 
-    def test_fit_round_limit_fails_closed_without_relaxing_tolerance(self) -> None:
-        """达到扩阶轮数仍未通过时必须保持原容差并关闭失败。"""
+    def test_fit_round_limit_returns_uncertified_result_without_relaxing_tolerance(self) -> None:
+        """达到扩阶轮数仍未通过时返回未认证结果并保持原容差。"""
 
         def quartic_boundary(ep: fmpq) -> list[acb]:
             regulator = acb(ep)
@@ -286,10 +334,8 @@ class SeriesReconstructionTest(unittest.TestCase):
                 acb(1) + regulator + regulator**2 + regulator**3 + regulator**4
             ]
 
-        with self.assertRaisesRegex(
-            SeriesValidationError, r"tolerance.*1\.0000000000000000000e-20"
-        ):
-            reconstruct_series_solution(
+        with self.assertWarnsRegex(RuntimeWarning, r"tolerance.*1\.0000000000000000000e-20"):
+            result = reconstruct_series_solution(
                 DEmatrix=zero_system(1),
                 boundary=quartic_boundary,
                 path=[acb(0), acb(1)],
@@ -304,6 +350,16 @@ class SeriesReconstructionTest(unittest.TestCase):
                 fit_max_rounds=1,
                 parallel_task_count=1,
             )
+        self.assertFalse(result.diagnostics["precision_target_met"])
+        self.assertEqual(
+            result.diagnostics["precision_failure_reason"],
+            "fit_round_limit_reached",
+        )
+        self.assertTrue(
+            acb(result.effective_parameters["validation_tolerance"]).real.contains(
+                acb("1e-20").real
+            )
+        )
 
     def test_top_level_factories_use_bounded_parallel_ep_solves(self) -> None:
         """生产和验证样本均可由模块顶层工厂在独立进程中求解。"""
@@ -744,10 +800,10 @@ class SeriesReconstructionTest(unittest.TestCase):
         self.assertTrue(all(value is acb for value in received_types))
 
     def test_independent_validation_rejects_insufficient_buffer(self) -> None:
-        """只拟合最低所需三项时，未建模指数尾项必须触发独立验证失败。"""
+        """只拟合最低所需三项时，未建模指数尾项必须返回未认证结果。"""
 
-        with self.assertRaises(SeriesValidationError):
-            reconstruct_series_solution(
+        with self.assertWarns(RuntimeWarning):
+            result = reconstruct_series_solution(
                 DEmatrix=zero_system(1),
                 boundary=lambda ep: [acb(ep).exp() / acb(ep)],
                 path=[acb(0), acb(1)],
@@ -762,6 +818,11 @@ class SeriesReconstructionTest(unittest.TestCase):
                 validation_tolerance="1e-14",
                 parallel_task_count=1,
             )
+        self.assertFalse(result.effective_parameters["precision_target_met"])
+        self.assertEqual(
+            result.effective_parameters["precision_failure_reason"],
+            "candidate_pool_exhausted",
+        )
 
     def test_singular_start_boundary_is_reused_by_series_reconstruction(self) -> None:
         """外层 regulator 重构必须复用基础输运的 ``{a,b,C}`` 验证和初始化。"""

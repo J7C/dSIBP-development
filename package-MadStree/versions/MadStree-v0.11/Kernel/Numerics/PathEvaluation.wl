@@ -896,6 +896,7 @@ Options[MSReconstructEpSeries] = DeleteDuplicatesBy[
       MaximumEpPower -> 0,
       EpFitExtraOrder -> 2,
       EpSamplePoints -> Automatic,
+      EpSampleAngleRange -> Automatic,
       EpValidationPoints -> Automatic,
       EpInitialInternalMaximumPower -> Automatic,
       EpFitOrderIncrement -> 2,
@@ -1006,7 +1007,8 @@ MSReconstructEpSeries[
 ] := Module[
   {unknownOptions, maximumPower, goalDigits, parallelCount, baseOptions, configuration, failure,
    runtimeDirectory, pythonExecutable, supportCertificate,
-    leadingPower, fitExtraOrder, samplePoints, validationPoints,
+    leadingPower, fitExtraOrder, samplePoints, sampleAngleRange, sampleAngleValues,
+    validationPoints,
     initialInternalMaximumPower,
     fitOrderIncrement,
    fitMaximumRounds,
@@ -1015,7 +1017,9 @@ MSReconstructEpSeries[
    validationCache = <||>, validationEvaluationCache = <||>,
    newProductionStrings, newValidationStrings, newPointStrings, newBatch,
    newValues, productionStrings, validationStrings, fit, coefficients,
-   pointEvaluations, messageLanguage, productionRound,
+   pointEvaluations, messageLanguage, productionRound, loopResult, failureTag,
+   precisionTargetMet,
+   precisionFailureReason, precisionWarning,
    maximumEffectiveParallelCount = 0},
   unknownOptions = msUnknownOptionNames[{opts}, Options[MSReconstructEpSeries]];
   If[unknownOptions =!= {},
@@ -1029,6 +1033,7 @@ MSReconstructEpSeries[
   goalDigits = OptionValue[EpGoalDigits];
   fitExtraOrder = OptionValue[EpFitExtraOrder];
   samplePoints = OptionValue[EpSamplePoints];
+  sampleAngleRange = OptionValue[EpSampleAngleRange];
   validationPoints = OptionValue[EpValidationPoints];
   initialInternalMaximumPower = OptionValue[EpInitialInternalMaximumPower];
   fitOrderIncrement = OptionValue[EpFitOrderIncrement];
@@ -1052,6 +1057,25 @@ MSReconstructEpSeries[
        Length[DeleteDuplicates[samplePoints]] =!= Length[samplePoints]),
     Return[Failure["EpSamplePointsExactDistinctNonzeroListRequired",
       <|"value" -> samplePoints, "default" -> Automatic|>]]
+  ];
+  If[
+    sampleAngleRange =!= Automatic &&
+      (! ListQ[sampleAngleRange] || Length[sampleAngleRange] =!= 2),
+    Return[Failure["EpSampleAngleRangePairRequired",
+      <|"value" -> sampleAngleRange, "default" -> Automatic|>]]
+  ];
+  If[sampleAngleRange =!= Automatic,
+    sampleAngleValues = N[sampleAngleRange, Max[50, goalDigits + 20]];
+    If[
+      ! AllTrue[sampleAngleValues, NumericQ[#] && TrueQ[Im[#] == 0] &] ||
+        ! TrueQ[First[sampleAngleValues] < Last[sampleAngleValues]],
+      Return[Failure["EpSampleAngleRangeOpenRealIntervalRequired",
+        <|"value" -> sampleAngleRange, "unit" -> "radians"|>]]
+    ]
+  ];
+  If[samplePoints =!= Automatic && sampleAngleRange =!= Automatic,
+    Return[Failure["EpSamplePointsAndAngleRangeMutuallyExclusive",
+      <|"samplePoints" -> samplePoints, "sampleAngleRange" -> sampleAngleRange|>]]
   ];
   If[
     validationPoints =!= Automatic &&
@@ -1123,7 +1147,8 @@ MSReconstructEpSeries[
   ];
 
   fit = Missing["NotAccepted"];
-  Do[
+  failureTag = Unique["epSeriesFailure"];
+  loopResult = Catch[Do[
     productionPlan = msEpSeriesControl[
       "production_plan",
       Join[<|"maximumPower" -> maximumPower, "goalDigits" -> goalDigits,
@@ -1136,6 +1161,9 @@ MSReconstructEpSeries[
         "fitMaximumRounds" -> fitMaximumRounds|>,
         If[samplePoints === Automatic, <||>,
           <|"samplePoints" -> (ToString[#, InputForm] & /@ samplePoints)|>],
+        If[sampleAngleRange === Automatic, <||>,
+          <|"sampleAngleRange" ->
+            (msDecimalString[#, Max[50, goalDigits + 20]] & /@ sampleAngleValues)|>],
         If[validationPoints === Automatic, <||>,
           <|"validationPoints" -> (ToString[#, InputForm] & /@ validationPoints)|>],
         If[initialInternalMaximumPower === Automatic, <||>,
@@ -1143,9 +1171,9 @@ MSReconstructEpSeries[
       ],
       configuration, pythonExecutable, runtimeDirectory
     ];
-    If[Head[productionPlan] === Failure, Return[productionPlan]];
+    If[Head[productionPlan] === Failure, Throw[productionPlan, failureTag]];
     productionOptions = msEpSeriesStageOptions[baseOptions, productionPlan, goalDigits];
-    If[Head[productionOptions] === Failure, Return[productionOptions]];
+    If[Head[productionOptions] === Failure, Throw[productionOptions, failureTag]];
     productionStrings = productionPlan["points"];
     validationStrings = productionPlan["validationPoints"];
     newProductionStrings = Select[
@@ -1160,13 +1188,13 @@ MSReconstructEpSeries[
         context, epSymbol, newPointStrings, pointTemplate,
         parallelCount, productionOptions
       ];
-      If[Head[newBatch] === Failure, Return[newBatch]];
+      If[Head[newBatch] === Failure, Throw[newBatch, failureTag]];
       maximumEffectiveParallelCount = Max[
         maximumEffectiveParallelCount,
         newBatch["parallelTaskCountEffective"]
       ];
       newValues = msEpSeriesPointValues[newBatch];
-      If[Head[newValues] === Failure, Return[newValues]];
+      If[Head[newValues] === Failure, Throw[newValues, failureTag]];
       KeyValueMap[
         AssociateTo[productionCache, #1 -> #2] &,
         AssociationThread[
@@ -1208,7 +1236,7 @@ MSReconstructEpSeries[
         "validationTolerance" -> "1e-" <> ToString[goalDigits]|>,
       configuration, pythonExecutable, runtimeDirectory
     ];
-    If[Head[fit] === Failure, Return[fit]];
+    If[Head[fit] === Failure, Throw[fit, failureTag]];
     AppendTo[productionHistory, <|
       "round" -> productionRound,
       "internalMaximumPower" -> productionPlan["internalMaximumPower"],
@@ -1228,10 +1256,36 @@ MSReconstructEpSeries[
     |>];
     If[fit["fitStatus"] === "accepted", Break[]],
     {productionRound, 1, fitMaximumRounds}
+  ], failureTag];
+  If[Head[loopResult] === Failure, Return[loopResult]];
+  If[! AssociationQ[fit] || ! KeyExistsQ[fit, "coefficients"],
+    Return[Failure["EpSeriesFitResultMissing",
+      <|"productionRounds" -> productionHistory, "fit" -> fit|>]]
   ];
-  If[! AssociationQ[fit] || Lookup[fit, "fitStatus", None] =!= "accepted",
-    Return[Failure["EpSeriesValidationFailed",
-      <|"productionRounds" -> productionHistory|>]]
+  precisionTargetMet = Lookup[fit, "fitStatus", None] === "accepted";
+  precisionFailureReason = If[
+    precisionTargetMet,
+    None,
+    Which[
+      samplePoints =!= Automatic &&
+        Lookup[productionPlan, "unusedCandidateCount", 0] == 0,
+        "candidate_pool_exhausted",
+      Lookup[productionPlan, "sampleCount", 0] >= 100,
+        "maximum_samples_reached",
+      True,
+        "fit_round_limit_reached"
+    ]
+  ];
+  precisionWarning = If[
+    precisionTargetMet,
+    None,
+    Lookup[fit, "reason", "The requested regulator-fit precision was not reached."] <>
+      Switch[precisionFailureReason,
+        "candidate_pool_exhausted",
+          "; the user candidate pool was exhausted and no point outside it was generated.",
+        "maximum_samples_reached", "; the automatic sample limit was reached.",
+        _, "; the fitting-round limit was reached."
+      ]
   ];
   coefficients = Association@KeyValueMap[
     ToExpression[#1] -> msParseFlintVector[#2] &,
@@ -1254,8 +1308,20 @@ MSReconstructEpSeries[
       " 个独立验证点，ep 任务并行上限为 " <> ToString[parallelCount] <>
       "（缺省 12）。"
   ]];
+  If[! precisionTargetMet,
+    Print[msLocalizedEvaluationText[
+      messageLanguage,
+      "Warning: " <> precisionWarning <>
+        " The returned coefficients are the current best fit and are not precision-certified.",
+      "警告：正规化拟合未达到目标精度（" <> precisionFailureReason <>
+        "）。仍返回当前最佳系数，但这些系数未通过目标精度认证。"
+    ]]
+  ];
   <|
-    "status" -> "computed",
+    "status" -> If[precisionTargetMet, "computed", "computed_with_warning"],
+    "precisionTargetMet" -> precisionTargetMet,
+    "precisionFailureReason" -> precisionFailureReason,
+    "precisionWarning" -> precisionWarning,
     "epSymbol" -> HoldForm[epSymbol],
     "leadingPower" -> leadingPower,
     "maximumPower" -> maximumPower,
@@ -1272,6 +1338,7 @@ MSReconstructEpSeries[
       Automatic,
       samplePoints
     ],
+    "sampleAngleRange" -> sampleAngleRange,
     "validationEpValues" -> (ToExpression /@ productionPlan["validationPoints"]),
     "laurentSupportCertificate" -> supportCertificate,
     "productionHistory" -> productionHistory,

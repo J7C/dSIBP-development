@@ -92,7 +92,9 @@ symbolic boundary condition and dlog DE certify the lowest integer power. A nega
 power, a non-Laurent boundary, or an unproved leading coefficient fails closed. The fit initially
 includes two powers above the user maximum; failed independent validation adds two powers per round,
 solves only new production points, and reuses separate production/validation caches. Three failed
-rounds stop without relaxing the tolerance. `ParallelTaskCount` defaults to 12 and controls outer
+rounds return the current best coefficients without relaxing the tolerance. Such a result has
+`status -> "computed_with_warning"` and `precisionTargetMet -> False`; it is not precision-certified.
+`ParallelTaskCount` defaults to 12 and controls outer
 process parallelism, not python-flint's in-process `ctx.threads` setting.
 
 To restrict every regulator value to a user-approved range, set `EpSamplePoints -> {...}` and
@@ -100,8 +102,15 @@ To restrict every regulator value to a user-approved range, set `EpSamplePoints 
 may contain surplus points. With `EpInitialInternalMaximumPower -> q`, the first round consumes only
 the prefix required to fit through `ep^q`; failed validation incrementally consumes later candidates
 while reusing cached values. Validation points never enter the fit and must be disjoint from the
-whole production pool. Exhaustion fails closed without generating an out-of-range point. All three
-options default to `Automatic`, so the default call and backend schema are unchanged.
+whole production pool. Exhaustion never generates an out-of-range point and is reported as
+`candidate_pool_exhausted` while retaining the current coefficients.
+
+Alternatively, `EpSampleAngleRange -> {thetaMin,thetaMax}` selects an open angular interval in
+radians for automatic complex samples. Up to three uniformly spaced interior rays are used; the
+magnitudes remain controlled by the precision, pole depth, and fit order, with no user radius cap.
+Validation samples keep the corresponding angles and reduce only the magnitudes. MadStree converts
+the high-precision generated points to exact Gaussian rationals before the exact dlog pullback.
+These options default to `Automatic`, so the default call and backend schema are unchanged.
 
 `WorkingPrecision` defaults to 200 decimal digits for both `MSBoundaryData` and `MSEvaluatePath`.
 An explicit positive integer overrides the default; the backend uses

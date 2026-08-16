@@ -1510,7 +1510,8 @@ $1/\epsilon$ 项。
 
 认证支撑后，内部方阵插值缺省至少拟合到用户最高阶以上两阶。独立验证点从不进入拟合矩阵；
 若其相对残差高于固定的 \texttt{EpGoalDigits} 门槛，下一轮缺省再增加两阶，只求解新增生产点，
-并复用所有既有生产点和独立验证点。最多三轮仍未通过时返回失败，不降低容差、不改用最小二乘，
+并复用所有既有生产点和独立验证点。最多三轮仍未通过时保留当前最佳系数，但返回
+\texttt{computed\_with\_warning}、\texttt{precisionTargetMet -> False} 和结构化原因；程序不降低容差、不改用最小二乘，
 也不从头重算缓存。不同 $\epsilon$ 任务由 \texttt{ParallelTaskCount -> 12} 的缺省外层进程池
 调度；实际并发取任务数与上限的较小者。
 
@@ -1519,8 +1520,14 @@ $1/\epsilon$ 项。
 \texttt{EpValidationPoints -> \{...\}} 提供与整个生产池分离的独立验证点。候选池可以冗余；
 \texttt{EpInitialInternalMaximumPower -> $q$} 指定首轮内部最高幂后，首轮只消费拟合
 $n_{\min},\ldots,q$ 所需的 $q-n_{\min}+1$ 个候选点，失败扩阶才顺序消费后续点。候选耗尽时
-明确失败，绝不在用户范围外自动生成新点。三个选项缺省均为 \texttt{Automatic}，因此原缺省
-调用和 adapter JSON 字段集合不变。
+不生成池外点，当前系数随 \texttt{candidate\_pool\_exhausted} 警告返回。
+
+用户也可设置 \texttt{EpSampleAngleRange -> \{thetaMin,thetaMax\}}，以弧度给出复角开区间。
+程序在区间内部均匀选择最多三条射线，不取边界；各点模长仍由上述精度公式决定，没有模长
+上限参数。自动验证点保持对应角度，只缩小模长。为保持本包 exact dlog pullback，后端把
+高精度生成的实部、虚部分别转成 exact rational，形成 $\mathbb Q(i)$ 中的样本后再交回 MadStree。
+该选项与显式 \texttt{EpSamplePoints} 互斥，缺省 \texttt{Automatic} 不改变原正实轴 schema。
+相关选项缺省均为 \texttt{Automatic}，因此原缺省调用和 adapter JSON 字段集合不变。
 
 用户点只接受裸坐标或 \texttt{\{coordinate,}\allowbreak\texttt{"tmp"\}}；前者缺省保存，后者是临时途经点。
 普通保存点在 \texttt{MSEvaluatePath} 返回值中携带坐标、完整主积分向量、状态和用户序号；使用

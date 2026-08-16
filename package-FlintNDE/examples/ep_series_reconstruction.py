@@ -5,6 +5,8 @@
 FlintNDE 只消费该证书，不从数值样本猜最低阶。用户只请求有限项，本例提供冗余的
 生产候选池和独立验证点，并把首轮内部最高幂设为 2。首轮只计算所需候选前缀；独立
 验证失败时再追加两点且复用已有生产点和验证点，绝不取用户池外的 regulator 值。
+随后用 ``sample_angle_range=(-pi/3,pi/3)`` 再跑自动网格：程序只在该开角域内部
+均匀选择三条射线，模长仍由目标精度自动决定且没有用户模长上限参数。
 
 并行：``parallel_task_count`` 缺省为 12；实际进程数自动取任务数与 12 的较小者。
 Windows 多进程要求 DE、边界和路径工厂都定义在模块顶层。
@@ -13,6 +15,7 @@ Windows 多进程要求 DE、边界和路径工厂都定义在模块顶层。
 from __future__ import annotations
 
 import sys
+import math
 from pathlib import Path
 
 
@@ -83,6 +86,23 @@ def main() -> None:
         transport_extra_order=2,
         parallel_task_count=12,
     )
+    angle_result = reconstruct_series_solution(
+        DEmatrix=zero_system,
+        boundary=laurent_boundary,
+        path=fixed_path,
+        maximum_power=0,
+        leading_power=-1,
+        leading_power_certificate={
+            "status": "certified",
+            "leading_power": -1,
+            "method": "analytic-example-boundary-and-zero-DE",
+        },
+        goal_digits=12,
+        sample_angle_range=(str(-math.pi / 3), str(math.pi / 3)),
+        transport_order=4,
+        transport_extra_order=2,
+        parallel_task_count=12,
+    )
 
     pole = result.coefficient(-1)[0, 0]
     finite_part = result.coefficient(0)[0, 0]
@@ -107,6 +127,20 @@ def main() -> None:
         ),
         "default_parallel_limit":
             result.effective_parameters["parallel_task_count_requested"] == 12,
+        "angle_range_precision_certified":
+            angle_result.effective_parameters["precision_target_met"],
+        "angle_range_open_and_three_rays": (
+            all(
+                -math.pi / 3 < math.atan2(
+                    float(point.imag.mid()), float(point.real.mid())
+                ) < math.pi / 3
+                for point in angle_result.sample_points
+            )
+            and len({
+                round(math.atan2(float(point.imag.mid()), float(point.real.mid())), 12)
+                for point in angle_result.sample_points
+            }) == 3
+        ),
     }
 
     print(f"certified powers returned: {result.leading_power}..{result.maximum_power}")
@@ -116,6 +150,10 @@ def main() -> None:
     print(f"fit expansion history: {history}")
     print(f"production candidates: {production_candidates}")
     print(f"used production points: {tuple(point.str(20) for point in result.sample_points)}")
+    print(
+        "automatic angle-range points: "
+        f"{tuple(point.str(20) for point in angle_result.sample_points)}"
+    )
     print(f"checks: {checks}")
     if not all(checks.values()):
         raise SystemExit(1)

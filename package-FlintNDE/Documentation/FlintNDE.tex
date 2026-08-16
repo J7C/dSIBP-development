@@ -1140,9 +1140,17 @@ contain more values than the current square interpolation needs: the first round
 the required prefix, and a failed validation round consumes later candidates without recomputing
 previous solves.  The optional \texttt{initial\_internal\_maximum\_power} fixes the highest power
 included in that first square system.  Once an explicit pool is exhausted, reconstruction fails
-closed instead of generating a regulator value outside the user-approved range.  To bound the
-complete run, including checks, the user must also provide an explicit disjoint
-\texttt{validation\_points} sequence.
+to generate a regulator value outside the user-approved range, but returns the current best
+coefficients with \texttt{precision\_target\_met=False} and reason
+\texttt{candidate\_pool\_exhausted}.  To bound the complete run, including checks, the user must
+also provide an explicit disjoint \texttt{validation\_points} sequence.
+
+Alternatively, \texttt{sample\_angle\_range=(theta\_min,theta\_max)} selects an open angular
+interval in radians for automatic complex samples.  The implementation chooses at most three
+uniformly spaced interior rays and cycles the precision-driven radii over them.  No boundary ray
+is used, and there is no user radius cap: the magnitude remains
+$\epsilon_j=\epsilon_0(1+j\delta)$ with $\epsilon_0$ fixed by the same AMFlow-inspired accuracy
+formula.  Automatic validation samples preserve the corresponding angle and scale only the radius.
 
 Let the certified global leading power be $n_{\min}$, let the user request the absolute
 highest power $m$, and define
@@ -1905,6 +1913,11 @@ sampling, working-precision, and validation rules. \\
 and the rationalized one-percent grid.  An explicit ordered sequence is a candidate pool:
 each round consumes only the prefix needed by its current internal highest power, reuses earlier
 values, and never generates a point after the pool is exhausted. \\
+\texttt{sample\_angle\_range=}
+\newline\texttt{"automatic"} & Optional open angular interval $(\theta_{\min},\theta_{\max})$
+in radians for automatic complex samples.  Up to three uniformly spaced interior rays are used;
+the radius remains automatic.  This option is mutually exclusive with explicit
+\texttt{sample\_points}; automatic preserves the positive-real-axis grid. \\
 \texttt{sample\_count="automatic"} & Automatic production interpolation count.  With explicit
 \texttt{sample\_points}, an explicit count must equal the total candidate-pool length; it is not
 the number consumed in the first round. \\
@@ -1953,7 +1966,9 @@ power $q\ge m$.  With certified leading power $n_{\min}$, the first round requir
 $q-n_{\min}+1$ production candidates; insufficient capacity fails before any NDE solve. \\
 \texttt{fit\_order\_increment=2} & Additional candidates consumed after each failed validation
 round.  Previously computed production and validation values remain cached. \\
-\texttt{fit\_max\_rounds=3} & Maximum number of fit/validation rounds before closed failure. \\
+\texttt{fit\_max\_rounds=3} & Maximum number of fit/validation rounds.  If a square fit exists but
+the target residual is still missed, the current coefficients are returned without precision
+certification; diagnostics distinguish candidate exhaustion, the sample cap, and the round cap. \\
 \texttt{parallel\_task\_count=12} & Maximum number of independent fixed-regulator worker
 processes.  The effective count is \texttt{min(parallel\_task\_count, number of samples)};
 queued samples start automatically as workers finish.  Fixed exact rational systems, ordinary

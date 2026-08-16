@@ -87,6 +87,15 @@ badEpInitialPower = MSReconstructEpSeries[
   MaximumEpPower -> 1,
   EpInitialInternalMaximumPower -> 0
 ];
+badEpAngleRange = MSReconstructEpSeries[
+  context, ep, First[points],
+  EpSampleAngleRange -> {Pi/3, Pi/3}
+];
+badEpPointAngleCombination = MSReconstructEpSeries[
+  context, ep, First[points],
+  EpSamplePoints -> {1/10, 1/20, 1/30},
+  EpSampleAngleRange -> {-Pi/3, Pi/3}
+];
 
 plannedValues = Lookup[Lookup[planned, "pointResults", {}], "value"];
 directValues = Lookup[Lookup[direct, "pointResults", {}], "value"];
@@ -127,10 +136,17 @@ checks = <|
       Failure["EpProductionAndValidationPointsMustBeDisjoint", _]],
   "initialInternalPowerRangeChecked" ->
     MatchQ[badEpInitialPower, Failure["EpInitialInternalMaximumPowerRequired", _]],
+  "openEpAngleRangeRequired" ->
+    MatchQ[badEpAngleRange,
+      Failure["EpSampleAngleRangeOpenRealIntervalRequired", _]],
+  "epPointsAndAngleRangeExclusive" ->
+    MatchQ[badEpPointAngleCombination,
+      Failure["EpSamplePointsAndAngleRangeMutuallyExclusive", _]],
   "adaptiveEpSeriesDefaults" ->
     MemberQ[Options[MSReconstructEpSeries], MaximumEpPower -> 0] &&
     MemberQ[Options[MSReconstructEpSeries], EpGoalDigits -> 20] &&
     MemberQ[Options[MSReconstructEpSeries], EpSamplePoints -> Automatic] &&
+    MemberQ[Options[MSReconstructEpSeries], EpSampleAngleRange -> Automatic] &&
     MemberQ[Options[MSReconstructEpSeries], EpValidationPoints -> Automatic] &&
     MemberQ[Options[MSReconstructEpSeries],
       EpInitialInternalMaximumPower -> Automatic] &&

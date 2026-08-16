@@ -19,6 +19,11 @@
   provide an ordered surplus production pool, a separate validation grid, and the first-round
   internal power. Only the required prefix is consumed; exhaustion never generates an out-of-range
   value. All three default to `Automatic`, preserving the default adapter JSON field set.
+- `EpSampleAngleRange -> {thetaMin,thetaMax}` selects an open angular interval and uses up to three
+  uniformly spaced interior rays. Magnitudes remain precision-driven and have no user radius cap.
+  Generated points are rationalized to exact Gaussian rationals before MadStree's dlog pullback.
+  Failed precision validation retains the best coefficients as `computed_with_warning`; candidate
+  exhaustion is reported separately and never creates an out-of-pool point.
 - `ParallelTaskCount -> 12` bounds production and validation process pools. The old public
   `MSEvaluateEpBatch` is physically removed; the fixed-point batch executor is private.
 - `FlintNDEPathPlanning -> True` (default) asks FlintNDE to plan nodes inside each segment.
@@ -65,7 +70,7 @@ Windows `0xC0000142` failure under consecutive Python/FLINT launches without add
   route uses four production points with an internal `ep^2` buffer and recovers pole 1 and finite part 2.
 - Exact Laurent valuation passed 8/8; the real nine-master, nine-branch three-vertex certificate
   returns `leadingPower=0` before numerical NDE work.
-- The full Python regression passed 165/165, Wolfram `Needs["FlintNDE`"]` passed 25/25, and the
+- The full Python regression passed 166/166, Wolfram `Needs["FlintNDE`"]` passed 25/25, and the
   MadStree shallow-runtime/export gate passed 10/10. All 42 non-cache delivery files are
   SHA-256-identical between the standalone backend and the Vendor copy.
 - The v0.11 independent validation passed 18/18 after deleting its old results, runtime, and report

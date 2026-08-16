@@ -16,7 +16,8 @@
 - `ep_series_reconstruction.py`：从上游符号证书给出的 `leading_power=-1` 出发，自适应重构
   `1/ep` 与有限项；演示 7 个显式生产候选点中首轮按内部最高幂只取 4 个、验证失败后复用
   旧值并新增 2 个、最终留下 1 个未使用候选点，以及缺省 12 个外层进程。显式验证点始终不
-  进入拟合，FlintNDE 也不从数值样本猜最低阶。
+  进入拟合，FlintNDE 也不从数值样本猜最低阶；同一脚本还用开角域 `(-pi/3,pi/3)` 演示
+  最多三条内部复射线，模长仍由目标精度自动决定。
 - `ep_parallel_mathematica.wl`：Wolfram 入口使用
   `ParallelTaskCount -> 12`（缺省）运行相同的固定 `ep` 并行合同。
 - `mathematica_interface_example.wl`：Wolfram 入口从 exact 有理矩阵构造系统，显式规划并执行

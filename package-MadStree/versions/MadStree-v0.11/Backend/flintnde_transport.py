@@ -14,6 +14,7 @@ from fractions import Fraction
 import json
 import math
 import os
+import re
 import sys
 import time
 import traceback
@@ -572,7 +573,8 @@ def _validate_series_control_request(value: Any) -> dict[str, Any]:
         raise ValueError(f"unsupported ep series control action: {action}")
     if action == "production_plan":
         optional = {
-            "samplePoints", "validationPoints", "initialInternalMaximumPower"
+            "samplePoints", "sampleAngleRange", "validationPoints",
+            "initialInternalMaximumPower"
         }
         actual = set(value)
         if not production_base <= actual or not actual <= production_base | optional:
@@ -592,6 +594,34 @@ def _fraction_text(value: Fraction) -> str:
     """把自动网格点写成 Wolfram 和 FLINT 都能精确读取的有理数字符串。"""
 
     return f"{value.numerator}/{value.denominator}"
+
+
+def _wolfram_sample_text(value: Any, digits: int) -> str:
+    """把实点或 Acb 复点写成 MadStree 可精确拉回的 Gaussian rational。"""
+
+    from flint import acb, fmpq
+
+    if isinstance(value, fmpq):
+        return str(value)
+    point = acb(value)
+    real = _fraction_text(Fraction(point.real.mid().str(digits, radius=False)))
+    imag = _fraction_text(Fraction(point.imag.mid().str(digits, radius=False)))
+    return f"({real})+({imag})*I"
+
+
+def _sample_text_acb(value: Any) -> Any:
+    """读取 adapter 自己生成的 Wolfram 复数文本或原有实标量文本。"""
+
+    from flint import acb
+
+    if isinstance(value, str):
+        match = re.fullmatch(r"\(([^()]*)\)\+\(([^()]*)\)\*I", value)
+        if match is not None:
+            return acb(
+                match.group(1).replace("*^", "e"),
+                match.group(2).replace("*^", "e"),
+            )
+    return acb(value)
 
 
 def _acb_from_ball_record(record: Any, label: str) -> Any:
@@ -705,6 +735,7 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
             leading_power=leading, maximum_power=maximum_power,
             goal_digits=goal_digits,
             sample_points=(explicit_points if explicit_points is not None else AUTOMATIC),
+            sample_angle_range=data.get("sampleAngleRange", AUTOMATIC),
             sample_count=capacity_count,
             base_sample=AUTOMATIC, sample_spacing=data["sampleSpacing"],
             working_precision_digits=AUTOMATIC,
@@ -725,8 +756,14 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
         )
         return {
             "status": "success", "schema": data["schema"], "action": action,
-            "points": [str(item) for item in plan.sample_arguments[:target_count]],
-            "validationPoints": [str(item) for item in plan.validation_arguments],
+            "points": [
+                _wolfram_sample_text(item, plan.working_precision_digits)
+                for item in plan.sample_arguments[:target_count]
+            ],
+            "validationPoints": [
+                _wolfram_sample_text(item, plan.working_precision_digits)
+                for item in plan.validation_arguments
+            ],
             "sampleCount": target_count,
             "initialSampleCount": initial_count,
             "capacitySampleCount": capacity_count,
@@ -739,19 +776,21 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
             "baseSample": plan.base_sample,
             "alphaEpsilon": plan.alpha_epsilon,
             "productionRound": production_round,
+            "sampleSource": plan.source,
         }
     leading = _integer(data["leadingPower"], "leadingPower", -10**9)
     precision = _integer(data["workingPrecisionDigits"], "workingPrecisionDigits")
     configure_working_precision(precision)
     values = _series_vectors(data["values"], "values")
     validation_values = _series_vectors(data["validationValues"], "validationValues")
-    from flintnde import SeriesValidationError
-
     internal_maximum = leading + len(values) - 1
     result = fit_sampled_series(
-        sample_points=data["points"], sample_values=values,
+        sample_points=[_sample_text_acb(value) for value in data["points"]],
+        sample_values=values,
         maximum_power=internal_maximum, leading_power=leading,
-        validation_points=data["validationPoints"],
+        validation_points=[
+            _sample_text_acb(value) for value in data["validationPoints"]
+        ],
         validation_values=validation_values,
         validation_tolerance=None, series_parameter="ep",
     )
@@ -759,6 +798,11 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
     maximum_residual = acb(
         result.diagnostics["maximum_validation_relative_residual"]
     ).real
+    coefficients = {
+        str(power): [_acb_record(vector[row, 0], precision) for row in range(vector.nrows())]
+        for power, vector in zip(result.powers, result.coefficients)
+        if power <= maximum_power
+    }
     if not maximum_residual < tolerance:
         return {
             "status": "success", "schema": data["schema"], "action": action,
@@ -768,13 +812,12 @@ def _run_series_control(data: dict[str, Any]) -> dict[str, Any]:
                 f"below {tolerance.str(20)}"
             ),
             "internalMaximumPower": internal_maximum,
+            "leadingPower": result.leading_power,
+            "maximumPower": result.maximum_power,
+            "coefficients": coefficients,
             "diagnostics": result.diagnostics,
+            "effectiveParameters": result.effective_parameters,
         }
-    coefficients = {
-        str(power): [_acb_record(vector[row, 0], precision) for row in range(vector.nrows())]
-        for power, vector in zip(result.powers, result.coefficients)
-        if power <= maximum_power
-    }
     return {
         "status": "success", "schema": data["schema"], "action": action,
         "fitStatus": "accepted",

@@ -55,6 +55,9 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
 - 新增显式 `EpSamplePoints`、`EpValidationPoints` 与 `EpInitialInternalMaximumPower`。生产点列表
   是可冗余的有序候选池，每轮只消费所需前缀；池耗尽时不生成范围外点。三个选项缺省均为
   `Automatic`，缺省 adapter JSON 保持原字段集合。
+- 新增 `EpSampleAngleRange -> {thetaMin,thetaMax}`：弧度开区间内部均匀使用最多三条射线，
+  模长仍由精度策略自动决定。复点在交给 MadStree 前 exact rationalize 为 `Q(i)`；缺省不增加
+  JSON 字段。拟合精度未达时保留当前系数并返回 `computed_with_warning`，候选池耗尽原因单列。
 - `ParallelTaskCount -> 12` 控制生产和验证批次的外层进程上限，超额任务自动续交。
 - 物理删除旧公开 `MSEvaluateEpBatch`；固定点批量器仅作为私有阶段执行器，不保留 wrapper。
 - Example 06 的真实无质量三顶点共同正规化 `a1=a2=a3=1+ep` 只指定最高阶 `0`，
@@ -65,7 +68,7 @@ fallback；需要旧行为只能显式加载冻结的 v0.10。
 - Python adapter：8/8 通过；接收已认证 `-1` 后使用 4 个生产点、内部拟合至 `ep^2`，
   并恢复人工 `1/ep+2+3ep` 的 pole `1` 与 finite part `2`。
 - Laurent valuation 8/8；真实 9 主积分、9 边界分支三顶点结构证书得到 `leadingPower=0`。
-- 完整 Python 回归 165/165，Wolfram `Needs["FlintNDE`"]` 25/25；MadStree 浅层目录与导出
+- 完整 Python 回归 166/166，Wolfram `Needs["FlintNDE`"]` 25/25；MadStree 浅层目录与导出
   门禁 10/10。独立包与 Vendor 的 42 个非缓存交付文件逐文件 SHA-256 一致。
 - v0.11 独立验证 18/18：runner 先删除旧结果/runtime/报告并检查唯一 `results_temp` 根；
   900 点乘 3 masters 全分量互检，最大绝对差 `5.8262e-43`；

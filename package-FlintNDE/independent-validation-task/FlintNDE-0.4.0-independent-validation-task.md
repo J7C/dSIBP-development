@@ -76,3 +76,65 @@ Y1(z)=1-z/20,  Y2(z)=(20/(z+20))^2.
 `overall_passed=true` 仅在 fast 算法被实际选择、全部数值门禁通过、direct sentinel 为 0、
 直接节点链不变、穿奇点负例 fail closed、所有输出严格 UTF-8 无 BOM/无 replacement character
 时成立。运行后清除 `__pycache__`、temp 和 cache，不删除正式 `results/`。
+
+---
+
+## 6. Validation-02：正规化角域与候选容量
+
+日期：2026-08-16
+目录：`independent-validation/FlintNDE-0.4.0-validation-02-regularization-angle-and-candidate-capacity/`
+
+本专项从当前 `regularization.py` 重新生成全部 expected，不读取 validation-01 或其它 retained
+summary。runner 在任何数值计算前必须物理删除本专项旧 `results/`、旧报告以及本专项 cache；
+删除失败立即停止。只允许重新建立正式 `results/summary.json` 和中文报告。
+
+### 6.1 默认 Automatic 基线
+
+使用零矩阵 DE、普通点路径和已知边界
+
+```text
+F(ep)=2 ep^-1 + 3 + 4 ep + 5 ep^2.
+```
+
+固定 `sample_count=4`、`fit_extra_order=0`、`base_sample=1/100`、
+`sample_spacing=1/100`。四点恰好对应请求的 `ep^-1,...,ep^2` 四个系数，避免用病态高阶
+Vandermonde 的应为零尾项替代角域功能门禁。缺省 `sample_angle_range="automatic"` 时，第
+`i=1,...,4` 个生产点必须逐项等于旧公式
+
+```text
+ep_i=(1/100)(1+i/100)
+```
+
+并位于正实轴；传给边界工厂的生产参数必须保持 exact `fmpq`。自动验证点必须与前部生产点
+同角且模长按 `validation_scale=1/2` 缩小。返回的 `ep^-1,ep^0,ep^1,ep^2` 系数分别恢复
+`2,3,4,5`，最大绝对误差 `<1e-35`；正例独立验证容差固定为 `1e-40`，且
+`precision_target_met=True`。
+
+### 6.2 开角域
+
+保持与 6.1 完全相同的生产模长参数，只增加 `sample_angle_range=(-1,1)`。四个点必须循环使用
+开区间内部三条均匀射线 `-1/2,0,1/2`，不得使用端点，角数量不得超过 3。每一点模长必须与
+6.1 同索引旧公式相等。前三个自动验证点必须与对应生产点同角，且复数值严格等于生产点的
+`1/2` 缩放。相同四个 Laurent 系数仍须恢复，且达到精度目标。
+
+### 6.3 显式候选池耗尽
+
+候选池严格固定为 `0.10,0.09,0.08,0.07`，验证点为 `0.04,0.03`；边界使用 `exp(ep)`，只请求
+常数项，并以严格容差迫使拟合扩展到候选池尾。验收要求：
+
+1. 即使候选池耗尽仍返回 `power=(0,)` 和一个系数，不抛弃当前最佳结果。
+2. `precision_target_met=False`，`precision_failure_reason="candidate_pool_exhausted"`。
+3. `sample_candidate_count=4`、`sample_count=4`、`unused_sample_candidate_count=0`。
+4. 边界工厂实际收到的参数集合严格等于四个候选点加两个验证点；无重复求解、无池外点。
+5. 必须产生明确的 `RuntimeWarning`，其文本说明候选池耗尽且未生成池外点。
+
+### 6.4 证据与门禁
+
+- `run_validation.py`：fresh-clean 唯一 runner，禁用 bytecode 写入，显式 UTF-8 I/O。
+- `results/summary.json`：保存当前 runner、`regularization.py`、`__init__.py` SHA-256，清理记录，
+  所有生产/验证点、模长、角、系数差、候选池调用记录及有效参数。
+- `000_FlintNDE-0.4.0-validation-02-report.md`：自包含中文报告。
+
+只有上述逐项、角域、模长、同角缩模、系数恢复、候选耗尽和无池外点门禁全部通过，且所有
+正式文本严格 UTF-8 无 BOM/无 replacement character、本专项目录无 cache/temp 时，才可写
+`overall_passed=true`。

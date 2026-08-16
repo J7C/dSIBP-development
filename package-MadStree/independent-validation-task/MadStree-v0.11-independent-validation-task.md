@@ -63,3 +63,36 @@ matching anchor 正好是 `k1=-900 I,k2=-30 I`。独立 exact 极点距离预审
 - `run_validation.wls` 自动生成 `000_...report.md`、`results/summary.wl` 和完整轻量 JSON；
   完整逐点证据固定为 `results/evidence.json` 并随报告保留；全部文本 UTF-8 无 BOM。运行结束
   删除 `results_temp/`、cache 与 Python bytecode。
+
+## 6. 验证 02：正规化角域与候选容量
+
+验证目录固定为
+`independent-validation/MadStree-v0.11-validation-02-ep-angle-capacity/`。本项验证当前
+live v0.11 工作树中的 `MSReconstructEpSeries`、MadStree adapter 与内嵌 FlintNDE，不复用
+validation-01 的结果，也不把当前 commit 当作未提交源码的完整身份；报告必须分别记录
+`Kernel/MadStree.wl`、`Kernel/Numerics/PathEvaluation.wl`、adapter 和 Vendor
+`regularization.py` 的 SHA-256。
+
+验证使用 Example 06 同型的真实无质量三顶点、两传播子树图，公共时间幂取
+`a1=a2=a3=1+ep`，并包含以下三条互相隔离的 fresh 路线：
+
+- 默认 schema 探针：独立构造 `madstree_flintnde_ep_series_control_v1` 的
+  `production_plan` JSON，不写 `sampleAngleRange`，用当前 adapter CLI 实际执行并确认默认
+  请求键集合不含该字段、返回 `sampleSource="automatic"`。此路线只验证 producer/consumer
+  schema，不代替真实程序包端到端计算。
+- 显式角域路线：通过公共 `MSReconstructEpSeries` 设置
+  `EpSampleAngleRange->{-Pi/3,Pi/3}`。生产点和验证点必须是 exact、互异、非零的 Gaussian
+  rationals；所有生产点角度严格位于开区间，不得触碰端点；内部射线数最多为 3；
+  `productionEpCandidateValues===Automatic`、`sampleSource="automatic-angle-range"`，且自动
+  `baseSample/alphaEpsilon` 与同参数默认计划一致，以证明只约束角度而未改为用户指定模长。
+- 候选耗尽路线：通过公共 `MSReconstructEpSeries` 给出恰能完成首轮拟合、但不足以达到独立
+  验证精度的 exact 生产候选池和显式独立验证点。结果必须是
+  `status="computed_with_warning"`，保留非空系数，`precisionTargetMet=False`，
+  `precisionFailureReason="candidate_pool_exhausted"`，并证明生产点、验证点及全部实际 ep
+  求值点均未越出用户给定集合。
+
+本项通过标准：默认 schema、显式角域、候选耗尽、真实点求值、路径/refinement、源码身份、
+fresh-clean 和 UTF-8/no-BOM 门禁全部通过。warning case 是本任务要求的成功行为，不得因
+`precisionTargetMet=False` 被 runner 当作进程失败。`run_validation.wls` 必须自动生成
+`000_MadStree-v0.11-validation-02-ep-angle-capacity-report.md`、`results/summary.wl` 和
+`results/evidence.json`；结束时删除 `results_temp/`、adapter JSON、cache 与 Python bytecode。

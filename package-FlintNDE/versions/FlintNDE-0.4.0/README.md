@@ -207,6 +207,7 @@ series_result = reconstruct_series_solution(
     series_parameter="ep",
     goal_digits=30,
     sample_points="automatic",
+    sample_angle_range="automatic",
     sample_count="automatic",
     base_sample="automatic",
     sample_spacing=0.01,
@@ -281,13 +282,24 @@ working_precision_digits = max(200, ceil(2 (1 + extra_working_precision) p0))
 显式 `sample_points` 是按给定顺序消费的生产候选池，而不是要求首轮全部使用。若显式给出
 `initial_internal_maximum_power=q`，首轮恰取前 `q-n_min+1` 个候选点；缺省仍按上述自动公式，
 但候选池较短且足以覆盖用户要求时使用整个候选池。验证失败后每轮按
-`fit_order_increment` 从剩余候选中增加点并复用所有旧值；候选池耗尽即明确失败，绝不生成
-池外取值。`sample_count` 与显式候选池同时给出时必须等于候选总数。
+`fit_order_increment` 从剩余候选中增加点并复用所有旧值；候选池耗尽时绝不生成池外取值，
+但会返回当前最佳系数并设置 `precision_target_met=False`、
+`precision_failure_reason="candidate_pool_exhausted"`。`sample_count` 与显式候选池同时给出时
+必须等于候选总数。
+
+`sample_angle_range=(theta_min,theta_max)` 以弧度指定自动复采样的开角区间，不能与显式
+`sample_points` 同时使用。程序在区间内部均匀选择最多三条射线并循环分配生产点，不取边界、
+也不刻意贴近边界；模长仍为原自动 `ep0*(1+j*sample_spacing)`，`ep0` 继续由 pole 深度、
+目标位数和拟合阶数决定，没有用户模长上限参数。自动验证点保持对应角度，只把模长乘
+`validation_scale`。缺省 `"automatic"` 严格保留原正实轴网格。普通 Python 浮点可用于角度
+边界控制；需要更高边界精度时传十进制字符串。
 
 独立验证点缺省位于生产网格的 `validation_scale` 倍尺度；也可用字符串、`fmpq` 或 `acb`
 序列显式传入 `validation_points`。验证点完全不参与插值；NDE 主/参考链以及
-返回截断级数都必须通过 `validation_tolerance`，缺省为 `10^(-goal_digits)`，否则抛出
-`SeriesValidationError`。显式 `sample_points` 应使用字符串、`fmpq` 或 `acb`，不接受会掩盖
+返回截断级数都以 `validation_tolerance` 检查，缺省为 `10^(-goal_digits)`。已有方阵拟合结果
+但精度仍未达标时，程序发出 `RuntimeWarning` 并返回当前最佳系数；调用方必须检查
+`effective_parameters["precision_target_met"]` 或同名 diagnostics 字段。候选池不足、达到
+`maximum_samples` 和达到轮数上限分别有结构化失败原因。显式 `sample_points` 应使用字符串、`fmpq` 或 `acb`，不接受会掩盖
 输入精度的 Python `float/complex`；显式 `validation_points` 必须与整个生产候选池分离。若要严格限制 regulator
 取值范围，应同时显式给出 `sample_points` 和 `validation_points`。`rationalize_sample_points=False` 会让自动生产和
 验证点以 Acb 而非 `fmpq` 传给工厂。
@@ -715,7 +727,7 @@ dimension * 10^(-precision_digits)
 python -m unittest discover -s tests -v
 ```
 
-2026-08-16 fresh 结果为 `unittest discover 165/165`；
+2026-08-16 fresh 结果为 `unittest discover 166/166`；
 Wolfram `Needs["FlintNDE`"]` 端到端检查为 `25/25`。验证覆盖一般有理矩阵、任意次数
 多项式加简单极点的内部特化、缺省避开奇点、显式奇点折跃、严格消息语言、计划序列化
 精度、执行期不重规划、浅层目录和 Python 前置路径/写入门禁，并覆盖 fast multipoint、

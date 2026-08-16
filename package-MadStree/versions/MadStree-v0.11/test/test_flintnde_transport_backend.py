@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import importlib
+import math
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -262,6 +264,62 @@ class EpSeriesControlTest(unittest.TestCase):
         self.assertLess(float(abs(pole - 1).mid()), 1.0e-20)
         self.assertLess(float(abs(finite - 2).mid()), 1.0e-20)
         self.assertTrue(all(item["passed"] for item in fitted["diagnostics"]["validation_samples"]))
+
+    def test_open_angle_range_and_uncertified_fit_keep_best_coefficients(self) -> None:
+        """角域点不触边界；验证失败时 adapter 仍返回当前拟合系数。"""
+
+        from flint import acb
+        from flintnde import configure_working_precision
+
+        request = self._control(
+            "production_plan", leadingPower=0, sampleSpacing="0.01",
+            validationSampleCount=2, validationScale="0.5", maximumSamples=100,
+            extraWorkingPrecision=0.0, productionRound=1,
+            fitExtraOrder=2, fitOrderIncrement=2, fitMaximumRounds=1,
+            sampleAngleRange=["-1.0", "1.0"],
+        )
+        plan = ADAPTER._run_series_control(
+            ADAPTER._validate_series_control_request(request)
+        )
+        self.assertEqual(plan["sampleSource"], "automatic-angle-range")
+
+        def parse_point(text: str) -> acb:
+            match = re.fullmatch(r"\((.*)\)\+\((.*)\)\*I", text)
+            self.assertIsNotNone(match)
+            return acb(
+                match.group(1).replace("*^", "e"),
+                match.group(2).replace("*^", "e"),
+            )
+
+        points = [parse_point(text) for text in plan["points"]]
+        angles = [
+            math.atan2(float(point.imag.mid()), float(point.real.mid()))
+            for point in points
+        ]
+        self.assertEqual({round(angle, 12) for angle in angles}, {-0.5, 0.0, 0.5})
+        self.assertTrue(all(-1.0 < angle < 1.0 for angle in angles))
+
+        configure_working_precision(plan["workingPrecisionDigits"])
+        validation_points = [parse_point(text) for text in plan["validationPoints"]]
+        fitted = ADAPTER._run_series_control(
+            ADAPTER._validate_series_control_request(self._control(
+                "fit", leadingPower=0,
+                workingPrecisionDigits=plan["workingPrecisionDigits"],
+                points=plan["points"],
+                values=[
+                    [ADAPTER._acb_record(point.exp(), 80)] for point in points
+                ],
+                validationPoints=plan["validationPoints"],
+                validationValues=[
+                    [ADAPTER._acb_record(point.exp(), 80)]
+                    for point in validation_points
+                ],
+                validationTolerance="1e-40",
+            ))
+        )
+        self.assertEqual(fitted["fitStatus"], "retry")
+        self.assertIn("0", fitted["coefficients"])
+        self.assertIn("effectiveParameters", fitted)
 
 
 if __name__ == "__main__":

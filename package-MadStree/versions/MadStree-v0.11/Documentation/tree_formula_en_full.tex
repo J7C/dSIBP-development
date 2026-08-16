@@ -1526,7 +1526,8 @@ After support certification, the square interpolation initially includes at leas
 above the user maximum.  Independent validation points never enter the fit.  If their relative
 residual exceeds the fixed \texttt{EpGoalDigits} target, the next round adds two fitted powers
 by default, solves only the new production points, and reuses every previous production and
-validation value.  Failure after at most three rounds is closed: the tolerance is not relaxed,
+validation value.  If the target is still missed after at most three rounds, the current best
+coefficients are returned without precision certification: the tolerance is not relaxed,
 least squares is not substituted, and caches are not discarded.  Independent regulator tasks
 use an outer process pool with default \texttt{ParallelTaskCount -> 12}; the effective count is
 the smaller of this limit and the number of tasks.
@@ -1537,8 +1538,18 @@ range, \texttt{EpSamplePoints -> \{...\}} supplies an ordered production candida
 pool.  The pool may be redundant.  With
 \texttt{EpInitialInternalMaximumPower -> $q$}, the first round consumes exactly the
 $q-n_{\min}+1$ candidates required for powers $n_{\min},\ldots,q$; later candidates are consumed
-only after failed validation.  Pool exhaustion fails closed and never creates an out-of-range
-value.  All three options default to \texttt{Automatic}, preserving the original default call and
+only after failed validation.  Exhaustion never creates an out-of-pool point: the current
+coefficients are returned with \texttt{computed\_with\_warning},
+\texttt{precisionTargetMet -> False}, and reason \texttt{candidate\_pool\_exhausted}.
+
+Alternatively, \texttt{EpSampleAngleRange -> \{thetaMin,thetaMax\}} selects an open angular
+interval in radians.  Up to three uniformly spaced interior rays are used, while magnitudes remain
+controlled by the same precision formula and have no user radius cap.  Validation points retain
+their corresponding angles and reduce only the radii.  The high-precision real and imaginary parts
+are rationalized to exact values in $\mathbb Q(i)$ before MadStree performs its exact dlog pullback.
+The option is mutually exclusive with explicit \texttt{EpSamplePoints}; \texttt{Automatic} keeps
+the original positive-real-axis schema.
+All related options default to \texttt{Automatic}, preserving the original default call and
 adapter JSON field set.
 
 User points are bare coordinates or \texttt{\{coordinate,"tmp"\}}; the former are saved and
