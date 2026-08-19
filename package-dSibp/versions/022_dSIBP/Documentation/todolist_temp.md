@@ -244,11 +244,12 @@ Kira 当前路径合同 `7/7`；正式 `package/` 已删除 021 三件套并只�
 
 ## D17：最新版冗余审计修复
 
-- [x] 四个退休运动学字段不再被 parser 读取，并在 raw case 边界逐项失败。
+- [x] 四个退休运动学字段不再被 parser 读取；runtime 与现行 smoke 不保留旧名字 denylist 或专门反例。
 - [x] 删除缺 `kEPower` 时的旧 metadata 重建分支，增加结构缺字段负例。
 - [x] 重建候选单文件，完成候选与正式路径同项复验后同字节晋升。
 
-D17 完成记录（2026-08-19）：合法 022 topology 和额外无关键保持原合同；四个退休键的
-preflight 与 `parseTopology` 均失败。当前 producer/materializer exact identity 保持，删除
+D17 完成记录（2026-08-20）：合法 022 topology 和额外无关键保持原合同；raw-case parser
+不读取退休字段，也不再对已删除 schema 的名字附加运行时语义。当前 producer/materializer exact identity 保持，删除
 `kEPower` 后返回结构化 `MissingStructuralKEPower`。候选和正式单文件均通过 topology
-`17/17`、normalization `14/14`、参数导数 `11/11`、死定义 `17/17`。
+`16/16`、normalization `14/14`、参数导数 `11/11`、死定义 `17/17`；两者 SHA-256 均为
+`FF8B6F87274C88998D9E38AB31ED27B7FAA2ACC6AAD3B9BCCCF4B5D426C06FF3`。

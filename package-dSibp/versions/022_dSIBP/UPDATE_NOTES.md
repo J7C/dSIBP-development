@@ -69,12 +69,10 @@ dSIBP 只生成和序列化关系，不运行 reduction。外部 Kira artifact �
 
 ## 2026-08-19 审计清理
 
-- `resolveKinematicRulesForCase` 只读取当前 `kinematicRules`；四个已退休的
-  `loopKinematicRules/magnitudeKinematicRules/resolvedLoopKinematicRules/`
-  `resolvedMagnitudeKinematicRules` 在 raw case preflight 中定向失败，不能再改变 topology。
-  其它无语义冲突的额外 Association 键仍按 022 合同忽略。
+- `resolveKinematicRulesForCase` 只读取当前 `kinematicRules`；四个已退休 raw-case Lookup 已物理删除，
+  runtime 和现行 smoke 不保留旧名字 denylist 或专门反例。其它额外 Association 键仍按 022 合同忽略。
 - `materializeSectorPrefactor018` 不再从 `parameterList/powerList` 重建缺少 `kEPower` 的旧
   metadata；缺少结构主字段时返回 `MissingStructuralKEPower`。
-- 模块路径、候选单文件和正式单文件分别通过 topology `17/17`、normalization `14/14`、
+- 模块路径、候选单文件和正式单文件分别通过 topology `16/16`、normalization `14/14`、
   参数导数 `11/11` 与死定义 `17/17`。正式 `package_022.0.wl` 与验收候选 SHA-256 同为
-  `7E9894EF3881F61AF01D0B32C597E8840D5A0FC2C883D189BE8A532C5FED3351`。
+  `FF8B6F87274C88998D9E38AB31ED27B7FAA2ACC6AAD3B9BCCCF4B5D426C06FF3`。
