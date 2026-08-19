@@ -31,7 +31,7 @@
 - Phase 1 不生成大范围解析 IBP，不撒任何连续指标点或数值点；连续指标保持 general，zero-point 保持非零符号。
 - 每个函数族只使用第 9.0 节冻结的一个纯同号分支和一个混合分支，并应用 family 已声明的 parity。通用模板按实际可达 sector 与适用 time/momentum 生成元组织；离散端点只按允许的 `0/1` 等价类推导，不再把连续指标包络展开。
 - 任何 massive `n=2` 一出现就立即 EOM；massless 正式表示从不产生 `n=2`。
-- Phase 2 的 package 全流程可以展开冻结的 seed envelope；只允许任务书点名的 representative workflow 运行外部 reduction，并且每个 workflow 只使用一组确定性精确数值规则。纯数值 workflow 必须先从符号 topology 构造参量微分算符，再从 `DSSeeds[...,ApplyNumericRules->True]` 起让 seed、撒点关系、导数系数和 reduction 共用同一点；要求 `seedResidualCoefficientVariables==={}`、`sampledCoefficientVariables==={}`，并对去掉全部 `J` 后的系数独立确认 `Variables==={}`。reference 既有解析结果只复制、哈希核验并作约定变换，不重新生成 reference IBP 或运行 reference Kira。
+- Phase 2 的 package 全流程可以展开冻结的 seed envelope；只允许任务书点名的 representative workflow 运行外部 reduction，并且每个 workflow 只使用一组确定性精确数值规则。纯数值 workflow 必须先从符号 topology 构造参量微分算符；`DSSeeds` 与 `DSGenerateIBP` 保持符号系数，数值规则只由 `DSLinear[...,CoefficientRules->rules,LinearSystemMode->"numeric"]` 持有，使 sampled relations、导数系数和 reduction 共用同一点。要求 `seedResidualCoefficientVariables==={}`、`sampledCoefficientVariables==={}`，并对去掉全部 `J` 后的系数独立确认 `Variables==={}`。reference 既有解析结果只复制、哈希核验并作约定变换，不重新生成 reference IBP 或运行 reference Kira。
 
 ## 2. 自包含的 SK 费曼规则与 building block
 
@@ -86,7 +86,7 @@ theta(0)=1/2.
 ssij := Sqrt[sp[kLi,kLj]] = ssji,    1 <= i <= j <= K.
 ```
 
-在 Mathematica 输出中写成符号 `ss11,ss12,...`，因此反向规则是 `sp[kLi,kLj]->ssij^2`。`ssij` 是点积的根，不是 `|kLi+kLj|`；后者必须由原始矢量和 `Sqrt[sp[kLi+kLj,kLi+kLj]]` 表示。名称 `ssij` 只用于对称的外部不变量坐标，不用来命名有序方向导数算符。用户不输入缺省规则；只有第 16 节 compatibility probe 才显式输入旧 `externalInvariantRules` 平方坐标。
+在 Mathematica 输出中写成符号 `ss11,ss12,...`，因此反向规则是 `sp[kLi,kLj]->ssij^2`。`ssij` 是点积的根，不是 `|kLi+kLj|`；后者必须由原始矢量和 `Sqrt[sp[kLi+kLj,kLi+kLj]]` 表示。名称 `ssij` 只用于对称的外部不变量坐标，不用来命名有序方向导数算符。用户不输入缺省规则；第 16 节的自定义坐标只通过现行 `kinematicRules`/`DSRedefineParameters` 接口给出。
 
 ### 2.2 Massive h/H building block 定义
 
@@ -115,7 +115,7 @@ ssij := Sqrt[sp[kLi,kLj]] = ssji,    1 <= i <= j <= K.
 
 ### 2.3 Massive 四种 SK 传播子
 
-对有序端点 `{u,v}`，令 `Delta=tau[u]-tau[v]`、`type=bbType[e]`，并定义去掉 coefficient-only normalization 的 Wightman blocks
+对有序端点 `{u,v}`，令 `Delta=tau[u]-tau[v]`、`type=functionSystem[e]`，并定义去掉 coefficient-only normalization 的 Wightman blocks
 
     WGreater[e] =
       F[type,1,n[e,1];nu[e],-q[e] tau[u]]
@@ -354,7 +354,7 @@ sector 改变时按以下 convention 处理：
 
 ## 4. 有序 massless 双端点 quotient convention
 
-对同分支 massless full line，`lineData["endpoints"] -> {u,v}` 是有序输入。第一端点 `u` 定义反对称 `n=1` 的方向。令 `Delta=tau[u]-tau[v]`，`sigma=+1` 对应 `++`，`sigma=-1` 对应 `--`：
+对同分支 massless full line，`lines[[e,"endpoints"]] -> {u,v}` 是有序输入。第一端点 `u` 定义反对称 `n=1` 的方向。令 `Delta=tau[u]-tau[v]`，`sigma=+1` 对应 `++`，`sigma=-1` 对应 `--`：
 
 ```text
 M[sigma,0;q,Delta] = theta[ Delta] exp[-i sigma q Delta]
@@ -461,9 +461,9 @@ familyDefinition = <|
   "loopExternalMomenta" -> {...},
   "independentExternalMomenta" -> {...},
   "ibpMode" -> "full" | "timeOnly",
-  "vertexEnergies" -> <|v1 -> E1, ...|>,
+  "externalLegEnergyMap" -> <|v1 -> E1, ...|>,
   "lineOrder" -> {...},
-  "lineData" -> {...},
+  "lines" -> {...},
   "ispData" -> {...},
   "zeroPointRules" -> {...},
   "topIntegralTemplate" -> HoldForm[...],
@@ -473,9 +473,9 @@ familyDefinition = <|
 |>;
 ```
 
-上面的 `familyDefinition` 是 Phase 1 冻结多个 sign case 的独立 oracle descriptor，不是可以原样交给 package 的旧输入。Phase 2 必须对每个 `vertexSignCases` 条目构造当前公开 `caseInput`：使用 `"vertexData"` 写入该分支的顶点符号，并使用 `"lineData"`、`"extLegs"`、`"loopMomenta"`、`"loopExternalMomenta"`、`"independentExternalMomenta"`、`"ibpMode"`、`"vertexEnergies"`、`"ispData"`、`"zeroPointRules"` 和 `"symmetryRules"`；不得生成 `externalMomenta/externalLegMomenta/externalInvariantRules` adapter。只有第 16 节明确点名的旧平方坐标 compatibility probe 例外。
+上面的 `familyDefinition` 是 Phase 1 冻结多个 sign case 的独立 oracle descriptor，不直接传给 package。Phase 2 必须对每个 `vertexSignCases` 条目构造当前公开 `caseInput`：`"vertices"` 是 Association 列表，每项含 `id/vertexType/externalLegEnergy`；其余使用 `"lines"`、`"extLegs"`、`"loopMomenta"`、`"loopExternalMomenta"`、`"independentExternalMomenta"`、`"ibpMode"`、`"ispData"`、`"zeroPointRules"` 和 `"symmetryRules"`。不得生成任何旧字段或 schema adapter；自定义动力学坐标只通过现行 `kinematicRules` 或 `DSRedefineParameters` 给出。
 
-`lineData` 中每条线必须逐项写明 `id`、`endpoints`、`momentum`、`massType`、`bbType` 和 `nu`。`endpoints->{u,v}` 是有序数据；对 massless 线，该顺序固定双端点 quotient 的符号和 canonical 方向。即使所有线连接同一对顶点，也不允许省略该字段。
+`lines` 中每条线必须逐项写明 `id`、`massType`、`endpoints` 和 `momentum`。massive 线另需 `nu`，只有非缺省基底才给唯一 `functionSystem`；massless 线不得包含 `nu` 或 `functionSystem`。`endpoints->{u,v}` 是有序数据；对 massless 线，该顺序固定双端点 quotient 的符号和 canonical 方向。即使所有线连接同一对顶点，也不允许省略该字段。
 
 各 family 输入块里的 `zeroPointRules` 只列 unshrunk `a0[v]`、`b0[e]`。独立输出应在 README/derivation 中另列由推导得到的 merged-vertex zero-point、`bS0[e]` 和 shrink normalization；不得把这些派生量倒填成任务输入。
 
@@ -529,11 +529,11 @@ loopMomenta = {};
 loopExternalMomenta = {};
 independentExternalMomenta = {ell};
 ibpMode = "timeOnly";
-vertexEnergies = <|v1->kE,v2->kE|>;
+externalLegEnergyMap = <|v1->kE,v2->kE|>;
 lineOrder = {1};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->ell,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {};
 zeroPointRules = {
@@ -572,9 +572,10 @@ Phase 2 按正式用户手册所述的公开 workflow 验收，不在任务书�
 除 sign 分支按第 9.0 节固定为 `--` 与 `-+` 外，其余定义与 9.1 相同；line 1 改为
 
 ```mathematica
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->ell,
-    "massType"->"massive", "bbType"->mode, "nu"->nuM|>
+    "massType"->"massive", "nu"->nuM,
+    "functionSystem"->mode|>
 };
 basisRoutes = {"h","HIdentity","HToh"};
 zeroPointRules = {
@@ -612,13 +613,13 @@ loopMomenta = {q};
 loopExternalMomenta = {k};
 independentExternalMomenta = {};
 (* 缺省输出：sp[k,k]->ss11^2。 *)
-vertexEnergies = <|v1->E1,v2->E2|>;
+externalLegEnergyMap = <|v1->E1,v2->E2|>;
 lineOrder = {1,2};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->q,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>,
+    "massType"->"massless"|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->q-k,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {};
 zeroPointRules = {
@@ -652,11 +653,11 @@ symmetryRules = {};
 固定使用 9.3 的顶点、动量空间、外不变量、能量和生成元，但 sign 分支按第 9.0 节改为 `++` 与 `-+`；line 1 改为 massive h：
 
 ```mathematica
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->q,
-    "massType"->"massive", "bbType"->"h", "nu"->nuM|>,
+    "massType"->"massive", "nu"->nuM|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->q-k,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {};
 zeroPointRules = {
@@ -687,15 +688,15 @@ loopMomenta = {q};
 loopExternalMomenta = {k1,k2};
 independentExternalMomenta = {};
 (* 缺省输出：sp[k1,k1]->ss11^2、sp[k1,k2]->ss12^2、sp[k2,k2]->ss22^2。 *)
-vertexEnergies = <|v1->E1,v2->E2,v3->E3|>;
+externalLegEnergyMap = <|v1->E1,v2->E2,v3->E3|>;
 lineOrder = {1,2,3};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->q,
-    "massType"->"massive", "bbType"->"h", "nu"->nuM|>,
+    "massType"->"massive", "nu"->nuM|>,
   <|"id"->2, "endpoints"->{v2,v3}, "momentum"->q-k1,
-    "massType"->"massive", "bbType"->"h", "nu"->nuM|>,
+    "massType"->"massive", "nu"->nuM|>,
   <|"id"->3, "endpoints"->{v3,v1}, "momentum"->q+k2,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {};
 zeroPointRules = {
@@ -738,15 +739,15 @@ loopMomenta = {l3,k321};
 loopExternalMomenta = {kL};
 independentExternalMomenta = {};
 (* 缺省输出：sp[k,k]->ss11^2。 *)
-vertexEnergies = <|v1->E1,v2->E2|>;
+externalLegEnergyMap = <|v1->E1,v2->E2|>;
 lineOrder = {1,2,3};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->l3,
-    "massType"->"massive", "bbType"->"h", "nu"->nuM|>,
+    "massType"->"massive", "nu"->nuM|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->k321,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>,
+    "massType"->"massless"|>,
   <|"id"->3, "endpoints"->{v1,v2}, "momentum"->l3-k321-kL,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {
   <|"name"->rhoMassless2,"expr"->sp[k321,l3],"range"->{0,1}|>,
@@ -813,13 +814,15 @@ loopMomenta = {q};
 loopExternalMomenta = {k};
 independentExternalMomenta = {};
 (* 缺省输出：sp[k,k]->ss11^2。 *)
-vertexEnergies = <|v1->E1,v2->E2|>;
+externalLegEnergyMap = <|v1->E1,v2->E2|>;
 lineOrder = {1,2};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->q,
-    "massType"->"massive", "bbType"->mode, "nu"->nuM|>,
+    "massType"->"massive", "nu"->nuM,
+    "functionSystem"->mode|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->q-k,
-    "massType"->"massive", "bbType"->mode, "nu"->nuM|>
+    "massType"->"massive", "nu"->nuM,
+    "functionSystem"->mode|>
 };
 basisRoutes = {"h","HIdentity","HToh"};
 ispData = {};
@@ -859,16 +862,16 @@ loopMomenta = {l3,k321};
 loopExternalMomenta = {wdnmd};
 independentExternalMomenta = {};
 (* 缺省输出：sp[wdnmd,wdnmd]->ss11^2。 *)
-vertexEnergies = <|v1->E1,v2->E2|>;
+externalLegEnergyMap = <|v1->E1,v2->E2|>;
 lineOrder = {1,2,3};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->l3,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>,
+    "massType"->"massless"|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->k321,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>,
+    "massType"->"massless"|>,
   <|"id"->3, "endpoints"->{v1,v2},
     "momentum"->l3-k321-wdnmd,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {
   <|"name"->rho1,"expr"->sp[l3,k321+l3],"range"->{0,1}|>,
@@ -906,15 +909,15 @@ loopMomenta = {q1,q2};
 loopExternalMomenta = {k};
 independentExternalMomenta = {};
 (* 缺省输出：sp[k,k]->ss11^2。 *)
-vertexEnergies = <|v1->E1,v2->E2|>;
+externalLegEnergyMap = <|v1->E1,v2->E2|>;
 lineOrder = {1,2,3};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->q1,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>,
+    "massType"->"massless"|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->q2,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>,
+    "massType"->"massless"|>,
   <|"id"->3, "endpoints"->{v1,v2}, "momentum"->k-q1-q2,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {
   <|"name"->rho1,"expr"->sp[q1,k],"range"->{0,1}|>,
@@ -965,11 +968,11 @@ loopExternalMomenta = {k1,k2};
 independentExternalMomenta = (* 随下述 energy case 显式给出 *);
 ibpMode = "full";
 lineOrder = {1,2};
-lineData = {
+lines = {
   <|"id"->1, "endpoints"->{v1,v2}, "momentum"->ell-k1,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>,
+    "massType"->"massless"|>,
   <|"id"->2, "endpoints"->{v1,v2}, "momentum"->ell-k2,
-    "massType"->"massless", "bbType"->"exp", "nu"->0|>
+    "massType"->"massless"|>
 };
 ispData = {
   <|"name"->rho1, "expr"->sp[ell,k1], "range"->{0,1}|>
@@ -982,20 +985,20 @@ generatorList = {dtau[v1],dtau[v2],dqq[1,1],dqk[1,1],dqk[1,2]};
 symmetryRules = {};
 ```
 
-在完全相同的 topology 上分别使用三组 `vertexEnergies`：
+在完全相同的 topology 上分别使用三组 `externalLegEnergyMap`：
 
 ```mathematica
 energyCaseA = <|
   "independentExternalMomenta"->{p1,p2},
-  "vertexEnergies"-><|v1->Sqrt[sp[p1,p1]],v2->Sqrt[sp[p2,p2]]|>
+  "externalLegEnergyMap"-><|v1->Sqrt[sp[p1,p1]],v2->Sqrt[sp[p2,p2]]|>
 |>;
 energyCaseB = <|
   "independentExternalMomenta"->{p2},
-  "vertexEnergies"-><|v1->Sqrt[sp[k1,k1]],v2->Sqrt[sp[p2,p2]]|>
+  "externalLegEnergyMap"-><|v1->Sqrt[sp[k1,k1]],v2->Sqrt[sp[p2,p2]]|>
 |>;
 energyCaseC = <|
   "independentExternalMomenta"->{p1+p2,p2},
-  "vertexEnergies"-><|v1->Sqrt[sp[p1+p2,p1+p2]],v2->Sqrt[sp[p2,p2]]|>
+  "externalLegEnergyMap"-><|v1->Sqrt[sp[p1+p2,p1+p2]],v2->Sqrt[sp[p2,p2]]|>
 |>;
 ```
 
@@ -1090,8 +1093,8 @@ vertexExchangeRules = {
 
 - `name`、`vertexOrder`、`vertexSignCases`；
 - `loopMomenta`、`loopExternalMomenta`、`independentExternalMomenta`、`ibpMode`；
-- `vertexEnergies`；
-- `lineOrder` 与每条线的有序 `endpoints`、`momentum`、`massType`、`bbType`、`nu`；
+- `externalLegEnergyMap`；
+- `lineOrder` 与每条线的有序 `endpoints`、`momentum`、`massType`；massive 线另含 `nu`，非缺省基底另含 `functionSystem`；
 - `ispData`、`zeroPointRules`；
 - 同分支/异分支 `topIntegralTemplate`；
 - `sectorNaming`、`generatorList`、`symmetryRules`。
@@ -1263,7 +1266,7 @@ check/
 
 ## 14. pure time-IBP/tree 限定验证
 
-本节只使用下列两个 pure-time/tree case。Phase 1 独立产物限于 general `dtau` IBP seed identities 与 treeEnergy/顶点能量参量算符；不独立构造 endpoint reduction、master reduction 或 DE matrix。Phase 2 在同一 convention 下比较 package general seeds/operators，并执行点名的 tree package 功能检查。
+本节只使用下列两个 pure-time/tree case。Phase 1 独立产物限于 general `dtau` IBP seed identities，以及 massive-line 动量模长和外腿能量参量算符；不独立构造 endpoint reduction、master reduction 或 DE matrix。Phase 2 在同一 convention 下比较 package general seeds/operators，并执行点名的 tree package 功能检查。
 
 ### 14.1 固定 family 与表示
 
@@ -1288,7 +1291,7 @@ J[aList,linePacks,{}]
 
 1. 从 time total derivative、h 一阶系统和 theta 导数独立推导 general-index `dtau` seed，明确列出 regular 项和 contact/lower-sector source。
 2. 把 loop time seed 投影到论文 vertex basis，逐项记录指标映射和 prefactor，再映回同一公开三参数 `J`。必须使用目标项相对参考 seed 的完整物理幂次差：`a+a0` 给出 `(-1)` 相位，`b+b0` 或 `bS+bS0` 给出显式能量幂；h contact 应得到完整 `(-k)^(-2nu-1)`，只检查整数 `k^-1` 不通过。
-3. 独立推导每个 treeEnergy/顶点能量变量的参量算符；fixed massive h line 必须包含 `D[k,variable]`、两端点 `a+1,n:0->1` 与 line-prefactor 导数，不能把 loop 积分变量机械当作 tree 外参量。
+3. 独立推导每个 massive-line 动量模长和外腿能量变量的参量算符；fixed massive h line 必须包含 `D[k,variable]`、两端点 `a+1,n:0->1` 与 line-prefactor 导数，不能把 loop 积分变量机械当作 tree 外参量。
 4. 冻结 general seeds/operators 后进入 Phase 2，调用当前最新 package 的 `DSSeeds/DSTreeSeeds` 和公开 operator metadata 逐项比较。
 5. Phase 2 再调用 `repIterative`、`DSTreeNaiveIBP/DE` 与 `DSTreeDLogDE`。这些结果是 package 路线间交叉验证，不写入 Phase 1 expected。master 依论文二进制顺序，letters 按 `vertexOrder` 逐顶点拼接 `{该顶点 massiveLegs 顺序的能量 letters, binary master order 的 cut letters}` 后稳定去重；`letterMatrices` key 必须同序。
 
@@ -1316,7 +1319,7 @@ Phase 1 的全部 general seeds/operators 冻结并记录哈希后，Phase 2 才
 1. 第 9.0 节表中的每个 family 只使用表内固定的一个同号分支和一个混合分支，并应用该 family 明示的 parity；不得增加其它 sign/parity。Phase 2 比较 Phase 1 冻结的 `{family,branch,sector,generator,discreteClass,basisMode}` general seed identity 与 package `DSSeeds/DSAllSeeds` 模板，连续指标不取点。
 2. 每个第 13、16、17 节点名参量算符与 package operator metadata 严格相同，并只用一个统一 `ds` witness 检查乘积法则；不建立每个 sector/离散态的 derivative 表。
 3. `atomic_massive_line` 与 `pure_massive_bubble_reference` 依第 13.3 节比较 direct-h、bare-H、H-to-h 的 general seeds/operators 与 `AT/WT`；不在其它 massive family 重复 H 路线。
-4. 第 14 节两个 tree family 比较 general `dtau` seeds、treeEnergy 算符和公开三槽表示；递推与 naive/dlog 只按第 14.3、15.5 节作为 Phase 2 package 路线交叉验证。
+4. 第 14 节两个 tree family 比较 general `dtau` seeds、massive-line 动量模长算符和公开三槽表示；递推与 naive/dlog 只按第 14.3、15.5 节作为 Phase 2 package 路线交叉验证。
 5. common-theta 多线只在 `massless_sunrise_bundle_guard` 固定分支中验证 odd-subset/contact；cross 分支必须没有 theta/`WT` source，不另造全 sign 组合。
 6. `single_massive_sunrise` 只比较 general seeds 和 `{ss11,kE}` general 参数微分算符；该 family 在 Phase 2 禁止 `DSMetaSeedRange/DSGenerateIBP/DSLinear/Kira/DE/scaling`。
 
@@ -1383,11 +1386,54 @@ Bubble 的唯一固定点为 `ks=ss11=43/17`、`ip0=29/13`、`P0=-29 I/13`；在
 
 ### 15.5 Tree naive IBP/DE 与直接 dlog 的双路线门禁
 
-本节只使用第 14.1 节两顶点 `{+,+}` massive `timeOnly` case。Phase 1 已在第 14.2 节冻结 general `dtau` seeds 与 treeEnergy/顶点能量算符；不得再手推 raw derivative 表、有限 naive 线性系统或 DE matrix。
+本节只使用第 14.1 节两顶点 `{+,+}` massive `timeOnly` case。Phase 1 已在第 14.2 节冻结 general `dtau` seeds、massive-line 动量模长和外腿能量算符；不得再手推 raw derivative 表、有限 naive 线性系统或 DE matrix。
 
 Phase 2 固定使用 `DSTreeDLogDE[context]["masters"]` 给出的同序 `{sectorKey,integral,coefficient}` 列表，其中 `coefficient=N_s` 是 master 定义的一部分。先让 `DSTreeNaiveIBP` 从已与 Phase 1 general seeds 相等的 package seeds 构造有限一步升幂系统，再由 `DSTreeNaiveDE` 求导；另一条路线直接调用 `DSTreeDLogDE`。两路只能共享 topology convention 和显式 master 列表，不共享 reduction rules或矩阵。
 
-验收只包括：equation/unknown 数与 solve residual；master 顺序和 `N_s` normalization；每个顶点能量与不同 massive treeEnergy 的全部矩阵；`D[Log[N_s],x]` 非零项；residual `J`、内部 sector token 和 source；以及两路矩阵逐项严格相等。第 14.1 节三顶点 `{+,+,-}` case 只用 general seed 和 trace 验证 `G+-` 无 contact/`WT` 消费，不再运行第二套 tree DE。最终数值交叉检查沿用第 14.3 节唯一精确点，不增加其它点。
+验收只包括：equation/unknown 数与 solve residual；master 顺序和 `N_s` normalization；各外腿能量与不同 massive-line 动量模长的全部矩阵；`D[Log[N_s],x]` 非零项；residual `J`、内部 sector token 和 source；以及两路矩阵逐项严格相等。第 14.1 节三顶点 `{+,+,-}` case 只用 general seed 和 trace 验证 `G+-` 无 contact/`WT` 消费，不再运行第二套 tree DE。最终数值交叉检查沿用第 14.3 节唯一精确点，不增加其它点。
+
+### 15.6 dSIBP 单独对论文的两顶点 massive G++ 门禁
+
+本节只验证 2411.03088 Sec. 4 的两顶点、单条 massive `G++` 五主积分族，不读取 MadStree
+程序、矩阵、任务书、结果或报告。Phase 2 只读取本项目自身
+`reference-results/paper2411_two_vertex_gpp_de.wl`；该附件独立转录论文 Eqs. (3.3)、(4.2)、
+(4.4)、(4.5)，并保存 PDF/参考代码 hash、论文 master 顺序和 dSIBP normalized master map。
+
+dSIBP 不生成该函数族的数值边界，因此本节不要求边界输运，也不调用 FlintNDE。验收分四层：
+
+1. 在读取论文 DE expected 之前，只从初始化后的 h `compiledFunctionSystem`、Wronskian
+   `shrinkTerms` 和冻结的 `sectorPrefactorData` 独立重建 massive contact。必须分别 exact 验证：
+   raw contact 含完整 `sE1^(-2 nu1-1)`；child physical sector prefactor 含
+   `sE1^(-2 nu1)`；有理 selector 只为 `-1/sE1`；complete normalization 是二者乘积；
+   `D Log[completeNormalization]` 为 `-(2 nu1+1)/sE1`。另外扫描 naive IBP reduction 和
+   naive/direct DE 的全部 coefficient：允许 `nu1/sE1` 等参数有理函数，但缺省 naive 指标
+   basis 不得残留 `Power[kinematic, exponent containing nu1]`。这些检查不得读取论文矩阵、
+   `reference-results/` 或由 package actual 拟合 expected。
+2. `DSTreeDLogDE[context]["masters"]` 必须按 `{00,01,10,11,child}` 返回五项；报告逐项保存
+   `sectorKey`、`integral`、dlog-basis `coefficient` 和物理 `sectorPrefactorData`。前四项两者均为
+   `1`；child 的 dlog coefficient 与物理 sector prefactor 乘积必须直接与论文 Eq. (4.2)
+   对齐，不能只比较去掉相位的模长，也不能额外乘连续幂或 contact phase。两层来源必须
+   分别保留在 `masterNormalizationRecords` 中，禁止把同一层 normalization 重复相乘；旧的
+   `sectorNormalizations/normalizationAudits` 不属于当前接口，不得作为 fallback 读取。
+3. `DSTreeNaiveIBP -> DSTreeNaiveDE` 是本项主要 IBP 路线。dSIBP 的每个 endpoint `n=1`
+   状态相对论文 Eq. (4.1) 带一个负号，因此先显式使用固定矩阵
+   `diag(1,-1,-1,1,1)` 变到论文 `{I00,I01,I10,I11,IR}` basis，再对 `{k12,k34,ks}` 三个
+   `5x5` 矩阵逐项 exact 相减，逐变量报告 `25/25`、非零数和首差值；不得由最终差矩阵拟合
+   其它 adapter。
+4. `DSTreeDLogDE` 的 direct dlog 路线也独立与论文比较；naive 与 direct 两路相等只作内部
+   consistency，不能替代任一路对论文为零。
+
+统一 family 固定两项 `vertices` 的 `vertexType` 均为 `"+"`、`externalLegEnergy` 依次为
+`k12,k34`；唯一 massive line 使用 `momentum->ks`、`nu->nu1`，并取
+`a0[v1]=a0[v2]=nu0`、`b0=0`。dSIBP 派生的固定线模长名称 `sE1` 只属于 normalized
+sector prefactor；论文 basis map 必须显式消去该辅助 normalization。source 与 target 均使用
+`(-tau)^A`，不得在 contact 合并时再次生成 `(-1)^DeltaA`。
+不实现或调用论文超几何函数；超几何普通点属于 MadStree 的另一份独立任务，不构成 dSIBP
+生产能力。
+
+本 targeted runner 保存到独立执行工作区，报告回收为
+`000-report/YYYY-MM-DD-HHmm-{currentVersion}-内部.md`，附件保存 exact 差值、master map 和 hash。只执行本节，
+不重跑第 15.1--15.5 节、两套 loop full flow 或全量 smoke。
 
 ## 16. 根号坐标与参数闭合的限定验证
 
@@ -1402,7 +1448,7 @@ partial_ssij = 2 ssij partial_xij,
 D_ij = k_i . partial/partial k_j.
 ```
 
-`x_ij` 是对称坐标，但 `D_ij` 是有序算符；raw decomposition 始终使用第 13.1 节的 `{D_ij|i<=j}`，不得把 `D_12` 换成 `D_21`。不使用 `PowerExpand`，不暗改根号分支。显式旧输入 `sp[ki,kj]->sij` 保持单位 Jacobian；只有缺省 `ssij` 使用上式的 `2 ssij` 链式法则。
+`x_ij` 是对称坐标，但 `D_ij` 是有序算符；raw decomposition 始终使用第 13.1 节的 `{D_ij|i<=j}`，不得把 `D_12` 换成 `D_21`。不使用 `PowerExpand`，不暗改根号分支。现行自定义 `kinematicRules` 中直接写 `sp[ki,kj]->sij` 时保持单位 Jacobian；只有缺省 `ssij` 使用上式的 `2 ssij` 链式法则。
 
 ### 16.1 双 loop-external exact case
 
@@ -1472,7 +1518,7 @@ undercomplete 只删除 `sp[k2,k2]` 方向；overcomplete 只增加 `sp[2 k1,2 k
 
 ### 17.4 固定 bubble+tree 参数闭合专项
 
-固定 family 不得由其它 bubble/bridge 代替：`v1,v2` 间两条 cycle lines 的动量为 `l1`、`l1+k1+k2`，line 1 是 massive h（指标 `nu1`），line 2 是 massless exponential；`v2,v3` 间 line 3 是动量 `k1+k2` 的 massless exponential bridge。`extLegs={{v1,k1+k2},{v3,k1},{v3,k2}}`，`vertexEnergies=<|v1->E1,v2->E2,v3->E3|>`；三项顶点能量不从传播子动量推断。
+固定 family 不得由其它 bubble/bridge 代替：`v1,v2` 间两条 cycle lines 的动量为 `l1`、`l1+k1+k2`，line 1 是 massive h（指标 `nu1`），line 2 是 massless exponential；`v2,v3` 间 line 3 是动量 `k1+k2` 的 massless exponential bridge。`extLegs={{v1,k1+k2},{v3,k1},{v3,k2}}`；三项 `vertices` 的 `externalLegEnergy` 依次为 `E1,E2,E3`，不从传播子动量推断。
 
 ```wl
 vertexSignCases = <|
@@ -1518,6 +1564,7 @@ Phase 2 先对两个分支比较 general seeds/operators。随后只对 `+++` �
 - [ ] 仅第 15.3 节两套 full flow 运行外部 Kira：pure massive bubble `--`/even/default root coordinates，以及 mix bubble+tree `+++`/no parity/exact custom coordinates；其它 branch/family 不运行 reduction。
 - [ ] 两套 full flow 均完成 export、外部 reduction、import、DE、符号 scaling 和各自唯一精确点；package 未自行启动 reduction，reference bubble 未重新生成 IBP 或运行 reference Kira。
 - [ ] 第 15.5 节只对两顶点 `++` massive tree 比较 naive/dlog；三顶点 `++-` 只验证 cross/contact guard；含 massless full line 的公式型 tree 路线保持 `PendingRederivation`。
+- [ ] 第 15.6 节 targeted run 单独保存 dSIBP master/coefficient/`N_s` 与两条 DE 各自对论文的结果；未调用 MadStree、边界输运或全量回归。
 
 ### 18.3 范围与报告
 
@@ -1553,6 +1600,7 @@ Phase 2 先对两个分支比较 general seeds/operators。随后只对 `+++` �
 | Kira 能量变量 | 仅相位能量 `k->-I ik`; `D_k=I D_ik`; Euler 不变 | 15.3 | Phase 1 不涉及 | 两套 full flow 的 `DSKiraPlan/Export/Import` | 不替换纯空间坐标，不运行 reference Kira |
 | Serializer/import identity | backend-neutral `linearData`; artifact/hash/map/target/master closure | 15.2 | Phase 1 不涉及 | 仅两套 full flow的 `DSLinear/DSKiraPlan/Export/Import` | 不做全 API/release 审计 |
 | DE closure | master 同序；无 residual `J`/内部原子；显式系数求导保留 | 15.3, 15.5 | Phase 1 不推 DE matrix | 两套 loop `DSDE`；一个 two-vertex tree naive/dlog | full-loop 与 tree 无 map 时不比较 |
+| 论文两顶点 G++ | 五个 normalized master 的 coefficient/`N_s`；column-vector DE | 15.6 | 公开论文独立 oracle，不读 package/MadStree | dSIBP naive IBP-DE 与 direct dlog-DE 各自对论文 | 不要求 dSIBP 边界/输运，不重跑其它章节 |
 | Scaling relation | 完整 physical degree 含 `N_s`; normalization 用 `E[T]T^-1` | 15.3 | Phase 1 不做 scaling | 两套 full flow，先符号恒等式后唯一精确点 | 不作为额外 family/example 任务 |
 | Reference basis/energy/`ks` | `P_pkg=-P_ref`; `P0=-I ip0`; 原始 `MIdlogNote`; explicit `ks` 导数恢复 | 13.2, 15.3 | pure massive bubble `--`/even seeds/operators，不读 reference | reference source hash、R2->R1、`T' T^-1`、三套 `361` 比较 | 不反解 adapter，不 fresh reference reduction |
 
@@ -1560,6 +1608,6 @@ Phase 2 先对两个分支比较 general seeds/operators。随后只对 `+++` �
 
 本节登记后续独立验证任务，不改变第 9.6 节和公开 example 的当前范围，也不计入本任务书现有通过项。验证必须复用 `single_massive_sunrise` 的同一 topology、branch、massive/massless 配置、ISP 顺序、symmetry 和 `{ss11,kE}` 参数算符；不得另造简化 sunrise family。
 
-执行时先在符号层生成 general seeds/operators，再选择一个避开全部 seed、normalization 和 DE 分母的固定精确有理点。`numericRules` 必须从 `DSSeeds[...,ApplyNumericRules->True]` 开始同时覆盖外部不变量、顶点能量和其它非 DE 参数；随后依次执行 `DSGenerateIBP -> DSLinear -> DSKiraPlan/DSKiraExport -> package 外部 Kira -> DSKiraImport -> DSDE -> DSScaleCheck`。报告至少保存关系数、积分数、master/target/unreduced 数、Kira 版本与耗时、DE 变量和矩阵维数、残留对象、一般 loop-topology scaling matrix/source residual、所选点全部分母非零证书及 artifact hash。
+执行时先在符号层生成 general seeds/operators，再选择一个避开全部 seed、normalization 和 DE 分母的固定精确有理点。`DSSeeds` 与 `DSGenerateIBP` 均保持符号系数；随后在 `DSLinear[...,CoefficientRules->numericRules,LinearSystemMode->"numeric"]` 同时固定外部不变量、外腿能量和其它非 DE 参数，再依次执行 `DSKiraPlan/DSKiraExport -> package 外部 Kira -> DSKiraImport -> DSDE -> DSScaleCheck`。报告至少保存关系数、积分数、master/target/unreduced 数、Kira 版本与耗时、DE 变量和矩阵维数、残留对象、一般 loop-topology scaling matrix/source residual、所选点全部分母非零证书及 artifact hash。
 
 该任务当前状态为 **未执行**。现有 sunrise example 只认证 general seeds/operators；pure massive bubble 或 mix bubble+tree 的 reduction、DE 与 scaling 结果不能作为 sunrise 的替代证据。

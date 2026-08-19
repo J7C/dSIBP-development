@@ -8,28 +8,28 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
    "name" -> "CheckParameterDerivativeOperators",
-   "vertexData" -> {{v1, "+"}, {v2, "+"}},
-   "lineData" -> {
-     <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p1,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu1,
-       "skType" -> "++"|>
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> Sqrt[sp[p2, p2]]|>,
+     <|"id" -> v2, "vertexType" -> "+", "externalLegEnergy" -> E2|>
+     },
+   "lines" -> {
+     <|"id" -> 1, "massType" -> "massive", "endpoints" -> {v1, v2},
+       "momentum" -> p1, "nu" -> nu1|>
      },
    "loopMomenta" -> {},
    "loopExternalMomenta" -> {},
    "independentExternalMomenta" -> {p1, p2},
    "ibpMode" -> "timeOnly",
-   "vertexEnergies" -> <|v1 -> Sqrt[sp[p2, p2]], v2 -> E2|>,
    "ispData" -> {},
    "zeroPointRules" -> {
      a0[v1] -> 2 nu1, a0[v2] -> 2 nu1, b0[1] -> -2 nu1
      },
-   "symmetryRules" -> {},
-   "seedPreset" -> "quickCheck"
+   "symmetryRules" -> {}
    |>;
 
 defaultContext = DSInit[caseInput, RegisterAsCurrent -> False, ProgressReporting -> False];
@@ -43,50 +43,62 @@ customContext = DSRedefineParameters[
 (* ::Chapter:: *)
 (*结构化 prefactor、contact 与参数导数*)
 
-topIntegral = J[{a[v1], a[v2]}, {{"F", 1, 0}}, {}];
+topInternalIntegral = J[{a[v1], a[v2]}, {{"F", 1, 0}}, {}];
+topIntegral = dSIBP`Private`dsTimeOnlyInternalIntegralToPublic020[
+   topInternalIntegral,
+   customContext
+   ];
 lowerPattern = J[_, {{"F"}}, {}];
 topData = dSIBP`Private`sectorPrefactorDataForIntegral018[
-   customContext["topology"], topIntegral
+   customContext["topology"], topInternalIntegral
    ];
 topN = dSIBP`Private`materializeSectorPrefactor018[topData];
 boundary = Expand@dSIBP`Private`timeThetaBoundaryShrinkTerms[
-    customContext["topology"], topIntegral, v1
+    customContext["topology"], topInternalIntegral, v1
     ];
 contactTerm = SelectFirst[
    If[Head[boundary] === Plus, List @@ boundary, {boundary}],
    ! FreeQ[#, lowerPattern] &,
    Missing["NoContact"]
    ];
-lowerIntegral = FirstCase[contactTerm, _J, Missing["NoLowerIntegral"], Infinity];
+lowerInternalIntegral = FirstCase[contactTerm, _J, Missing["NoLowerIntegral"], Infinity];
 contactCoefficient = If[
-   Head[lowerIntegral] === Missing,
+   Head[lowerInternalIntegral] === Missing,
    Missing["NoContactCoefficient"],
-   Cancel[contactTerm/lowerIntegral]
+   Cancel[contactTerm/lowerInternalIntegral]
    ];
 
 fullDerivative = ds[topIntegral, u, customContext];
-bareDerivative = rep2outform[
+bareDerivativeInternal = rep2outform[
    dSIBP`Private`sectorAwareCanonical018[
     dSIBP`Private`applyIndependentVariableDerivativeSeed[
-     customContext["topology"], topIntegral, u
+     customContext["topology"], topInternalIntegral, u
      ],
     customContext["topology"]
     ],
    customContext["topology"]
    ];
+bareDerivative = dSIBP`Private`dsTimeOnlyExpressionToPublic020[
+   bareDerivativeInternal,
+   customContext
+   ];
 logContribution = Expand[fullDerivative - bareDerivative];
 expectedLogContribution = Expand[D[topN, u]/topN topIntegral];
 
 lowerTopology = dSIBP`Private`sectorTopologyForIntegral018[
-   customContext["topology"], lowerIntegral
+   customContext["topology"], lowerInternalIntegral
    ];
 lowerData = dSIBP`Private`sectorPrefactorDataForIntegral018[
-   customContext["topology"], lowerIntegral
+   customContext["topology"], lowerInternalIntegral
    ];
 lowerN = dSIBP`Private`materializeSectorPrefactor018[lowerData];
+lowerIntegral = dSIBP`Private`dsTimeOnlyInternalIntegralToPublic020[
+   lowerInternalIntegral,
+   customContext
+   ];
 lowerIntegrand = rep2Integrand[lowerIntegral, customContext];
 expectedLowerIntegrand = rep2outform[
-   lowerN dSIBP`Private`integralToBareInertIntegrand018[lowerTopology, lowerIntegral],
+   lowerN dSIBP`Private`integralToBareInertIntegrand018[lowerTopology, lowerInternalIntegral],
    customContext["topology"]
    ];
 
@@ -137,6 +149,6 @@ Print["check_parameter_derivative_operators: ", Count[Values[checks], True], "/"
 Print["failed: ", InputForm[failed]];
 Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
     "contactCoefficient" -> contactCoefficient,
-    "scalingDegree" -> scalingDegree
-  "checks" -> checks|>]];
+    "scalingDegree" -> scalingDegree,
+    "checks" -> checks|>]];
 If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

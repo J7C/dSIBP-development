@@ -2,23 +2,26 @@
 
 ## 当前版本
 
-- 版本：`v0.11`
-- 目录：`versions/MadStree-v0.11/`
+- 版本：`v0.13`
+- 目录：`versions/MadStree-v0.13/`
 - 状态：当前工作版本
 - 数值后端：版本内嵌 FlintNDE `0.4.0` 同步副本
 - 当前接口：`MSEvaluatePath[context, pointSequence, FlintNDEPathPlanning -> True|False]`
 - 职责边界：MadStree 只划分最大连续复仿射单变量段并各拉回一次；FlintNDE 在同一
   Python 进程内完成边界初始化、可选路径规划、输运和多点求值。
-- 兼容策略：v0.11 不加载、不转发也不保留 v0.10 的两阶段路径接口或计划 schema。
+- 拓扑接口：顶点用 `"vertexType" -> "+"|"-"` 指定轮廓支并以
+  `"externalLegEnergy"` 给出外腿指数参数；传播子只输入
+  `"type" -> "massive"|"massless"`，内部 SK 分类完全由端点派生。
+- 兼容策略：v0.13 不读取、不转发也不保留旧 `energy`、`phaseSign`、`skType`、`sigma`、
+  `phaseSigns`；它们作为额外键出现时被忽略，不能替代必需字段或覆盖端点派生值。六种带
+  Full/Cross/External 后缀的旧公开线型因非法 `type` 取值失败。
 
-## 保留版本
+## 工作树保留
 
-- `v0.9`：冻结版本，不再回写。
-- `v0.10`：冻结版本，保留旧两阶段路径工作流的历史实现与验证证据。
-- `v0.11`：当前工作版本。
+- `v0.13`：唯一当前工作版本。
 
-v0.8 及更早版本按只保留最新三个版本的规则从工作树删除，可从 Git 历史恢复。独立验证
-报告作为审计资产按其版本号另行保留。
+v0.12 及更早版本在 v0.13 验收后从工作树删除，只能从 Git 历史恢复。当前目录只保留 v0.13 任务书及
+当前版本正式 validation cases；旧版本任务书、报告和结果不另行归档。
 
 ## 升级规则
 

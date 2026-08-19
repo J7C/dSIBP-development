@@ -6,7 +6,7 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = ExpandFileName@FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -29,7 +29,10 @@ defaultPlan = DSKiraPlan[
    linearData,
    <|"stage" -> "preReduction", "preferredIntegrals" -> {integral2}|>
    ];
-reordered = DSReorderIntegrals[linearData, {integral2}];
+Block[{$MessageList = {}},
+ reordered = DSReorderIntegrals[linearData, {integral2}];
+ reorderMessages = $MessageList
+ ];
 reorderedPlan = DSKiraPlan[
    reordered,
    <|"stage" -> "preReduction", "preferredIntegrals" -> {integral1}|>
@@ -39,6 +42,8 @@ checks = <|
    "defaultOrderPreserved" -> (defaultPlan["integralOrder"] === {integral1, integral2}),
    "preferredDoesNotReorder" -> (defaultPlan["linearData", "integralRules"] === linearData["integralRules"]),
    "explicitOrderAppliedOnce" -> (reordered["integralList"] === {integral2, integral1}),
+   "orderingSpecIsAssociation" -> AssociationQ[reordered["kiraOrdering"]],
+   "reorderMessagesClean" -> (reorderMessages === {}),
    "equationIDsReindexed" -> (Lookup[First[reordered["linearEquations"]], "coefficientRules"] === {2 -> 3, 1 -> -5}),
    "planReadsExplicitOrder" -> (reorderedPlan["integralOrder"] === reordered["integralList"]),
    "orderingConvention" -> (reorderedPlan["orderingConvention"] === "linearDataIntegralList"),

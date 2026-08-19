@@ -14,9 +14,8 @@
 (* 解析最终 package 入口：
    1) $ScriptCommandLine 中的 package_*.wl 候选（存在且为文件）；
    2) DSIBP_PACKAGE_FILE 环境变量；
-   3) DSIBP_CHECK_PACKAGE 环境变量（兼容既有脚本）；
-   4) defaultFile 兜底。 *)
-dsSmokeResolvePackageFile[defaultFile_String] := Module[{candidates, envPrimary, envLegacy},
+   3) defaultFile 兜底。 *)
+dsSmokeResolvePackageFile[defaultFile_String] := Module[{candidates, envPrimary},
   candidates = Select[
     $ScriptCommandLine,
     StringQ[#] && StringMatchQ[FileNameTake[#], "package_" ~~ __ ~~ ".wl"] && FileExistsQ[#] &
@@ -25,10 +24,6 @@ dsSmokeResolvePackageFile[defaultFile_String] := Module[{candidates, envPrimary,
   envPrimary = Quiet[Environment["DSIBP_PACKAGE_FILE"]];
   If[StringQ[envPrimary] && StringLength[StringTrim[envPrimary]] > 0,
     Return[StringTrim[envPrimary]]
-  ];
-  envLegacy = Quiet[Environment["DSIBP_CHECK_PACKAGE"]];
-  If[StringQ[envLegacy] && StringLength[StringTrim[envLegacy]] > 0,
-    Return[StringTrim[envLegacy]]
   ];
   defaultFile
 ];

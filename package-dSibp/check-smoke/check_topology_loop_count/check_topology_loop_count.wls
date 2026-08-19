@@ -8,7 +8,7 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -17,16 +17,18 @@ DSMessagesOff[];
 
 singleEdgeCase = <|
    "name" -> "CheckOrdinarySingleEdge",
-   "vertexData" -> {{v1, "+"}, {v2, "+"}},
-   "lineData" -> {
-     <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> p,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> E1|>,
+     <|"id" -> v2, "vertexType" -> "+", "externalLegEnergy" -> E2|>
+     },
+   "lines" -> {
+     <|"id" -> 1, "massType" -> "massive", "endpoints" -> {v1, v2},
+       "momentum" -> p, "nu" -> nu|>
      },
    "loopMomenta" -> {},
    "loopExternalMomenta" -> {},
    "independentExternalMomenta" -> {p},
    "ibpMode" -> Automatic,
-   "vertexEnergies" -> <|v1 -> E1, v2 -> E2|>,
    "ispData" -> {},
    "zeroPointRules" -> {a0[v1] -> 2 nu, a0[v2] -> 2 nu, b0[1] -> -2 nu},
    "symmetryRules" -> {}
@@ -34,16 +36,17 @@ singleEdgeCase = <|
 
 tadpoleCase = <|
    "name" -> "CheckSelfLoopTadpole",
-   "vertexData" -> {{v1, "+"}},
-   "lineData" -> {
-     <|"id" -> 1, "endpoints" -> {v1, v1}, "momentum" -> q,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> E1|>
+     },
+   "lines" -> {
+     <|"id" -> 1, "massType" -> "massive", "endpoints" -> {v1, v1},
+       "momentum" -> q, "nu" -> nu|>
      },
    "loopMomenta" -> {q},
    "loopExternalMomenta" -> {},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "vertexEnergies" -> <|v1 -> E1|>,
    "ispData" -> {},
    "zeroPointRules" -> {a0[v1] -> 2 nu, b0[1] -> -2 nu},
    "symmetryRules" -> {}
@@ -51,20 +54,22 @@ tadpoleCase = <|
 
 sunriseCase = <|
    "name" -> "CheckThreeParallelEdgeSunrise",
-   "vertexData" -> {{v1, "+"}, {v2, "+"}},
-   "lineData" -> {
-     <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q1,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>,
-     <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> q2,
-       "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>,
-     <|"id" -> 3, "endpoints" -> {v1, v2}, "momentum" -> q1 - q2 - k,
-       "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> E1|>,
+     <|"id" -> v2, "vertexType" -> "+", "externalLegEnergy" -> E2|>
+     },
+   "lines" -> {
+     <|"id" -> 1, "massType" -> "massive", "endpoints" -> {v1, v2},
+       "momentum" -> q1, "nu" -> nu|>,
+     <|"id" -> 2, "massType" -> "massless", "endpoints" -> {v1, v2},
+       "momentum" -> q2|>,
+     <|"id" -> 3, "massType" -> "massless", "endpoints" -> {v1, v2},
+       "momentum" -> q1 - q2 - k|>
      },
    "loopMomenta" -> {q1, q2},
    "loopExternalMomenta" -> {k},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "vertexEnergies" -> <|v1 -> E1, v2 -> E2|>,
    "ispData" -> {
      <|"name" -> rho1, "expr" -> sp[q1, k], "range" -> {0, 1}|>,
      <|"name" -> rho2, "expr" -> sp[q2, k], "range" -> {0, 1}|>

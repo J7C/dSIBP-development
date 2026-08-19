@@ -8,31 +8,32 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
    "name" -> "CheckGeneralIBPSeedsPureMassiveBubble",
-   "vertexData" -> {{v1, "-"}, {v2, "-"}},
-   "lineData" -> {
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "-", "externalLegEnergy" -> P0|>,
+     <|"id" -> v2, "vertexType" -> "-", "externalLegEnergy" -> P0|>
+     },
+   "lines" -> {
      <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>,
+       "massType" -> "massive", "nu" -> nu|>,
      <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> q - k,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>
+       "massType" -> "massive", "nu" -> nu|>
      },
    "loopMomenta" -> {q},
    "loopExternalMomenta" -> {k},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "externalInvariantRules" -> {sp[k, k] -> ss11^2},
-   "vertexEnergies" -> <|v1 -> P0, v2 -> P0|>,
+   "kinematicRules" -> {sp[k, k] -> ss11^2},
    "ispData" -> {},
    "zeroPointRules" -> {
      a0[v1] -> 2 nu, a0[v2] -> 2 nu,
      b0[1] -> -2 nu, b0[2] -> -2 nu
      },
-   "symmetryRules" -> {},
-   "seedPreset" -> "quickCheck"
+   "symmetryRules" -> {}
    |>;
 
 context = DSInit[
@@ -49,9 +50,10 @@ context = DSInit[
 
 seedData = DSSeeds[context, ProgressReporting -> False];
 records = DSAllSeeds[seedData];
-topRecords = Select[records, Lookup[#, "sectorKey", None] === "top" &];
+topSectorKey = Lookup[First[Lookup[context, "sectors", {<||>}]], "sectorKey", Missing["topSectorKey"]];
+topRecords = Select[records, Lookup[#, "sectorKey", None] === topSectorKey &];
 timeRecords = Select[topRecords, Lookup[#, "ibpClass", None] === "tIBP" &];
-momentumRecords = Select[topRecords, Lookup[#, "ibpClass", None] === "mIBP" &];
+momentumRecords = Select[topRecords, Lookup[#, "ibpClass", None] === "qIBP" &];
 generalSourceIndices = DeleteDuplicates@Cases[
     Lookup[topRecords, "sourceIntegral", {}],
     _a | _b | _bS,
@@ -79,6 +81,6 @@ Print["failed: ", InputForm[failed]];
 Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
     "topTimeSeedCount" -> Length[timeRecords],
     "topMomentumSeedCount" -> Length[momentumRecords],
-    "generalSourceIndices" -> generalSourceIndices
+    "generalSourceIndices" -> generalSourceIndices,
   "checks" -> checks|>]];
 If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

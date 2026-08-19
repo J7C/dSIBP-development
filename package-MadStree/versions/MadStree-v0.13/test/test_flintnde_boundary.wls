@@ -1,0 +1,87 @@
+(* ::Package:: *)
+
+(***
+File: test_flintnde_boundary.wls
+Purpose: Verifies the automatic Gamma boundary of a single-vertex zero-Hankel family, the relative FlintNDE path and the analytic values at the target point.
+Run: wolframscript -file package-MadStree/versions/MadStree-v0.13/test/test_flintnde_boundary.wls
+***)
+
+(* ::Chapter:: *)
+(* Loading and single-vertex input *)
+
+Get[FileNameJoin[{DirectoryName[$InputFileName], "_harness.wls"}]];
+packageRoot = msTestLoadKernel[];
+
+initializationMessageFreeQ = True;
+context = Check[
+  MSInitTree[<|
+    "vertices" -> {<|"id" -> v, "externalLegEnergy" -> k0, "timePower" -> a, "vertexType" -> "+"|>},
+    "lines" -> {}
+  |>],
+  initializationMessageFreeQ = False;
+  $Failed
+];
+targetRules = {k0 -> 3, a -> 1/3};
+
+
+(* ::Chapter:: *)
+(* Automatic boundary and FlintNDE transport *)
+
+runtimeDirectory = FileNameJoin[{
+  DirectoryName[$InputFileName], "results_test", "flintnde-boundary"
+}];
+configuration = MSFlintNDEConfiguration[];
+boundary = MSBoundaryData[
+  context,
+  targetRules,
+  BoundaryScale -> 8,
+  WorkingPrecision -> 60
+];
+result = MSEvaluatePath[
+  context,
+  {targetRules},
+  PythonExecutable -> msTestPythonExecutable[],
+  MSRuntimeDirectory -> runtimeDirectory,
+  BoundaryScale -> 8,
+  WorkingPrecision -> 60,
+  TransportOrder -> 96,
+  ReferenceTransportOrder -> 128,
+  TargetRelativeError -> "1e-28",
+  MessageLanguage -> "CN"
+];
+
+
+(* ::Chapter:: *)
+(* Analytic comparison and summary *)
+
+(* vertexType "+" means Exp[-I k tau], hence the defining Gamma integral uses -I k. *)
+expected = N[Gamma[4/3]/(-I 3)^(4/3), 50];
+relativeDifference = Abs[(First[result["values"]] - expected)/expected];
+
+(* 奇点边界与有限段必须在同一 Python 请求中完成，并返回实际边界节点。 *)
+
+
+checks = <|
+  "initializationMessageFree" -> initializationMessageFreeQ,
+  "zeroWidthSectorKey" -> context =!= $Failed && context["sectorKeySchema", "width"] === 0 &&
+    context["sectors"][[1, "sectorKey"]] === "" && StringQ[context["sectors"][[1, "sectorKey"]]],
+  "configuration" -> TrueQ[configuration["availableQ"]],
+  "boundaryGenerated" -> Lookup[boundary, "status", None] === "generated",
+  "boundaryMethod" -> Lookup[boundary, "method", None] === "2411GenericSectorLeadingSeries",
+  "transportComputed" -> Lookup[result, "status", None] === "computed",
+  "singularBoundaryInSameRequest" ->
+    Lookup[result["flintNDE", "boundary"], "kind", None] === "regular_singular" &&
+    Lookup[result["flintNDE", "boundary"], "pathPointCount", 0] >= 2,
+  "masterDigest" -> Lookup[result, "masterDigest", None] === context["masterDigest"],
+  "analyticAgreement" -> TrueQ[relativeDifference < 10^-26],
+  "refinement" -> TrueQ[result["flintNDE", "targetRelativeErrorMet"]]
+|>;
+
+msTestSummary[checks, "MadStree FlintNDE boundary"];
+Print["relativeDifference: ", InputForm[relativeDifference]];
+
+If[! And @@ Values[checks],
+  Print["boundary: ", InputForm[boundary]];
+  Print["result: ", InputForm[result]];
+  Exit[1]
+];

@@ -52,7 +52,7 @@ def solve_ep(ep_value: str) -> dict[str, Any]:
         reference_order=64,
         target_relative_error="1e-18",
     )
-    value = result["reference_snapshots"][-1][0, 0]
+    value = result["primary_snapshots"][-1][0, 0]
     expected = acb(2) ** acb(ep_value)
     return {
         "ep": ep_value,

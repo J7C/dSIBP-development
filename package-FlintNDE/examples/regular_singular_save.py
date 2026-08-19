@@ -61,7 +61,7 @@ def main() -> None:
         save_output_directory=OUTPUT_DIR,
     )
 
-    print("final value:", result["reference_snapshots"][-1][0, 0])
+    print("final value:", result["primary_snapshots"][-1][0, 0])
     print("relative difference:", result["relative_difference_inf"])
     print("saved files:", OUTPUT_DIR)
 

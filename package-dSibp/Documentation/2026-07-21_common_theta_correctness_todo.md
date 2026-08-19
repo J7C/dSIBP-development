@@ -42,7 +42,7 @@
 - [x] plan/design/README/AGENTS/用户手册将该模块列为正确性门禁，不得描述为 future 或可选优化。
 - [x] independent benchmark 只明确原始传播子、distribution 和指标/零点记账 convention；删除特定多线结果、triple/pair-sector 等答案提示。
 - [x] independent benchmark 明确一般 shrink factor `q^(-s-z)(-tau)^(-s-z)` 如何映射到 `bS=b+s`、`bS0=b0+z`、`aMerged=a_u+a_v-s`、`a0Merged=a0_u+a0_v-z`。
-- [x] `independent-benchmark/package/` 当前只保留 `package_020.0.wl`、`package_020.0.pdf`、同版本更新说明和更新后的 examples；旧版本及无版本名程序/手册已删除。
+- [x] `independent-benchmark/package/` 当前只保留 `package_022.0.wl`、`package_022.0.pdf`、同版本更新说明和更新后的 examples；旧版本及无版本名程序/手册已删除。
 - [x] 两份 TeX/PDF 编译并目视检查；运行矛盾扫描、快照哈希和 `git diff --check`。
 
 ## E. 018 sector prefactor 与 parity 状态（已实施，待 source-isolated 独立审计）
@@ -61,4 +61,4 @@
 - [x] 从实际 compiled shrink data 验证 h/H 缺省 `{bShift,zShift}={1,2nu}` / `{1,0}` 是否与 `n1+n2=1` 共同保持 child parity；不得只按 preset 文本假定。
 - [x] 用户修改 H/h child zero point 时，对可判定整数重基更新 parity offset；非整数或不可判定重基关闭相应 sector parity capability并返回双语诊断。
 
-当前状态：上述实现已进入 018，并由维护 smoke 覆盖；历史 `4/4`、`21/21`、`14/14`、`30/30` 计数只说明当时回归，不替代尚未执行的 source-isolated 018 独立审计。massless quotient 上的公式型 tree 递推与 dlog 仍未重推，018 对相关接口保持 `PendingRederivation`；该项统一列入根目录 `todolist_temp.md`，不伪装成已认证能力。
+当前状态：上述实现已进入后续版本，并由维护 smoke 覆盖；历史 `4/4`、`21/21`、`14/14`、`30/30` 计数只说明当时回归，不替代当前 source-isolated 独立审计。massless quotient 上的公式型 tree 递推与 dlog 仍未重推，相关接口保持 `PendingRederivation`；该项统一列入根目录 `研究计划与研究进度.md`，不伪装成已认证能力。

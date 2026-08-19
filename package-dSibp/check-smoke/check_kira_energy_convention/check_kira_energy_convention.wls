@@ -8,24 +8,26 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
    "name" -> "CheckKiraEnergyConvention",
-   "vertexData" -> {{v1, "-"}, {v2, "-"}},
-   "lineData" -> {
-     <|"id" -> 1, "endpoints" -> {v1, v2}, "momentum" -> q,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>,
-     <|"id" -> 2, "endpoints" -> {v1, v2}, "momentum" -> q - k,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nu|>
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "-", "externalLegEnergy" -> P0|>,
+     <|"id" -> v2, "vertexType" -> "-", "externalLegEnergy" -> P0|>
+     },
+   "lines" -> {
+     <|"id" -> 1, "massType" -> "massive", "endpoints" -> {v1, v2},
+       "momentum" -> q, "nu" -> nu|>,
+     <|"id" -> 2, "massType" -> "massive", "endpoints" -> {v1, v2},
+       "momentum" -> q - k, "nu" -> nu|>
      },
    "loopMomenta" -> {q},
    "loopExternalMomenta" -> {k},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "externalInvariantRules" -> {sp[k, k] -> ss11^2},
-   "vertexEnergies" -> <|v1 -> P0, v2 -> P0|>,
+   "kinematicRules" -> {sp[k, k] -> ss11^2},
    "ispData" -> {},
    "zeroPointRules" -> {
      a0[v1] -> 2 nu, a0[v2] -> 2 nu,

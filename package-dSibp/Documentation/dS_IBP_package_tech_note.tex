@@ -392,7 +392,7 @@ $e^{\pi\text{Im}[\nu]}$ 是以下两个因素\textbf{共同作用}的结果：
 % ============================================================
 \section{Massless 双 theta 的 time-IBP 缩并与抵消}
 
-本 package 对纯 massless 与 massive/massless 混合积分族都采用逐传播子的双 theta 合并路线。对一条 masslessFull 线，\texttt{lineData["endpoints"]=\{u,v\}} 是有序数据。令 $\Delta=\tau_u-\tau_v$，并对 $++/--$ 分别取 $\sigma=+1/-1$，先定义二维物理基
+本 package 对纯 massless 与 massive/massless 混合积分族都采用逐传播子的双 theta 合并路线。对一条内部派生为 masslessFull 的线，公开 \texttt{lines} 项中的 \texttt{"endpoints"->\{u,v\}} 是有序数据。令 $\Delta=\tau_u-\tau_v$，并对 $++/--$ 分别取 $\sigma=+1/-1$，先定义二维物理基
 \begin{align}
  M_0 &=
  \theta(\Delta)e^{-i\sigma q\Delta}
@@ -582,12 +582,7 @@ $\longrightarrow$
 \section{Building Block 参数体系}
 % ============================================================
 
-每条 massive 完整线 $e$ 在 012 中都带编译后的 \texttt{functionSystem}。推荐直接输入 $P,Q,T,W$；旧 $\text{bbType}_e$ 与二元 $\texttt{eomCoefficients}$ 只作为初始化兼容入口。若旧输入给出 $\{c_1,c_2\}$，初始化层解释为：
-
-\begin{itemize}
-  \item $P=c_1/x$、$Q=c_2$、$T=I_2$；
-  \item $W=-\mathcal C x^{-c_1}$，整数 shrink shift 缺省取 $1$，zero-point shift 为 $c_1-1$。
-\end{itemize}
+每条 massive 完整线 $e$ 都带编译后的 \texttt{functionSystem}。公开输入缺省使用 h preset；需要其它系统时，唯一可选字段 \texttt{"functionSystem"} 接受 \texttt{"h"}、\texttt{"H"} 或给出 $P,Q,T,W$ 的完整 Association。022 不读取旧 \texttt{bbType/eomCoefficients}。
 
 内置缺省值为
 \begin{align}
@@ -825,8 +820,11 @@ Parity capability 逐 line 读取初始化后的函数系统：massive line 只�
 loopMomenta = {l3, k321};
 loopExternalMomenta = {wdnmd};
 independentExternalMomenta = {kE1};
-vertexEnergies = <|1 -> ke[1], 2 -> Sqrt[sp[wdnmd,wdnmd]],
-  3 -> Sqrt[sp[kE1,kE1]]|>;
+vertices = {
+  <|"id"->1,"vertexType"->"+","externalLegEnergy"->ke[1]|>,
+  <|"id"->2,"vertexType"->"+","externalLegEnergy"->Sqrt[sp[wdnmd,wdnmd]]|>,
+  <|"id"->3,"vertexType"->"-","externalLegEnergy"->Sqrt[sp[kE1,kE1]]|>
+};
 
 ispData = {
   {rhoA, sp[l3, wdnmd + l3], {0, 1}},
@@ -915,7 +913,7 @@ DSGenerateIBP[allSeeds,{a1,La1,Ua1},{b1,Lb1,Ub1},...]
 \end{equation}
 用户显式给出的 $L_x<0$ 仍完整有效；式~\eqref{ispSeedEnvelope018} 只禁止 planner 为了覆盖升幂项把下界进一步推向更负的整数。对所选 seed 作用全部 shift 后，所得关系仍落在用户 target envelope 内，但不再承诺为了填满下边界而自动生成更低 ISP seed。不得误用并集外包络 $[L_x-\max\Delta_x,U_x-\min\Delta_x]$，后者会无故扩大撒点域。若修正后的下界大于上界，该组为空；程序 warning 并保留结构化 \texttt{emptySeedRangeGroups}，但该结果的 complete IBP capability 为 false，不能作为完整后端约化系统。
 
-实际生成顺序固定为：按式~\eqref{seedEnvelopeInverse017} 构造候选整数点，\emph{在生成元作用前}按当前 sector 的 parity 筛点，再把连续指标值代入 general seed，应用用户已经单向定向的 sector symmetry，随后重复代入同一组精确 numeric rules 并对每个线性项执行 \texttt{Together/Cancel}。\texttt{DSSeeds[...,ApplyNumericRules->True]} 在 general template 密封前已经做第一次物理规则代入；此时 \texttt{a/b/bS/ispN} 仍是合法 continuous indices，必须与其它 \texttt{seedResidualCoefficientVariables} 分开。撒点后 \texttt{sampledCoefficientVariables} 才表示仍未数值化的真实 coefficient residual。纯数值工作流必须先按符号 topology 构造参量微分算符，再把同一个固定非奇异精确有理点写入 seed 的 \texttt{numericRules}；验收要求 \texttt{seedResidualCoefficientVariables} 与 \texttt{sampledCoefficientVariables} 都为空。逐关系的直接复核应收集全部不同的 \texttt{J}，提取各 \texttt{Coefficient} 和常数项，先精确重构原关系，再确认这些系数的 \texttt{Variables} 为空；不能把多积分关系除以任意一个 \texttt{J}。生成后的 parity certificate 只检查关系，不删除关系中的积分，也不把不满足 parity 的积分替换为零。\texttt{candidatePointCount}、\texttt{parityAcceptedPointCount}、逐组 shift/range 和空域状态均写入返回数据。用户包络唯一决定规模；package 不设置 seed 数、离散态数或方程数上限。
+实际生成顺序固定为：按式~\eqref{seedEnvelopeInverse017} 构造候选整数点，\emph{在生成元作用前}按当前 sector 的 parity 筛点，再把连续指标值代入 general seed，应用用户已经单向定向的 sector symmetry，并对每个线性项执行 \texttt{Together/Cancel}。\texttt{DSSeeds} 始终只生成符号 general templates；精确数值系数规则由 \texttt{DSLinear[...,CoefficientRules->rules]} 持有。formal DE 工作流必须先按符号 topology 构造参量微分算符和 target closure，再在 post-derivative 阶段代入固定非奇异精确有理点。逐关系的直接复核应收集全部不同的 \texttt{J}，提取各 \texttt{Coefficient} 和常数项，先精确重构原关系，再确认系数域满足当前 linear/Kira 合同；不能把多积分关系除以任意一个 \texttt{J}。生成后的 parity certificate 只检查关系，不删除关系中的积分，也不把不满足 parity 的积分替换为零。\texttt{candidatePointCount}、\texttt{parityAcceptedPointCount}、逐组 shift/range 和空域状态均写入返回数据。用户包络唯一决定规模；package 不设置 seed 数、离散态数或方程数上限。
 
 018 不改变上述代数顺序，但把连续撒点热路径实现为两层复用。一次 \texttt{DSGenerateIBP} 先由初始化的完整 sector metadata 构造
 \begin{equation}
@@ -1368,13 +1366,12 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线按
   \item $a0_{\text{merged}}$：合并顶点的 $a$ 零点。h 模式：$a0_{\text{merged}} = a0_u + a0_v - 2\nu_e$；H 模式：$a0_{\text{merged}} = a0_u + a0_v$。
 \end{itemize}
 
-\subsection{Building Block 类型}
+\subsection{Massive 函数系统}
 
 \begin{itemize}
-  \item $\text{bbType}_e$：线 $e$ 的 building block 类型。
-  \item \texttt{"h"} $\to \{2\nu+1, 1, -(2\nu+1)\}$：h 函数（归一化 Hankel）。
-  \item \texttt{"H"}：裸 Hankel 矩阵 EOM，含 $\nu^2/x^2$ 二次 pole；shrink power 为 $-1$。
-  \item \texttt{\{c1,c2\}} 或 line-local \texttt{eomCoefficients}：旧输入兼容；初始化时转换为 $P=c_1/x,Q=c_2,T=I_2,W=-\mathcal Cx^{-c_1}$。
+  \item 缺省 h preset：归一化 Hankel，$P=(2\nu+1)/x$、$Q=1$。
+  \item \texttt{"functionSystem"->"H"}：裸 Hankel 矩阵 EOM，含 $\nu^2/x^2$ 二次 pole；shrink power 为 $-1$。
+  \item \texttt{"functionSystem"->Association}：显式给出并编译 $P,Q,T,W$；不保留旧字段适配。
 \end{itemize}
 
 \subsection{维度参数}
@@ -1527,7 +1524,7 @@ residual/tadpole sector 使用该文 Eq.~(64)
   +2\sum_j r_{j,s}+\frac{{\cal E}N_s}{N_s}.
  \label{eq:general-loop-scaling-degree}
 \end{equation}
-这里 $A_{v,s}=a_{v,s}+a_{0,v,s}$；full line 使用 $B_{e,s}=b_{e,s}+b_{0,e,s}$，shrunk line 使用 $B_{e,s}=b_{S,e,s}+b_{S0,e,s}$；$r_{j,s}$ 是 ISP 分子幂次，因为每个 ISP 是二次齐次的 loop scalar product，所以贡献 $2r_{j,s}$。$L_{\rm root}$ 来自 root topology；contact sector 不重新降圈。最后一项必须从结构化 \texttt{sectorPrefactorData} 物化完整 $N_s$ 后求 Euler 对数导数，不能只看 \texttt{J} 的 pack。若 $N_s$ 或 master 的显式线性组合关于所声明的 Euler 变量不齐次，该路线返回无效 scaling specification，而不是选择一个次数。\texttt{PureMassiveBubble} 仍保留为 reference 专用关系，不负责含 ISP 的一般 topology。
+这里 $A_{v,s}=a_{v,s}+a_{0,v,s}$；full line 使用 $B_{e,s}=b_{e,s}+b_{0,e,s}$，shrunk line 使用 $B_{e,s}=b_{S,e,s}+b_{S0,e,s}$；$r_{j,s}$ 是 ISP 分子幂次，因为每个 ISP 是二次齐次的 loop scalar product，所以贡献 $2r_{j,s}$。$L_{\rm root}$ 来自 root topology；contact sector 不重新降圈。time-only 模式收到公开 $J[\texttt{sectorKey},\texttt{timeShifts},\texttt{stateBits}]$ 后，必须先通过唯一的 public-to-internal adapter 恢复带 sector line metadata 的内部三槽表示，再读取次数、ISP 幂和 prefactor；不得把公开三槽按 full-loop line pack 解释。转换失败或输入不符合当前公开 schema 时，\texttt{DSScaleCheck} fail closed。最后一项必须从结构化 \texttt{sectorPrefactorData} 物化完整 $N_s$ 后求 Euler 对数导数，不能只看 \texttt{J} 的 pack。若 $N_s$ 或 master 的显式线性组合关于所声明的 Euler 变量不齐次，该路线返回无效 scaling specification，而不是选择一个次数。\texttt{PureMassiveBubble} 仍保留为 reference 专用关系，不负责含 ISP 的一般 topology。
 
 若 $\bm I'=T(x)\bm I$，则
 \begin{equation}
@@ -1585,12 +1582,12 @@ Tree family 不保留 loop 的 $b$ 槽，因此投影必须把完整物理幂次
 相对参考积分归一化后的投影系数为
 \begin{equation}
  \mathcal P_{s\leftarrow r}
- =(-1)^{A_s-A_r}\prod_e k_e^{-\left(B_{e,s}-B_{e,r}\right)}.
+ =\prod_e k_e^{-\left(B_{e,s}-B_{e,r}\right)}.
  \label{eq:loop-tree-projection-prefactor}
 \end{equation}
 目标 sector 的 $a0_v^{(s)}$ 同时作为式~\eqref{eq:tree-m10} 的 $\nu_{0;v}$。式~\eqref{eq:loop-tree-projection-prefactor} 必须直接由幂次差构造；对一般符号 $b$ 不使用 \texttt{PowerExpand}。
 
-对 h-mode massive contact，$bS=b+1$、$bS0=b0+2\nu$，同时 $a_{\rm merged}=a_u+a_v-1$、$a0_{\rm merged}=a0_u+a0_v-2\nu$。因此整数和 zero-point 共同产生完整的 $(-k)^{-2\nu-1}$；只写 $k^{-1}$ 会遗漏物理系数。H-mode 采用相同整数 shift 但 zero-point shift 为零，无质量 contact 的两类 shift 均为零。
+source 与 target 的时间幂都按 $(-\tau)^A$ 定义，contact 合并只是在同一负时间变量上合并幂次，因此不再产生 $(-1)^{A_s-A_r}$。对 h-mode massive contact，$bS=b+1$、$bS0=b0+2\nu$，同时 $a_{\rm merged}=a_u+a_v-1$、$a0_{\rm merged}=a0_u+a0_v-2\nu$。因此整数和 zero-point 共同产生完整的 $k^{-2\nu-1}$；只写 $k^{-1}$ 会遗漏物理系数。H-mode 采用相同整数 shift 但 zero-point shift 为零，无质量 contact 的两类 shift 均为零。
 
 017 的 sector-tagged \texttt{treeLinearData} 必须为每个未合并 loop 单项分别序列化目标与参考的整数幂、zero-point、完整物理幂及其差值，并保存由这些差值直接重建的式~\eqref{eq:loop-tree-projection-prefactor}。若若干来源投影到相同的 \texttt{\{sectorKey,J[...]\}}，最终系数可以求和，但逐来源 \texttt{contributions} 和 \texttt{physicalPowerAudits} 不得覆盖。对同一 contact 事件同时缩并多条线时，式~\eqref{eq:loop-tree-projection-prefactor} 的乘积逐线保留；例如三条 h 线的显式能量指数分别为 $-1-2\nu_i$，而 merged vertex 的 $\nu_0$ 同时减去 $\sum_i2\nu_i$。
 
@@ -1598,7 +1595,7 @@ Tree family 不保留 loop 的 $b$ 槽，因此投影必须把完整物理幂次
 \section{Tree 的通用迭代关系}
 % ============================================================
 
-\textbf{当前实现边界（2026-07-29）}：本节保留原 dSIBP tree 公式的历史 convention 与对照公式；018 中的公式型 \texttt{repIterative}、\texttt{DSTreeDLogDE} 及 massless quotient tree producer继续暂记为禁用，不属于正式公开能力。直接公式实现已经隔离到根目录独立程序包 \texttt{package-MadStree/}：它以原生 time-only context 提供 \texttt{MSInitTree}、\texttt{MSInitTimeGraph} 与专用单顶点入口 \texttt{MSInitVertexFamily}，由局部 $1\times1/2\times2$ building blocks 直接构造主积分、迭代约化和 dlog DE。当前 MadStree 已实现共同-theta odd-subset simultaneous contact、coincident massless/massive quotient、event-reachable sectors、非零 child shift 的公式约化右复合、nested blow-up/theta fixing/normal-crossing 证书，并可调用独立 FlintNDE 后端；它的 time-only 圈图不执行 loop-momentum integration。该隔离不改变本 package 的 topology-driven IBP/serializer 边界，也不把 MadStree 的共享 massless 二态写回旧 \texttt{J} 表示。
+\textbf{当前实现边界（022）}：本节公式在 dSIBP 中服务 massive-only time-only family。公开入口 \texttt{DSTreeSeeds}、\texttt{repIterative}、\texttt{DSTreeNaiveIBP}、\texttt{DSTreeNaiveDE} 与 \texttt{DSTreeDLogDE} 均返回当前 \texttt{J[sectorKey,timeShifts,stateBits]} 表示；naive IBP-DE 与直接 dlog DE 使用同序 normalized masters 交叉检查。含 massless full line 的 quotient-basis 公式尚未独立重推，因此公式型迭代与 DE 接口返回 \texttt{PendingRederivation}，但 general \texttt{DSTreeSeeds} 仍可用于 IBP seed 对照。根目录的独立程序包 \texttt{package-MadStree/} 另行实现直接公式、边界和 FlintNDE 输运；dSIBP 不调用它，MadStree 的结果也不构成 dSIBP 自身的 package oracle。
 
 定义 $\bm f(a_0)$ 为式~\eqref{eq:tree-master-order} 排序的 $2^p$ 维向量。令 $\Lambda_r^{(i)}$ 表示只在第 $i$ 个二进制因子上作用 Pauli 矩阵 $\sigma_r$。2401.00129 Eq.~(3.37) 给出
 \begin{align}
@@ -1643,7 +1640,7 @@ Tree family 不保留 loop 的 $b$ 槽，因此投影必须把完整物理幂次
 \begin{verbatim}
 repIterative[expr_, end_:Automatic]
 \end{verbatim}
-把每个顶点的 $a_e$ 迭代到指定终点；\texttt{Automatic} 表示全零终点。显式终点的长度必须等于顶点数，且每段步数必须是可判定整数。多 sector 情形按 contact-reachable sector DAG 从低到高处理，避免把含 source 的非齐次关系当作齐次 replacement repeated。017 的公开输入始终是三参数 $J$；massive-only family 先按 sector tag 映射到 Private vertex basis，公式内核完成单步关系后再映回同一公开表示。这个要求保证用户显式给出的 \texttt{treeEnergy} 不会被 fixed-line notation \texttt{sEi} 替换。含 massless full line 时 quotient-basis 公式尚未重推，接口返回 \texttt{PendingRederivation}，不使用旧单槽公式猜测结果。
+把每个顶点的 $a_e$ 迭代到指定终点；\texttt{Automatic} 表示全零终点。显式终点的长度必须等于顶点数，且每段步数必须是可判定整数。多 sector 情形按 contact-reachable sector DAG 从低到高处理，避免把含 source 的非齐次关系当作齐次 replacement repeated。017 的公开输入始终是三参数 $J$；massive-only family 先按 sector tag 映射到 Private vertex basis，公式内核完成单步关系后再映回同一公开表示。这个要求保证用户 line \texttt{momentum} 决定的传播子模长不会被 fixed-line 内部 notation \texttt{sEi} 替换。含 massless full line 时 quotient-basis 公式尚未重推，接口返回 \texttt{PendingRederivation}，不使用旧单槽公式猜测结果。
 
 % ============================================================
 \section{Tree 的 dlog DE 与 SK branch}
@@ -1670,16 +1667,20 @@ repIterative[expr_, end_:Automatic]
 
 017 另保留一条不使用式~\eqref{eq:tree-dlog} 或 $A_\pm$ 构造约化规则的路线。对每个 sector 的 $a_v=0$ binary master，把一个活动顶点改成 $a_v=1$，反投影为 loop 代表元并调用已经验证的 \texttt{dtau}。完成共同 theta、simultaneous contact、zero point 和 coincident canonical 后再投影为 sector-tagged tree 方程。所有方程一次联立，固定 $a_v=0$ masters，只解一步升幂对象。这正是 \texttt{DSTreeNaiveIBP} 的定义。
 
-顶点相位能量导数仍可由 loop 代表元的相位项投影。传播子的 \texttt{treeEnergy} 则不能使用完整 loop 动量导数，因为后者作用于积分变量。由式~\eqref{dkh0}--\eqref{dkh1}，以 tree 的 $\tau^a$ convention 写成
+外腿相位能量导数仍可由 loop 代表元的相位项投影。传播子的动量模长则不能使用完整 loop 动量导数，因为后者作用于积分变量。由式~\eqref{dkh0}--\eqref{dkh1}，以 tree 的 $\tau^a$ convention 对 bare sector integral $I_s$ 写成
 \begin{align}
- \partial_k J[a,n=0]&=-J[a+1,n=1],\label{eq:tree-naive-dk0}\\
- \partial_k J[a,n=1]&=J[a+1,n=0]-\frac{2\nu+1}{k}J[a,n=1].\label{eq:tree-naive-dk1}
+ \partial_k I_s[a,n=0]&=-I_s[a+1,n=1],\label{eq:tree-naive-dk0}\\
+ \partial_k I_s[a,n=1]&=I_s[a+1,n=0]-\frac{2\nu+1}{k}I_s[a,n=1].\label{eq:tree-naive-dk1}
 \end{align}
 每个 endpoint leg 分别应用式~\eqref{eq:tree-naive-dk0}--\eqref{eq:tree-naive-dk1}，并乘 $\partial k/\partial x$。这里 $J_s=N_sI_s$ 已隐含 sector prefactor，故
 \begin{equation}
  \partial_xJ_s=(\partial_x\log N_s)J_s+N_s\partial_xI_s,
 \end{equation}
-所以 Wronskian/zero-point prefactor 的导数不可遗漏，也不得在 $J_s$ 外再次乘 $N_s$。\texttt{DSTreeNaiveDE} 最后只使用上述 raw derivative 与 naive 线性规则，输出的逐变量矩阵应与 $\partial_x\Omega$ 在完全相同的 ordered normalized basis 下逐项相等。
+所以 Wronskian/zero-point prefactor 的导数不可遗漏，也不得在 $J_s$ 外再次乘 $N_s$。最终 dlog master 为 $F_s=S_sJ_s$，其乘积法则是
+\begin{equation}
+ \partial_xF_s=(\partial_xS_s)J_s+S_s(\partial_x\log N_s)J_s+S_sN_s\partial_xI_s.
+\end{equation}
+其中 $S_s$ 是有理 selector；连续幂只存在于 $N_s$ 的 master 定义中，其导数以 $c\nu/k$ 形式进入 DE。\texttt{DSTreeNaiveDE} 最后只使用上述 raw derivative 与 naive 线性规则，输出的逐变量矩阵应与 $\partial_x\Omega$ 在完全相同的 ordered normalized basis 下逐项相等。
 
 每个顶点的 $+/-$ branch 决定其相位能量 $k_{0;e}$ 的符号。h 的 EOM、二进制 basis 和式~\eqref{eq:tree-m10} 的矩阵结构不因 branch 改变。内部线的 SK 类型由两个端点的 branch 唯一决定：同号端点只能给 $G^{++}$ 或 $G^{--}$，异号端点只能给 $G^{+-}$ 或 $G^{-+}$，不存在同一传播子在一次计算中同时具有两种类型的情形。
 
@@ -1687,17 +1688,17 @@ $G^{+-}/G^{-+}$ 不含 theta，因此 time-IBP 完全按 vertex family 因子化
 
 设 sector $s$ 的 binary master vector 为 $\bm f_s^{(0)}$。非对角块需要约化求导产生的 $\bm f_s^{(1)}$，所以 contact selector 必须从 $R^{(1)}$ 取得：对 $\bm f_s^{(0)}$ 的每个 binary state，只把当前求导顶点的整数时间指标改成 $a=1$ 后调用 loop time-IBP。$a=0$ seed 给出的是 $R^{(0)}$；其 lower-sector 指标一般为 $a=-1$，先把它迭代到零会引入合并顶点能量，不能替代 Eq.~(3.68) 的 selector。
 
-每个 sector 的 binary master 已按 $\bm J_s=N_s\bm I_s$ 定义；$N_s$ 来自传播子收缩并保存在 sector metadata 中，不再引入第二层 master normalization。于是对角与非对角块都使用同一份 $N_s$：
+每个 sector 的 normalized binary integral 按 $\bm J_s=N_s\bm I_s$ 定义；$N_s$ 来自传播子收缩并保存在 sector metadata 中。为了把所有进入同一 lower sector 的 contact 矩阵化为有理常 selector，dlog basis 另选 $\bm F_s=S_s\bm J_s$。$S_s$ 是可追溯的有理 basis coefficient，不是第二份物理 sector prefactor。于是
 \begin{align}
- \Omega_{ss}^{\rm global}&=\Omega_s+\log(\mathcal N_s)\,\mathbb I_s,\\
+ \Omega_{ss}^{\rm global}&=\Omega_s+\log(S_sN_s)\,\mathbb I_s,\\
  \Omega_{st}^{\rm global}&=-i\sum_{v\in s}
  \operatorname{Embed}_v\!\left(T_v^{-1}\widetilde\Omega_{0;v}T_v\right)
- C_{st}^{(v)},\qquad t\prec s,
+ \left(S_sR_{st}^{(v)}S_t^{-1}\right),\qquad t\prec s,
  \label{eq:tree-sector-offdiagonal}
 \end{align}
-其中 $C_{st}^{(v)}$ 由当前 loop \texttt{dtau} 的 tagged $R^{(1)}$ raw source 乘 $N_s/N_t$ 得到。该写法逐项实现 Eq.~(3.68)，且共同-theta多传播子 source 会自然给直接跨多层 sector 的块。$\log(N_s)$ 作为整体 letter 保存；不把一般复幂拆开，也不使用 \texttt{PowerExpand}。
+其中 $R_{st}^{(v)}$ 由当前 loop \texttt{dtau} 的 tagged $R^{(1)}$ raw source 得到，并已按统一 $J$ 表示包含 $N_s/N_t$；只有 $S_s/S_t$ 在 tree dlog 层追加。该写法逐项实现 Eq.~(3.68)，且共同-theta多传播子 source 会自然给直接跨多层 sector 的块。$\log(S_sN_s)$ 作为整体 letter 保存；不把一般复幂拆开，也不使用 \texttt{PowerExpand}。
 
-\texttt{DSTreeDLogDE[context]} 返回同序的 \texttt{masters}、\texttt{omega}、\texttt{letters/letterMatrices}，并附带 \texttt{sectorNormalizations}、\texttt{normalizationAudits}、\texttt{contactMaps} 与 \texttt{omegaBlocks}。缺省 \texttt{standard} 路线信任同一 producer 的统一公开表示 stamp，不再全对象扫描 legacy/private token，也不构造 \texttt{dlogResidual}；显式 \texttt{AuditLevel->"full"} 才运行公开表示、\texttt{LinearSolve} residual 与 dlog 严格重构证书。矩阵按 contact DAG 排序；从 lower sector 回到 parent 的块及同层 sibling 块必须严格为零。
+\texttt{DSTreeDLogDE[context]} 返回同序的 \texttt{masters}、\texttt{omega}、\texttt{letters/letterMatrices}，并附带每个 master 的 \texttt{masterNormalizationRecords}、contact 使用的 \texttt{dlogSelectorCoefficients}、\texttt{selectorAudits}、\texttt{contactMaps} 与 \texttt{omegaBlocks}。记录明确区分有理 contact selector、物理 sector prefactor 及二者的 complete normalization；naive/direct 两条路线均从同一记录取其对数导数。缺省 \texttt{standard} 路线信任同一 producer 的统一公开表示 stamp，不再全对象扫描 legacy/private token，也不构造 \texttt{dlogResidual}；显式 \texttt{AuditLevel->"full"} 才运行公开表示、\texttt{LinearSolve} residual 与 dlog 严格重构证书。矩阵按 contact DAG 排序；从 lower sector 回到 parent 的块及同层 sibling 块必须严格为零。
 
 % ============================================================
 \section{013 pure time-IBP 交叉验证定义}
@@ -2105,7 +2106,7 @@ h/H 的 $\mathcal C_e=(4i/\pi)e^{\pi\operatorname{Im}\nu_e}$ 进入 target secto
  massless & $a_u+a_v$ & $a_{0,u}+a_{0,v}$ & $b$ & $b_0$
 \end{tabular}
 \end{center}
-fixed/non-loop line 没有 $b/b_S$ 指标；上表对应的 zero point 改由 sector prefactor 保存。\texttt{shrinkBShift} 与 \texttt{shrinkZeroPointShift} 是由函数系统和 Wronskian 编译出的物理数据，一般不应由用户修改。若确需 override，必须同步重建 child zero point、normalized coefficient 与 parity metadata；额外 normalization 通过 master/basis 选择处理。
+fixed/non-loop line 没有 $b/b_S$ 指标；上表对应的 zero point 改由 sector prefactor 保存。\texttt{shrinkBShift} 与 \texttt{shrinkZeroPointShift} 是由函数系统和 Wronskian 编译出的内部物理数据，公开 topology 不能覆盖。额外 normalization 通过 master/basis 选择处理，不建立第二套 shrink 输入入口。
 
 \subsection{massless shrink 的缺省吸收与 child-sector parity}
 

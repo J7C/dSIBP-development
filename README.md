@@ -46,24 +46,23 @@ DE，再数值拟合例如 `epsilon` 的 Laurent/幂级数系数，并用额外�
 
 ## 引用
 
-dSIBP 与 MadStree 主要基于以下 dSIBP 系列工作实现。使用这两个程序包时，建议引用与所用
-功能相关的三篇论文：
+使用 dSIBP 时，建议引用：
 
 1. Jiaqi Chen and Bo Feng, [*Towards Systematic Evaluation of de Sitter Correlators via Generalized Integration-By-Parts Relations*](https://arxiv.org/abs/2401.00129), arXiv:2401.00129.
 2. Jiaqi Chen, Bo Feng and Yi-Xiao Tao, [*Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations*](https://arxiv.org/abs/2411.03088), arXiv:2411.03088.
 3. Jiaqi Chen, Bo Feng, Zhehan Qin and Yi-Xiao Tao, [*Loop integrals in de Sitter spacetime: The parity-split IBP system and d log-form differential equations*](https://arxiv.org/abs/2604.14549), arXiv:2604.14549.
+4. dSIBP package paper, arXiv identifier pending.
 
-FlintNDE 的高阶 pole 处理和解析正规化参数重构深度参考了 AMFlow 的公开算法与代码：
-
-- Xiao Liu and Yan-Qing Ma, [*AMFlow: A Mathematica package for Feynman integrals computation via auxiliary mass flow*](https://arxiv.org/abs/2201.11669), arXiv:2201.11669.
+使用 MadStree 时，建议引用上述第 1、2 篇及 MadStree package paper（arXiv identifier pending）。
+使用 FlintNDE 时，建议引用 FlintNDE package paper（arXiv identifier pending）。
 
 ## 当前入口
 
 | 程序包 | 当前版本 | 入口 |
 | --- | --- | --- |
-| dSIBP | `021.0` | `package-dSibp/versions/021_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_021.0.wl` |
-| MadStree | `v0.10` | `package-MadStree/load_current.wl` |
-| FlintNDE | `0.3.0` | `package-FlintNDE/versions/FlintNDE-0.3.0/`；导入名 `flintnde` |
+| dSIBP | `022.0` | `package-dSibp/versions/022_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_022.0.wl` |
+| MadStree | `v0.13` | `package-MadStree/load_current.wl`；显式目录 `package-MadStree/versions/MadStree-v0.13/` |
+| FlintNDE | `0.4.0` | `package-FlintNDE/versions/FlintNDE-0.4.0/`；导入名 `flintnde` |
 
 ## 依赖与工作流
 
@@ -98,15 +97,20 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 
 ### MadStree
 
-目录：`package-MadStree/versions/MadStree-v0.10/Examples/`。
+目录：`package-MadStree/versions/MadStree-v0.13/Examples/`。
 
 | 示例 | 覆盖内容 |
 | --- | --- |
 | `01_massless_full_edge.wl` | massless quotient、主积分、递推、dlog 和自动边界/数值入口 |
 | `02_vertex_family_reduction.wl` | 单顶点专用输入、局部张量逆和有限线性组合约化 |
 | `03_time_only_cycle_chart.wl` | time-only 圈图、共同 theta、contact sector 与全部 strict-rank chart |
+| `04_three_vertex_tree.wl` | 三顶点树图端到端数值输运与多点求值 |
+| `05_massive_three_vertex_tree.wl` | massive 三顶点树图、边界与 FlintNDE 输运 |
+| `06_massless_three_vertex_ep_regularization.wl` | 共同正规化参数、自动 Laurent 拟合、误差估计与并行取值 |
 
-三个 example 已在 v0.5 fresh 运行并退出 `0`。独立验证 T1--T6 均由 v0.5 fresh 执行并通过；T6 通过 Wolfram 公开入口验证内置 FlintNDE 的保存点和能力边界。
+六个 example 已从空运行产物状态在 v0.13 fresh 运行并退出 `0`。当前独立 validation-01
+比较 900 点自动规划/fast multipoint 与严格用户节点路线，validation-02 检查正规化复角域、
+候选容量不足保留结果和 UTF-8 输出。
 
 ### FlintNDE
 
@@ -117,6 +121,8 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 | `qnm_2x2.py` | exact 2x2 QNM 系统、无穷远形式渐近和双端匹配 |
 | `regular_singular_save.py` | 正则奇点 `{a,b,C}` 边界、普通保存点与 refinement |
 | `exponential_boundary_save.py` | 已认证指数型奇点 `{phi,a,b,C}` 的保存和复用 |
+| `ep_series_reconstruction.py` | regulator 自动取值、Laurent 拟合和误差估计 |
+| `ep_parallel.py` / `ep_parallel_mathematica.wl` | 不同 regulator 取值的外层并行调度 |
 
 后两项抽自当前 `76/76` 回归中已经执行的公开调用配置；本轮只做脚本语法和路径检查，不把它们记成新的数值验收。
 
@@ -134,8 +140,9 @@ Windows 下在任何目录创建或 Python 启动前检查完整运行文件路�
 ## 文档与验证
 
 - dSIBP：`package-dSibp/Documentation/`、`package-dSibp/independent-benchmark/`、`package-dSibp/000-report/`。
-- MadStree：`package-MadStree/versions/MadStree-v0.11/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
-- FlintNDE：`package-FlintNDE/Documentation/`、版本 README、`check_*` 与 `test/`。
+- MadStree：`package-MadStree/versions/MadStree-v0.13/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
+- FlintNDE：`package-FlintNDE/Documentation/`、版本 README、`check_*` 与
+  `package-FlintNDE/versions/FlintNDE-0.4.0/tests/`。
 
 验证报告只证明其记录的版本、路径和范围。旧实现历史保留在 Git history 和进度归档中，不在根 README 重复维护。
 

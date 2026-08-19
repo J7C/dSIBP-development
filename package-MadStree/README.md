@@ -1,6 +1,6 @@
 # MadStree 版本与验证入口
 
-MadStree 是 Wolfram Language 的 dS time-integral 公式程序包。当前版本为 `v0.11`，数值
+MadStree 是 Wolfram Language 的 dS time-integral 公式程序包。当前版本为 `v0.13`，数值
 输运委托给版本内嵌且与独立包同步的 FlintNDE `0.4.0`。
 
 ## 加载
@@ -8,7 +8,7 @@ MadStree 是 Wolfram Language 的 dS time-integral 公式程序包。当前版�
 交互使用可直接执行根目录 `load_current.wl`。正式复现应显式加载版本目录：
 
 ```wl
-packageRoot = ".../package-MadStree/versions/MadStree-v0.11";
+packageRoot = ".../package-MadStree/versions/MadStree-v0.13";
 AppendTo[$Path, packageRoot];
 Needs["MadStree`"];
 ```
@@ -16,7 +16,7 @@ Needs["MadStree`"];
 源码和文档均为 UTF-8；包内 `Get`、JSON 和后端日志入口显式使用 UTF-8，用户不需要给
 `Needs` 额外填写编码参数。
 
-## v0.11 数值边界
+## v0.13 数值边界
 
 单个参数赋值与路径的当前入口是：
 
@@ -66,14 +66,14 @@ Python 进程中交给 FlintNDE。Wolfram 侧以参数列表 `RunProcess` 启动
 - `FlintNDEPathPlanning -> False`：严格把每段用户点依次作为输运节点，不插点、不删点、
   不静默规划。用户必须给出落在逐步收敛圆内且不穿奇点的点列。
 
-裸坐标是需要返回的用户点；`{coordinate,"tmp"}` 只参与连续段识别和输运。v0.11 不提供
+裸坐标是需要返回的用户点；`{coordinate,"tmp"}` 只参与连续段识别和输运。v0.13 不提供
 奇点领头阶点标签，也不提供旧两阶段路径函数、计划对象、wrapper 或旧 JSON schema。
 `SingularityMode -> "Avoid"` 缺省拒绝穿过奇点；`"SingularityJump"` 只在开启 FlintNDE
 规划时可用。
 
 ## 目录
 
-- `versions/MadStree-v0.11/`：当前源码、内嵌后端、手册、examples 和开发测试。
+- `versions/MadStree-v0.13/`：当前源码、内嵌后端、手册、examples 和开发测试。
 - `VERSION_INDEX.md`：当前版本和冻结版本边界。
 - `independent-validation-task/`：版本化独立验证任务书。
 - `independent-validation/`：独立 runner、正式轻量结果和自动报告。

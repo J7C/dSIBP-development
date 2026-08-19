@@ -306,6 +306,11 @@ all generated files are rooted beside that calling script, never in the installe
 Importing the package initializes the global Acb context to 200 decimal working digits plus
 32 guard bits.  Calling \texttt{configure\_working\_precision()} restores that default, while
 an explicit positive integer overrides it.
+The first \texttt{import flintnde} in each Python process also prints one citation notice to
+stderr: ``FlintNDE package paper, arXiv identifier pending.''  It does not list dSIBP,
+MadStree, AMFlow, or any other paper.  A file-protocol adapter may set
+\texttt{FLINTNDE\_SUPPRESS\_CITATION\_NOTICE=1} before import and preserve its own citation
+list in response metadata; the notice must never be mixed into machine-readable stdout.
 
 The source tree also provides a standard Wolfram Language package.  Add the 0.4.0 version
 root to \texttt{\$Path}, then evaluate
@@ -569,8 +574,10 @@ where the point itself is excluded.  The package uses
   |\Delta z|<r< R(c)
 \end{equation}
 for every segment.  A long path is subdivided according to a fixed fraction of $R(c)$.  The
-primary and reference chains are evaluated independently.  Their final relative difference
-is a truncation diagnostic; it is not confused with the radius carried by an individual
+primary and reference chains are evaluated independently.  User-visible endpoint values,
+dense samples, saved points, and regulator-fit samples are taken from the lower-order primary
+chain.  The higher-order reference chain is retained only for the final relative-difference
+diagnostic; that diagnostic is not confused with the radius carried by an individual
 FLINT ball.  Multi-segment calculations restart from high-precision midpoints to limit
 interval wrapping and are consequently reported as arbitrary-precision point transport,
 not as a rigorous enclosure of the complete path.
@@ -709,7 +716,8 @@ order.  The default directory is the caller's \texttt{Path.cwd()};
 \texttt{save\_output\_directory} may select another caller-owned directory.  Only after all
 transport steps succeed does the package write \texttt{flintnde\_save\_points.json}.  Thus a
 later failure preserves completed point files without claiming a complete summary.  A
-refined transport writes the reference chain only.
+refined transport writes the primary chain only; the reference chain remains an accuracy
+diagnostic and never replaces a user result.
 
 At an ordinary point the record contains the coordinate and the transported Acb column.  At
 a direct regular singular start or target it contains reusable $\{a,b,C\}$ terms and

@@ -11,7 +11,7 @@ $HistoryLength = 0;
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectDirectory = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
-dsSmokeLoadPackage[FileNameJoin[{projectDirectory, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectDirectory, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -20,20 +20,22 @@ DSMessagesOff[];
 
 validCase = <|
    "name" -> "ISPNumeratorContract",
-   "vertexData" -> {{v1, "+"}, {v2, "+"}},
-   "lineData" -> {
-     <|"id" -> e1, "endpoints" -> {v1, v2}, "momentum" -> q1,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nuM|>,
-     <|"id" -> e2, "endpoints" -> {v1, v2}, "momentum" -> q2,
-       "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>,
-     <|"id" -> e3, "endpoints" -> {v1, v2}, "momentum" -> k - q1 - q2,
-       "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> E|>,
+     <|"id" -> v2, "vertexType" -> "+", "externalLegEnergy" -> E|>
+     },
+   "lines" -> {
+     <|"id" -> e1, "massType" -> "massive", "endpoints" -> {v1, v2},
+       "momentum" -> q1, "nu" -> nuM|>,
+     <|"id" -> e2, "massType" -> "massless", "endpoints" -> {v1, v2},
+       "momentum" -> q2|>,
+     <|"id" -> e3, "massType" -> "massless", "endpoints" -> {v1, v2},
+       "momentum" -> k - q1 - q2|>
      },
    "loopMomenta" -> {q1, q2},
    "loopExternalMomenta" -> {k},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "vertexEnergies" -> <|v1 -> E, v2 -> E|>,
    "ispData" -> {
      <|"name" -> rho1, "expr" -> sp[q1, k], "range" -> {0, 1}|>,
      <|"name" -> rho2, "expr" -> sp[q2, k], "range" -> {0, 1, 2}|>
@@ -43,9 +45,7 @@ validCase = <|
      b0[e1] -> betaM, b0[e2] -> beta0, b0[e3] -> beta0
      },
    "symmetryRules" -> {},
-   "parityConstraints" -> {},
-   "seedPreset" -> "quickCheck",
-   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0, 1}|>
+   "parityConstraints" -> {}
    |>;
 
 negativeDefinitionCase = Join[
@@ -60,11 +60,6 @@ nonzeroDefinitionCase = Join[
        validCase["ispData"],
        1 -> Join[validCase["ispData"][[1]], <|"zeroPoint" -> 1|>]
        ]|>
-   ];
-negativeSeedCase = Join[
-   validCase,
-   <|"name" -> "NegativeISPSeedRange",
-     "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {-1, 1}|>|>
    ];
 
 context = DSInit[
@@ -82,13 +77,6 @@ negativeDefinitionContext = DSInit[
    ];
 nonzeroDefinitionContext = DSInit[
    nonzeroDefinitionCase,
-   RegisterAsCurrent -> False,
-   WriteInitializationFiles -> False,
-   GenerateDerivativeMetadata -> False,
-   ProgressReporting -> False
-   ];
-negativeSeedContext = DSInit[
-   negativeSeedCase,
    RegisterAsCurrent -> False,
    WriteInitializationFiles -> False,
    GenerateDerivativeMetadata -> False,
@@ -185,7 +173,6 @@ checks = <|
      Lookup[nonzeroDefinitionContext, "status", "failed"] === "initialized" &&
       Lookup[nonzeroDefinitionContext["topology"]["ispData"], "zeroPoint", Missing["zeroPoint"]] === {0, 0}
      ),
-   "negativeSeedRangeAccepted" -> (Lookup[negativeSeedContext, "status", "failed"] === "initialized"),
    "zeroExponentDerivativeIsZero" -> TrueQ[Expand[zeroISPDerivative] === 0],
    "validTargetRangeAccepted" -> (Lookup[validRangeAudit, "status", "failed"] === "passed"),
    "negativeTargetRangeAccepted" -> (Lookup[negativeRangeAudit, "status", "failed"] === "passed"),

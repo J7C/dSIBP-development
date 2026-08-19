@@ -10,7 +10,7 @@
 本规则生效后的每个新 FlintNDE 版本必须在对应 `versions/FlintNDE-X.Y.Z/` 中增加
 `UPDATE_NOTES.md`，其中目录版本与 `pyproject.toml` 完全一致。文件至少记录
 基线版本、新增功能、修复、公开接口或数值 convention 变化、迁移要求、验证状态和已知限制。
-工作树只保留最新三个版本，更早版本可从 Git 历史恢复。
+工作树只保留唯一当前版本，更早版本可从 Git 历史恢复；旧任务书、报告和结果不在现行目录归档。
 
 建议新版本从稳定主线新建独立 Git branch 开发和验证；branch 是否创建、保留或合并由用户
 决定，不会因版本完成而自动合并到 `main`。
@@ -28,11 +28,15 @@
 `avoid` / `"Avoid"`）。Python 导入与 Wolfram 公开入口的缺省工作精度均为 200 位；工作位数为
 `ceil(WorkingPrecisionDigits*log2(10))+32`，序列化计划记录规划精度，执行要求更高精度
 时必须重新规划。0.4.0 另提供按节点覆盖桶的 fast multipoint evaluation，以及不调用
-规划器的公开 `direct_user_point_path`。独立包和 MadStree v0.11 的 Vendor 保持同一实现。
+规划器的公开 `direct_user_point_path`。独立包和 MadStree v0.13 的 Vendor 保持同一实现。
 
 Python 使用 `import flintnde`。Wolfram Language 把版本根加入 `$Path` 后可直接
 `Needs["FlintNDE`"]`，使用 `FlintNDERationalSystem`、`FlintNDEPlanPath` 和
 `FlintNDEExecutePath`。
+
+每个 Python 进程首次 `import flintnde` 时会在 stderr 提醒引用 FlintNDE package paper
+（arXiv identifier pending）；不列出 dSIBP、MadStree 或其它程序包论文。文件协议适配器可
+显式静默该提示，并由自己的响应 metadata 保存所属程序包的引用清单。
 
 Wolfram 入口的 `"WorkDirectory"` 明确表示临时运行根本身；`Automatic` 使用当前调用目录下
 的 `results_temp/`，接口只在其下追加 `bridge/`，不重复追加任务名或第二层 `results_temp`。
@@ -92,7 +96,7 @@ python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.4.0
 
 0.4.0 当前聚焦回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
 Arb 路径 round-trip、fast multipoint、严格用户节点、精度拒绝和运行路径门禁；Python
-`unittest discover` 166/166 通过，Wolfram `Needs["FlintNDE`"]` 端到端检查为 25/25。
+`unittest discover` 170/170 通过，Wolfram `Needs["FlintNDE`"]` 端到端检查为 25/25。
 完整验证结果以
 `versions/FlintNDE-0.4.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
 
@@ -175,7 +179,8 @@ result = transport_path_refined(system, boundary, path)
 adaptive path 的起点、终点和 `detour_points` 也接受同一标签。每到达一个保存点，程序立即按
 路径次序写 `flintnde_save_001.json`、`flintnde_save_002.json` 等文件；全部输运成功后再写
 `flintnde_save_points.json` 汇总。中途失败时，已经完成的逐点文件保留，但不写虚假的完整汇总。
-refinement 只保存 reference chain，避免同一坐标出现两套结果。普通点记录含坐标和 Acb 结果
+refinement 只保存 primary chain，避免同一坐标出现两套结果；reference chain 仅用于误差核验。
+普通点记录含坐标和 Acb 结果
 列向量；正则奇点记录含可再次输入的 `{a,b,C}`；已认证的严格解耦指数型奇点记录含
 `{phi,a,b,C}`，表示 `exp(phi(z)) z^a log(z)^b C`。带 `"save"` 的中间奇点在局部 bridge
 反解常数后立即保存。程序不把奇点处通常不存在的有限 `Y(z_*)` 冒充为结果。Lee--Moser 后
@@ -207,11 +212,11 @@ transition 都是 `ordinary_taylor`，且不直接处理路径 `save` 标签。M
 逐项 exact 比较，跨多个指数 sector 的 `C` 必须拆成多项。该 Frobenius 协议也由
 `reconstruct_series_solution` 的 `boundary(ep)` 直接复用。
 
-实际 16 维 kECep 单点测试见 `test/test_kECep_16x16.py`。该测试只消费共享 OOO-232 EC
-资源，在一个物理点上检查一般矩阵系数、短程输运、epsilon=0 共振 log、power-log 基、
-3+1 个 regulator 样本的重构，以及通用 `RationalMatrixSystem over Q(i)(k)` 的自动奇点和
-exact Frobenius 全链。当前结果为 `passed`，位于
-`test/results_test/kECep_16x16_ooo232/summary.json`。
+实际 16 维 kECep 单点交叉检查的维护脚本见
+`check_01_nde_npackage_16x16/check_01_nde_npackage_16x16.py`。该检查只消费共享 OOO-232 EC
+资源，在一个物理点上比较 Npackage 与 FlintNDE 的完整端点向量；它不把可重建的运行结果
+保留在发布树。当前正式独立验证报告和轻量结果位于
+`independent-validation/FlintNDE-0.4.0-validation-01-fast-multipoint-and-direct-path/`。
 
 `reconstruct_series_solution` 已作为公开高层接口实现。调用方给出 `DEmatrix`、
 `boundary`、`path`、目标 `maximum_power`、符号认证的整数 `leading_power` 及其严格证书。

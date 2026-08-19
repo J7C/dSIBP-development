@@ -7,9 +7,9 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
-examplesDirectory = FileNameJoin[{projectRoot, "versions", "021_dSIBP", "Examples"}];
+examplesDirectory = FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Examples"}];
 manifestPath = FileNameJoin[{examplesDirectory, "coverage_manifest.wl"}];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "021_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 
 manifest = Get[manifestPath];
 coverage = Lookup[manifest, "coverage", <||>];
@@ -54,6 +54,8 @@ sourceAudit = Association@KeyValueMap[
 
 checks = <|
    "manifestVersion" -> (Lookup[manifest, "version", Missing["version"]] === ToString[dSIBP`$dSIBPVersion]),
+   "obsoleteAliasesNotExported" ->
+    (Names["dSIBP`metaSeedRange"] === {} && Names["dSIBP`generateIBP"] === {}),
    "noMissingPublicFunctions" -> (Complement[publicFunctions, declaredFunctions] === {}),
    "noUnknownDeclaredFunctions" -> (Complement[declaredFunctions, publicFunctions] === {}),
    "allFilesExist" -> And @@ Lookup[Values[sourceAudit], "fileExistsQ", False],
@@ -69,6 +71,6 @@ Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[che
     "declaredFunctionCount" -> Length[declaredFunctions],
     "missingPublicFunctions" -> Complement[publicFunctions, declaredFunctions],
     "unknownDeclaredFunctions" -> Complement[declaredFunctions, publicFunctions],
-    "sourceAudit" -> sourceAudit
+    "sourceAudit" -> sourceAudit,
   "checks" -> checks|>]];
 If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

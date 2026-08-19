@@ -62,7 +62,7 @@
        "normalizedResidualPower" -> 1, "prefactorPower" -> -beta12 - 2*nu12|>}, "kEIndices" -> {1},
     "kEMomenta" -> {p12}, "kEParameterExpressions" -> {sE1}, "kEPower" -> kEpower[-beta12 - 2*nu12],
     "residualPowerParts" -> {}, "contractionParts" -> {<|"lineIndex" -> 1, "lineId" -> 1,
-       "normalizationFactor" -> ((4*I)*eta12)/Pi|>}, "constantPrefactor" -> ((4*I)*eta12)/Pi,
+       "normalizationFactor" -> ((4*I)*E^(Pi*Im[nu12]))/Pi|>}, "constantPrefactor" -> ((4*I)*E^(Pi*Im[nu12]))/Pi,
     "normalizationConvention" -> "structuralKEPowerAndContact-v1"|>, "builtInRelationData" -> {},
   "parityData" -> <|"status" -> "disabled", "reason" -> "noParityConstraints", "parityUsableQ" -> True,
     "constraints" -> {}|>, "representation" -> "J[sectorKey,timeShifts,stateBits]"|>}

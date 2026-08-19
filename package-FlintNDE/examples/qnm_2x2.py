@@ -335,7 +335,7 @@ def _transport_from_endpoint(
 def _selected_asymptotic_diagnostic(transport: dict[str, Any]) -> dict[str, Any]:
     """从奇点初始化报告提取用户实际选择的指数 sector 截断诊断。"""
 
-    initialization = transport["reference_segments"][0]
+    initialization = transport["primary_segments"][0]
     evaluation = initialization["local_evaluation"]
     diagnostic = dict(evaluation["selected_branch_diagnostics"][0])
     diagnostic["formal_accuracy_checks_passed"] = evaluation[
@@ -413,10 +413,10 @@ def run_frequency(
         INFINITY_MATCH_RATIO,
     )
 
-    h_allowed = horizon_allowed["reference_snapshots"][-1]
-    h_forbidden = horizon_forbidden["reference_snapshots"][-1]
-    i_allowed = infinity_allowed["reference_snapshots"][-1]
-    i_forbidden = infinity_forbidden["reference_snapshots"][-1]
+    h_allowed = horizon_allowed["primary_snapshots"][-1]
+    h_forbidden = horizon_forbidden["primary_snapshots"][-1]
+    i_allowed = infinity_allowed["primary_snapshots"][-1]
+    i_forbidden = infinity_forbidden["primary_snapshots"][-1]
     infinity_coefficients_at_match = _matrix_from_columns(i_allowed, i_forbidden).solve(h_allowed)
     horizon_coefficients_at_match = _matrix_from_columns(h_allowed, h_forbidden).solve(i_allowed)
     infinity_contamination = _ratio(
@@ -431,10 +431,10 @@ def run_frequency(
     manual_outgoing = infinity_vector(exact_iw, "outgoing", 1 / first_z, convention, ell)
     manual_incoming = infinity_vector(exact_iw, "incoming", 1 / first_z, convention, ell)
     outgoing_local_error = relative_difference_inf(
-        infinity_allowed["reference_snapshots"][0], manual_outgoing
+        infinity_allowed["primary_snapshots"][0], manual_outgoing
     )
     incoming_local_error = relative_difference_inf(
-        infinity_forbidden["reference_snapshots"][0], manual_incoming
+        infinity_forbidden["primary_snapshots"][0], manual_incoming
     )
 
     inverted_basis = build_local_solution_basis(system.inverted(), 0, REFERENCE_ORDER)

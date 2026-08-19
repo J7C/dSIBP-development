@@ -11,7 +11,7 @@ $HistoryLength = 0;
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectDirectory = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
-packagePath = dsSmokeResolvePackageFile[FileNameJoin[{projectDirectory, "versions", "018_dSIBP", "Kernel", "dSIBP.wl"}]];
+packagePath = dsSmokeResolvePackageFile[FileNameJoin[{projectDirectory, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
 exampleDirectory = FileNameJoin[{
     projectDirectory, "independent-benchmark", "package", "examples",
     "03_single_massive_sunrise"
@@ -26,20 +26,22 @@ Get[FileNameJoin[{exampleDirectory, "family_conventions.wl"}]];
 
 caseInput = <|
    "name" -> "singleMassiveSunriseParityGeneratorCheck",
-   "vertexData" -> {{v1, "+"}, {v2, "+"}},
-   "lineData" -> {
-     <|"id" -> e1, "endpoints" -> {v1, v2}, "momentum" -> l3,
-       "massType" -> "massive", "bbType" -> "h", "nu" -> nuM|>,
-     <|"id" -> e2, "endpoints" -> {v1, v2}, "momentum" -> k321,
-       "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>,
-     <|"id" -> e3, "endpoints" -> {v1, v2}, "momentum" -> l3 - k321 - kL,
-       "massType" -> "massless", "bbType" -> "exp", "nu" -> 0|>
+   "vertices" -> {
+     <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> kE|>,
+     <|"id" -> v2, "vertexType" -> "+", "externalLegEnergy" -> kE|>
+     },
+   "lines" -> {
+     <|"id" -> e1, "massType" -> "massive", "endpoints" -> {v1, v2},
+       "momentum" -> l3, "nu" -> nuM|>,
+     <|"id" -> e2, "massType" -> "massless", "endpoints" -> {v1, v2},
+       "momentum" -> k321|>,
+     <|"id" -> e3, "massType" -> "massless", "endpoints" -> {v1, v2},
+       "momentum" -> l3 - k321 - kL|>
      },
    "loopMomenta" -> {l3, k321},
    "loopExternalMomenta" -> {kL},
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
-   "vertexEnergies" -> <|v1 -> kE, v2 -> kE|>,
    "ispData" -> {
      <|"name" -> rhoMassless2, "expr" -> sp[k321, l3], "range" -> {0, 1}|>,
      <|"name" -> rhoMassless3, "expr" -> sp[l3 - k321 - kL, l3], "range" -> {0, 1}|>
@@ -48,11 +50,8 @@ caseInput = <|
      a0[v1] -> alpha, a0[v2] -> alpha,
      b0[e1] -> betaM, b0[e2] -> beta0, b0[e3] -> beta0
      },
-   "shrinkPrefactorRules" -> {Exp[Pi Im[nuM]]/Pi -> etaNu},
    "parityConstraints" -> sunriseParityConstraints0,
-   "symmetryRules" -> sunriseSymmetryRules0,
-   "seedPreset" -> "quickCheck",
-   "seedRanges" -> <|"a" -> {0}, "b" -> {0}, "isp" -> {0, 1}|>
+   "symmetryRules" -> sunriseSymmetryRules0
    |>;
 
 context = DSInit[
@@ -157,8 +156,7 @@ sectorParitySummary = Function[metadata,
 summary = <|
    "packageVersion" -> ToString[$dSIBPVersion],
    "contextStatus" -> Lookup[context, "status", "missing"],
-   "numericRulesAppliedBeforeSeeds" ->
-    TrueQ[Lookup[seedData, "numericRulesAppliedBeforeSeeds", False]],
+   "legacyNumericStageAbsent" -> ! KeyExistsQ[seedData, "numericRulesAppliedBeforeSeeds"],
    "topTemplateCount" -> Length[topTemplates],
    "timeGeneratorCount" -> Length[timeGeneratorLabels],
    "timeGeneratorLabels" -> timeGeneratorLabels,
@@ -184,7 +182,7 @@ summary = <|
 Print[summary];
 If[! And[
     summary["contextStatus"] === "initialized",
-    ! summary["numericRulesAppliedBeforeSeeds"],
+    summary["legacyNumericStageAbsent"],
     summary["topTemplateCount"] > 0,
     summary["timeGeneratorCount"] === 2,
     summary["momentumGeneratorCount"] === 6,

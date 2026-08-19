@@ -22,8 +22,9 @@
 
 ## 程序与目录
 
-- 当前开发主线由 `../研究计划与研究进度.md` 指定；当前为模块化目录 `versions/021_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 当前正式单文件兼容入口是 `independent-benchmark/package/package_021.0.wl`。代码版本只保留 `versions/019_dSIBP/`、`versions/020_dSIBP/` 和 `versions/021_dSIBP/`；更早版本只从 Git 历史追溯。
+- 当前开发主线由 `../研究计划与研究进度.md` 指定；当前为模块化目录 `versions/022_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
+- 当前正式单文件入口是 `independent-benchmark/package/package_022.0.wl`。验收后工作树只保留
+  `versions/022_dSIBP/`；全部更早源码版本只从 Git 历史追溯，不保留当前加载或测试入口。
 - 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。020 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `020.1`、`020.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
 - 本规则生效后新增的 dSIBP 版本都必须附带独立更新说明，至少记录基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制；018.1 及更早资产不追溯补建。新整数代码版本使用 `versions/NNN_dSIBP/UPDATE_NOTES.md`，同一代码版本的新正式发布号使用 `independent-benchmark/package/package_NNN.x_UPDATE_NOTES.md`。
 - `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；每项可复用检查放入名称直接说明功能的独立子目录，禁止重新堆叠全 family、全 sign/parity、连续指标撒点或完整 reduction 工作树。运行产物只放对应子目录的 `results_test/` 并在任务结束后清理。
@@ -59,7 +60,8 @@
 - 报告文件名统一为 `{时间}-{版本}-{内部/外部}.md`。
 - 时间使用 `YYYY-MM-DD-HHmm`，版本使用三位程序版本号；例如 `2026-07-21-1600-012-内部.md`、`2026-07-21-1600-012-外部.md`。
 - 报告如有附件，放入与报告同名并追加 `-附件` 的目录；附件不得混入程序、expected 或 package 交付目录。
-- 新一轮检验开始前先确认目标版本；旧报告、针对报告的 battle/`report-of-report` 和临时争论稿不作为项目资产长期保留。
+- 新一轮检验开始前先确认目标版本；只保留当前 022 对应且未被后续同类证据取代的正式报告。
+  旧版本报告、针对报告的 battle/`report-of-report` 和临时争论稿不作为项目资产长期保留。
 
 ## 正确性门禁
 
@@ -74,12 +76,12 @@
 - 多圈动量 IBP 生成元必须覆盖当前 plan/tech note 规定的完备集合；ISP 由用户定义并在生成关系前验证闭合性。
 - ISP 指数的定义零点固定为 `0`。正指数是 numerator 幂；用户显式选择负 range/target/J 时 package 不阻断。自动 target-to-seed 反推不得把 ISP 下界降到用户给定下界以下，且 `ispN=0` 的 ISP 自身求导必须先精确化为零。
 - topology、sector metadata、canonical seed、`linearData` 和 serializer 之间的状态必须一致；backend 只消费 backend-neutral `linearData`。
-- 016 要求用户分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。旧 `externalMomenta/externalLegMomenta` 只作为字段别名兼容。
+- 用户必须分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。022 不读取其它字段名或别名。
 - 加减号和复合方向必须保留精确系数。整体反号的无圈动量模长可 canonical 成同一对象，但 `p_1+p_2` 与 `p_1-p_2` 不得合并；实际模长只生成 `sE1,sE2,...` 或 dependent binding，不主动输出外腿交叉点积。
-- 016 缺省公开 loop 坐标为 `ssij=Sqrt[sp[p_i,p_j]]`，内部原子仍为 `kk[i,j]`。编号只依赖推断后列表顺序；任一类别总数超过 9 时按总数位宽补零，旧 `sij` 兼容名使用同一规则。
+- 缺省公开 loop 坐标为 `ssij=Sqrt[sp[p_i,p_j]]`，内部原子仍为 `kk[i,j]`。编号只依赖显式输入列表顺序；任一类别总数超过 9 时按总数位宽补零。自定义名称只通过现行 `KinematicRules` 或 `DSRedefineParameters` 给出。
 - 动量列表或动力学规则欠完备时必须红色报错，返回缺失方向/零空间表达式并拒绝初始化；所有下游入口读取 capability gate。过完备时 warning 后允许 symbolic IBP，但 `ds/DSDE` 与唯一反变换必须关闭。
 - root topology 决定圈数、loop space 与 cycle/bridge line-power schema；contact/shrink sector 必须继承这些 metadata，只改变端点代表、pack 状态、零点和对称性，不得重新降圈。
-- 根号坐标求导必须通过链式法则复用平方不变量原子导数：`d/dssij=2 ssij d/d(sp[ki,kj])`；不得复制或重写一套 loop 外动量导数实现。显式用户规则 `sp[ki,kj]->sij` 保持单位 Jacobian 的兼容语义。
+- 根号坐标求导必须通过链式法则复用平方不变量原子导数：`d/dssij=2 ssij d/d(sp[ki,kj])`；不得复制或重写一套 loop 外动量导数实现。现行自定义规则直接写 `sp[ki,kj]->sij` 时保持单位 Jacobian。
 - 初次 Kira 探测不得把全部积分设为 targets；必须按预估 master 规模设置有界候选范围，未有更具体依据时上限取约 1000，formal 阶段只选择 active basis 及其导数闭包。
 - 任何进入 Kira reduction 的 family 都必须先实数化。实数化的固定动作是：从 topology/line 的 phase-dependency metadata 结构性识别每个 massless propagator 动量原子 `k`，定义单个实 backend 变量 `ik` 并执行 `k -> -I ik`，不得按符号名猜测；再用可逆积分相位变换消除剩余整体虚相位。`ibp.kira` 出现 `I`、`dsii` 或其它虚数替代 token 时必须拒绝导出；该 convention 只限 Kira 内部，import 后恢复物理变量和导数 Jacobian。实现与检查直接参考已经完成的 massive bubble 路线，不重新构造另一套 convention。
 

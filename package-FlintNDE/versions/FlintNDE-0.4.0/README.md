@@ -2,6 +2,9 @@
 
 发布名使用 `FlintNDE`，Python 导入名使用 `flintnde`。
 
+每个 Python 进程首次 `import flintnde` 时在 stderr 显示一次简洁引用提醒：
+`FlintNDE package paper, arXiv identifier pending.`。该提醒不列出其它程序包或论文。
+
 ## 版本更新说明
 
 本规则生效后，每次修改 `pyproject.toml` 中的 FlintNDE 版本号，都必须在本目录增加
@@ -404,12 +407,11 @@ local = prepare_local_expansion(
 再收集约分后分母。一般 `AnalyticMatrixSystem` 的回调无法从有限采样可靠恢复全部 pole，仍须
 显式给 `singularities`。
 
-一个实际 16 维 complex-exact kECep 系统的单点测试位于
-`../../test/test_kECep_16x16.py`。它通过通用 `RationalMatrixSystem over Q(i)(k)` 自动发现
-7 个有限复奇点，并在 epsilon=0 由 exact gate 得到 roots `0, 9`、重数 `14, 2`、14 个
-active resonance gate 和一阶 log；没有调用 kECep 专用 package 类。普通点、短程输运、
-显式 numerical 路线、power-log 基与 3+1 样本重构也在同一脚本中通过。完整结果见
-`../../test/results_test/kECep_16x16_ooo232/summary.json`。
+一个实际 16 维 complex-exact kECep 系统的维护交叉检查脚本位于
+`../../check_01_nde_npackage_16x16/check_01_nde_npackage_16x16.py`。它通过通用
+`RationalMatrixSystem over Q(i)(k)` 构造共同系统并比较完整端点向量；运行时结果不作为
+发布产物保留。正式独立验证报告和轻量结果见
+`../../independent-validation/FlintNDE-0.4.0-validation-01-fast-multipoint-and-direct-path/`。
 
 Q(i)[s] 分母能严格分裂出的奇点会保存 `location_exact`，并可直接进入 exact 局部调度。
 若一个 square-free 因子同时含零根和不在 Q(i) 中的代数根，奇点发现会先精确除出 `s`；
@@ -500,6 +502,11 @@ snapshots, segment_reports, elapsed = transport_path(
 该阈值比较，返回 `target_relative_error_met`。未达到时只警告并保留结果；外层幂级数重构仍按
 自身的样本精度门禁拒绝不合格样本。
 
+`primary_order` 是生产阶数：用户可见末点、dense samples、保存点及正规化拟合输入均来自
+primary chain。`reference_order` 必须更高，但只用于与主链比较和认证精度；明确命名的
+`reference_snapshots`/`referenceFinalVector` 仅作为诊断。跨多个调用段续算时，两条链分别
+传播自己的末点，不在段界把参考链状态重新作为主链初值。
+
 `transport_path` / `transport_path_refined` 已支持把正则奇点保存成可复用的
 `{"resultType":"frobenius_boundary","result":{"terms":[{"a":...,"b":...,"C":[...]}]}}`，
 也支持把已认证指数型奇点保存为 `resultType: "exponential_boundary"` 及 `{phi,a,b,C}` terms。
@@ -551,7 +558,8 @@ snapshots, reports, elapsed = transport_path(
 
 程序到达一个保存点就立即写 `flintnde_save_001.json`、`flintnde_save_002.json` 等文件；
 整条路径完成后再写 `flintnde_save_points.json`。后续步骤失败不删除已完成文件，也不写完整
-汇总。`transport_path_refined` 只保存 reference chain。普通点的 `resultType` 是
+汇总。`transport_path_refined` 只保存 primary chain；reference chain 不写用户保存点。
+普通点的 `resultType` 是
 `ordinary_vector`，结果含坐标和 Acb 列向量；正则奇点的 `resultType` 是
 `frobenius_boundary`，结果含可再次交给 `frobenius_boundary` 的 `{a,b,C}` terms。后者是
 局部边界数据，不是奇点处的 `Y(z_*)`。严格解耦指数型奇点的 `resultType` 是
@@ -727,11 +735,11 @@ dimension * 10^(-precision_digits)
 python -m unittest discover -s tests -v
 ```
 
-2026-08-16 fresh 结果为 `unittest discover 166/166`；
+2026-08-18 fresh 结果为 `unittest discover 170/170`；
 Wolfram `Needs["FlintNDE`"]` 端到端检查为 `25/25`。验证覆盖一般有理矩阵、任意次数
 多项式加简单极点的内部特化、缺省避开奇点、显式奇点折跃、严格消息语言、计划序列化
 精度、执行期不重规划、浅层目录和 Python 前置路径/写入门禁，并覆盖 fast multipoint、
-严格用户节点、符号最低阶证书门禁、增量扩阶与缓存复用。独立包与 MadStree v0.11 Vendor 的 42 个非缓存交付文件逐文件
+严格用户节点、符号最低阶证书门禁、增量扩阶与缓存复用。独立包与 MadStree v0.13 Vendor 的 42 个非缓存交付文件逐文件
 SHA-256 一致。
 
 完整安装方式、普通点输运、正则奇点、显式数值路线、正规化重建及全部公开参数见

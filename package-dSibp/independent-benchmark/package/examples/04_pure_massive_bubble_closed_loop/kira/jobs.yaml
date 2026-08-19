@@ -5,6 +5,8 @@ jobs:
         select_mandatory_list:
           - [list]
       run_initiate: true
+      run_triangular: false
+      run_back_substitution: false
       run_firefly: true
   - kira2math:
       target:

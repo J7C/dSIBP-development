@@ -32,7 +32,9 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
       AMFlow-inspired production plan、显式冗余候选池的增量消费、开复角域内最多三条均匀
       射线、Acb 方阵插值和独立样本验证；说明未达精度时保留当前系数但撤销精度认证。
 4. Installation and dependencies
-   - 只声明 Python `>=3.10` 与 `python-flint>=0.6`；说明 wheel、源码安装和任意目录调用。
+   - 只声明 Python `>=3.10` 与 `python-flint>=0.6`；说明 wheel、源码安装和任意目录调用；
+     说明首次 `import flintnde` 的 stderr 一次性引用提醒只列 FlintNDE 程序包论文，文件协议
+     适配器可显式静默且不得污染机器可读 stdout。
 5. Examples
    - dS example 暂时留空；
    - QNM 例子保留原始 odd-parity 二阶方程、Darboux 统一说明和按常数/单极点组织的 2x2
@@ -69,7 +71,7 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
 | `local_solutions.py` | 已实现（受限） | 统一 power-log、Moser 后原基 exact-jet 边界验证、严格解耦指数 sector 与单重二阶-pole 起点形式递推；一般 formal gauge/Stokes fail closed |
 | `asymptotics.py` | 已实现 | 公开标量五阶尾项诊断，返回分子、分母、比值、阈值与严格门禁状态 |
 | `routing.py` / `singularity_jump.py` | 已实现 | `inf` 反演、普通/正则/高阶奇点调度、通用有理矩阵内部奇点清单、缺省避奇点与显式奇点折跃、用户点前瞻、自描述 Arb 球计划及反序列化；非 Q(i) 正则中心/谱及未认证内部/终点 fail closed |
-| `transport.py` | 已实现 | 普通点分段输运、统一奇点局部基 bridge、双链 refinement，以及普通/正则/指数型 `(coordinate,"save")` 的逐点即时输出与完成后汇总 |
+| `transport.py` | 已实现 | 普通点分段输运、统一奇点局部基 bridge、低阶主链生产结果与高阶参考链精度核验，以及普通/正则/指数型 `(coordinate,"save")` 的主链逐点即时输出与完成后汇总 |
 | `frobenius.py` | 已实现 | Q(i) exact indicial/Jordan/resonance manifest 与 power-log 基；非 Q(i) 谱 fail closed |
 | `numeric_structure.py` | 已实现 | 浮点 residue 的精度感知斩杀、结构判别与审计 manifest |
 | `regularization.py` | 已实现 | 文献公式给出的缺省采样规划、自定义覆盖与 Laurent 插值重构 |
@@ -79,6 +81,9 @@ benchmark 和公开 Feynman integral 示例仍留到发布前补充。
 ## 发布验收
 
 - 新包不得读取 BlackHoleQNM 私有结果或运行配置。
+- 每个 Python 进程首次 `import flintnde` 只向 stderr 显示一次 FlintNDE 程序包论文引用提醒；
+  不列 dSIBP、MadStree 或其它论文。文件协议适配器可在 import 前显式静默该提示，并由自身
+  响应 metadata 保存调用方的引用清单，禁止把提醒混入机器可读 stdout。
 - ordinary-point 主接口不得要求 pole/residue 分解；简单极点快速路线必须由包内部 exact 认证。
 - 计划与执行必须分离；执行不得重新规划。执行工作精度高于计划精度时必须拒绝并要求重规划。
 - 缺省路径不得穿过内部奇点；显式奇点折跃必须报告多值分支责任。任何经过中途节点的多点输运均可称折跃，只有穿越奇点的局部基连接称奇点折跃。

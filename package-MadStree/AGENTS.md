@@ -10,7 +10,8 @@
 
 - 当前工作版本由 `VERSION_INDEX.md` 指定；`load_current.wl` 只服务交互使用，正式验证和可复现计算必须显式加载版本目录。
 - 是否升版只由用户明确指令决定，不由代码、公式或接口的改动类型或大小自动触发。用户未要求升版时，修订继续写入当前工作版本。
-- 用户明确要求新开或发布版本后，才建立新的 `versions/MadStree-vX.Y/`。新版本建立后，此前版本冻结且不得覆盖或继续修改；工作树只保留最新三个版本，更早版本从 Git 历史恢复。
+- 用户明确要求新开或发布版本后，才建立新的 `versions/MadStree-vX.Y/`。新版本建立并验收后，
+  工作树只保留该唯一当前版本；此前版本从 Git 历史恢复，不保留旧入口、旧测试或旧任务书。
 - 版本号必须在版本目录名、`VERSION.md`、公开版本字符串、验证任务书、验证目录和验证报告中保持一致。
 - 本规则生效后新建的版本目录必须包含 `UPDATE_NOTES.md`；v0.3 及此前已经存在的版本不追溯补建。更新说明至少列出基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制，不得只写版本号或提交列表。
 - 建议每个新版本从当前稳定主线建立独立 branch 后再开发和验证。是否创建 branch、是否长期保留以及是否合并回主线均由用户决定；用户未明确要求时，agent 不得自动创建或合并版本 branch。
@@ -47,8 +48,10 @@ package-MadStree/
 ```
 
 - `versions/MadStree-vX.Y/` 保存该版本源码、适配器、手册、examples 和开发测试。版本内临时测试产物只进其 `test/results_test/`；历史遗留或可重跑中间数据只进 `results_temp/`。
-- `independent-validation-task/` 单列版本化任务书。任务书不得复制进验证目录。
-- `independent-validation/` 下每项验证单独建目录，目录名必须包含被验证版本号和任务编号。验证程序、专用独立 oracle、轻量正式结果和自动报告都归该任务目录所有。
+- `independent-validation-task/` 只保留当前版本任务书。任务书不得复制进验证目录。
+- `independent-validation/` 下每项验证单独建目录，目录名必须包含被验证版本号和任务编号。
+  只保留当前版本下互不替代的正式 case；验证程序、专用独立 oracle、轻量正式结果和自动
+  报告都归该任务目录所有。
 - 验证目录的 `results/` 保存机器可读 summary、最终差值、计时和支撑结论的轻量证据；不得反向成为 package 生产输入。
 - 验证目录的 `results_temp/` 保存 JSON、日志、Python cache、checkpoint、路径分段和其它可重跑中间文件，缺省不作为项目正式资产。
 - MMA 自动调用 FlintNDE 时，运行文件必须生成在调用脚本所在目录的 `results_temp/`，不得写入 `versions/.../Kernel/`、`Backend/` 或其它 package 源码目录。
