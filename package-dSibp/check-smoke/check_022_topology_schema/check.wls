@@ -7,9 +7,11 @@
 (*加载 022 模块包*)
 
 checkDirectory = DirectoryName[$InputFileName];
-packageDirectory = FileNameJoin[{checkDirectory, "..", "..", "versions", "022_dSIBP"}] // ExpandFileName;
-PrependTo[$Path, packageDirectory];
-Needs["dSIBP`"];
+Get[FileNameJoin[{checkDirectory, "..", "_harness.wls"}]];
+packageFile = FileNameJoin[{
+    checkDirectory, "..", "..", "versions", "022_dSIBP", "Kernel", "dSIBP.wl"
+    }] // ExpandFileName;
+dsSmokeLoadPackage[packageFile];
 
 
 (* ::Chapter:: *)
@@ -51,6 +53,23 @@ oldOnlyInput = <|
    |>;
 oldOnlyReport = dSIBP`Private`caseInputRequirementReport[oldOnlyInput];
 
+retiredKinematicKeys = {
+   "loopKinematicRules", "magnitudeKinematicRules",
+   "resolvedLoopKinematicRules", "resolvedMagnitudeKinematicRules"
+   };
+retiredKinematicReports = Association@Table[
+   key -> dSIBP`Private`caseInputRequirementReport[
+     Join[topologyInput, <|key -> {sp[k, k] -> oldSquaredK}|>]
+     ],
+   {key, retiredKinematicKeys}
+   ];
+retiredKinematicParses = Association@Table[
+   key -> Quiet[dSIBP`Private`parseTopology[
+      Join[topologyInput, <|key -> {sp[k, k] -> oldSquaredK}|>]
+      ]],
+   {key, retiredKinematicKeys}
+   ];
+
 massiveWithoutNuInput = Join[
    topologyInput,
    <|"lines" -> {<|"id" -> 1, "massType" -> "massive", "endpoints" -> {1, 2}, "momentum" -> k|>}|>
@@ -86,6 +105,14 @@ checks = <|
    "masslessNuIgnored" -> ! KeyExistsQ[line, "nu"],
    "oldLineFieldsIgnored" -> FreeQ[Keys[line], "bbType" | "eomCoefficients" | "shrinkPrefactor"],
    "oldOnlySchemaRejected" -> Sort[oldOnlyReport["missingRequiredKeys"]] === {"lines", "vertices"},
+   "retiredKinematicKeysRejected" -> And @@ Map[
+      Function[key,
+       ! TrueQ[retiredKinematicReports[key, "inputPreflightPassQ"]] &&
+        SameQ[retiredKinematicReports[key, "retiredKeys"], {key}] &&
+        SameQ[retiredKinematicParses[key], $Failed]
+       ],
+      retiredKinematicKeys
+      ],
    "massiveNuRequired" -> MemberQ[
      Lookup[massiveWithoutNuReport["malformedInputIssues"], "code", {}],
      "linesMissingRequiredKeys"

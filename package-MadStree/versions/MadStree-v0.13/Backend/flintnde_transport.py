@@ -253,12 +253,6 @@ def _validate_request(value: Any) -> dict[str, Any]:
     return data
 
 
-def _load_input(path: Path) -> dict[str, Any]:
-    """以显式 UTF-8 读取请求。"""
-
-    return _validate_request(json.loads(path.read_text(encoding="utf-8")))
-
-
 def _acb_record(value: Any, digits: int) -> dict[str, Any]:
     """同时写出用户可读中点和用于正规化认证的完整 Arb 球。"""
 

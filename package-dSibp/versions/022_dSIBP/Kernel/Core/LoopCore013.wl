@@ -265,7 +265,15 @@ caseInputMalformedIssues[case_Association] := Module[
 
 (* raw case 入口的轻量 preflight；避免缺必需字段时 parser 先抛底层 Part 消息。 *)
 caseInputRequirementReport[case_Association] := Module[
-   {keys = Keys[case], required = requiredCaseInputKeys[], optional = optionalCaseInputKeys[], malformedIssues},
+   {keys = Keys[case], required = requiredCaseInputKeys[], optional = optionalCaseInputKeys[],
+    retiredKeys, malformedIssues},
+   retiredKeys = Intersection[
+     keys,
+     {
+      "loopKinematicRules", "magnitudeKinematicRules",
+      "resolvedLoopKinematicRules", "resolvedMagnitudeKinematicRules"
+      }
+     ];
    malformedIssues = caseInputMalformedIssues[case];
    <|
     "providedKeys" -> keys,
@@ -273,9 +281,14 @@ caseInputRequirementReport[case_Association] := Module[
     "optionalKeys" -> optional,
     "missingRequiredKeys" -> Complement[required, keys],
     "unknownKeys" -> Complement[keys, Join[required, optional]],
+    "retiredKeys" -> retiredKeys,
     "malformedInputIssues" -> malformedIssues,
     "completeRequiredKeysQ" -> TrueQ[Complement[required, keys] === {}],
-    "inputPreflightPassQ" -> TrueQ[Complement[required, keys] === {} && malformedIssues === {}]
+    "inputPreflightPassQ" -> TrueQ[
+      Complement[required, keys] === {} &&
+       retiredKeys === {} &&
+       malformedIssues === {}
+      ]
     |>
    ];
 
@@ -283,7 +296,10 @@ caseInputRequirementReport[case_Association] := Module[
 caseInputErrorReport[case_Association] := Module[{report = caseInputRequirementReport[case]},
    With[{issues = Join[
        If[report["missingRequiredKeys"] === {}, {}, {<|"severity" -> "error", "code" -> "missingRequiredCaseKeys", "missingRequiredKeys" -> report["missingRequiredKeys"]|>}],
-       report["malformedInputIssues"]
+        report["malformedInputIssues"],
+        If[report["retiredKeys"] === {}, {},
+          {<|"severity" -> "error", "code" -> "retiredCaseInputKeys", "retiredKeys" -> report["retiredKeys"]|>}
+          ]
        ]},
    <|
     "status" -> If[issues === {}, "ok", "issues"],

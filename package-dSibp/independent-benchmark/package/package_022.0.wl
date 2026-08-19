@@ -950,7 +950,15 @@ caseInputMalformedIssues[case_Association] := Module[
 
 (* raw case 入口的轻量 preflight；避免缺必需字段时 parser 先抛底层 Part 消息。 *)
 caseInputRequirementReport[case_Association] := Module[
-   {keys = Keys[case], required = requiredCaseInputKeys[], optional = optionalCaseInputKeys[], malformedIssues},
+   {keys = Keys[case], required = requiredCaseInputKeys[], optional = optionalCaseInputKeys[],
+    retiredKeys, malformedIssues},
+   retiredKeys = Intersection[
+     keys,
+     {
+      "loopKinematicRules", "magnitudeKinematicRules",
+      "resolvedLoopKinematicRules", "resolvedMagnitudeKinematicRules"
+      }
+     ];
    malformedIssues = caseInputMalformedIssues[case];
    <|
     "providedKeys" -> keys,
@@ -958,9 +966,14 @@ caseInputRequirementReport[case_Association] := Module[
     "optionalKeys" -> optional,
     "missingRequiredKeys" -> Complement[required, keys],
     "unknownKeys" -> Complement[keys, Join[required, optional]],
+    "retiredKeys" -> retiredKeys,
     "malformedInputIssues" -> malformedIssues,
     "completeRequiredKeysQ" -> TrueQ[Complement[required, keys] === {}],
-    "inputPreflightPassQ" -> TrueQ[Complement[required, keys] === {} && malformedIssues === {}]
+    "inputPreflightPassQ" -> TrueQ[
+      Complement[required, keys] === {} &&
+       retiredKeys === {} &&
+       malformedIssues === {}
+      ]
     |>
    ];
 
@@ -968,7 +981,10 @@ caseInputRequirementReport[case_Association] := Module[
 caseInputErrorReport[case_Association] := Module[{report = caseInputRequirementReport[case]},
    With[{issues = Join[
        If[report["missingRequiredKeys"] === {}, {}, {<|"severity" -> "error", "code" -> "missingRequiredCaseKeys", "missingRequiredKeys" -> report["missingRequiredKeys"]|>}],
-       report["malformedInputIssues"]
+        report["malformedInputIssues"],
+        If[report["retiredKeys"] === {}, {},
+          {<|"severity" -> "error", "code" -> "retiredCaseInputKeys", "retiredKeys" -> report["retiredKeys"]|>}
+          ]
        ]},
    <|
     "status" -> If[issues === {}, "ok", "issues"],
@@ -13353,20 +13369,10 @@ resolveKinematicRulesForCase[case_Association, topo_Association] := Module[
    If[combined =!= Automatic,
     Return[kinematicCoordinateAudit[topo, normalizeKinematicRuleList[combined], "kinematicRules"]]
     ];
-   loopRules = normalizeLoopKinematicRulesForTopology[
-     Lookup[case, "loopKinematicRules", Lookup[case, "resolvedLoopKinematicRules", Automatic]],
-     topo
-     ];
-   legRules = normalizeMagnitudeKinematicRulesForTopology[
-     Lookup[case, "magnitudeKinematicRules", Lookup[case, "resolvedMagnitudeKinematicRules", Automatic]],
-     topo
-     ];
+   loopRules = normalizeLoopKinematicRulesForTopology[Automatic, topo];
+   legRules = normalizeMagnitudeKinematicRulesForTopology[Automatic, topo];
    selected = Join[loopRules, legRules];
-   kinematicCoordinateAudit[topo, selected, If[
-     Lookup[case, "resolvedLoopKinematicRules", Automatic] === Automatic && Lookup[case, "resolvedMagnitudeKinematicRules", Automatic] === Automatic,
-     "default",
-     "legacyFields"
-     ]]
+   kinematicCoordinateAudit[topo, selected, "default"]
    ];
 
 
@@ -14460,17 +14466,11 @@ sectorPrefactorData018[topo_Association, shrunkLines_: Automatic] := Module[
 
 
 materializeSectorPrefactor018[data_Association] := Module[
-   {powerHead, powers, expressions, residualParts, legacyQ},
-   powerHead = Lookup[data, "kEPower", Missing["NoStructuralKEPower"]];
-   legacyQ = Head[powerHead] === Missing;
-   If[legacyQ,
-    Return[Expand[
-      Lookup[data, "constantPrefactor", 1] Times @@ MapThread[
-        Power,
-        {Lookup[data, "parameterList", {}], Lookup[data, "powerList", {}]}
-        ]
-      ]]
-    ];
+    {powerHead, powers, expressions, residualParts},
+    powerHead = Lookup[data, "kEPower", Missing["NoStructuralKEPower"]];
+    If[Head[powerHead] === Missing,
+     Return[Failure["MissingStructuralKEPower", <|"requiredKey" -> "kEPower"|>]]
+     ];
    powers = List @@ powerHead;
    expressions = Lookup[data, "kEParameterExpressions", {}];
    residualParts = Lookup[data, "residualPowerParts", {}];

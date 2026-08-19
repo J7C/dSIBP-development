@@ -17,8 +17,6 @@ msEmbedMatrix[matrix_, position_Integer, slotCount_Integer] := msKroneckerAll@Ta
   {index, slotCount}
 ];
 
-msIdentityForSector[sector_Association] := IdentityMatrix[sector["masterCount"]];
-
 msRawIdentityForSector[sector_Association] := IdentityMatrix[sector["rawStateCount"]];
 
 msQuotientMatrix[sector_Association, rawMatrix_] := Simplify[

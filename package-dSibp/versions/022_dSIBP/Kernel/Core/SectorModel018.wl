@@ -387,17 +387,11 @@ sectorPrefactorData018[topo_Association, shrunkLines_: Automatic] := Module[
 
 
 materializeSectorPrefactor018[data_Association] := Module[
-   {powerHead, powers, expressions, residualParts, legacyQ},
-   powerHead = Lookup[data, "kEPower", Missing["NoStructuralKEPower"]];
-   legacyQ = Head[powerHead] === Missing;
-   If[legacyQ,
-    Return[Expand[
-      Lookup[data, "constantPrefactor", 1] Times @@ MapThread[
-        Power,
-        {Lookup[data, "parameterList", {}], Lookup[data, "powerList", {}]}
-        ]
-      ]]
-    ];
+    {powerHead, powers, expressions, residualParts},
+    powerHead = Lookup[data, "kEPower", Missing["NoStructuralKEPower"]];
+    If[Head[powerHead] === Missing,
+     Return[Failure["MissingStructuralKEPower", <|"requiredKey" -> "kEPower"|>]]
+     ];
    powers = List @@ powerHead;
    expressions = Lookup[data, "kEParameterExpressions", {}];
    residualParts = Lookup[data, "residualPowerParts", {}];

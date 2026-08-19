@@ -10,10 +10,6 @@ Scope: Users assign each vertex to the + or - contour through vertexType; every 
 (* Input normalization *)
 
 $msSupportedInputLineTypes = {"massive", "massless"};
-$msSupportedInternalLineTypes = {
-  "massiveFull", "massiveCross", "massiveExternal",
-  "masslessFull", "masslessCross", "masslessExternal"
-};
 
 
 (* Association 键顺序和额外字段不影响物理输入；这里只检查后续公式必需的字段是否齐全。 *)
@@ -181,7 +177,6 @@ msNormalizeLine[
 (* Correctness boundaries *)
 
 msInternalLineQ[line_Association] := Length[line["endpoints"]] === 2;
-msExternalLineQ[line_Association] := Length[line["endpoints"]] === 1;
 msFullLineQ[line_Association] := MemberQ[{"massiveFull", "masslessFull"}, line["type"]];
 
 msNormalizeContactBundles[spec_Association, lines_List] := Module[

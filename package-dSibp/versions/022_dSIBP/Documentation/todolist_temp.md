@@ -241,3 +241,14 @@ Kira 当前路径合同 `7/7`；正式 `package/` 已删除 021 三件套并只�
 - 圈动量 routing rank、ISP 闭合、标量积回代和 DE 闭合不退化。
 - contact sector 保留 root normalization 与唯一顶点代表映射，用户无法覆盖。
 - 当前源码、examples、tests 和现行文档不含被删入口的读取或调用。
+
+## D17：最新版冗余审计修复
+
+- [x] 四个退休运动学字段不再被 parser 读取，并在 raw case 边界逐项失败。
+- [x] 删除缺 `kEPower` 时的旧 metadata 重建分支，增加结构缺字段负例。
+- [x] 重建候选单文件，完成候选与正式路径同项复验后同字节晋升。
+
+D17 完成记录（2026-08-19）：合法 022 topology 和额外无关键保持原合同；四个退休键的
+preflight 与 `parseTopology` 均失败。当前 producer/materializer exact identity 保持，删除
+`kEPower` 后返回结构化 `MissingStructuralKEPower`。候选和正式单文件均通过 topology
+`17/17`、normalization `14/14`、参数导数 `11/11`、死定义 `17/17`。

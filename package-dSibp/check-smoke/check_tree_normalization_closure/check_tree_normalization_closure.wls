@@ -68,6 +68,13 @@ childMetadataPrefactor = If[
    dSIBP`Private`materializeSectorPrefactor018[childMetadata["sectorPrefactorData"]],
    Missing["NoChildMetadataPrefactor"]
    ];
+missingStructuralPrefactor = If[
+   AssociationQ[childMetadata],
+   dSIBP`Private`materializeSectorPrefactor018[
+     KeyDrop[childMetadata["sectorPrefactorData"], "kEPower"]
+     ],
+   Missing["NoChildMetadataPrefactor"]
+   ];
 childLogDerivative = If[
    Head[childComplete] === Missing,
    Missing["NoChildLogDerivative"],
@@ -104,6 +111,10 @@ checks = <|
    "naiveDEGenerated" -> (Lookup[naiveDE, "status", "failed"] === "generated"),
    "childSelectorIsRationalContact" -> TrueQ[FullSimplify[childSelector + 1/sE1] === 0],
    "childPhysicalMatchesMetadata" -> TrueQ[FullSimplify[childPhysical - childMetadataPrefactor] === 0],
+   "missingStructuralKEPowerRejected" -> MatchQ[
+      missingStructuralPrefactor,
+      Failure["MissingStructuralKEPower", _Association]
+      ],
    "completeNormalizationProductRule" ->
     TrueQ[FullSimplify[childComplete - childSelector childPhysical] === 0],
    "childLogDerivativeContainsNu" ->
@@ -128,6 +139,7 @@ dsSmokeSummary[
    "childSelector" -> childSelector,
    "childPhysical" -> childPhysical,
    "childComplete" -> childComplete,
+   "missingStructuralPrefactor" -> missingStructuralPrefactor,
    "childLogDerivative" -> childLogDerivative,
    "directChildDiagonal" -> directChildDiagonal,
    "naiveChildDiagonal" -> naiveChildDiagonal,

@@ -54,7 +54,7 @@ Notebook 使用可点击 `Hyperlink`；headless 输出完整 URL。条目严格�
   `6/6`、ISP `13/13`、UserMI `17/17`。
 - sunrise 的 2 个 time generators、6 个 momentum generators 与 5 个 sector parity
   检查通过。
-- module ownership 扫描 23 个 Kernel 文件、360 个顶层符号，无跨文件同签名重复。
+- module ownership 扫描 23 个 Kernel 文件、361 个顶层符号，无跨文件同签名重复。
 - Example 01 fresh 生成 5516 条方程，stdout 8,924 字节、stderr 0，无 `Join::incpt`。
 - Example 04 fresh 生成 57,160 条 IBP 方程并序列化 Kira 输入；状态为
   `awaitingExternalKira`，本轮未运行外部 Kira reduction。
@@ -66,3 +66,15 @@ Notebook 使用可点击 `Hyperlink`；headless 输出完整 URL。条目严格�
 
 dSIBP 只生成和序列化关系，不运行 reduction。外部 Kira artifact 缺失时，DE/scaling
 闭环保持等待状态，不能用 serializer 成功代替 reduction 通过。
+
+## 2026-08-19 审计清理
+
+- `resolveKinematicRulesForCase` 只读取当前 `kinematicRules`；四个已退休的
+  `loopKinematicRules/magnitudeKinematicRules/resolvedLoopKinematicRules/`
+  `resolvedMagnitudeKinematicRules` 在 raw case preflight 中定向失败，不能再改变 topology。
+  其它无语义冲突的额外 Association 键仍按 022 合同忽略。
+- `materializeSectorPrefactor018` 不再从 `parameterList/powerList` 重建缺少 `kEPower` 的旧
+  metadata；缺少结构主字段时返回 `MissingStructuralKEPower`。
+- 模块路径、候选单文件和正式单文件分别通过 topology `17/17`、normalization `14/14`、
+  参数导数 `11/11` 与死定义 `17/17`。正式 `package_022.0.wl` 与验收候选 SHA-256 同为
+  `7E9894EF3881F61AF01D0B32C597E8840D5A0FC2C883D189BE8A532C5FED3351`。

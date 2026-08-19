@@ -110,20 +110,6 @@ def exact_to_acb(value: Any) -> acb:
     return acb(exact_rational(value))
 
 
-def exact_matrix_to_acb(records: list[list[Any]]) -> acb_mat:
-    """把二维 exact 记录转换为 Acb 稠密矩阵。"""
-
-    cache: dict[str, acb] = {}
-
-    def convert(value: Any) -> acb:
-        key = str(value)
-        if key not in cache:
-            cache[key] = exact_to_acb(value)
-        return cache[key]
-
-    return acb_mat([[convert(value) for value in row] for row in records])
-
-
 def column_vector(values: list[acb | int | str]) -> acb_mat:
     """由标量列表构造 Acb 列向量。"""
 

@@ -72,3 +72,13 @@ Python adapter 的文件协议响应在 `metadata.citationNotice` 保存同一�
 
 MadStree 不生成一般 loop-momentum IBP，也不运行 Kira。公式、dlog 或边界 chart 未闭合时
 继续 fail closed；不会回退到慢速定义积分或旧路径接口。
+
+## 2026-08-19 审计清理
+
+- 正式 Kernel 删除已于 v0.10 退出生产、且没有测试消费者的单顶点 Frobenius 特殊路线；
+  generic sector-DAG boundary 仍使用唯一的 `msVertexEndpointCoefficient`。
+- 删除 `$msSupportedInternalLineTypes`、`msExternalLineQ`、`msIdentityForSector`、
+  `msBoundaryAnchorRules` 和 Python `_load_input` 五个无消费者定义，不增加 alias 或 wrapper。
+- 同步删除 Vendor FlintNDE 0.4.0 的退休 epsilon 局部求解簇和两个孤立函数。
+- 修复后 core `58/58`、generic boundary `10/10`、package artifact `18/18`、Python adapter
+  `11/11`、Vendor Python `170/170` 全部通过。

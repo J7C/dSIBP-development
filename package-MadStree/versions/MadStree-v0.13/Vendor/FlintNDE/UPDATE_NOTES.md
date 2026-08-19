@@ -138,3 +138,13 @@
   序列化计划。
 - fast 与 iterative/Horner 可能因舍入路径不同而不返回同一 Acb 球；必须按请求精度做
   数值误差门禁和独立逐点互检。
+
+## 2026-08-19 审计清理
+
+- 从 `epsilon_jet_de.py` 删除无公开 API、无测试和无 caller 的旧局部求解簇：
+  `FlintLocalEpsilonLaurentSystem`、两个结果类、两个求解器及其私有 helper。
+- 删除 `core.exact_matrix_to_acb` 与 `fuchsian._rational_identity` 两个孤立函数；保留
+  `regular_point_de._exact_matrix_to_acb`，因为当前局部基路线仍实际调用它。
+- 当前共享 regulator、transport、singularity 与根 `__all__` 不变；同一改动已逐字节同步到
+  MadStree v0.13 Vendor。独立包和 Vendor Python 各 `170/170`，Wolfram 端到端 `25/25`，
+  MadStree Backend `11/11`。

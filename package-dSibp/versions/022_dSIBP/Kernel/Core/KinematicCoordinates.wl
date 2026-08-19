@@ -543,20 +543,10 @@ resolveKinematicRulesForCase[case_Association, topo_Association] := Module[
    If[combined =!= Automatic,
     Return[kinematicCoordinateAudit[topo, normalizeKinematicRuleList[combined], "kinematicRules"]]
     ];
-   loopRules = normalizeLoopKinematicRulesForTopology[
-     Lookup[case, "loopKinematicRules", Lookup[case, "resolvedLoopKinematicRules", Automatic]],
-     topo
-     ];
-   legRules = normalizeMagnitudeKinematicRulesForTopology[
-     Lookup[case, "magnitudeKinematicRules", Lookup[case, "resolvedMagnitudeKinematicRules", Automatic]],
-     topo
-     ];
+   loopRules = normalizeLoopKinematicRulesForTopology[Automatic, topo];
+   legRules = normalizeMagnitudeKinematicRulesForTopology[Automatic, topo];
    selected = Join[loopRules, legRules];
-   kinematicCoordinateAudit[topo, selected, If[
-     Lookup[case, "resolvedLoopKinematicRules", Automatic] === Automatic && Lookup[case, "resolvedMagnitudeKinematicRules", Automatic] === Automatic,
-     "default",
-     "legacyFields"
-     ]]
+   kinematicCoordinateAudit[topo, selected, "default"]
    ];
 
 

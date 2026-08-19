@@ -3,7 +3,7 @@
 (***
 File: Boundary.wl
 Purpose: Generates the production boundary from the k0->Infinity Frobenius solution of 2411.03088, in the same order as the dlog masters.
-Current scope: any tree/time-only context that has completed formula dlog and strict-rank chart certification; every boundary is generated uniformly from the sector DAG leading system. The explicit single-vertex 2411.03088 Sec. 3.3 series is retired from the production path and kept only as the certified test oracle.
+Current scope: any tree/time-only context that has completed formula dlog and strict-rank chart certification; every boundary is generated uniformly from the sector DAG leading system.
 Correctness boundary: production code does not evaluate finite-point defining integrals and does not call NIntegrate; it returns a structured Failure when dlog/chart is uncertified, the pullback is not a regular singularity, the late-time powers do not converge, or the leading system does not close.
 ***)
 
@@ -49,24 +49,6 @@ msPreferredVertexOrder[context_?MSContextQ, targetRules_List] := Lookup[
 msRetainNonEnergyRules[targetRules_List, vertices_List] := DeleteCases[
   targetRules,
   Rule[left_, _] /; MemberQ[Lookup[vertices, "externalLegEnergy"], left]
-];
-
-
-msBoundaryAnchorRules[
-  context_?MSContextQ,
-  targetRules_List,
-  scale_?NumericQ,
-  rankOrder_List
-] := Module[{vertices = context["vertices"], positions, energyRules, retainedRules},
-  positions = AssociationThread[rankOrder -> Range[Length[rankOrder]]];
-  energyRules = Map[
-    Function[vertex,
-      vertex["externalLegEnergy"] -> -I vertex["vertexSign"] scale^(Length[vertices] - positions[vertex["id"]] + 1)
-    ],
-    vertices
-  ];
-  retainedRules = msRetainNonEnergyRules[targetRules, vertices];
-  Join[energyRules, retainedRules]
 ];
 
 
@@ -270,197 +252,6 @@ msVertexEndpointCoefficient["Positive", 1, 0, nu_] := msPaperC[-nu];
 msVertexEndpointCoefficient["Positive", 1, 1, nu_] := 2 nu Exp[-I Pi nu] msPaperC[nu];
 msVertexEndpointCoefficient["Positive", 2, 0, nu_] := -msPaperC[-nu];
 msVertexEndpointCoefficient["Positive", 2, 1, nu_] := -2 nu Exp[I Pi nu] msPaperC[nu];
-
-
-msMultiIndices[count_Integer, order_Integer] := Select[
-  Tuples[Range[0, order], count],
-  Total[#] <= order &
-];
-
-
-msPaperFTilde4[aOne_, aTwo_, bList_List, zList_List, order_Integer] := If[
-  bList === {},
-  1,
-  Total@Map[
-    Function[index,
-      Pochhammer[aOne, Total[index]] Pochhammer[aTwo, Total[index]] Times @@ MapThread[
-        #2^#1/(Pochhammer[#3, #1] #1!) &,
-        {index, zList, bList}
-      ]
-    ],
-    msMultiIndices[Length[bList], order]
-  ]
-];
-
-
-msVertexFrobeniusComponent[
-  aBits_List,
-  bBits_List,
-  nuZero_,
-  nuList_List,
-  momenta_List,
-  x_,
-  branches_List,
-  nuConvention_String,
-  order_Integer
-] := Module[
-  {difference, distance, formulaNuList, aTilde, bTilde, bParameters, aOne, aTwo,
-   coefficient, prefactor},
-  difference = Abs[aBits - bBits];
-  distance = Total[difference];
-  formulaNuList = If[nuConvention === "Positive", -nuList, nuList];
-  aTilde = nuZero + 1 - Total[bBits (2 formulaNuList + 1)];
-  bTilde = formulaNuList + 1 - bBits (2 formulaNuList + 1);
-  bParameters = bTilde + difference;
-  If[AnyTrue[MapThread[{#1, #2} &, {bTilde, difference}],
-      Last[#] === 1 && TrueQ[PossibleZeroQ[First[#]]] &],
-    Return[$Failed]
-  ];
-  aOne = (aTilde + distance)/2;
-  aTwo = (aTilde + distance + 1)/2;
-  coefficient = (-I)^(nuZero + 1) Gamma[aTilde] Times @@ MapThread[
-    (-I #1)^(-#2 (2 #3 + 1)) msVertexEndpointCoefficient[nuConvention, #4, #2, #5] &,
-    {momenta, bBits, formulaNuList, branches, nuList}
-  ];
-  prefactor = x^aTilde Pochhammer[aTilde, distance]/2^distance Times @@ MapThread[
-    If[#1 === 0, 1, ((-1)^#2 I #3 x/#4)] &,
-    {difference, bBits, momenta, bTilde}
-  ];
-  coefficient prefactor msPaperFTilde4[
-    aOne, aTwo, bParameters, momenta^2 x^2, order
-  ]
-];
-
-
-(* Retired from the production path in v0.10 (see MSBoundaryData): kept as the
-   certified 2411.03088 Sec. 3.3 oracle that tests compare the generic route
-   against. *)
-msSingleVertexFrobeniusData[
-  context_?MSContextQ,
-  targetRules_List,
-  scale_,
-  order_Integer,
-  workingPrecision_Integer
-] := Module[
-  {sector, vertex, lines, energy, vertexSign, nuZero, momenta, nuList, branches,
-   nuConvention, stateOrder, branchOrder, momentumSizes, dampingScale, anchorEnergy,
-   anchorRules, x, valuesAtOrder, valuesAtLowerOrder, normalization, leadingBranches,
-   convergenceRatio, errors, formulaNuList, lateTimeExponents},
-  sector = First[context["sectors"]];
-  vertex = First[context["vertices"]];
-  lines = context["lines"];
-  energy = vertex["externalLegEnergy"];
-  vertexSign = vertex["vertexSign"];
-  If[! MatchQ[energy, _Symbol],
-    Return[Failure["AsymptoticBoundaryEnergyCoordinateRequired", <|"externalLegEnergy" -> energy|>]]
-  ];
-  If[! And @@ (#["type"] === "massiveExternal" & /@ lines),
-    Return[Failure[
-      "AsymptoticBoundaryFamilyUnsupported",
-      <|"reason" -> "single-vertex producer currently accepts only massiveExternal h blocks"|>
-    ]]
-  ];
-  nuConvention = context["convention", "nuConvention"];
-  nuZero = sector["baseTimePowers"][[1]] /. targetRules;
-  momenta = If[lines === {}, {}, Lookup[lines, "momentum"]] /. targetRules;
-  nuList = If[lines === {}, {}, Lookup[lines, "nu"]] /. targetRules;
-  branches = If[lines === {}, {}, First /@ Lookup[lines, "hankelBranches"]];
-  If[! And @@ (TrueQ[PossibleZeroQ[Im[N[#, workingPrecision]]]] & /@ Join[{nuZero}, nuList]),
-    Return[Failure[
-      "AsymptoticBoundaryComplexNuUnsupported",
-      <|"reason" -> "current endpoint coefficient selector is certified for real nu only"|>
-    ]]
-  ];
-  If[! And @@ (NumericQ[N[#, workingPrecision]] & /@ Join[{nuZero}, momenta, nuList]),
-    Return[Failure["IncompleteNumericalPoint", <||>]]
-  ];
-  momentumSizes = Abs[N[momenta, workingPrecision]];
-  dampingScale = Max[2, Ceiling[N[scale (1 + Total[momentumSizes]), 20]]];
-  anchorEnergy = -I vertexSign dampingScale;
-  anchorRules = Join[
-    {energy -> anchorEnergy},
-    msRetainNonEnergyRules[targetRules, {vertex}]
-  ];
-  x = 1/anchorEnergy;
-  convergenceRatio = Total[Abs[N[momenta x, workingPrecision]]];
-  If[! TrueQ[convergenceRatio < 1],
-    Return[Failure[
-      "FrobeniusAnchorOutsideConvergenceDomain",
-      <|"ratio" -> convergenceRatio, "required" -> "Sum[Abs[ki/k0]] < 1"|>
-    ]]
-  ];
-  stateOrder = sector["stateOrder"];
-  branchOrder = Tuples[{0, 1}, Length[lines]];
-  formulaNuList = If[nuConvention === "Positive", -nuList, nuList];
-  lateTimeExponents = nuZero + 1 - Total[# (2 formulaNuList + 1)] & /@ branchOrder;
-  If[AnyTrue[lateTimeExponents, ! TrueQ[Re[N[#, workingPrecision]] > 0] &],
-    Return[Failure[
-      "LateTimeBoundaryNotVanishing",
-      <|
-        "frobeniusExponents" -> lateTimeExponents,
-        "condition" -> "Re[nu0+1-b.(2 formulaNu+1)]>0 for every endpoint branch"
-      |>
-    ]]
-  ];
-  normalization = sector["normalization"] /. targetRules;
-  valuesAtOrder = Map[
-    Function[aBits,
-      normalization Total[
-        msVertexFrobeniusComponent[
-          aBits, #, nuZero, nuList,
-          momenta, x, branches, nuConvention, order
-        ] & /@ branchOrder
-      ]
-    ],
-    stateOrder
-  ];
-  If[MemberQ[valuesAtOrder, $Failed] || ! And @@ (NumericQ[N[#, workingPrecision]] & /@ valuesAtOrder),
-    Return[Failure["FrobeniusSeriesEvaluationFailed", <|"values" -> valuesAtOrder|>]]
-  ];
-  valuesAtLowerOrder = If[
-    order < 2,
-    valuesAtOrder,
-    Map[
-      Function[aBits,
-        normalization Total[
-          msVertexFrobeniusComponent[
-            aBits, #, nuZero, nuList,
-            momenta, x, branches, nuConvention, order - 2
-          ] & /@ branchOrder
-        ]
-      ],
-      stateOrder
-    ]
-  ];
-  errors = Abs[N[valuesAtOrder - valuesAtLowerOrder, workingPrecision]];
-  leadingBranches = Map[
-    Function[bBits,
-      <|
-        "binaryState" -> bBits,
-        "masterPosition" -> First@FirstPosition[stateOrder, bBits],
-        "exponent" -> Simplify[nuZero + 1 - Total[bBits (2 formulaNuList + 1)]],
-        "coefficient" -> Simplify[
-          normalization (-I)^(nuZero + 1)
-            Gamma[nuZero + 1 - Total[bBits (2 formulaNuList + 1)]]
-            Times @@ MapThread[
-              (-I #1)^(-#2 (2 #3 + 1)) msVertexEndpointCoefficient[nuConvention, #4, #2, #5] &,
-              {momenta, bBits, formulaNuList, branches, nuList}
-            ]
-        ]
-      |>
-    ],
-    branchOrder
-  ];
-  <|
-    "values" -> N[valuesAtOrder, workingPrecision],
-    "errorEstimate" -> errors,
-    "anchorRules" -> anchorRules,
-    "convergenceRatio" -> convergenceRatio,
-    "lateTimeExponents" -> lateTimeExponents,
-    "leadingBranches" -> leadingBranches,
-    "seriesOrder" -> order
-  |>
-];
 
 
 (* ::Chapter:: *)
@@ -882,10 +673,7 @@ MSBoundaryData[
   If[Head[chartCertificate] === Failure || ! TrueQ[chartCertificate["normalCrossingQ"]],
     Return[Failure["BoundaryChartNotCertified", <|"certificate" -> chartCertificate|>]]
   ];
-  (* v0.10: the single-vertex hypergeometric special case is retired from the
-     production path; every boundary runs through the generic sector-DAG route.
-     msSingleVertexFrobeniusData stays in this file only as the certified test
-     oracle (2411.03088 Sec. 3.3 series). *)
+  (* Every boundary runs through the generic sector-DAG route. *)
   seriesData = msGenericSectorFrobeniusData[
     context, de, targetRules, scale, rankOrder, order, workingPrecision
   ];

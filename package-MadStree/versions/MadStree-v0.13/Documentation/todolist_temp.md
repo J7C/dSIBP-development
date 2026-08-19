@@ -123,6 +123,17 @@ recurrence 共用；无 dSIBP 的纯 massive `++/--` 5x5 外腿能量导数 exac
 - 所有现行例子、正规化重建、多点输运与论文交叉验证结果不因纯命名重构改变。
 - 当前源码、examples、tests 和现行文档不含旧公开键的读取或调用。
 
+## M15：最新版冗余审计修复
+
+- [x] 删除正式 Kernel 中无生产/测试 caller 的单顶点 Frobenius 特殊路线，不移动为假 oracle。
+- [x] 删除五个无消费者私有定义，不增加兼容入口。
+- [x] 与独立 FlintNDE 同步 Vendor 清理，并核对三个变更 Python 文件逐一同 hash。
+- [x] 运行 core、generic boundary、artifact、Backend 和 Vendor 全量 Python 回归。
+
+M15 完成记录（2026-08-19）：保留 generic boundary 实际调用的端点系数函数；退休路线四个
+符号及五个孤立定义在当前 Kernel/Backend 中均归零。回归结果为 `58/58`、`10/10`、`18/18`、
+`11/11` 和 `170/170`。
+
 ## 实施要点
 
 1. `normalizeVertex` 只把 `id/externalLegEnergy/timePower/vertexType` 写入内部 vertex；

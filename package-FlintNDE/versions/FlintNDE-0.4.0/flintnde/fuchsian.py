@@ -73,15 +73,6 @@ def _row(matrix: GaussianMatrix, index: int) -> GaussianMatrix:
     )
 
 
-def _rational_identity(dimension: int) -> list[list[RationalFunction]]:
-    """返回 RationalFunction 表示的单位阵。"""
-
-    return [
-        [rational_function(1 if row == column else 0) for column in range(dimension)]
-        for row in range(dimension)
-    ]
-
-
 def _rational_multiply(
     left: list[list[RationalFunction]],
     right: list[list[RationalFunction]],
