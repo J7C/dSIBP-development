@@ -17,8 +17,10 @@ MSInitVertexFamily::usage = "MSInitVertexFamily[spec] initializes a single-verte
 MSContextQ::usage = "MSContextQ[context] tests whether an object is a valid MadStree context.";
 MSSectors::usage = "MSSectors[context] returns the deterministically ordered list of contact-reachable sectors.";
 MSSlotRegistry::usage = "MSSlotRegistry[context,sector] returns the graph-wide two-dimensional slot registry of a sector.";
-MSIntegral::usage = "MSIntegral[sectorKey,aShifts,stateBits] is the native time-only integral of MadStree.";
-MSMasterIntegrals::usage = "MSMasterIntegrals[context] returns master-integral records in the exact order used by all formula matrices.";
+MSIntegral::usage = "MSIntegral[sectorKey,aShifts,stateBits] is the normalized native time-only integral J_s(n;a) of MadStree.";
+MSBareIntegral::usage = "MSBareIntegral[sectorKey,aShifts,stateBits] is the inert bare integral I_s(n;a) defined in the manual with exactly the same sector, shift and two-state indices as MSIntegral.";
+MSIntegralDefinition::usage = "MSIntegralDefinition[integral,context] returns the exact sector normalization and the inert normalized-to-bare relation J_s(n;a)=normalization I_s(n;a) for one valid MSIntegral.";
+MSMasterIntegrals::usage = "MSMasterIntegrals[context] returns master-integral records in the exact matrix order, including the bare integral, exact sector normalization and inert normalized-to-bare definition.";
 MSFormulaMatrices::usage = "MSFormulaMatrices[context,sector] returns M1, M0, U and the energy letters.";
 MSFormulaData::usage = "MSFormulaData[context] aggregates all-sector masters, recurrence metadata and the full dlog DE; TimePowerRules optionally substitutes user-specified a_i.";
 MSWriteFormulaArtifacts::usage = "MSWriteFormulaArtifacts[context] writes all-sector masters, recurrence metadata, the dlog DE and a manifest to the calling script directory, and returns the actual output paths.";

@@ -48,6 +48,7 @@ spec = <|
 
 context = MSInitTree[spec];
 masters = MSMasterIntegrals[context];
+masterDefinitions = KeyTake[#, {"integral", "normalization", "bareIntegral", "definition"}] & /@ masters;
 topKey = First[context["sectorOrder"]];
 matrices = MSFormulaMatrices[context, topKey];
 de = MSDLogDE[context];
@@ -62,6 +63,13 @@ written["outputDirectory"]
 targetRules = {k1 -> 9 I, k2 -> 3 I, q -> 1, a1 -> 1, a2 -> 1};
 chart = MSBoundaryChartCertificate[context, targetRules];
 ```
+
+`MSIntegral[sectorKey,timeShifts,stateBits]` is the normalized master
+$J_s(\mathbf n;\mathbf a)$; the same three entries uniquely identify the bare integral
+$I_s(\mathbf n;\mathbf a)$. `MSMasterIntegrals` directly reports the exact `normalization`
+and $J_s=\text{normalization}\,I_s$ for every master. Use
+`MSIntegralDefinition[MSIntegral[sectorKey,timeShifts,stateBits],context]` for one shifted integral.
+A two-state factor is a massive endpoint, a `masslessEndpointH`, or the quotient state shared by a whole massless Full edge; `MSSlotRegistry` gives their bit order. The $++/--$ h combinations are defined once in the manual and are not expanded in every record.
 
 `"vertexType" -> "+"|"-"` is the vertex's Schwinger--Keldysh contour branch and is
 required explicitly on every vertex. A propagator no longer accepts `skType`, `sigma`, or
@@ -194,7 +202,7 @@ vertexDE = MSDLogDE[vertexContext];
 vertexValue = MSEvaluatePath[vertexContext, {targetRules}];
 ```
 
-Here `First[ki]` is the pure vertex phase energy and `First[nui]` is the base power of `(-tau)`; the remaining entries give one by one the momentum and `nu=|nu|` of each h block. One may also give `energy`, `timePower`, `hBlocks` and `exponentialBlocks` explicitly. A pure exponential block is `1x1` and adds no state bits; every h block is `2x2`. The `NuConvention` chosen at initialization stays fixed and cannot be overridden in recurrence, DE, numerics or H/h transforms.
+Here `First[ki]` is the pure vertex phase energy and `First[nui]` is the base power of `(-tau)`; the remaining entries give one by one the momentum and `nu=|nu|` of each h block. One may also give `externalLegEnergy`, `timePower`, `hBlocks` and `exponentialBlocks` explicitly. A pure exponential block is `1x1` and adds no state bits; every h block is `2x2`. The `NuConvention` chosen at initialization stays fixed and cannot be overridden in recurrence, DE, numerics or H/h transforms.
 
 ## Direct reduction
 

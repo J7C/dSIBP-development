@@ -25,6 +25,16 @@ v0.13 基于冻结的 v0.12。公式、sector DAG、dlog、FlintNDE 输运和正
 `MSInitVertexFamily` 的显式模型同步只接受 `externalLegEnergy`；context metadata 使用
 `userExternalLegEnergy/baseExternalLegEnergy/effectiveExternalLegEnergy`，不保存含混旧名。
 
+## 主积分定义
+
+- `MSIntegral[s,n,a]` 继续是 recurrence、DE 和数值层使用的 normalized master $J_s(n;a)$。
+- 新增惰性 `MSBareIntegral[s,n,a]` 和 `MSIntegralDefinition[integral,context]`，用完全相同的
+  sector、shift 与二态指标返回精确 $J_s=\mathcal N_s I_s$。
+- `MSMasterIntegrals` 的同序记录直接增加 `bareIntegral` 与 `definition`；原有 `integral`、
+  normalization、顺序和 digest 不变。top normalization 为 1 时显示 $J_s=I_s$。
+- 手册把二态因子数记为 $n_s^{\mathrm{slot}}$，normalization 只记为 $\mathcal N_s$，并修正
+  边界权重中曾把后者写成普通 $N_s$ 的符号 typo。
+
 ## 数值和正规化
 
 - `MSEvaluatePath` 仍只划分最大连续复仿射单变量段；每段 exact 拉回一次，节点规划及

@@ -44,6 +44,12 @@ MSIntegral[sectorKey, aShifts, stateBits]
 
 dSIBP 020 的 time-only `J[sectorKey,timeShifts,stateBits]` 只通过显式 adapter 输入/输出；它与 `MSIntegral` 三个槽逐项对应，`stateBits` 是全 sector registry 的离散 `n_i` 态而不是按顶点 pack。该映射要求两边 context 的 sector normalization 已统一；adapter 不把 normalization 乘入积分表达式。MadStree 内部不携带 `b`、ISP 或 root-line 三槽占位结构，也不再构造 019 的 `J[aList,linePacks,{}]`。
 
+当前读取合同沿用现有完整记号 `J_s(n;a)=MSIntegral[s,n,a]`，并补足
+`J_s(n;a)=calN_s I_s(n;a)`；`calN_s` 只表示 normalization，二态因子数量改记为
+`n_s^(slot)`。手册统一定义
+`I_s`，逐 master 输出不展开 `++/--` h 组合。`MSIntegralDefinition` 查询单个对象，既有
+`MSMasterIntegrals` 复用同一实现附带定义，不另设重复 bulk API。
+
 ## 3. 最小拓扑输入
 
 初始化入口为 `MSInitTree[spec]`。最小 `spec` 包含：
@@ -166,6 +172,10 @@ Kronecker 顺序采用左侧 slot 慢变、右侧 slot 快变；`stateBits` 使�
 ```
 
 这份列表是 recurrence、DE 行列、数值边界向量的唯一顺序 authority。任何矩阵都同时返回该列表及其 digest。
+
+当前 record 增加同指标的 `bareIntegral` 和惰性 `definition`；现有 `integral`
+字段不改成乘积，以保持矩阵 basis identity。`normalization` 单独保留，因此 top 即使显示
+为 `J_s=I_s`，机器接口仍明确返回系数 1。
 
 ## 6. 公式原子与全图矩阵
 
@@ -443,7 +453,7 @@ package-MadStree/versions/MadStree-v0.13/
   test/results_test/
 ```
 
-现行公开接口包括初始化、结构、公式、边界、输运和导出六层：`MSInitTree`、`MSInitTimeGraph`、`MSInitVertexFamily`、`MSContextQ`、`MSSectors`、`MSSlotRegistry`、`MSIntegral`、`MSMasterIntegrals`、`MSFormulaMatrices`、`MSFormulaData`、`MSWriteFormulaArtifacts`、`MSContactMaps`、`MSRecurrenceStep`、`MSReduce`、`MSDLogDE`、`MSHTohMatrix`、`MShToHMatrix`、`MSConvertBasis`、`MSToDSIBPJ`、`MSFromDSIBPJ`、`MSFromDSIBPExpression`、`MSNumericalSystem`、`MSBoundaryChartCertificate`、`MSBoundaryData`、`MSFlintNDEConfiguration`、`MSSetFlintNDERelativePath`、`MSEvaluatePath`、`MSReconstructEpSeries` 和 `MSExportEvaluationData`。
+现行公开接口包括初始化、结构、公式、边界、输运和导出六层：`MSInitTree`、`MSInitTimeGraph`、`MSInitVertexFamily`、`MSContextQ`、`MSSectors`、`MSSlotRegistry`、`MSIntegral`、`MSBareIntegral`、`MSIntegralDefinition`、`MSMasterIntegrals`、`MSFormulaMatrices`、`MSFormulaData`、`MSWriteFormulaArtifacts`、`MSContactMaps`、`MSRecurrenceStep`、`MSReduce`、`MSDLogDE`、`MSHTohMatrix`、`MShToHMatrix`、`MSConvertBasis`、`MSToDSIBPJ`、`MSFromDSIBPJ`、`MSFromDSIBPExpression`、`MSNumericalSystem`、`MSBoundaryChartCertificate`、`MSBoundaryData`、`MSFlintNDEConfiguration`、`MSSetFlintNDERelativePath`、`MSEvaluatePath`、`MSReconstructEpSeries` 和 `MSExportEvaluationData`。
 
 内部函数按物理含义命名；不以数字后缀区分操作，不为不同 sector 或 fold 数复制实现。
 

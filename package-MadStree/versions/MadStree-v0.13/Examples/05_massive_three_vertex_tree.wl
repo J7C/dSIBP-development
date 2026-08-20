@@ -46,7 +46,8 @@ topMatrices = MSFormulaMatrices[context, topKey];
 contactMaps = MSContactMaps[context, topKey];
 dlogDE = MSDLogDE[context];
 
-Lookup[masters, "integral"]
+(* 每条记录直接显示 normalized master、裸积分标签和精确 normalization。 *)
+KeyTake[#, {"integral", "normalization", "bareIntegral", "definition"}] & /@ masters
 
 dlogDE["omegaPotential"] // MatrixForm
 
@@ -55,7 +56,10 @@ dlogDE["omegaPotential"] // MatrixForm
 (* Iterative reduction and automatic numerical boundary *)
 
 shiftedIntegral = MSIntegral[topKey, {1, 0, 0}, {0, 0, 0, 0}];
+shiftedDefinition = MSIntegralDefinition[shiftedIntegral, context];
 reduction = MSReduce[shiftedIntegral, context];
+shiftedDefinition
+
 reduction["result"]
 
 numericalTemplate = MSNumericalSystem[dlogDE];

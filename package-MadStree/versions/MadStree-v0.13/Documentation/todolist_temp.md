@@ -134,6 +134,43 @@ M15 完成记录（2026-08-19）：保留 generic boundary 实际调用的端点
 符号及五个孤立定义在当前 Kernel/Backend 中均归零。回归结果为 `58/58`、`10/10`、`18/18`、
 `11/11` 和 `170/170`。
 
+## M16：normalized master 与裸指标积分的公开对应（已完成）
+
+### 接口设计
+
+- [x] 保持现有记号 `J_s(n;a)=MSIntegral[sectorKey,aShifts,stateBits]`；`s`、`n`、`a`
+  已分别完整标识 sector、component shifts 和 slot states，不新增另一套指标。
+- [x] 用惰性 `MSBareIntegral[s,n,a]` 只表示同指标的裸积分 `I_s(n;a)`；它不参与约化或输运。
+- [x] 新增唯一查询入口 `MSIntegralDefinition[integral,context]`，返回显式
+  `normalization -> calN_s` 和 `J_s(n;a)=calN_s I_s(n;a)`；非法指标复用 `msIntegralData`。
+- [x] 既有 `MSMasterIntegrals` 的 record 直接加入同源定义；不新增重复 bulk API，不改变
+  `integral` 字段及 master identity/order。
+
+### 手册定义
+
+- [x] 沿用 `J_s(n;a)=calN_s I_s(n;a)`；normalization 只写作 `calN_s`，二态因子数量统一
+  改记为 `n_s^(slot)`。同时修正边界权重一节把 normalization 误写成普通 `N_s` 的符号 typo。
+- [x] 手册一次性定义 `I_s(n;a)` 的 measure、时间幂、外腿指数与 slot building blocks；
+  massless shared quotient 保持共享二态，`++/--` h 组合不在逐 master 输出中展开。
+- [x] README 只给一个列全部 masters 和一个查询单积分的短例子。
+
+### 验收
+
+- [x] 两顶点 massive `G++` 五个 masters 保持同序：top 给 `calN_s=1`，child 给 context 中
+  exact prefactor；合法 shifts/state bits 原样保留，非法指标 fail closed。
+- [x] massless quotient 与 `RedundantH` 各检查一个定义；definition、sector、master record 和
+  dlog normalization gauge 使用同一 normalization authority。
+- [x] master order/digest、recurrence、contact phase、DE 和 boundary 在改动前后 exact 不变。
+- [x] 更新 `MadStree.wl` usage/API coverage、UPDATE_NOTES、中英文 README、两份 TeX 手册和
+  一个现行 example；运行 targeted/core/artifact 回归，重编并目视检查两份 PDF，最后清理
+  `results_test`、TeX 中间物与 cache，执行 UTF-8 和 `git diff --check`。
+
+M16 完成记录（2026-08-20）：专项、core、package artifact 分别通过 `17/17`、`58/58`、
+`18/18`；Example 05 从空输出目录运行，exit code 为 `0`。中英文 PDF 重编为 31/32 页，
+日志无 fatal error、undefined reference/citation 或 overfull box，受影响页面目视正常；14 个
+本轮文本文件严格 UTF-8 解码通过，普通 `N_s` 旧歧义扫描为空。运行产物、cache、TeX 中间
+文件和 PDF 渲染文件清理后，`git diff --check` 通过。
+
 ## 实施要点
 
 1. `normalizeVertex` 只把 `id/externalLegEnergy/timePower/vertexType` 写入内部 vertex；

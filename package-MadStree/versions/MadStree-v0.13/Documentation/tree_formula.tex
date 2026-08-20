@@ -563,18 +563,20 @@ $M_1$ 不含这些一维 blocks；massive h 的 $P_1,\sigma_2$ 原子也不因 H
 
 \subsection{2401 二进制顺序与递推的精确定义域}
 
-固定 sector $s$，令 $N_s$ 是该 sector 的二维 slots 数，$c_s$ 是 contact 后的 time components 数。沿用 2401 的二进制表示，把 state 写成
+固定 sector $s$，令 $n_s^{\mathrm{slot}}$ 是该 sector 的二态因子数，$c_s$ 是 contact 后的 time components 数。沿用 2401 的二进制表示，把 state 写成
 \begin{equation}
- \bm a=(a_1,\ldots,a_{N_s}),
+ \bm a=(a_1,\ldots,a_{n_s^{\mathrm{slot}}}),
  \qquad a_i\in\{0,1\}.
 \end{equation}
 状态顺序固定为
 \begin{equation}
- \bm a(m)=\operatorname{IntegerDigits}(m,2,N_s),
- \qquad 0\leq m<2^{N_s}.
+ \bm a(m)=\operatorname{IntegerDigits}(m,2,n_s^{\mathrm{slot}}),
+ \qquad 0\leq m<2^{n_s^{\mathrm{slot}}}.
  \label{eq:binary-state-order}
 \end{equation}
-第一位是最高有效位；Kronecker 积中左侧 slot 慢变、右侧 slot 快变。对任意字串，$\operatorname{Del}_i\bm a$ 表示删除第 $i$ 位，$\operatorname{Ins}_i(\widehat{\bm c},x)$ 表示在第 $i$ 位补入 $x\in\{0,1\}$。这些约定与参考代码的 \texttt{IntegerDigits[...,2,n]}、\texttt{Delete} 和 \texttt{Insert} 完全同序。
+第一位是最高有效位；Kronecker 积中左侧二态因子慢变、右侧快变。$\operatorname{Del}_i\bm a$
+删除第 $i$ 位，$\operatorname{Ins}_i(\widehat{\bm c},x)$ 在该位置补入 $x\in\{0,1\}$；
+这些操作与参考代码的二进制顺序完全一致。
 
 MadStree 的一个原生积分可记为
 \begin{equation}
@@ -583,7 +585,7 @@ MadStree 的一个原生积分可记为
  \qquad
  \bm n\in\mathbb Z^{c_s},
  \quad
- \bm a\in\{0,1\}^{N_s}.
+ \bm a\in\{0,1\}^{n_s^{\mathrm{slot}}}.
  \label{eq:MSIntegral-domain}
 \end{equation}
 这里 $s$ 不是由局部 $\bm n,\bm a$ 反推的标签。设 root propagator 依初始化顺序为
@@ -594,7 +596,7 @@ $E=(e_1,\ldots,e_{N_E})$，已收缩的 canonical set 为 $L_s^{\rm ctr}$。定�
  \end{cases}
  \label{eq:sector-bit-string-key}
 \end{equation}
-不能发生 contact shrink 的传播子恒有 $q_j=1$，top sector 为全 $1$ 字符串。该 key 的类型是字符串，不是二进制整数；前导零不可删除。例如 $E=(e_1,e_2,e_3,e_4)$ 且 $L_s^{\rm ctr}=\{e_1,e_2,e_4\}$ 时，key 是 \texttt{"0010"}。完整积分头始终把该 key 放在第一参数。因此两个 subsectors 即使 $c_s,N_s,\bm n,\bm a$ 全部相同，也仍是不同的
+不能发生 contact shrink 的传播子恒有 $q_j=1$，top sector 为全 $1$ 字符串。该 key 的类型是字符串，不是二进制整数；前导零不可删除。例如 $E=(e_1,e_2,e_3,e_4)$ 且 $L_s^{\rm ctr}=\{e_1,e_2,e_4\}$ 时，key 是 \texttt{"0010"}。完整积分头始终把该 key 放在第一参数。因此两个 subsectors 即使 $c_s,n_s^{\mathrm{slot}},\bm n,\bm a$ 全部相同，也仍是不同的
 \texttt{MSIntegral} 表达式。同一 contraction set 经不同 contact 路径到达时则合并到同一个 sector。\texttt{MSInitTree} 在返回 context 前生成
 \texttt{sectorIdentityCertificate}，一次性检查 canonical contraction sets、sector keys、完整 master expressions、连续 global indices 及完整有序 master 表的 SHA-256 digest；任一碰撞返回
 \texttt{SectorIdentityCollision}，不把歧义留给递推或 DE consumer。
@@ -606,7 +608,7 @@ $E=(e_1,\ldots,e_{N_E})$，已收缩的 canonical set 为 $L_s^{\rm ctr}$。定�
  J_s(\bm n;\bm a)\,\middle|\,
  s\in\operatorname{ContactDAG},\
  \bm n\in\mathbb Z^{c_s},\
- \bm a\in\{0,1\}^{N_s}
+ \bm a\in\{0,1\}^{n_s^{\mathrm{slot}}}
  \right\}.
  }
  \label{eq:MSReduce-domain}
@@ -1134,10 +1136,32 @@ $M_1,M_0$、迭代约化和完整 block-triangular dlog，而不是在验证程�
 
 \subsection{\texorpdfstring{$(-\tau)^A$ 与 normalized-$J$}{(-tau)A 与 normalized-J}}
 
-前文使用论文的 $\tau^{\nu_0}$ convention。package 的唯一公开积分是 normalized object
+前文使用论文的 $\tau^{\nu_0}$ convention。package 中参与递推、DE 与数值输运的积分对象是 normalized object
 \begin{equation}
  J_s=\cN_sI_s,
 \end{equation}
+其中同一组现有指标下的裸积分紧凑定义为
+\begin{equation}
+ I_s(\bm n;\bm a)=
+ \int_{(-\infty,0)^{c_s}}
+ \prod_{C=1}^{c_s}\!\dd\tau_C\,
+ (-\tau_C)^{A_{C,s}+n_C}e^{\ii p_{C,s}\tau_C}
+ \;\mathcal H_{s,\bm a}(\bm\tau).
+ \label{eq:package-bare-integral}
+\end{equation}
+$s=\texttt{sectorKey}$，$\bm n=\texttt{aShifts}$，$\bm a=\texttt{stateBits}$；
+$\mathcal H_{s,\bm a}$ 是前文已定义的 active line 二态 building blocks 的有序乘积。
+massive endpoint 与 \texttt{masslessEndpointH} 读取各自状态位，massless shared quotient
+读取整条边共享的一位；Full 的 $++/--$ time ordering 保留在相应 building block 中，已收缩线不再出现。
+程序不逐个 master 展开这一乘积。
+
+单对象查询写为
+\begin{verbatim}
+MSIntegralDefinition[MSIntegral[s,n,a], context]
+\end{verbatim}
+它返回同指标的裸积分标签、精确 $\cN_s$ 及惰性等式；
+\texttt{MSMasterIntegrals[context]} 的每条同序记录直接附带这些字段。$\cN_s=1$ 时显示
+$J_s(\bm n;\bm a)=I_s(\bm n;\bm a)$。
 时间幂写为 $(-\tau_v)^{A_{v,s}}$，所以
 \begin{equation}
  \partial_{\tau_v}(-\tau_v)^{A_{v,s}}
@@ -1461,14 +1485,14 @@ memoizedIntegralCount, singularLayers
 \begin{align}
  \lambda_{s,\bm a}&=\sum_C\ell_{sC}\alpha_{sC}(\bm a),
  \notag\\
- W_{s,\bm a}&=N_s\Phi_s\Xi_{s,\bm a}
+ W_{s,\bm a}&=\cN_s\Phi_s\Xi_{s,\bm a}
  \prod_C\left[
  (-\ii)^{A_{sC}+1}\Gamma(\alpha_{sC})
  E_{sC,\bm a}\,c_{sC}^{-\alpha_{sC}}
  \right].
  \label{eq:generic-sector-boundary-weight}
 \end{align}
-$N_s$ 是 sector normalization，$\Phi_s$ 是已初始化的 massive-contact phase，$\Xi_{s,\bm a}$ 收集 shared-massless chamber sign 与 RedundantH normalization，$E_{sC,\bm a}$ 是该 component 全部 Hankel endpoint coefficients 的乘积。所有量都从当前 sector metadata 取得，不能从 root sector 猜 child 的幂次或 slots。
+$\cN_s$ 是 sector normalization，$\Phi_s$ 是已初始化的 massive-contact phase，$\Xi_{s,\bm a}$ 收集 shared-massless chamber sign 与 RedundantH normalization，$E_{sC,\bm a}$ 是该 component 全部 Hankel endpoint coefficients 的乘积。所有量都从当前 sector metadata 取得，不能从 root sector 猜 child 的幂次或二态因子。
 
 把完整 dlog potential 沿 $K_{\sigma(j)}=B^{V-j+1}t^{-(V-j+1)}$ 拉回并记 residue 为 $R_0$。对每个 $(s,\bm a)$，程序固定该 sector 内对应 root master 的分量为 $1$，非 ancestor sectors 为 $0$，解
 \begin{equation}
@@ -1560,10 +1584,12 @@ $1/\epsilon$ 项。
 也不从头重算缓存。不同 $\epsilon$ 任务由 \texttt{ParallelTaskCount -> 12} 的缺省外层进程池
 调度；实际并发取任务数与上限的较小者。
 
-缺省调用仍不含任何 regulator 数值点。若用户需要限制全部取值范围，可用
-\texttt{EpSamplePoints -> \{...\}} 提供有序生产候选池，并以
-\texttt{EpValidationPoints -> \{...\}} 提供与整个生产池分离的独立验证点。候选池可以冗余；
-\texttt{EpInitialInternalMaximumPower -> $q$} 指定首轮内部最高幂后，首轮只消费拟合
+缺省调用仍不含任何 regulator 数值点。若用户需要限制全部取值范围，
+\texttt{EpSamplePoints} 提供有序生产候选池，\texttt{EpValidationPoints} 提供独立验证点；
+验证点须与整个生产池分离。
+候选池可以冗余。
+
+\texttt{EpInitialInternalMaximumPower} 指定首轮内部最高幂 $q$；首轮只消费拟合
 $n_{\min},\ldots,q$ 所需的 $q-n_{\min}+1$ 个候选点，失败扩阶才顺序消费后续点。候选耗尽时
 不生成池外点，当前系数随 \texttt{candidate\_pool\_exhausted} 警告返回。
 

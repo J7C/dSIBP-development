@@ -49,6 +49,7 @@ spec = <|
 
 context = MSInitTree[spec];
 masters = MSMasterIntegrals[context];
+masterDefinitions = KeyTake[#, {"integral", "normalization", "bareIntegral", "definition"}] & /@ masters;
 topKey = First[context["sectorOrder"]];
 matrices = MSFormulaMatrices[context, topKey];
 de = MSDLogDE[context];
@@ -63,6 +64,14 @@ written["outputDirectory"]
 targetRules = {k1 -> 9 I, k2 -> 3 I, q -> 1, a1 -> 1, a2 -> 1};
 chart = MSBoundaryChartCertificate[context, targetRules];
 ```
+
+`MSIntegral[sectorKey,timeShifts,stateBits]` 表示 normalized master
+$J_s(\mathbf n;\mathbf a)$；同一组三项也唯一标识裸积分 $I_s(\mathbf n;\mathbf a)$。
+`MSMasterIntegrals` 直接给出每个 master 的精确 `normalization` 和
+`J_s=normalization I_s`；单个 shifted integral 可用
+`MSIntegralDefinition[MSIntegral[sectorKey,timeShifts,stateBits],context]` 查询。
+二态因子是 massive endpoint、`masslessEndpointH` 或整条 massless Full 边共享的 quotient
+二态；其逐位顺序由 `MSSlotRegistry` 给出。`++/--` 的 h 组合只在手册统一定义，不在每条输出中展开。
 
 `"vertexType" -> "+"|"-"` 是顶点的 Schwinger--Keldysh 轮廓支，必须在每个顶点上
 显式给出。传播子不再输入 `skType`、`sigma` 或端点符号；程序从 `"endpoints"` 指向的
@@ -190,7 +199,7 @@ vertexDE = MSDLogDE[vertexContext];
 vertexValue = MSEvaluatePath[vertexContext, {targetRules}];
 ```
 
-这里 `First[ki]` 是纯顶点指数能量，`First[nui]` 是 `(-tau)` 的基准幂；其余位置一一给出 h block 的动量和 `nu=|nu|`。也可显式给 `energy`、`timePower`、`hBlocks` 和 `exponentialBlocks`。纯指数 block 是 `1x1`，不增加状态位；每个 h block 是 `2x2`。初始化时选定的 `NuConvention` 此后固定，不能在递推、DE、数值计算或 H/h 变换时另行覆盖。
+这里 `First[ki]` 是纯顶点指数能量，`First[nui]` 是 `(-tau)` 的基准幂；其余位置一一给出 h block 的动量和 `nu=|nu|`。也可显式给 `externalLegEnergy`、`timePower`、`hBlocks` 和 `exponentialBlocks`。纯指数 block 是 `1x1`，不增加状态位；每个 h block 是 `2x2`。初始化时选定的 `NuConvention` 此后固定，不能在递推、DE、数值计算或 H/h 变换时另行覆盖。
 
 ## 直接约化
 

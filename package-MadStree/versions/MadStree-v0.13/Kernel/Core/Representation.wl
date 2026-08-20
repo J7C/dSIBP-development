@@ -2,8 +2,8 @@
 
 (***
 File: Representation.wl
-Purpose: Validates native MSIntegral objects, performs H/h state transformations, and adapts the native dSIBP 020 time-only J.
-Scope: Reverse conversion is allowed only when the three slots sectorKey, timeShifts and stateBits match the current context exactly.
+Purpose: Validates native MSIntegral objects, exposes their normalized-to-bare definitions, performs H/h state transformations, and adapts the native dSIBP 020 time-only J.
+Scope: Every representation uses the same three indices sectorKey, timeShifts and stateBits; no interface reconstructs a second index convention.
 ***)
 
 (* ::Chapter:: *)
@@ -25,6 +25,53 @@ msIntegralData[int : MSIntegral[key_String, shifts_List, bits_List], context_?MS
 ];
 
 msIntegralData[other_, _] := Failure["NotMSIntegral", <|"input" -> HoldForm[other]|>];
+
+
+(* ::Chapter:: *)
+(*Normalized master 与裸指标积分*)
+
+(* 裸积分只复用 MSIntegral 的三个既有指标。normalization 始终读取当前 sector，
+   definition 仅用于显示和审计，不参加递推、求导或数值输运。 *)
+MSIntegralDefinition[
+  int : MSIntegral[key_String, shifts_List, bits_List],
+  context_?MSContextQ
+] := Module[{data, bareIntegral, normalization, definition},
+  data = msIntegralData[int, context];
+  If[Head[data] === Failure, Return[data]];
+  bareIntegral = MSBareIntegral[key, shifts, bits];
+  normalization = data["sector", "normalization"];
+  definition = If[
+    TrueQ[normalization === 1],
+    With[{normalized = int, bare = bareIntegral}, HoldForm[normalized == bare]],
+    With[
+      {normalized = int, bare = bareIntegral, coefficient = normalization},
+      HoldForm[normalized == coefficient bare]
+    ]
+  ];
+  <|
+    "integral" -> int,
+    "bareIntegral" -> bareIntegral,
+    "normalization" -> normalization,
+    "definition" -> definition
+  |>
+];
+
+
+MSIntegralDefinition[other_, context_?MSContextQ] := msIntegralData[other, context];
+
+
+(* 主积分列表继续以 context 中的认证顺序为 authority；新增字段全部来自上面的单对象入口。 *)
+msMasterRecordWithDefinition[record_Association, context_?MSContextQ] := Module[{definition},
+  definition = MSIntegralDefinition[record["integral"], context];
+  If[Head[definition] === Failure, Return[definition]];
+  Join[
+    record,
+    KeyTake[definition, {"bareIntegral", "normalization", "definition"}]
+  ]
+];
+
+
+MSMasterIntegrals[context_?MSContextQ] := msMasterRecordWithDefinition[#, context] & /@ context["masters"];
 
 
 (* ::Section:: *)

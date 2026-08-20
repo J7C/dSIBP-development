@@ -16,6 +16,10 @@ Needs["MadStree`"];
 源码和文档均为 UTF-8；包内 `Get`、JSON 和后端日志入口显式使用 UTF-8，用户不需要给
 `Needs` 额外填写编码参数。
 
+主积分对象 `MSIntegral[sectorKey,timeShifts,stateBits]` 是 normalized master。
+`MSMasterIntegrals[context]` 直接返回其裸积分标签、精确 sector normalization 和
+`normalized == normalization bare` 定义；单个对象使用 `MSIntegralDefinition[integral,context]`。
+
 ## v0.13 数值边界
 
 单个参数赋值与路径的当前入口是：

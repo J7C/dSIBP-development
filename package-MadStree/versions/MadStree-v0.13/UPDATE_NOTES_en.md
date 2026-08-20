@@ -28,6 +28,18 @@ The explicit `MSInitVertexFamily` model also accepts only `externalLegEnergy`; c
 metadata uses `userExternalLegEnergy`, `baseExternalLegEnergy`, and
 `effectiveExternalLegEnergy`.
 
+## Master-integral definitions
+
+- `MSIntegral[s,n,a]` remains the normalized master $J_s(n;a)$ used by recurrence, DEs,
+  and numerical transport.
+- The inert `MSBareIntegral[s,n,a]` and `MSIntegralDefinition[integral,context]` use exactly
+  the same sector, shift, and two-state indices to return the exact $J_s=\mathcal N_s I_s$.
+- Ordered `MSMasterIntegrals` records now include `bareIntegral` and `definition`; the
+  existing `integral`, normalization, order, and digest are unchanged. Unit normalization
+  is displayed as $J_s=I_s$.
+- The manual now denotes the number of two-state factors by $n_s^{\mathrm{slot}}$ and uses
+  $\mathcal N_s$ only for normalization, including the corrected boundary-weight notation.
+
 ## Numerical and regulator workflows
 
 - `MSEvaluatePath` still splits only maximal continuous complex-affine one-variable

@@ -569,15 +569,15 @@ is performed; the user's $q_e$ are not silently renamed \texttt{pik} or \texttt{
 
 \subsection{The 2401 binary order and the precise domain of the recurrences}
 
-Fix a sector $s$, let $N_s$ be the number of two-dimensional slots in the sector and $c_s$ the number of time components after contact. Following the binary representation of 2401, write a state as
+Fix a sector $s$, let $n_s^{\mathrm{slot}}$ be the number of two-state factors in the sector and $c_s$ the number of time components after contact. Following the binary representation of 2401, write a state as
 \begin{equation}
- \bm a=(a_1,\ldots,a_{N_s}),
+ \bm a=(a_1,\ldots,a_{n_s^{\mathrm{slot}}}),
  \qquad a_i\in\{0,1\}.
 \end{equation}
 The state order is fixed to
 \begin{equation}
- \bm a(m)=\operatorname{IntegerDigits}(m,2,N_s),
- \qquad 0\leq m<2^{N_s}.
+ \bm a(m)=\operatorname{IntegerDigits}(m,2,n_s^{\mathrm{slot}}),
+ \qquad 0\leq m<2^{n_s^{\mathrm{slot}}}.
  \label{eq:binary-state-order}
 \end{equation}
 The first bit is the most significant; in a Kronecker product the left slots vary slowly and the right slots vary quickly. For any bit string, $\operatorname{Del}_i\bm a$ deletes the $i$-th bit and $\operatorname{Ins}_i(\widehat{\bm c},x)$ inserts $x\in\{0,1\}$ at position $i$. These conventions are exactly in the same order as \texttt{IntegerDigits[...,2,n]}, \texttt{Delete} and \texttt{Insert} of the reference code.
@@ -589,7 +589,7 @@ A native integral of MadStree can be written as
  \qquad
  \bm n\in\mathbb Z^{c_s},
  \quad
- \bm a\in\{0,1\}^{N_s}.
+ \bm a\in\{0,1\}^{n_s^{\mathrm{slot}}}.
  \label{eq:MSIntegral-domain}
 \end{equation}
 Here $s$ is not a label recovered from the local $\bm n,\bm a$. Let the root propagators be, in the initialization order,
@@ -600,7 +600,7 @@ $E=(e_1,\ldots,e_{N_E})$, and let the contracted canonical set be $L_s^{\rm ctr}
  \end{cases}
  \label{eq:sector-bit-string-key}
 \end{equation}
-Propagators that cannot undergo contact shrink always have $q_j=1$, and the top sector is the all-$1$ string. The key is a string, not a binary integer; leading zeros cannot be dropped. For example, if $E=(e_1,e_2,e_3,e_4)$ and $L_s^{\rm ctr}=\{e_1,e_2,e_4\}$, the key is \texttt{"0010"}. The full integral head always puts this key in the first argument. Hence two subsectors remain different \texttt{MSIntegral} expressions even if $c_s,N_s,\bm n,\bm a$ are all identical. If the same contraction set is reached through different contact paths, it is merged into the same sector. Before returning the context, \texttt{MSInitTree} generates a \texttt{sectorIdentityCertificate} that checks in one pass the canonical contraction sets, the sector keys, the full master expressions, the consecutive global indices, and the SHA-256 digest of the complete ordered master table; any collision returns \texttt{SectorIdentityCollision}, so that no ambiguity is left to the recurrence or DE consumers.
+Propagators that cannot undergo contact shrink always have $q_j=1$, and the top sector is the all-$1$ string. The key is a string, not a binary integer; leading zeros cannot be dropped. For example, if $E=(e_1,e_2,e_3,e_4)$ and $L_s^{\rm ctr}=\{e_1,e_2,e_4\}$, the key is \texttt{"0010"}. The full integral head always puts this key in the first argument. Hence two subsectors remain different \texttt{MSIntegral} expressions even if $c_s,n_s^{\mathrm{slot}},\bm n,\bm a$ are all identical. If the same contraction set is reached through different contact paths, it is merged into the same sector. Before returning the context, \texttt{MSInitTree} generates a \texttt{sectorIdentityCertificate} that checks in one pass the canonical contraction sets, the sector keys, the full master expressions, the consecutive global indices, and the SHA-256 digest of the complete ordered master table; any collision returns \texttt{SectorIdentityCollision}, so that no ambiguity is left to the recurrence or DE consumers.
 
 Thus the input domain of \texttt{MSReduce} is not ``arbitrary dS integrals'' but the space spanned, in a fixed initialization context, by the following legal objects
 \begin{equation}
@@ -609,7 +609,7 @@ Thus the input domain of \texttt{MSReduce} is not ``arbitrary dS integrals'' but
  J_s(\bm n;\bm a)\,\middle|\,
  s\in\operatorname{ContactDAG},\
  \bm n\in\mathbb Z^{c_s},\
- \bm a\in\{0,1\}^{N_s}
+ \bm a\in\{0,1\}^{n_s^{\mathrm{slot}}}
  \right\}.
  }
  \label{eq:MSReduce-domain}
@@ -1135,11 +1135,31 @@ For a sector with spectator slots, Eq.~\eqref{eq:madstree-redundant-massless-map
 
 \subsection{\texorpdfstring{$(-\tau)^A$ and normalized-$J$}{(-tau)A and normalized-J}}
 
-The previous text used the $\tau^{\nu_0}$ convention of the paper. The only public integral object of the package is the normalized object
+The previous text used the $\tau^{\nu_0}$ convention of the paper. The integral object used by recurrence, DEs and numerical transport is the normalized object
 \begin{equation}
  J_s=\cN_sI_s,
 \end{equation}
-with the time power written as $(-\tau_v)^{A_{v,s}}$, so
+where the bare integral with the same existing indices is defined compactly by
+\begin{equation}
+ I_s(\bm n;\bm a)=
+ \int_{(-\infty,0)^{c_s}}
+ \prod_{C=1}^{c_s}\!\dd\tau_C\,
+ (-\tau_C)^{A_{C,s}+n_C}e^{\ii p_{C,s}\tau_C}
+ \;\mathcal H_{s,\bm a}(\bm\tau).
+ \label{eq:package-bare-integral}
+\end{equation}
+Here $s=\texttt{sectorKey}$, $\bm n=\texttt{aShifts}$ and $\bm a=\texttt{stateBits}$;
+$\mathcal H_{s,\bm a}$ is the ordered product of the active-line two-state building blocks defined above.
+Massive endpoints and \texttt{masslessEndpointH} read their own state bits, whereas a massless shared quotient reads one bit shared by the whole edge. The $++/--$ time ordering of a Full line stays inside its building block, and contracted lines are absent. The program does not expand this product separately for every master.
+
+The single-integral query is
+\begin{verbatim}
+MSIntegralDefinition[MSIntegral[s,n,a], context]
+\end{verbatim}
+It returns the same-index \texttt{MSBareIntegral[s,n,a]}, the exact $\cN_s$, and an inert equality;
+each ordered record returned by \texttt{MSMasterIntegrals[context]} contains the same fields.
+For $\cN_s=1$ the displayed relation is $J_s(\bm n;\bm a)=I_s(\bm n;\bm a)$.
+The time power is written as $(-\tau_v)^{A_{v,s}}$, so
 \begin{equation}
  \partial_{\tau_v}(-\tau_v)^{A_{v,s}}
  =-A_{v,s}(-\tau_v)^{A_{v,s}-1}.
@@ -1463,14 +1483,14 @@ Here $H(s,C)$ contains only the still-active Hankel endpoint slots on that compo
 \begin{align}
  \lambda_{s,\bm a}&=\sum_C\ell_{sC}\alpha_{sC}(\bm a),
  \notag\\
- W_{s,\bm a}&=N_s\Phi_s\Xi_{s,\bm a}
+ W_{s,\bm a}&=\cN_s\Phi_s\Xi_{s,\bm a}
  \prod_C\left[
  (-\ii)^{A_{sC}+1}\Gamma(\alpha_{sC})
  E_{sC,\bm a}\,c_{sC}^{-\alpha_{sC}}
  \right].
  \label{eq:generic-sector-boundary-weight}
 \end{align}
-$N_s$ is the sector normalization, $\Phi_s$ the initialized massive-contact phase, $\Xi_{s,\bm a}$ collects the shared-massless chamber sign and the RedundantH normalization, and $E_{sC,\bm a}$ is the product of all Hankel endpoint coefficients of the component. All quantities are taken from the current sector metadata; one must not guess the child powers or slots from the root sector.
+$\cN_s$ is the sector normalization, $\Phi_s$ the initialized massive-contact phase, $\Xi_{s,\bm a}$ collects the shared-massless chamber sign and the RedundantH normalization, and $E_{sC,\bm a}$ is the product of all Hankel endpoint coefficients of the component. All quantities are taken from the current sector metadata; one must not guess the child powers or two-state factors from the root sector.
 
 Pull back the complete dlog potential along $K_{\sigma(j)}=B^{V-j+1}t^{-(V-j+1)}$ and denote the residue by $R_0$. For each $(s,\bm a)$, the program fixes the component of the corresponding root master in that sector to $1$ and the components of the non-ancestor sectors to $0$, and solves
 \begin{equation}

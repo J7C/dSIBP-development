@@ -474,5 +474,3 @@ MSSlotRegistry[context_?MSContextQ, All] := AssociationThread[
 MSSlotRegistry[context_?MSContextQ, key_String] := Module[{sector = msSectorByKey[context, key]},
   If[Head[sector] === Missing, sector, sector["slots"]]
 ];
-
-MSMasterIntegrals[context_?MSContextQ] := context["masters"];
