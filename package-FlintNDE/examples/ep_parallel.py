@@ -13,7 +13,7 @@ from typing import Any
 
 
 EXAMPLE_ROOT = Path(__file__).resolve().parent
-PACKAGE_ROOT = EXAMPLE_ROOT.parent / "versions" / "FlintNDE-0.4.0"
+PACKAGE_ROOT = EXAMPLE_ROOT.parent / "versions" / "FlintNDE-0.5.0"
 if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 

@@ -1,14 +1,14 @@
 # MadStree 版本与验证入口
 
-MadStree 是 Wolfram Language 的 dS time-integral 公式程序包。当前版本为 `v0.13`，数值
-输运委托给版本内嵌且与独立包同步的 FlintNDE `0.4.0`。
+MadStree 是 Wolfram Language 的 dS time-integral 公式程序包。当前版本为 `v0.15`，数值
+输运委托给版本内嵌且与独立包同步的 FlintNDE `0.5.0`。
 
 ## 加载
 
 交互使用可直接执行根目录 `load_current.wl`。正式复现应显式加载版本目录：
 
 ```wl
-packageRoot = ".../package-MadStree/versions/MadStree-v0.13";
+packageRoot = ".../package-MadStree/versions/MadStree-v0.15";
 AppendTo[$Path, packageRoot];
 Needs["MadStree`"];
 ```
@@ -20,23 +20,30 @@ Needs["MadStree`"];
 `MSMasterIntegrals[context]` 直接返回其裸积分标签、精确 sector normalization 和
 `normalized == normalization bare` 定义；单个对象使用 `MSIntegralDefinition[integral,context]`。
 
-## v0.13 数值边界
+## v0.15 数值接口
 
-单个参数赋值与路径的当前入口是：
+单点和多点只有一个入口。`pointSequence` 首行定义可跑动坐标，后续每行是一个等宽坐标点；
+固定参数只在 `ParameterRules` 中给一次：
 
 ```wl
 result = MSEvaluatePath[
   context,
-  {point1, point2, {point3, "tmp"}},
+  {{k0, k1}, {1, 1}, {11/10, 1}, {{6/5, 1}, "tmp"}},
+  ParameterRules -> {q -> 1, nu -> 1/2, a -> 2},
   FlintNDEPathPlanning -> True
 ];
 ```
+
+单点只保留表头和一行值，例如 `{{k0,k1},{1,1}}`；不另设 `MSEvaluatePoint`。表头与
+`ParameterRules` 必须互斥，二者合起来必须覆盖解析 DE 和边界的全部必需符号。缺失或替换后
+仍非数值时，返回列出问题符号的 `Failure`，并明确说明数值 NDE 未启动。
 
 带共同正规化参数 `ep` 的极限计算使用：
 
 ```wl
 series = MSReconstructEpSeries[
-  context, ep, pointTemplate,
+  context, ep, pointSequence,
+  ParameterRules -> {q -> 1, a1 -> 1 + ep, a2 -> 1 + ep},
   MaximumEpPower -> 0,
   EpGoalDigits -> 20,
   ParallelTaskCount -> 12
@@ -70,14 +77,17 @@ Python 进程中交给 FlintNDE。Wolfram 侧以参数列表 `RunProcess` 启动
 - `FlintNDEPathPlanning -> False`：严格把每段用户点依次作为输运节点，不插点、不删点、
   不静默规划。用户必须给出落在逐步收敛圆内且不穿奇点的点列。
 
-裸坐标是需要返回的用户点；`{coordinate,"tmp"}` 只参与连续段识别和输运。v0.13 不提供
+普通值行是需要返回的用户点；`{{values...},"tmp"}` 只参与连续段识别和输运。v0.15 不提供
 奇点领头阶点标签，也不提供旧两阶段路径函数、计划对象、wrapper 或旧 JSON schema。
-`SingularityMode -> "Avoid"` 缺省拒绝穿过奇点；`"SingularityJump"` 只在开启 FlintNDE
-规划时可用。
+`SingularityMode -> "Automatic"` 缺省忠实处理用户显式给出的奇点：FlintNDE 的同一局部基
+覆盖收敛域内双侧用户点，真实发散返回文本 `Infinity`，并从出射普通点继续。末端奇点若
+需要则自动插入由目标奇点收敛半径决定的隐藏普通匹配点。`"Avoid"` 显式拒绝穿越；
+`"SingularityJump"` 显式选择穿越分支，并要求用户确认等价绕行类的多值性。奇点处非共线
+转向和关闭规划后的中间奇点仍 fail closed。
 
 ## 目录
 
-- `versions/MadStree-v0.13/`：当前源码、内嵌后端、手册、examples 和开发测试。
+- `versions/MadStree-v0.15/`：当前源码、内嵌后端、手册、examples 和开发测试。
 - `VERSION_INDEX.md`：当前版本和冻结版本边界。
 - `independent-validation-task/`：版本化独立验证任务书。
 - `independent-validation/`：独立 runner、正式轻量结果和自动报告。
@@ -92,3 +102,12 @@ Windows 完整路径过长时在 Python 启动前独立返回 `RuntimePathTooLon
 输入写入、缺少 `python-flint`、后端启动和后端无输出分别使用不同错误标签。
 内嵌 FlintNDE Wolfram bridge 使用参数列表 `RunProcess`，不保留 shell `Run` launcher、命令
 引号 helper、重定向或失败重试 fallback。
+
+解析公式使用 `MSDLogDE[context]` 直接读取；纯符号工作流可显式调用
+`MSWriteFormulaArtifacts[context]` 保存。所有数值入口都会在启动 Python/FlintNDE 前自动写出或
+复用同一 context 的完整解析资产，写出失败则不启动 NDE，并在返回值的 `"formulaArtifacts"`
+给出实际路径。缺省正式目录是 `results/madstree_formula/run-<UUID>/`，其中 `masters.wl`、
+`recurrence_metadata.wl`、`dlog_de.wl` 和 `manifest.wl` 分别保存同序主积分、递推 metadata、
+完整解析 dlog DE 和版本/摘要/实际路径清单。数值阶段只构造函数内局部参数化 DE，不覆盖这些
+正式解析结果。`MSExportEvaluationData` 的缺省正式数值目录是
+`results/madstree_evaluation/run-<UUID>/`，文件固定为 `evaluation_data.csv/json`。

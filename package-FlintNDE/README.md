@@ -15,9 +15,9 @@
 建议新版本从稳定主线新建独立 Git branch 开发和验证；branch 是否创建、保留或合并由用户
 决定，不会因版本完成而自动合并到 `main`。
 
-## 当前版本 0.4.0
+## 当前版本 0.5.0
 
-当前源码位于 `versions/FlintNDE-0.4.0/`。FlintNDE 仍是通用单变量矩阵微分方程包：
+当前源码位于 `versions/FlintNDE-0.5.0/`。FlintNDE 仍是通用单变量矩阵微分方程包：
 `RationalMatrixSystem` 从矩阵元内部发现奇点，并在 exact 验证通过时自动采用
 `A(x)=P(x)+Sum R_j/(x-p_j)` 快速路线，其中 `P(x)` 可为任意有限次数；高阶极点和
 一般有理系统保留通用路线。用户无需预提取奇点或提供 dlog letters。
@@ -27,8 +27,16 @@
 奇点折跃；模式只接受 `singularity_jump` / `"SingularityJump"`（以及缺省的
 `avoid` / `"Avoid"`）。Python 导入与 Wolfram 公开入口的缺省工作精度均为 200 位；工作位数为
 `ceil(WorkingPrecisionDigits*log2(10))+32`，序列化计划记录规划精度，执行要求更高精度
-时必须重新规划。0.4.0 另提供按节点覆盖桶的 fast multipoint evaluation，以及不调用
-规划器的公开 `direct_user_point_path`。独立包和 MadStree v0.13 的 Vendor 保持同一实现。
+时必须重新规划。0.5.0 另提供按节点覆盖桶的 fast multipoint evaluation，以及不调用
+规划器的公开 `direct_user_point_path`。独立包和 MadStree v0.15 的 Vendor 保持同一实现。
+
+显式 `singularity_jump` 路线允许精确奇点作为中间用户点：该点不进入普通节点链，同一
+局部基按目标奇点到最近其它奇点的距离覆盖收敛域内双侧用户点，并从出射普通点继续。
+奇点值另行分类为有限 Acb 或文本 `Infinity`。末端奇点由
+`plan_singular_target_match` 选择域内普通匹配点；低阶主链给出结果，高阶参考链只核验
+分类和有限值误差。候选奇点和分类只由完整 exact 有理矩阵决定；任意 $\mathbb Q(i)$ 位置、
+任意变量名走同一入口，坐标为零本身不构成奇点。奇点处非共线转向不唯一指定分支，继续
+fail closed。
 
 Python 使用 `import flintnde`。Wolfram Language 把版本根加入 `$Path` 后可直接
 `Needs["FlintNDE`"]`，使用 `FlintNDERationalSystem`、`FlintNDEPlanPath` 和
@@ -58,7 +66,7 @@ Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼
 
 目录分工：
 
-- `versions/FlintNDE-0.4.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
+- `versions/FlintNDE-0.5.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
 - `examples/`：通过顶部路径变量加载程序包的示例；
 - `independent-validation-task/`：版本化独立检验任务书；
 - `independent-validation/`：会先清除自身旧结果再 fresh 运行的独立 runner、summary 和报告；
@@ -87,23 +95,21 @@ Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼
 wheel、从源码普通安装以及开发者可编辑安装分别为
 
 ```powershell
-python -m pip install .\flintnde-0.4.0-py3-none-any.whl
-python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.4.0"
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.4.0
+python -m pip install .\flintnde-0.5.0-py3-none-any.whl
+python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.5.0"
+python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.5.0
 ```
 
 前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint` 与 `sympy`。
 
-0.4.0 当前聚焦回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
-Arb 路径 round-trip、fast multipoint、严格用户节点、精度拒绝和运行路径门禁；Python
-`unittest discover` 170/170 通过，Wolfram `Needs["FlintNDE`"]` 端到端检查为 25/25。
-完整验证结果以
-`versions/FlintNDE-0.4.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
+0.5.0 当前回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
+Arb 路径 round-trip、fast multipoint、严格用户节点、双侧奇点 bucket、末端隐藏匹配点、
+有限奇点目标分类、正规化自适应拟合、精度拒绝和运行路径门禁。最终 fresh 计数以
+`UPDATE_NOTES.md` 和根进度表的最新验收记录为准。
+完整验证结果以 `versions/FlintNDE-0.5.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
 
-2026-08-13 的 0.4.0 独立检验检查 257 点 fast/Horner 单节点桶和 30x30 复网格。
-planned 路线使用 2 个节点并 fast 覆盖 899 点；direct 路线严格使用 901 个节点，全部 900 点
-两分量通过闭式解和相互误差门禁。任务书、实际节点、逐点差值和效率见
-`independent-validation/FlintNDE-0.4.0-validation-01-fast-multipoint-and-direct-path/`。
+2026-08-13 的 0.4.0 历史独立检验检查了 257 点 fast/Horner 单节点桶和 30x30 复网格；
+该旧版本任务书、报告和结果已按唯一当前版本规则从工作树清理，可从 Git 历史追溯。
 
 安装一次后，任意目录 `A` 中的调用脚本都可直接 `import flintnde`，无需把 package 源码
 复制到 `A`。脚本调用 `initialize_output_layout(__file__, run_name=...)` 后，所有由该 layout
@@ -215,8 +221,8 @@ transition 都是 `ordinary_taylor`，且不直接处理路径 `save` 标签。M
 实际 16 维 kECep 单点交叉检查的维护脚本见
 `check_01_nde_npackage_16x16/check_01_nde_npackage_16x16.py`。该检查只消费共享 OOO-232 EC
 资源，在一个物理点上比较 Npackage 与 FlintNDE 的完整端点向量；它不把可重建的运行结果
-保留在发布树。当前正式独立验证报告和轻量结果位于
-`independent-validation/FlintNDE-0.4.0-validation-01-fast-multipoint-and-direct-path/`。
+保留在发布树。当前正式独立验证状态以 0.5.0 任务书和根进度表为准；旧版本报告只从
+Git 历史追溯。
 
 `reconstruct_series_solution` 已作为公开高层接口实现。调用方给出 `DEmatrix`、
 `boundary`、`path`、目标 `maximum_power`、符号认证的整数 `leading_power` 及其严格证书。

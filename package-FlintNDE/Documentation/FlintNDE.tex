@@ -297,7 +297,7 @@ python -m pip install FlintNDE
 \end{verbatim}
 or install a downloaded source tree once with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.4.0
+python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.5.0
 \end{verbatim}
 Editable development mode uses the same command with \texttt{-e}.  A calling script may
 then live in any directory and simply \texttt{import flintnde}; the package source is not
@@ -312,7 +312,7 @@ MadStree, AMFlow, or any other paper.  A file-protocol adapter may set
 \texttt{FLINTNDE\_SUPPRESS\_CITATION\_NOTICE=1} before import and preserve its own citation
 list in response metadata; the notice must never be mixed into machine-readable stdout.
 
-The source tree also provides a standard Wolfram Language package.  Add the 0.4.0 version
+The source tree also provides a standard Wolfram Language package.  Add the 0.5.0 version
 root to \texttt{\$Path}, then evaluate
 \begin{verbatim}
 Needs["FlintNDE`"];
@@ -326,6 +326,24 @@ The planning default is \texttt{"SingularityMode" -> "Avoid"}; explicit
 \texttt{"SingularityJump"} mode carries the branch warning.  These are the only accepted
 mode values.  Messages use English by default and
 \texttt{MessageLanguage -> "CN"} selects Chinese.
+
+In explicit singularity-jump mode, an exact intermediate singular user point is not an
+ordinary transport node.  One local power--log basis owns that target and every user point
+inside its convergence disk on both sides; the disk radius is the distance to the nearest
+other singularity.  Transport resumes from the outgoing ordinary match point.  A terminal
+singular target uses \texttt{plan\_singular\_target\_match}: if the current state lies outside
+the conservative local disk, the planner inserts a hidden ordinary match point along the
+incoming direction.  The lower-order primary chain supplies the reported value, while the
+higher-order reference chain checks component classifications and finite-value accuracy.
+Non-collinear turning at an exact singular point remains fail closed because the continuation
+branch is not fixed by that input.
+
+This target logic is coordinate agnostic. Candidate points are discovered from the complete exact
+rational matrix, and a target may lie anywhere in $\mathbb Q(i)$; neither the variable name nor the
+numeric value zero has a distinguished role. The regression suite shifts a target to $2+\mathrm{i}$ while
+retaining another finite singularity at $5+\mathrm{i}$ and obtains one removable and one true-pole component
+from the same two-dimensional system. This guards the general entry against zero-point, single-letter,
+and topology-specific classifications.
 
 The Wolfram option \texttt{"WorkDirectory"} denotes the temporary runtime root itself.
 Its \texttt{Automatic} value creates one \texttt{results\_temp/} below the current calling
@@ -1298,15 +1316,15 @@ python -m pip install FlintNDE
 \end{verbatim}
 or from a downloaded wheel with
 \begin{verbatim}
-python -m pip install ./flintnde-0.4.0-py3-none-any.whl
+python -m pip install ./flintnde-0.5.0-py3-none-any.whl
 \end{verbatim}
 A downloaded source checkout can be installed normally with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.4.0
+python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.5.0
 \end{verbatim}
 and developers may instead select editable mode with
 \begin{verbatim}
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.4.0
+python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.5.0
 \end{verbatim}
 Neither the wheel nor source-install route requires the user to build the package manually;
 \texttt{pip} installs the declared \texttt{python-flint} dependency automatically.

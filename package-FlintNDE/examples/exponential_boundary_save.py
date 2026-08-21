@@ -16,7 +16,7 @@ from pathlib import Path
 
 # 仓库内示例集中设置源码路径；安装 FlintNDE 后可删除本段并直接 import。
 EXAMPLE_DIR = Path(__file__).resolve().parent
-PACKAGE_ROOT = (EXAMPLE_DIR / ".." / "versions" / "FlintNDE-0.4.0").resolve()
+PACKAGE_ROOT = (EXAMPLE_DIR / ".." / "versions" / "FlintNDE-0.5.0").resolve()
 OUTPUT_DIR = EXAMPLE_DIR / "results" / "exponential_boundary_save"
 if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))

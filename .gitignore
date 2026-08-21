@@ -48,6 +48,11 @@ codex-independent-benchmark/todolist_temp.md
 **/result/
 **/temp/
 
+# Root cross-package validation retains its lightweight machine-readable summary.
+!independent-validation/MadStree-v0.13-dSIBP-022-master-normalization/results/
+independent-validation/MadStree-v0.13-dSIBP-022-master-normalization/results/*
+!independent-validation/MadStree-v0.13-dSIBP-022-master-normalization/results/summary.wl
+
 # MadStree independent validation retains the summary and complete pointwise evidence.
 !package-MadStree/independent-validation/**/results/
 package-MadStree/independent-validation/**/results/*

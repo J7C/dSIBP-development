@@ -8,7 +8,7 @@ FlintNDE 是与物理模型无关的 Python/FLINT 矩阵微分方程后端。它
 
 ## 目录与版本
 
-- 当前源码和测试：`versions/FlintNDE-0.4.0/`。
+- 当前源码和测试：`versions/FlintNDE-0.5.0/`。
 - 手册与论文规划：`Documentation/`。
 - 用户示例：`examples/`；配置：`config/`；专项验证和开发测试保留在各自 `check_*`、`test/`。
 - 是否升版只由用户决定。新版本进入 `versions/FlintNDE-X.Y.Z/` 并增加 `UPDATE_NOTES.md`。

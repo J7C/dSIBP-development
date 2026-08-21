@@ -8,7 +8,7 @@
 
 exampleDirectory = DirectoryName[$InputFileName];
 versionDirectory = ExpandFileName[FileNameJoin[{
-  exampleDirectory, "..", "versions", "FlintNDE-0.4.0"
+  exampleDirectory, "..", "versions", "FlintNDE-0.5.0"
 }]];
 runtimeDirectory = FileNameJoin[{exampleDirectory, "results_temp"}];
 PrependTo[$Path, versionDirectory];
