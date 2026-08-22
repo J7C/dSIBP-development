@@ -1463,7 +1463,7 @@ The theorem above also fixes the scope of automation. Singularities that contain
 
 The boundary condition of each sector must treat that sector itself as the top sector: use the post-contact component base power, the normalization and Eq.~\eqref{eq:component-energy-rank}. Compute the bottom sectors first, then move up along the sector DAG. After theta fixing, the homogeneous leading term factorizes into a product of component vertex-family boundary coefficients; but the parent may also receive a leading contribution from the lower-sector solution. In the five-dimensional example of Sec.~4.2 of the reference, the remaining integral already has nonzero leading coefficients on the second and third components of the original sector, which is exactly why writing only the homogeneous product misses terms. A general producer should solve the block-triangular Frobenius leading system, or equivalently keep the endpoint expansions of the theta/delta, to obtain the complete same-ordered boundary vector recursively.
 
-\subsection{Why auxiliary vertex energies cannot be run to zero by default}
+\subsection{Controlled transport of an auxiliary external-leg energy to zero}
 
 From Eq.~\eqref{eq:global-M0-diagonal},
 \begin{equation}
@@ -1492,7 +1492,7 @@ The recommended flow is therefore: first choose the preferred chart according to
 
 \subsection{The current 2411 infinity boundary and FlintNDE transport}
 
-The production entry point does not compute the defining integral directly at a finite Euclidean ordinary point. \texttt{MSBoundaryData} uses the $K_v\to\infty$ data of \cite{Chen:2024jms} as the only boundary source. Every closed tree/time-only context, including the single-vertex massive-external family, uniformly consumes the sector DAG, components, slot registry, normalization, state order and strict rank and follows the ``boundary leading term plus FlintNDE Frobenius recurrence'' route. The explicit multivariable series of Eqs.~(3.44)--(3.46) is retained only as a test oracle and is not a production dispatch.
+The production entry point does not compute the defining integral directly at a finite Euclidean ordinary point. \texttt{MSBoundaryData} uses the $K_v\to\infty$ data of \cite{Chen:2024jms} as the only boundary source. If a vertex has no physical external leg, the program internally introduces a private auxiliary external-leg energy $k_{0,v}^{\rm aux}$ in the same analytic dlog system, first constructs the boundary data from the corresponding damped limit $K_v^{\rm aux}\to\infty$, and then uses FlintNDE to transport along that auxiliary coordinate to the physical target $k_{0,v}^{\rm aux}=0$. The user does not enter this private coordinate in \texttt{pointSequence} or \texttt{ParameterRules}. Every closed tree/time-only context, including the single-vertex massive-external family, uniformly consumes the sector DAG, components, slot registry, normalization, state order and strict rank and follows the ``boundary leading term plus FlintNDE Frobenius recurrence'' route. The explicit multivariable series of Eqs.~(3.44)--(3.46) is retained only as a test oracle and is not a production dispatch.
 
 Concretely, for a component $C$ of a sector $s$ define
 \begin{align}

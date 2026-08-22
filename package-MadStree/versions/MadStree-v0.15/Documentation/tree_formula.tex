@@ -1462,7 +1462,7 @@ memoizedIntegralCount, singularLayers
 
 每个 sector 的边界条件必须把该 sector 自己当作 top sector：使用 contact 后的 component base power、normalization 和式 \eqref{eq:component-energy-rank}。先计算 bottom sectors，再沿 sector DAG 向上。固定 theta 后的 homogeneous leading term 因子化成 component vertex-family 边界系数的乘积；但 parent 还可收到 lower-sector solution 的 leading contribution。文献第 4.2 节五维例子中，remaining integral 对原 sector 的第二、第三分量已有非零 leading coefficient，正说明只写 homogeneous product 会漏项。通用 producer 应解 block-triangular Frobenius leading system，或等价地保留 theta/delta 的端点展开，递归得到完整同序边界向量。
 
-\subsection{为什么辅助顶点指数参数不能缺省跑到零}
+\subsection{辅助外腿能量取零的受控输运}
 
 由式 \eqref{eq:global-M0-diagonal}，
 \begin{equation}
@@ -1491,7 +1491,7 @@ memoizedIntegralCount, singularLayers
 
 \subsection{当前 2411 无穷远边界与 FlintNDE 输运}
 
-生产入口不在有限 Euclidean 普通点直接计算定义积分。\texttt{MSBoundaryData} 以文献 \cite{Chen:2024jms} 的 $K_v\to\infty$ 数据为唯一边界来源。包括单顶点 massive-external family 在内，所有已闭合 tree/time-only context 都统一消费 sector DAG、component、slot registry、normalization、state order 与 strict rank，并走“边界领头项 + FlintNDE Frobenius 递推”路线。式 (3.44)--(3.46) 的单顶点显式多变量级数只作为测试 oracle，不进入生产分派。
+生产入口不在有限 Euclidean 普通点直接计算定义积分。\texttt{MSBoundaryData} 以文献 \cite{Chen:2024jms} 的 $K_v\to\infty$ 数据为唯一边界来源。若某个顶点没有物理外腿，程序在同一解析 dlog 系统中内部引入私有辅助外腿能量 $k_{0,v}^{\rm aux}$，先从对应 $K_v^{\rm aux}\to\infty$ 的阻尼极限构造边界数据，再由 FlintNDE 沿该辅助坐标输运到物理目标 $k_{0,v}^{\rm aux}=0$；用户无需在 \texttt{pointSequence} 或 \texttt{ParameterRules} 中输入该私有坐标。包括单顶点 massive-external family 在内，所有已闭合 tree/time-only context 都统一消费 sector DAG、component、slot registry、normalization、state order 与 strict rank，并走“边界领头项 + FlintNDE Frobenius 递推”路线。式 (3.44)--(3.46) 的单顶点显式多变量级数只作为测试 oracle，不进入生产分派。
 
 具体地，对 sector $s$ 的 component $C$ 定义
 \begin{align}
