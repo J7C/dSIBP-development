@@ -56,6 +56,9 @@ paper2411DSIBPPotential = ArrayFlatten[{
 
 paper2411DSIBPTwoVertexGppDE = <|
   "schema" -> "paper2411_dsibp_two_vertex_gpp_v1",
+  "paper" -> "arXiv:2411.03088",
+  "paperFile" -> "reference/2411.03088-Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations.pdf",
+  "erratumFile" -> "reference/2411.03088-勘误.md",
   "paperSHA256" -> "34315DA929126E8B455638C168722B6909CD243183B71C4137EEC81B5F0F2EAA",
   "referenceCodeSHA256" -> "C6E4C290D9BF1B76CF6A029109521078B843E4A1B2E84EB184A79E6B7C3B1A06",
   "variables" -> {k12, k34, ks},
@@ -70,10 +73,11 @@ paper2411DSIBPTwoVertexGppDE = <|
   },
   "dSIBPNormalizedMasterMap" -> <|
     "topCoefficients" -> ConstantArray[1, 4],
-    "childCoefficient" -> -(-1)^(-1 - 2 nu1) ks^(-1 - 2 nu1) sE1^(2 nu1),
-    "childSectorPrefactor" -> (4 I/Pi) Exp[Pi Im[nu1]] sE1^(-2 nu1),
-    "childPhysicalDefinition" -> -(-1)^(-1 - 2 nu1)
-      ks^(-1 - 2 nu1) sE1^(2 nu1)
+    "childCoefficient" -> 1/ks,
+    "childBareIntegral" -> J["0", {0}, {}],
+    "childNormalizedMaster" -> J["0", {0}, {}]/ks,
+    "basisStatement" ->
+      "The dSIBP numeric-reduction basis uses J[\"0\",{0},{}]/ks. The paper Hankel prefactor is recorded separately and is not multiplied into this package-basis master."
   |>,
   "paperChildNormalization" -> -(4 I/Pi) Exp[Pi Im[nu1]] ks^(-2 nu1 - 1),
   "omegaPotential" -> paper2411DSIBPPotential,

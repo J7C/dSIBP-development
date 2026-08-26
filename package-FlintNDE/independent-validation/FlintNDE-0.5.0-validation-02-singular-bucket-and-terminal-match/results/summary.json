@@ -398,9 +398,9 @@
   "workingPrecisionDigits": 90,
   "targetRelativeError": "1e-25",
   "timingSeconds": {
-    "planned": 0.05406240001320839,
-    "naivePointwise": 0.31512849999126047,
-    "naiveOverPlanned": 5.82897725432591
+    "planned": 0.05249300005380064,
+    "naivePointwise": 0.32589229999575764,
+    "naiveOverPlanned": 6.208300147862517
   },
   "maximumRelativeErrors": {
     "plannedVsClosed": "[3.3340394572497705139339800543274141705279317884796e-42 +/- 4.84e-92]",

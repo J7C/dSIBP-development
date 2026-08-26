@@ -3,7 +3,7 @@
 (***
 文件：paper2411_two_vertex_gpp_solution.wl
 用途：在论文级数收敛域内独立求值 2411.03088 Sec. 4 两顶点 massive G++ 的五维物理解。
-来源：Eqs. (3.14), (3.16), (4.8), (4.10), (4.11)；公式经本地论文 PDF 页面逐项核对。
+来源：Eqs. (3.14), (3.16), (4.2), (4.8), (4.10)；定义积分与印刷 Eq. (4.11) 的相位差单独记录。
 边界：仅供独立验证，不属于 MadStree Kernel，不允许被生产程序包加载或公开。
 接口：Get 后调用 Paper2411TwoVertexGppValue[rules,cutoff,WorkingPrecision->digits]。
 ***)
@@ -126,7 +126,8 @@ Paper2411TwoVertexGppValue[
   OptionsPattern[]
 ] := Module[
   {digits, k12Value, k34Value, momentumValue, powerValue, orderValue,
-   xValue, yValue, convergenceData, homogeneous, particular, contactCoefficient},
+   xValue, yValue, convergenceData, homogeneous, particular, contactPower,
+   contactCoefficient, printedEq411Coefficient},
   digits = OptionValue[WorkingPrecision];
   {k12Value, k34Value, momentumValue, powerValue, orderValue} = N[
     {k12, k34, ks, nu0, nu1} /. rules,
@@ -154,20 +155,30 @@ Paper2411TwoVertexGppValue[
     ],
     0
   ];
-  contactCoefficient = -(4 I/Pi) Exp[Pi Im[orderValue]]
-    momentumValue^(-2 orderValue - 1)
-    Exp[I Pi (orderValue - powerValue)] Gamma[2 powerValue - 2 orderValue + 1];
+  contactPower = 2 powerValue - 2 orderValue;
+  contactCoefficient = Times[
+    -(4 I/Pi) Exp[Pi Im[orderValue]] momentumValue^(-2 orderValue - 1),
+    Exp[-I Pi (contactPower + 1)/2],
+    Gamma[contactPower + 1]
+  ];
+  printedEq411Coefficient = Times[
+    -(4 I/Pi) Exp[Pi Im[orderValue]] momentumValue^(-2 orderValue - 1),
+    Exp[I Pi (orderValue - powerValue)],
+    Gamma[contactPower + 1]
+  ];
   particular = paper2411ParticularSolution[
     xValue, yValue, momentumValue, powerValue, orderValue, cutoff
   ];
   <|
     "status" -> "computed",
-    "method" -> "paper2411-Eqs-3.14-4.8-4.10-4.11",
+    "method" -> "paper2411-Eqs-3.14-4.2-4.8-4.10-direct-integral",
     "cutoff" -> cutoff,
     "convergence" -> convergenceData,
     "homogeneousValue" -> homogeneous,
     "particularValue" -> contactCoefficient particular,
     "contactCoefficient" -> contactCoefficient,
+    "printedEq411Coefficient" -> printedEq411Coefficient,
+    "printedEq411OverDefiningEq42" -> printedEq411Coefficient/contactCoefficient,
     "value" -> homogeneous + contactCoefficient particular
   |>
 ];

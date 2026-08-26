@@ -3,7 +3,7 @@
 (***
 文件：paper2411_two_vertex_gpp_de.wl
 用途：保存 2411.03088 两顶点单条 massive G++ family 的独立五维微分方程基准。
-来源：论文 Eqs. (3.3)、(4.4)、(4.5)；Top-to-child 列另与 reference/ref_code 中的既有符号结果核对。
+来源：论文 Eqs. (3.3)、(4.2)、(4.4)、(4.5)；Top-to-child 列另与 reference/ref_code 中的既有符号结果核对。
 边界：本文件属于独立验证任务输入，不得由 MadStree 或 dSIBP 的当前输出生成，也不得被生产程序加载。
 接口：Get 本文件后读取 paper2411TwoVertexGppDE；其中同时保存 potential、三个连接矩阵和 convention 元数据。
 ***)
@@ -18,7 +18,10 @@ ClearAll[
   paper2411TopToChildPotential,
   paper2411ReferenceCodeTopToChildPotential,
   paper2411ChildPotential,
-  paper2411Potential
+  paper2411Potential,
+  paper2411ContactPower,
+  paper2411DirectContactBoundaryCoefficient,
+  paper2411PrintedEq411ContactBoundaryCoefficient
 ];
 
 paper2411OmegaOne[vertexEnergy_, lineEnergy_] := {
@@ -60,6 +63,19 @@ paper2411Potential = ArrayFlatten[{
   {ConstantArray[0, {1, 4}], {{paper2411ChildPotential}}}
 }];
 
+(* Eq. (4.2) 的定义积分按 i-epsilon/Laplace 分支直接求值；印刷 Eq. (4.11) 单独保留为差异诊断。 *)
+paper2411ContactPower = 2 nu0 - 2 nu1;
+paper2411DirectContactBoundaryCoefficient = Times[
+  -(4 I/Pi) Exp[Pi Im[nu1]] ks^(-2 nu1 - 1),
+  Exp[-I Pi (paper2411ContactPower + 1)/2],
+  Gamma[paper2411ContactPower + 1]
+];
+paper2411PrintedEq411ContactBoundaryCoefficient = Times[
+  -(4 I/Pi) Exp[Pi Im[nu1]] ks^(-2 nu1 - 1),
+  Exp[I Pi (nu1 - nu0)],
+  Gamma[paper2411ContactPower + 1]
+];
+
 
 (* ::Chapter:: *)
 (*机器可读微分方程与边界元数据*)
@@ -67,10 +83,11 @@ paper2411Potential = ArrayFlatten[{
 paper2411TwoVertexGppDE = <|
   "schema" -> "paper2411_two_vertex_gpp_de_v1",
   "authority" -> <|
-    "paper" -> "J. Chen, B. Feng, Y.-X. Tao, arXiv:2411.03088v2, JHEP 03 (2025) 075",
-    "paperFile" -> "reference/ref_paper/2411.03088_Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations.pdf",
+    "paper" -> "arXiv:2411.03088",
+    "paperFile" -> "independent-validation-task/reference/2411.03088-Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations.pdf",
+    "erratumFile" -> "independent-validation-task/reference/2411.03088-勘误.md",
     "paperSHA256" -> "34315DA929126E8B455638C168722B6909CD243183B71C4137EEC81B5F0F2EAA",
-    "equations" -> {"3.3", "4.4", "4.5", "4.11", "4.13", "4.14"},
+    "equations" -> {"3.3", "4.2", "4.4", "4.5", "4.11", "4.13", "4.14"},
     "referenceCodeFile" -> "reference/ref_code/codebubble/Omegatau/validate_TopToR1_against_dsdeppsol.m",
     "referenceCodeSHA256" -> "C6E4C290D9BF1B76CF6A029109521078B843E4A1B2E84EB184A79E6B7C3B1A06",
     "referenceCodeScope" -> "Eq. (4.4) top-to-child 4x1 potential only"
@@ -82,7 +99,10 @@ paper2411TwoVertexGppDE = <|
   "masterDefinitions" -> <|
     "topStateOrder" -> {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
     "child" -> "IR of 2411.03088 Eq. (4.2)",
-    "paperToMadStreeBasis" -> IdentityMatrix[5]
+    "paperToMadStreeBasis" -> IdentityMatrix[5],
+    "paperToMadStreeVariableRules" -> {e12 -> -k12, e34 -> -k34},
+    "variableRuleReason" ->
+      "Paper Eq. (4.1) uses Exp[+I k tau], while MadStree vertexType + uses Exp[-I E tau]."
   |>,
   "normalization" -> <|
     "top" -> 1,
@@ -101,9 +121,13 @@ paper2411TwoVertexGppDE = <|
     paper2411TopToChildPotential - paper2411ReferenceCodeTopToChildPotential
   ],
   "contactLeadingVector" -> {0, 1/(2 nu1 - nu0), 1/(nu0 + 1), 0, 1},
-  "contactBoundaryCoefficient" ->
-    -(4 I/Pi) Exp[Pi Im[nu1]] ks^(-2 nu1 - 1)
-      Exp[I Pi (nu1 - nu0)] Gamma[2 nu0 - 2 nu1 + 1],
+  "contactBoundaryCoefficient" -> paper2411DirectContactBoundaryCoefficient,
+  "printedEq411ContactBoundaryCoefficient" ->
+    paper2411PrintedEq411ContactBoundaryCoefficient,
+  "printedEq411OverDefiningEq42" -> FullSimplify[
+    paper2411PrintedEq411ContactBoundaryCoefficient/
+      paper2411DirectContactBoundaryCoefficient
+  ],
   "sourceIsolation" -> <|
     "generatedFromCurrentMadStree" -> False,
     "generatedFromCurrentDSIBP" -> False,
@@ -117,7 +141,10 @@ ClearAll[
   paper2411TopToChildPotential,
   paper2411ReferenceCodeTopToChildPotential,
   paper2411ChildPotential,
-  paper2411Potential
+  paper2411Potential,
+  paper2411ContactPower,
+  paper2411DirectContactBoundaryCoefficient,
+  paper2411PrintedEq411ContactBoundaryCoefficient
 ];
 
 paper2411TwoVertexGppDE

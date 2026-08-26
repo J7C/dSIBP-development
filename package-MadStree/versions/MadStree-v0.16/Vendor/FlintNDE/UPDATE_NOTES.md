@@ -129,6 +129,8 @@
 - 0.5.0 保留上述公开合同；依赖和列向量 convention 不变。
 ## 验证状态
 
+- `test_singular_targets` 7/7；包含非零 exact $\mathbb Q(i)$ 目标、其它有限奇点共存和二维
+  removable/true-pole 逐分量分类，并与独立 FlintNDE 同名测试逐字节一致。
 - fast/iter 多点求值单元测试与公开直接用户节点测试已通过。
 - 完整 Python 回归 181/181；Wolfram `Needs["FlintNDE`"]` 端到端 25/25，其中新增测试覆盖
   浅层目录、259/260 字符边界及 Python 前置输入写入失败。

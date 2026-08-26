@@ -424,11 +424,10 @@ local = prepare_local_expansion(
 再收集约分后分母。一般 `AnalyticMatrixSystem` 的回调无法从有限采样可靠恢复全部 pole，仍须
 显式给 `singularities`。
 
-一个实际 16 维 complex-exact kECep 系统的维护交叉检查脚本位于
-`../../check_01_nde_npackage_16x16/check_01_nde_npackage_16x16.py`。它通过通用
-`RationalMatrixSystem over Q(i)(k)` 构造共同系统并比较完整端点向量；运行时结果不作为
-发布产物保留。正式独立验证报告和轻量结果见
-`../../independent-validation/FlintNDE-0.5.0-validation-01-fast-multipoint-and-direct-path/`。
+一个实际 16 维 complex-exact kECep 系统的维护交叉检查脚本位于独立 FlintNDE 包的
+`../../../../../package-FlintNDE/check_01_nde_npackage_16x16/check_01_nde_npackage_16x16.py`。
+运行时结果不作为发布产物保留；正式独立验证报告和轻量结果见
+`../../../../../package-FlintNDE/independent-validation/FlintNDE-0.5.0-validation-01-fast-multipoint-and-direct-path/`。
 
 Q(i)[s] 分母能严格分裂出的奇点会保存 `location_exact`，并可直接进入 exact 局部调度。
 若一个 square-free 因子同时含零根和不在 Q(i) 中的代数根，奇点发现会先精确除出 `s`；

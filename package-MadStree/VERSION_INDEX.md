@@ -2,8 +2,8 @@
 
 ## 当前版本
 
-- 版本：`v0.15`
-- 目录：`versions/MadStree-v0.15/`
+- 版本：`v0.16`
+- 目录：`versions/MadStree-v0.16/`
 - 状态：当前工作版本
 - 数值后端：版本内嵌 FlintNDE `0.5.0` 同步副本
 - 当前接口：`MSEvaluatePath[context, pointSequence, ParameterRules -> {...}, ...]`
@@ -14,15 +14,15 @@
 - 拓扑接口：顶点用 `"vertexType" -> "+"|"-"` 指定轮廓支并以
   `"externalLegEnergy"` 给出外腿指数参数；传播子只输入
   `"type" -> "massive"|"massless"`，内部 SK 分类完全由端点派生。
-- 兼容策略：v0.15 不读取、不转发也不保留旧 `energy`、`phaseSign`、`skType`、`sigma`、
+- 兼容策略：v0.16 不读取、不转发也不保留旧 `energy`、`phaseSign`、`skType`、`sigma`、
   `phaseSigns`；它们作为额外键出现时被忽略，不能替代必需字段或覆盖端点派生值。六种带
   Full/Cross/External 后缀的旧公开线型因非法 `type` 取值失败。
 
 ## 工作树保留
 
-- `v0.15`：唯一当前工作版本。
+- `v0.16`：唯一当前工作版本。
 
-v0.15 及更早版本在当前验收后从工作树删除，只能从 Git 历史恢复。当前目录只保留 v0.15
+v0.15 及更早版本在当前验收后从工作树删除，只能从 Git 历史恢复。当前目录只保留 v0.16
 任务书及当前版本正式 validation cases；旧版本任务书、报告和结果不另行归档。
 
 ## 升级规则

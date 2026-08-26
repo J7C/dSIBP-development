@@ -13,6 +13,22 @@
 
 “Phase 1 完整”只表示限定范围内两类通用符号对象完整，不表示手推撒点后的数万条关系。Phase 2 的规定流程必须真实经过 `DSInit -> DSSeeds -> DSGenerateIBP -> DSLinear -> DSKiraPlan/DSKiraExport -> package 外部 reduction -> DSKiraImport -> DSDE -> scaling check`；它是基于 package 的运行验收，不是额外的独立解析推导。
 
+### 1.1 原始论文、勘误与公式索引
+
+独立任务使用的原始 PDF 统一放在 `reference/`，不再从仓库根论文目录或其它程序包借用。
+执行者必须先核对 PDF 完整性、页数和 SHA-256；勘误文件与原文相邻，但不改写原始 PDF。
+
+| 资料文件 | 对应原文公式 | 在本任务中的职责 |
+| --- | --- | --- |
+| `reference/2401.00129v5-Towards Systematic Evaluation of de Sitter Correlators via Generalized Integration-By-Parts Relations.pdf` | Eq. (3.33) | 第 14 节 vertex basis 与二进制 master 顺序的独立来源 |
+| `reference/2411.03088-Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations.pdf` | Eqs. (3.3)、(4.1)、(4.2)、(4.4)、(4.5) | 第 15.6 节五主积分、basis、DE 和 child normalization provenance |
+| 同上 | Eq. (4.11) | 只保留为原始印刷式，不进入 dSIBP DE expected |
+| `reference/2411.03088-勘误.md` | Eq. (4.11) 对 Eq. (4.2) | 记录 Eq. (4.11) 相对定义积分多一个整体因子 `I` |
+
+本任务书、runner 和报告只用 arXiv 号称呼论文，不写作者名。第 15.7 节使用的
+`reference-results/pure_massive_bubble/reference_probe.wl` 只有可核验的代码来源与 hash，当前没有
+可核验的原论文身份或公式号，因此明确列为既有解析 reference，不冒充论文 oracle。
+
 **当前 package 解析规则**：Phase 1 冻结前不得读取 `package/`。进入 Phase 2 后，先枚举 `package/package_<三位版本>.wl` 与同版本 PDF；交付目录必须只有一对当前版本化程序和手册。把唯一文件名中的三位 token 记为 `currentVersion`，用 `Get[唯一程序路径]` 加载所提供的最新 package，再要求 `$dSIBPVersion===currentVersion`；报告文件名也使用该动态 token。任何验证脚本、命令或文字指令都不得写死某个历史或当前版本号，不得通过仓库内 `versions/<版本目录>/`、旧单文件或旧报告旁路加载；若版本化文件不唯一、程序/PDF token 不一致或运行时版本不匹配，立即停止。
 
 任务范围完整性索引如下；“手推”列只指 Phase 1，“运行”列只指 Phase 2：
@@ -1392,48 +1408,90 @@ Phase 2 固定使用 `DSTreeDLogDE[context]["masters"]` 给出的同序 `{sector
 
 验收只包括：equation/unknown 数与 solve residual；master 顺序和 `N_s` normalization；各外腿能量与不同 massive-line 动量模长的全部矩阵；`D[Log[N_s],x]` 非零项；residual `J`、内部 sector token 和 source；以及两路矩阵逐项严格相等。第 14.1 节三顶点 `{+,+,-}` case 只用 general seed 和 trace 验证 `G+-` 无 contact/`WT` 消费，不再运行第二套 tree DE。最终数值交叉检查沿用第 14.3 节唯一精确点，不增加其它点。
 
-### 15.6 dSIBP 单独对论文的两顶点 massive G++ 门禁
+### 15.6 dSIBP 单独对论文的两顶点 massive G++ 数值 IBP 门禁
 
-本节只验证 2411.03088 Sec. 4 的两顶点、单条 massive `G++` 五主积分族，不读取 MadStree
-程序、矩阵、任务书、结果或报告。Phase 2 只读取本项目自身
+本节只验证 arXiv:2411.03088 Sec. 4 的两顶点、单条 massive `G++` 五主积分族，不读取 MadStree
+程序、矩阵、任务书、结果或报告。论文 expected 只来自本项目
 `reference-results/paper2411_two_vertex_gpp_de.wl`；该附件独立转录论文 Eqs. (3.3)、(4.2)、
-(4.4)、(4.5)，并保存 PDF/参考代码 hash、论文 master 顺序和 dSIBP normalized master map。
+(4.4)、(4.5)，并保存 `reference/` 下 PDF/勘误、参考代码 hash、论文 master 顺序和 dSIBP
+normalized master map。
 
-dSIBP 不生成该函数族的数值边界，因此本节不要求边界输运，也不调用 FlintNDE。验收分四层：
+本节的目的不是再比较 dSIBP 内部两套现成 DE。执行者必须证明 dSIBP 能“自己求导，再用自己
+生成的 IBP 数值约化”得到论文 DE。具体要求如下：
 
-1. 在读取论文 DE expected 之前，只从初始化后的 h `compiledFunctionSystem`、Wronskian
-   `shrinkTerms` 和冻结的 `sectorPrefactorData` 独立重建 massive contact。必须分别 exact 验证：
-   raw contact 含完整 `sE1^(-2 nu1-1)`；child physical sector prefactor 含
-   `sE1^(-2 nu1)`；有理 selector 只为 `-1/sE1`；complete normalization 是二者乘积；
-   `D Log[completeNormalization]` 为 `-(2 nu1+1)/sE1`。另外扫描 naive IBP reduction 和
-   naive/direct DE 的全部 coefficient：允许 `nu1/sE1` 等参数有理函数，但缺省 naive 指标
-   basis 不得残留 `Power[kinematic, exponent containing nu1]`。这些检查不得读取论文矩阵、
-   `reference-results/` 或由 package actual 拟合 expected。
-2. `DSTreeDLogDE[context]["masters"]` 必须按 `{00,01,10,11,child}` 返回五项；报告逐项保存
-   `sectorKey`、`integral`、dlog-basis `coefficient` 和物理 `sectorPrefactorData`。前四项两者均为
-   `1`；child 的 dlog coefficient 与物理 sector prefactor 乘积必须直接与论文 Eq. (4.2)
-   对齐，不能只比较去掉相位的模长，也不能额外乘连续幂或 contact phase。两层来源必须
-   分别保留在 `masterNormalizationRecords` 中，禁止把同一层 normalization 重复相乘；旧的
-   `sectorNormalizations/normalizationAudits` 不属于当前接口，不得作为 fallback 读取。
-3. `DSTreeNaiveIBP -> DSTreeNaiveDE` 是本项主要 IBP 路线。dSIBP 的每个 endpoint `n=1`
-   状态相对论文 Eq. (4.1) 带一个负号，因此先显式使用固定矩阵
-   `diag(1,-1,-1,1,1)` 变到论文 `{I00,I01,I10,I11,IR}` basis，再对 `{k12,k34,ks}` 三个
-   `5x5` 矩阵逐项 exact 相减，逐变量报告 `25/25`、非零数和首差值；不得由最终差矩阵拟合
-   其它 adapter。
-4. `DSTreeDLogDE` 的 direct dlog 路线也独立与论文比较；naive 与 direct 两路相等只作内部
-   consistency，不能替代任一路对论文为零。
+1. 在读取论文 DE expected 之前，按下面的明确顺序冻结同一五主积分；第五项的 `1/ks` 是
+   master 定义的一部分，不是比较后补上的 basis adapter：
 
-统一 family 固定两项 `vertices` 的 `vertexType` 均为 `"+"`、`externalLegEnergy` 依次为
-`k12,k34`；唯一 massive line 使用 `momentum->ks`、`nu->nu1`，并取
-`a0[v1]=a0[v2]=nu0`、`b0=0`。dSIBP 派生的固定线模长名称 `sE1` 只属于 normalized
-sector prefactor；论文 basis map 必须显式消去该辅助 normalization。source 与 target 均使用
-`(-tau)^A`，不得在 contact 合并时再次生成 `(-1)^DeltaA`。
-不实现或调用论文超几何函数；超几何普通点属于 MadStree 的另一份独立任务，不构成 dSIBP
-生产能力。
+   ```wl
+   {
+     J["1", {0, 0}, {0, 0}],
+     J["1", {0, 0}, {0, 1}],
+     J["1", {0, 0}, {1, 0}],
+     J["1", {0, 0}, {1, 1}],
+     J["0", {0}, {}]/ks
+   }
+   ```
 
-本 targeted runner 保存到独立执行工作区，报告回收为
-`000-report/YYYY-MM-DD-HHmm-{currentVersion}-内部.md`，附件保存 exact 差值、master map 和 hash。只执行本节，
-不重跑第 15.1--15.5 节、两套 loop full flow 或全量 smoke。
+   这个列表只来自任务书中的论文定义和 dSIBP 公开积分表示，不得从 `DSTreeDLogDE`、
+   `DSTreeNaiveIBP`、旧 report 或已有 reduction 结果提取。
+2. 对五个 master 分别调用公开 `ds[master,variable,context]`，变量为 `{k12,k34,ks}`。求导时
+   保留完整符号系数，先展开
+   `D[c(x) J,x] = c'(x) J + c(x) ds[J,x]`，确认所有系数导数都已出现，之后才代入数值点。
+   runner 必须另存一个 `D[coefficient,variable] != 0` 的实际正例及其导数项；如果把数值规则
+   提前代入会使该项消失，则反例门禁必须失败。
+3. 使用 dSIBP `DSSeeds/DSAllSeeds/DSGenerateIBP` 生成覆盖上述十五组导数目标的 IBP 关系。
+   在固定的非奇异精确有理点代入全部物理参数后，直接从这些关系构造 exact-rational 稀疏线性
+   系统，并用 `LinearSolve`（或同等 exact-rational 线性求解）把十五组导数约回手工冻结的五
+   master。不得调用 `DSTreeDLogDE`、`DSTreeNaiveDE`、`DSDE`，不得读取解析 reduction table，
+   也不得用论文 DE 辅助选 pivot 或修补未约回对象。
+4. 报告每个变量的 equation 数、unknown 数、rank、自由变量/五 master 顺序、solve residual 和
+   未约回对象。若数值系统没有唯一保留这五个 master、存在额外自由变量或任一导数残留，必须
+   判失败，不能从论文矩阵反解缺项。
+5. dSIBP 的两个 endpoint `n=1` 状态相对论文 Eq. (4.1) 各带一个负号。固定使用事先声明的
+   `diag(1,-1,-1,1,1)` 变到论文 `{I00,I01,I10,I11,IR}` basis；不得由最终差矩阵拟合其它
+   adapter。在同一精确点，对 `{k12,k34,ks}` 三个数值 `5x5` 矩阵分别与论文 dlog potential
+   的偏导值逐项 exact 比较，逐变量报告相等数、非零数和首差值。
+6. 论文公式只在第 5 步生成 expected 数值矩阵；它不能进入 dSIBP 求导、seed、数值线性系统、
+   pivot 选择或 reduction。dSIBP 不生成此族边界，因此本节不要求边界输运或 FlintNDE。
+
+统一 family 固定两个 `vertexType -> "+"` 顶点，`externalLegEnergy` 依次为 `k12,k34`；唯一
+massive line 使用 `momentum->ks`、`nu->nu1`，并取 `a0[v1]=a0[v2]=nu0`、`b0=0`。
+数值点必须避开 `k12=+-ks`、`k34=+-ks`、`k12+k34=0` 以及所有数值 IBP 分母零点；点值和全部
+非零分母列表写入 summary。论文 Eq. (4.2) 的 Hankel/物理 prefactor 只用于说明论文 `IR` 的
+normalization provenance；本节 dSIBP 数值约化的第五个 master 固定为 `J["0",{0},{}]/ks`，
+不得再乘 branch phase、`sE1` 或 `ks^(-2 nu1)`。source 与 target 均使用 `(-tau)^A`，contact
+合并时不得再次生成 `(-1)^DeltaA`。
+
+### 15.7 既有解析 reference 的一圈 massive bubble fresh 数值约化 DE 门禁
+
+本节增量验证既有解析 reference source 的 pure massive one-loop bubble。当前 provenance 没有给出
+可核验的原论文身份或公式号，因此本节不声称使用论文 oracle。它与 15.6 分开执行、分开计数，
+不能用树图通过替代 loop reduction。
+
+1. 在启动 dSIBP 前冻结并核验
+   `reference-results/pure_massive_bubble/reference_probe.wl` 及其来源文件 SHA-256、reference
+   convention、19 个主积分顺序和 basis 映射。expected 不得由本轮 package 或 Kira 输出生成。
+2. 从当前正式 package fresh 执行
+   `DSInit -> DSSeeds -> DSGenerateIBP -> DSLinear(numeric) -> DSKiraPlan/DSKiraExport`。
+   清空的新工作区内调用 package 外部的 Kira 2.3 做数值约化，再由 `DSKiraImport` 取回。不得
+   复用 example 中现成或历史 reduction、masters、`kira_list.m`、DE manifest 或 summary；不得
+   加载解析 reduction table，也不得用解析约化替代本轮数值 Kira reduction。
+3. master basis 固定为论文/reference 的同一 19 项；若 Kira 选择不同 master，必须通过运行前
+   冻结的 `DSUserMI` 候选和公开映射得到同一 basis，不得在看见差矩阵后另加 adapter。
+4. 对这 19 个 master 分别使用 dSIBP 的公开总导数入口构造 `{ss11,P0}` 导数目标；数值规则只能在
+   完整乘积法则和解析一阶导数之后应用。用 fresh Kira reduction 约回 19 项并形成数值 DE。
+5. 按 13.2 节冻结的 convention 顺序应用 `P_pkg=-P_ref`、`P0_pkg=-I ip0` 的 Jacobian、一般
+   `ks` homogeneity 恢复，以及 reference 第 15--18 项显式 `ks` 的 `D[T,ks] T^-1` 贡献。
+   在唯一点 `ks=ss11=43/17`、`ip0=29/13`、`P0=-29 I/13` 比较 `P0/ip0/ks` 三套
+   `19x19` 数值矩阵；各报告相等数、非零数、首差值和 reduction residual。
+6. 保存 Kira 命令、版本、wall time、equation/unknown/rank、master/target/unreduced 数、输入与
+   输出 hash。Kira 未 fresh 运行、任一目标未约回、fixed parameter 残留或乘积法则项缺失时，
+   本节必须标为未通过。
+
+15.6 与 15.7 的 runner 都保存在新建且整体忽略的 `package-dSibp/check/`。最终报告回收为
+`000-report/YYYY-MM-DD-HHmm-{currentVersion}-内部.md`，附件保存差矩阵、master map、hash、
+数值线性系统摘要和外部程序日志。此次是增量检验，只执行 15.6--15.7；不得把第 15.1--15.5 节、
+开发 smoke 或旧解析约化报告写成这次已经重跑。
 
 ## 16. 根号坐标与参数闭合的限定验证
 
