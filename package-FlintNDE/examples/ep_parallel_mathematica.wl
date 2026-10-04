@@ -56,7 +56,10 @@ checks = <|
   "effectiveParallelTaskCount" ->
     batch["parallelTaskCountEffective"] === Min[epParallelTaskCount, Length[epValues]],
   "inputOrder" -> Lookup[batch["results"], "ep"] === epValues,
-  "closedForm" -> TrueQ[maximumDifference < 10^-30]
+  "closedForm" -> TrueQ[maximumDifference < 10^-30],
+  (* 返回向量一旦退化成机器精度，闭式差可能被舍入成 0. 而伪装成高精度通过，
+     所以解码后的精度单独作为一项检查。 *)
+  "returnedPrecision" -> TrueQ[Min[Precision /@ Flatten[values]] > 30]
 |>;
 
 Print["parallel requested/effective: ",

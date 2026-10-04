@@ -1,6 +1,8 @@
 """演示 FlintNDE 对不同固定 ep 取值进行有界多进程 NDE 计算。
 
 方程为 ``y'(x)=ep/(1+x) y(x)``、``y(0)=1``，故 ``y(1)=2^ep``。
+三个 ep 任务固定用 112/128 阶与 ``1e-40`` 相对目标；``passed`` 同时检查后端
+``target_relative_error_met`` 和与闭式解 ``2^ep`` 的相对差。
 ``parallel_task_count`` 缺省为 12；实际 worker 数由程序自动取该值与 ep 数量的较小者，
 任务更多时完成一个自动续交一个。任务函数必须定义在模块顶层以支持 Windows spawn。
 """
@@ -48,18 +50,22 @@ def solve_ep(ep_value: str) -> dict[str, Any]:
         system,
         column_vector([1]),
         path,
-        primary_order=48,
-        reference_order=64,
-        target_relative_error="1e-18",
+        primary_order=112,
+        reference_order=128,
+        target_relative_error="1e-40",
     )
     value = result["primary_snapshots"][-1][0, 0]
     expected = acb(2) ** acb(ep_value)
+    relative_error = abs(value - expected) / abs(expected)
     return {
         "ep": ep_value,
         "value": value.str(45),
         "expected": expected.str(45),
         "absolute_difference": abs(value - expected).str(20),
-        "passed": bool(abs(value - expected) < arb("1e-25")),
+        "relative_difference": relative_error.str(20),
+        # 通过条件与声明的 target_relative_error 同量级，并显式要求后端自认达标；
+        # 更松的绝对阈值会让未达标的目标照样打印 PASSED。
+        "passed": bool(result["target_relative_error_met"] and relative_error < arb("1e-40")),
     }
 
 
