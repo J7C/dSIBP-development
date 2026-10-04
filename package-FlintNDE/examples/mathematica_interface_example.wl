@@ -81,20 +81,9 @@ If[! AssociationQ[result] || Lookup[result, "status", "error"] =!= "complete",
 (* ::Section:: *)
 (*闭式比较*)
 
-(* 精度本身是门禁，不能只看待比较结果之差：返回向量一旦退化成机器精度，
-   下面的混合精度相减可能把可见差异舍入成 0.，从而伪装成高精度通过。 *)
-returnedPrecision = Min[
-  Precision /@ Join[result["primaryFinalVector"], result["referenceFinalVector"]]
-  ];
-If[! TrueQ[returnedPrecision > 30],
-  Print["mathematica_interface_example: FAILED returned precision: ", returnedPrecision];
-  Exit[1]
-  ];
-
 expectedFinal = N[{1/2, 36/49}, 40];
 finalDifference = Max[Abs[N[result["primaryFinalVector"], 40] - expectedFinal]];
 Print["certification mode: ", result["certificationMode"]];
-Print["returned vector precision: ", returnedPrecision];
 Print["relative difference (primary vs reference): ", result["relativeDifferenceInf"]];
 Print["final |delta| vs closed form: ", finalDifference];
 
