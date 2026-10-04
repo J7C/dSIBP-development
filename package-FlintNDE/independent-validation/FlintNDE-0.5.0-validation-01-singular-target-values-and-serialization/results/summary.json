@@ -1,0 +1,191 @@
+{
+  "schema": "flintnde_0.5.0_validation_01_v1",
+  "status": "passed",
+  "passedCount": 14,
+  "checkCount": 14,
+  "sourceDigestSHA256": "39b0e7956a400faa9bf219ca2d2c81bbb599cc0583f4fe2f58ad5d43142b0225",
+  "settings": {
+    "workingPrecisionDigits": 90,
+    "outputDigits": 50,
+    "localOrder": 64,
+    "targetRelativeError": "1e-25",
+    "sampleExponents": [
+      8,
+      12,
+      16,
+      20,
+      24
+    ]
+  },
+  "exactModels": {
+    "removable": "y'=y/x, y(1)=1, hence y=x and y(0)=0",
+    "pole": "y'=-y/x, y(1)=1, hence y=1/x",
+    "logarithmic": "y1'=y2/x, y2'=0, y(1)=(0,1), hence y=(log(x),1)"
+  },
+  "results": {
+    "removable": {
+      "classification": "removable_singularity",
+      "componentClassifications": [
+        "removable_singularity"
+      ],
+      "value": "[5.0000000000000000000000000000000000000000000000000e-25 +/- 3e-79]",
+      "closedFormAbsoluteError": "[5.0000000000000000000000000000000000000000000000000e-25 +/- 3e-79]",
+      "report": {
+        "target": "0",
+        "classification": "removable_singularity",
+        "componentClassifications": [
+          "removable_singularity"
+        ],
+        "sampleExponents": [
+          8,
+          12,
+          16,
+          20,
+          24
+        ],
+        "sampleScale": "0.5000000000000000000000000000000000000000",
+        "convergenceRadius": null,
+        "sampleMagnitudes": [
+          [
+            5e-09,
+            5e-13,
+            5e-17,
+            5e-21,
+            5e-25
+          ]
+        ],
+        "localBasisMethod": "regular_singular_power_log",
+        "localBasisOrder": 64,
+        "targetRelativeError": "1e-25"
+      }
+    },
+    "pole": {
+      "classification": "true_pole",
+      "componentClassifications": [
+        "true_pole"
+      ],
+      "values": [
+        "Infinity"
+      ],
+      "report": {
+        "target": "0",
+        "classification": "true_pole",
+        "componentClassifications": [
+          "true_pole"
+        ],
+        "sampleExponents": [
+          8,
+          12,
+          16,
+          20,
+          24
+        ],
+        "sampleScale": "0.5000000000000000000000000000000000000000",
+        "convergenceRadius": null,
+        "sampleMagnitudes": [
+          [
+            200000000.0,
+            2000000000000.0,
+            2e+16,
+            2e+20,
+            2e+24
+          ]
+        ],
+        "localBasisMethod": "regular_singular_power_log",
+        "localBasisOrder": 64,
+        "targetRelativeError": "1e-25"
+      }
+    },
+    "logarithmic": {
+      "classification": "log_divergent_singularity",
+      "componentClassifications": [
+        "log_divergent_singularity",
+        "removable_singularity"
+      ],
+      "values": [
+        "Infinity",
+        "1.0000000000000000000000000000000000000000000000000"
+      ],
+      "finiteComponentAbsoluteError": "0",
+      "report": {
+        "target": "0",
+        "classification": "log_divergent_singularity",
+        "componentClassifications": [
+          "log_divergent_singularity",
+          "removable_singularity"
+        ],
+        "sampleExponents": [
+          8,
+          12,
+          16,
+          20,
+          24
+        ],
+        "sampleScale": "0.5000000000000000000000000000000000000000",
+        "convergenceRadius": null,
+        "sampleMagnitudes": [
+          [
+            19.11382792451231,
+            28.324168296488494,
+            37.534508668464674,
+            46.74484904044086,
+            55.95518941241704
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "localBasisMethod": "regular_singular_power_log",
+        "localBasisOrder": 64,
+        "targetRelativeError": "1e-25"
+      }
+    }
+  },
+  "serializedRecords": {
+    "removable": [
+      {
+        "real": "5.0000000000000000000000000000000000000000000000000e-25",
+        "imag": "0",
+        "realRadius": "[7.2132646257596193695229796796922381907219550236392e-130 +/- 1.65e-180]",
+        "imagRadius": "0"
+      }
+    ],
+    "pole": [
+      {
+        "text": "Infinity"
+      }
+    ],
+    "logarithmic": [
+      {
+        "text": "Infinity"
+      },
+      {
+        "real": "1.0000000000000000000000000000000000000000000000000",
+        "imag": "0",
+        "realRadius": "0",
+        "imagRadius": "0"
+      }
+    ]
+  },
+  "checks": {
+    "removableOverallClassification": true,
+    "removableComponentClassification": true,
+    "removableReturnsAcb": true,
+    "removableClosedLimit": true,
+    "poleOverallClassification": true,
+    "poleComponentClassification": true,
+    "poleReturnsInfinityText": true,
+    "logOverallClassification": true,
+    "logComponentClassifications": true,
+    "logTypesAndFiniteLimit": true,
+    "sampleEvidenceComplete": true,
+    "localOrderRecorded": true,
+    "roundTripPreservesText": true,
+    "roundTripPreservesNumericRecord": true
+  },
+  "wallTimeSeconds": 0.05446200002916157
+}

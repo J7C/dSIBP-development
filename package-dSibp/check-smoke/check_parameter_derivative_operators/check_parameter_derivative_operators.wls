@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 文件用途：用单条 fixed massive line 检查 N_s 的结构化动量幂、normalized contact、
+(* 文件用途：用 fixed massive/massless line 检查 N_s 的结构化动量幂、normalized contact、
    参数微分中的 D[Log[N_s]]、显式系数乘积法则和被积函数回乘。 *)
 
 
@@ -8,7 +8,7 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
@@ -27,7 +27,7 @@ caseInput = <|
    "ibpMode" -> "timeOnly",
    "ispData" -> {},
    "zeroPointRules" -> {
-     a0[v1] -> 2 nu1, a0[v2] -> 2 nu1, b0[1] -> -2 nu1
+     a0[v1] -> 2 nu1 + ep, a0[v2] -> 2 nu1 + ep, b0[1] -> -2 nu1
      },
    "symmetryRules" -> {}
    |>;
@@ -103,7 +103,7 @@ expectedLowerIntegrand = rep2outform[
    ];
 
 (* 这个 fixed-line normalized J 的非平凡 N_s=(u+v)^(2 nu1) 必须进入
-   自动 Euler 次数；若遗漏 prefactor，下面的次数不会化为 -2。 *)
+   自动 Euler 次数；符号解析正规化使完整次数成为 -2 (1+ep)。 *)
 scalingMaster = topIntegral /. {a[v1] -> 0, a[v2] -> 0};
 scalingDE = <|
    "status" -> "generated",
@@ -120,6 +120,55 @@ scalingData = DSScaleCheck[
    <|"relation" -> "LoopTopology", "variables" -> {u, v}, "weights" -> {1, 1}|>
    ];
 scalingDegree = First[Lookup[scalingData, "degrees", {$Failed}]];
+
+
+(* ::Chapter:: *)
+(*Fixed massless contact 前后的同一动量幂*)
+
+masslessCaseInput = <|
+   "name" -> "CheckFixedMasslessContactNormalization",
+   "vertices" -> {
+     <|"id" -> m1, "vertexType" -> "+", "externalLegEnergy" -> EM1|>,
+     <|"id" -> m2, "vertexType" -> "+", "externalLegEnergy" -> EM2|>
+     },
+   "lines" -> {
+     <|"id" -> 1, "massType" -> "massless", "endpoints" -> {m1, m2},
+       "momentum" -> p1|>
+     },
+   "loopMomenta" -> {},
+   "loopExternalMomenta" -> {},
+   "independentExternalMomenta" -> {p1},
+   "ibpMode" -> "timeOnly",
+   "ispData" -> {},
+   "zeroPointRules" -> {
+     a0[m1] -> alpha1 + ep, a0[m2] -> alpha2 + ep, b0[1] -> beta1
+     },
+   "symmetryRules" -> {}
+   |>;
+
+masslessContext = DSInit[
+   masslessCaseInput,
+   RegisterAsCurrent -> False,
+   WriteInitializationFiles -> False,
+   GenerateDerivativeMetadata -> False,
+   ProgressReporting -> False
+   ];
+masslessSource = J[{a[m1], a[m2]}, {{"F", 1, 0}}, {}];
+masslessBoundary = Expand@dSIBP`Private`timeThetaBoundaryShrinkTerms[
+    masslessContext["topology"], masslessSource, m1
+    ];
+masslessTarget = FirstCase[masslessBoundary, J[_, {{"F"}}, {}], Missing["NoTarget"], Infinity];
+masslessSourceN = dSIBP`Private`materializeSectorPrefactor018[
+   dSIBP`Private`sectorPrefactorDataForIntegral018[masslessContext["topology"], masslessSource]
+   ];
+masslessTargetN = dSIBP`Private`materializeSectorPrefactor018[
+   dSIBP`Private`sectorPrefactorDataForIntegral018[masslessContext["topology"], masslessTarget]
+   ];
+masslessContactCoefficient = If[
+   Head[masslessTarget] === Missing,
+   Missing["NoContactCoefficient"],
+   Cancel[Coefficient[masslessBoundary, masslessTarget]]
+   ];
 
 
 (* ::Chapter:: *)
@@ -141,7 +190,10 @@ checks = <|
     TrueQ[FullSimplify[ds[u topIntegral, u, customContext] - topIntegral - u fullDerivative] === 0],
    "integrandRestoresN" ->
     TrueQ[FullSimplify[lowerIntegrand - expectedLowerIntegrand] === 0],
-   "loopScalingIncludesN" -> TrueQ[FullSimplify[scalingDegree + 2] === 0]
+   "loopScalingIncludesN" -> TrueQ[FullSimplify[scalingDegree + 2 (1 + ep)] === 0]
+   ,"fixedMasslessInitialized" -> (Lookup[masslessContext, "status", "failed"] === "initialized")
+   ,"fixedMasslessPrefactorPreserved" -> TrueQ[Cancel[masslessSourceN/masslessTargetN] === 1]
+   ,"fixedMasslessNormalizedContact" -> MemberQ[{2, -2}, masslessContactCoefficient]
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
@@ -149,6 +201,8 @@ Print["check_parameter_derivative_operators: ", Count[Values[checks], True], "/"
 Print["failed: ", InputForm[failed]];
 Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[checks], "failed" -> failed,
     "contactCoefficient" -> contactCoefficient,
+    "masslessContactCoefficient" -> masslessContactCoefficient,
+    "masslessPrefactorRatio" -> Cancel[masslessSourceN/masslessTargetN],
     "scalingDegree" -> scalingDegree,
     "checks" -> checks|>]];
 If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

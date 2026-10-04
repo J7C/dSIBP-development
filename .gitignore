@@ -78,3 +78,8 @@ batches/
 structured/
 cache/
 **/flintnde_cache/
+
+# Final-release staging tree. It is assembled from the current sources above and is
+# published as its own repository (git@github.com:J7C/dSIBP-Packages.git), so the
+# development repository must never track it.
+/packages-final/

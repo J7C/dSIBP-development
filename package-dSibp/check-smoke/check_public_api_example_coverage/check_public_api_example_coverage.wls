@@ -7,9 +7,9 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
-examplesDirectory = FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Examples"}];
+examplesDirectory = FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Examples"}];
 manifestPath = FileNameJoin[{examplesDirectory, "coverage_manifest.wl"}];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 
 manifest = Get[manifestPath];
 coverage = Lookup[manifest, "coverage", <||>];

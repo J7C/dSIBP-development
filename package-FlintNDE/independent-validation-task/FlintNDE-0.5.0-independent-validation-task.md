@@ -11,6 +11,9 @@
 3. FlintNDE 只认证通用矩阵 DE、边界和输运算法，不认证上游的 dS 图、主积分顺序、normalization
    或论文物理公式。MadStree 的论文全链 case 必须在上游先认证这些对象，再检查交给 FlintNDE 的
    矩阵和边界与已认证对象一致；不能用本任务书的 scalar/exact 模型替代上游物理验证。
+4. 所有公开异常、warning、notice、CLI 和 Wolfram bridge 返回必须保留机器可判断的异常类型或
+   status/reason，同时向用户给出简洁、完整、通俗的自然语言句子。不得只显示拼接状态名、
+   变量式黑话或未解释的内部对象名；句子应指出原因、相关输入和可行下一步。
 
 ## Validation-01：奇点目标值与序列化
 
@@ -31,7 +34,7 @@
 
 ## Validation-03：回归与同步
 
-运行完整 Python `unittest`、提升权限的 Wolfram `Needs` 端到端测试，并按相对路径比较独立包与 MadStree v0.15 Vendor 的全部非缓存交付文件 SHA-256。任何源码差异均失败；MadStree 自有 adapter 文件不纳入 Vendor 同源比较。
+运行完整 Python `unittest`、提升权限的 Wolfram `Needs` 端到端测试，并按相对路径比较独立包与 MadStree v0.16 Vendor 的全部非缓存交付文件 SHA-256。任何源码差异均失败；MadStree 自有 adapter 文件不纳入 Vendor 同源比较。
 
 ## Validation-04：高阶 pole、指数型局部解与 fail-closed 边界
 
@@ -48,6 +51,17 @@ connection 的系统。前两类逐阶检查变换 residual、局部系数和普
    点复用。拟合点与验证点必须严格分离；未达目标精度或候选点耗尽不得写成通过。
 3. 通过 `Mathematica/FlintNDE.wl` 公开入口执行同一最小 case，比较 Python/Wolfram schema、复数类型、
    Infinity、消息语言和输出路径；不能只验证 `Needs` 成功。
+
+## Validation-06：公开反馈与异常语言
+
+1. 从公开 Python API、CLI 和 Wolfram bridge 各自刻意触发代表性的输入类型、维数、精度、路径、
+   奇点、savepoint、unsupported capability、序列化和文件写出错误；不得只静态搜索异常字符串。
+2. 对每项核对异常类型或 status/reason 未改变，用户说明为完整自然语言句子，包含具体原因和
+   可行下一步，并且失败后没有继续数值输运或写出错误的成功状态。
+3. 对支持 `message_language` 的路径分别检查中英文；内部 schema/key 名可以保留在结构化字段中，
+   但不得作为用户说明的主体。警告也必须遵守同一要求。
+4. 建立公开提醒出口矩阵，记录已动态触发、仅静态审阅和无法安全触发的数量及文件/行号；
+   后两类不得记为动态通过。
 
 ## 交付
 

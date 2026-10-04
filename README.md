@@ -60,7 +60,7 @@ DE，再数值拟合例如 `epsilon` 的 Laurent/幂级数系数，并用额外�
 
 | 程序包 | 当前版本 | 入口 |
 | --- | --- | --- |
-| dSIBP | `022.0` | `package-dSibp/versions/022_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_022.0.wl` |
+| dSIBP | `023.0` | `package-dSibp/versions/023_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_023.0.wl` |
 | MadStree | `v0.15` | `package-MadStree/load_current.wl`；显式目录 `package-MadStree/versions/MadStree-v0.15/` |
 | FlintNDE | `0.5.0` | `package-FlintNDE/versions/FlintNDE-0.5.0/`；导入名 `flintnde` |
 
@@ -148,6 +148,9 @@ Windows 下在任何目录创建或 Python 启动前检查完整运行文件路�
 
 ## 版本与分支规则
 
-2026-07-30 之后新建的程序包版本必须自带 `UPDATE_NOTES.md`，说明基线、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制。现有 dSIBP 018.1、MadStree v0.3、FlintNDE 0.1.0.dev0 及更早资产不追溯补建。
+三个程序包都在自身根目录的 `历史版本更新日志/` 集中保存版本更新说明。新版本日志必须说明
+基线、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制；升级时可以
+删除旧源码目录，但不得删除已经集中归档的旧版更新说明。现有 dSIBP 018.1、MadStree v0.3、
+FlintNDE 0.1.0.dev0 及更早资产没有历史日志时不追溯补建。
 
 建议新版本从稳定主线建立独立 Git branch。是否创建、保留、关闭或合并 branch 由仓库所有者决定；agent 不会因版本完成而自行合并到 `main`。

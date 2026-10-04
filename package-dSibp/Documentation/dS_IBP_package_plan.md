@@ -10,11 +10,11 @@
 - EOM 不是后处理选项，而是 seed 生成的一部分；任何 Hankel 二阶导数一旦产生 `n=2`，必须立刻用 EOM 递推消去。
 - time-IBP 与 momentum-IBP 同属必需 seed 来源；缺少 time-IBP 时，不允许声称已经得到完整 IBP 系统。
 - Kira 导出只消费 `makeLinearSystemData` 产生的 linear-system 数据，不直接消费 seed batch。`makeCanonicalSeedBatch` 自动派生并联立全部 contact-reachable shrink sectors，不设置 sector 数量上限；若仍有 `n=2`、sector coverage 不完整或其它 pending feature，则不能进入 linear/Kira 阶段。当前 `makeKiraExportData` 已能写 user-defined system 文件。独立 numeric linear workflow 可先完成数值规则/撒点选择；准备生成 DE 时，所有 derivative variables 及其内部平方原子必须保持符号，只能固定不参与微分的系数参数。
-- 当前 022 使用严格的 `vertices/lines` topology Association、统一三参数 `J`、cycle/fixed 三槽与单槽 shrink schema、sector prefactor、compact lower 导数，以及 massive h/H 与 massless exponential 的 parity transport；用户显式声明两类外动量。common-theta contact、可达 sector 和完整 coincidence canonical 是全部入口共用的正确性门禁。
+- 当前 023 使用严格的 `vertices/lines` topology Association、统一三参数 `J`、cycle/fixed 三槽与单槽 shrink schema、sector prefactor、compact lower 导数，以及 massive h/H 与 massless exponential 的 parity transport；用户显式声明两类外动量。common-theta contact、可达 sector 和完整 coincidence canonical 是全部入口共用的正确性门禁。
 
 ### P0 seed 模板与显式撒点边界
 
-022 保持 seed 的“离散状态/EOM 构造”和“连续指标撒点”两个原子步骤。`DSSeeds` 生成各 contact-reachable sector 的全部 time/momentum generator 符号模板；模板阶段对 massive 完整枚举端点 `0,1` 四态，对 masslessFull 先按代数 quotient 只枚举 `n2->0` 的 `00/10` representatives，随后立即应用 EOM、共同-theta/contact canonical、可判定 symmetry 与 parity。它额外返回一维列表 `allSeeds`；该列表由所有内部 `Table` 结果用 `Flatten[...,Infinity]` 磨平，连续指标仍为符号。精确数值系数规则只在 `DSLinear` 的 `CoefficientRules` 或 formal Kira 的 post-derivative 阶段使用。
+023 保持 seed 的“离散状态/EOM 构造”和“连续指标撒点”两个原子步骤。`DSSeeds` 生成各 contact-reachable sector 的全部 time/momentum generator 符号模板；模板阶段对 massive 完整枚举端点 `0,1` 四态，对 masslessFull 先按代数 quotient 只枚举 `n2->0` 的 `00/10` representatives，随后立即应用 EOM、共同-theta/contact canonical、可判定 symmetry 与 parity。它额外返回一维列表 `allSeeds`；该列表由所有内部 `Table` 结果用 `Flatten[...,Infinity]` 磨平，连续指标仍为符号。精确数值系数规则只在 `DSLinear` 的 `CoefficientRules` 或 formal Kira 的 post-derivative 阶段使用。
 
 EOM/canonical 可能把某个完整离散态模板化为精确零。密封 `allSeeds` 中的这种 `equation->0` 是应保留的合法恒等式，仍参与模板计数、哈希和离散态完整性审计；只有缺失 equation，或非零且完全不含 `J` 的伪模板才由 `DSGenerateIBP` 拒绝。
 
@@ -36,7 +36,7 @@ EOM/canonical 可能把某个完整离散态模板化为精确零。密封 `allS
 
 `kL` 与 `kE` 各自在自己的输入列表中从 1 编号，互不共享编号空间。坐标短名只依赖各自列表的稳定顺序：类别总数不超过 9 时保持 `ss11/sE1`；超过 9 时按该列表总数位宽补零，例如 `ss0101/sE01`；超过 99 时自然扩展为三位。用户符号名从不参与编号。
 
-动力学规则或动量列表欠完备时阻断初始化；`DSKinematics` 返回 `undercomplete`、`missingDirections/missingMagnitudeSquares` 与零空间表达式。过完备返回 warning 并允许 symbolic seed，但 `derivativeUsableQ=False`、`inverseKinematicsUsableQ=False`。
+动力学规则或动量列表欠完备时阻断初始化；`DSKinematics` 返回 `undercomplete`、`missingDirections/missingMagnitudeSquares` 与零空间表达式。过完备返回 warning 并允许 symbolic seed/`linearData` 诊断，但 `derivativeUsableQ=False`、`inverseKinematicsUsableQ=False`、`backendExportUsableQ=False`；`DSKiraExport` 必须在写文件前消费最后一项门禁并拒绝把冗余坐标系统交给后端。
 
 根号坐标层是平方不变量原子层的 adapter，而不是第二套微分实现。对
 
@@ -215,7 +215,7 @@ $$-(2\nu_e + 1) = \underbrace{-1}_{\text{整数 → 指标}} + \underbrace{(-2\n
 
 ### 3.1 当前实现与目标接口
 
-022 的 massive 线缺省使用 h preset；需要裸 H 或自定义二维函数空间时，只能通过唯一可选字段 `functionSystem -> "H"|"h"|Association` 指定。裸 H 的 `nu^2/x^2` 由 `AT` 的普通 Laurent 项生成，不在 IBP 层特判，也不读取 `bbType/eomCoefficients`。
+023 的 massive 线缺省使用 h preset；需要裸 H 或自定义二维函数空间时，只能通过唯一可选字段 `functionSystem -> "H"|"h"|Association` 指定。裸 H 的 `nu^2/x^2` 由 `AT` 的普通 Laurent 项生成，不在 IBP 层特判，也不读取 `bbType/eomCoefficients`。
 
 目标接口不直接让 IBP 接收一阶矩阵，而是让每条 massive 线先给一个标准二阶函数空间：
 
@@ -362,6 +362,22 @@ Sum over 三项贡献:
       - 吸收 shrinkPow_e 到 a 指标
 ```
 
+#### 4.2.1 小 $t$ 整数端点门禁
+
+`DSInit` 在 contact-reachable sector 完整建立后，对每个活动顶点代表检查时间积分的小
+$t$ 领头幂。程序只查已知的 h/H 局部幂次表：每个 massive endpoint 枚举离散态
+$n=0,1$ 和两支领头行为，再把同一顶点的局部幂与 `a0` 相加。若
+
+$$
+\alpha_v=1+a_{0,v}+\sum_{e\ni v}p_{e,v}
+$$
+
+可被 exact 证明为整数，未正规化 family 直接拒绝。这里正整数也必须拒绝，因为无界整数
+移位会最终命中 $\Gamma(\alpha_v+m)$ 的非正整数极点；dSIBP 同时含时间和动量 IBP，不用用户
+给定的有限 seed range 猜测全 family 是否安全。`a0[v] -> alpha[v] + ep` 一类 generic 符号
+正规化使整数性保持未定，允许继续。自定义函数系统若不能识别为 h/H，只给出未完全认证的
+自然语言提醒，不把未知渐近行为猜成整数或非整数。
+
 ### 4.3 圈动量 IBP：链式法则分解与复合算符
 
 #### 4.3.1 链式法则：从圈动量到 ξ-导数
@@ -485,7 +501,7 @@ ispData = {
 5. 输出：按 sector 分组的 IBP seed 文件或 MMA seed batch。后续 linear/Kira 只能读取这些 canonical seed 转成的 linear-system。
 ```
 
-022 不从 topology 读取 `seedRanges/generatorSeedRanges`。统一或逐指标最终关系包络只传给 `DSGenerateIBP`；它按每组实际 shifts 反推 seed 点域，并逐组保存变量顺序、value lists、配置范围、规则数、方程数和来源。
+023 不从 topology 读取 `seedRanges/generatorSeedRanges`。统一或逐指标最终关系包络只传给 `DSGenerateIBP`；它按每组实际 shifts 反推 seed 点域，并逐组保存变量顺序、value lists、配置范围、规则数、方程数和来源。
 
 **命名规则**（建议）：`IBP_sector_<shrunkLines>_seed_<seedIndex>.dat`
 
@@ -544,7 +560,7 @@ ds[expr, sij]
 
 `applyIndependentVariableDerivativeSeed` 自动判断 `var` 属于用户选定动力学坐标、内部平方 Gram 原子、实际无圈模长还是独立顶点能量。用户混合坐标统一按完整 Jacobian 对所有基础原子求和，不能因变量名同时命中某个简单根号坐标而提前返回。loop Gram 原子分支会把每个 $D_{ij}$ 作用到传播子、massive/massless building block、ISP/numerator 和相应顶点能量；无圈模长分支执行绑定线径向导数及显式相位导数。
 
-`DSKinematics[input]` 给出完整 loop Gram 原子、实际无圈模长独立基的缺省规则、从属模长 binding 和可复制的 `selectionTemplate`；`DSKinematics[input,rules]` 审计候选，`DSInit[...,KinematicRules->rules]` 才重选并重新初始化。审计同时检查规则左端对基础原子的覆盖秩和基础原子对用户参数的 Jacobian 秩，并按 `baseCoordinateOrder` 返回零空间方向表达式。欠秩时拒绝初始化；超完备时返回冗余关系/约束，允许 symbolic IBP 初始化但禁用冗余坐标 `ds` 与无唯一逆映射的 `rep2innerform`。过完备 loop 声明的原列表只用于审计和展示，核心 `nK`/Gram/`dqk`/ISP 使用 affine quotient 的 `effectiveLoopExternalMomenta` 必要基。一般满秩混合坐标先逐条展开规则右端再提取原子参数；即使没有简单逆映射，`ds` 仍按完整 Jacobian 工作。从属 line/phase/显式系数统一对 binding 表达式继续使用同一链式法则。
+`DSKinematics[input]` 给出完整 loop Gram 原子、实际无圈模长独立基的缺省规则、从属模长 binding 和可复制的 `selectionTemplate`；`DSKinematics[input,rules]` 审计候选，`DSInit[...,KinematicRules->rules]` 才重选并重新初始化。审计同时检查规则左端对基础原子的覆盖秩和基础原子对用户参数的 Jacobian 秩，并按 `baseCoordinateOrder` 返回零空间方向表达式。欠秩时拒绝初始化；超完备时返回冗余关系/约束，允许 symbolic IBP 初始化与 `linearData` 诊断，但禁用冗余坐标 `ds`、无唯一逆映射的 `rep2innerform` 和所有 backend export。过完备 loop 声明的原列表只用于审计和展示，核心 `nK`/Gram/`dqk`/ISP 使用 affine quotient 的 `effectiveLoopExternalMomenta` 必要基。一般满秩混合坐标先逐条展开规则右端再提取原子参数；即使没有简单逆映射，`ds` 仍按完整 Jacobian 工作。从属 line/phase/显式系数统一对 binding 表达式继续使用同一链式法则。
 
 批量入口枚举 `externalInvariantVariables` 与独立顶点能量参数的并集，并返回每个变量的 decomposition、canonical derivative、失败状态和 forbidden-`n` 数据；它不替用户发明新的物理变量。
 
@@ -721,9 +737,9 @@ caseInput = <|
 
 ## 7. 当前主线与工作流
 
-当前权威实现是模块化 `versions/022_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。当前正式单文件入口是 `independent-benchmark/package/package_022.0.wl`；验收后工作树只保留 022，全部更早源码版本从 Git 历史追溯。022 随源码提供 `Examples/`，正式交付同步保留同一组 examples。
+当前权威实现是模块化 `versions/023_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。正式入口为 `independent-benchmark/package/package_023.0.wl`，工作树只保留 023；更早版本从 Git 历史追溯。023 随源码提供 `Examples/`，正式交付同步保留同一组 examples。
 
-独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前只保留 `package_022.0.wl/pdf`、同版本更新说明和少量不含 expected 的应用 examples。独立推导阶段不得读取该目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
+独立 benchmark 的程序交付位于 `independent-benchmark/package/`；023 晋升后只保留 `package_023.0.wl/pdf` 和少量不含 expected 的应用 examples。真实 Kira 工作区必须位于仓库外并由 WSL 运行，Kira 成品例子只保存可读输入、轻量输入摘要和轻量结果摘要，不保存完整 reduction 产物。版本更新说明长期保存在项目根 `历史版本更新日志/`。独立推导阶段不得读取交付目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
 
 正式交付采用候选先行门禁：构建器通过 `DSIBP_BUILD_OUTPUT` 把候选单文件写入 `test/results_test/`，正式检查通过 `DSIBP_PACKAGE_FILE`（phase 2 另用 `DSIBP_PDF_FILE`）显式加载候选。只有候选专项、独立单文件检查和受影响 phase 全部通过后，才用同一候选字节覆盖 `independent-benchmark/package/`，随后在正式路径复验并清理候选。未设置这些环境变量时保留原有正式构建/模块检查合同。
 
@@ -796,7 +812,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 | 项目 | 当前约定 |
 |------|----------|
-| 主线脚本 | 模块化 `versions/022_dSIBP/`；正式单文件按 022.0 candidate-first 发布 |
+| 主线脚本 | 模块化 `versions/023_dSIBP/`；正式单文件按 023.0 candidate-first 发布 |
 | 积分 Head | full：`J[aList,linePacks,ispList]`；timeOnly：`J[sectorKey,timeShifts,stateBits]` |
 | cycle line pack | full massive/massless 均为 `{b_e,n_{e1},n_{e2}}`，shrunk 为 `{bS_e}`；root line 位置永久保留 |
 | bridge/fixed line pack | full 为 `{"F",n_{e1},n_{e2}}`，shrunk 为 `{"F"}`；物理幂属于结构化 sector prefactor |
@@ -949,8 +965,8 @@ independent-benchmark/package/examples/<case>/
 
 正式 examples 不追求把 benchmark 的所有 family 各复制一份，而固定三个结构互补、可长期维护的典型案例：
 
-1. `04_pure_massive_bubble_closed_loop/` 是唯一带既有解析 reference 与原始 dlog basis 的闭环案例。它把初始化、parity-closed relations、Kira export/import、19-master DE、显式 `ks` basis 恢复和 scaling relation 放在同一条可对照链上，因此负责验证 normalization、basis order、能量 convention 和 DE/scaling，而不是承担复杂 topology 覆盖。
-2. `06_mix_bubble_tree/` 固定一条 massive h cycle line、一条 massless exponential cycle line和一条 massless exponential bridge。这个最小复合图同时区分 `loopExternalMomenta` 的 `kL` 与 `independentExternalMomenta` 的 `kE`，包含独立顶点相位和无圈模长参数，并让 massless 新三槽 convention、cycle contraction 与 fixed/bridge contraction 在同一 context 中出现。再增加 massive line 只会叠加 function-system/EOM 复杂度，不增加上述结构边界，因此不作为缺省 example。
+1. `04_pure_massive_bubble_closed_loop/` 是唯一带既有解析 reference 与原始 dlog basis 的闭环案例。它把初始化、parity-closed relations、Kira export/import、19-master DE、显式 `ks` basis 恢复和 scaling relation 放在同一条可对照链上，因此负责验证 normalization、basis order、能量 convention 和 DE/scaling，而不是承担复杂 topology 覆盖。运行脚本必须从 `DSIBP_KIRA_WORKSPACE` 取得仓库外目录；example 只保留输入/结果轻量摘要。
+2. `06_mix_bubble_tree/` 固定一条 massive h cycle line、一条 massless exponential cycle line和一条 massless exponential bridge。两条 cycle line 分别选择 `b[e]+n[e,1]+n[e,2]==0 (mod 2)` 的全偶子空间；fixed bridge 不属于圈积分，不进入 parity constraints。这个最小复合图同时区分 `loopExternalMomenta` 的 `kL` 与 `independentExternalMomenta` 的 `kE`，包含独立顶点相位和无圈模长参数，并让 massless 新三槽 convention、cycle contraction 与 fixed/bridge contraction 在同一 context 中出现；其 81-master Kira/DE 检验以 input/result summary 与该例对应。再增加 massive line 只会叠加 function-system/EOM 复杂度，不增加上述结构边界，因此不作为缺省 example。
 3. `03_single_massive_sunrise/` 是唯一 sunrise example。两个顶点由三条平行边连接，故 `L=3-2+1=2`；只保留一条 massive h line，其余两条 massless，并用两个显式 ISP 补齐五维 loop scalar-product 空间。两个顶点的外腿能量固定为同一个 `kE`，圈外 Gram 根号为 `ss11=Sqrt[sp[kL,kL]]`。顶点交换与两条同类 massless 平行线交换由 `symmetryRules` canonicalize；两个 ISP 特意选成在线交换下互换的一对，避免 line pack 已交换而 ISP 仍停在旧定义。它只负责验证全部 contact-reachable sector 的 general time/momentum IBP seeds、两圈 routing、ISP 闭合、离散 symmetry，以及 `{ss11,kE}` general 参数微分算符；不撒连续指标点，不构造 `linearData`、Kira、DE 或 scaling，也不再另设 all-massless 或 multi-massive sunrise example。
 
 这三项是长期接口与物理 convention 的代表案例，不是全 family 验收的替代品。新增 family 优先进入独立 benchmark；只有当它覆盖三者均不具备的公开功能边界时，才讨论增加正式 example。
@@ -1163,9 +1179,9 @@ $$
 
 通用 loop scaling 不复用无 ISP 的 bubble 次数。`DSScaleCheck` 的 `"LoopTopology"` 路线逐 master 使用 root 圈数、目标 sector 活动顶点、物理 `a/b/bS` 幂、`2 Total[ispList]` 与 `Euler[N_s]/N_s`；其中 contact sector 继承 root 圈数，`N_s` 仍从同一结构化 materializer 读取。若显式 master 组合或 `N_s` 对所选变量不齐次，检查失败而不猜次数；`"PureMassiveBubble"` 继续只服务已有 reference 对照。
 
-### 19.1.1 Kira 内部实能量 convention
+### 19.1.1 Kira 内部虚轴运动学 convention
 
-018 的公开物理 convention 不变；`DSInit/DSSeeds/ds/DSDE` 继续使用用户给出的物理能量 `k`。只有 Kira serializer 在写后端文件前，从 topology/line 的 phase-energy dependency data 结构性识别所有 massless propagator 动量原子并建立
+018 的公开物理 convention 不变；`DSInit/DSSeeds/ds/DSDE` 继续使用用户给出的物理变量 `k`。只有 Kira serializer 在写后端文件前，结构性识别所有顶点相位独立参数和 fixed massless propagator 模长原子并建立
 
 ```text
 k = -I ik,       ik = I k,
@@ -1173,11 +1189,13 @@ D_k = I D_ik,    D_ik = -I D_k,
 k D_k = ik D_ik.
 ```
 
-`ik` 是一个小写实 backend symbol，命名为物理原子名前加单个 `i`；例如 `P0 -> ip0`。角色来源只允许读取初始化后的 phase dependency 结构数据。复合能量先按该结构拆成独立原子，同一原子在多个顶点或 massless line 中复用时合并来源；不进入任何传播子/顶点相位的 `ssij`、Gram 坐标和其它空间变量保持不变。非原子映射、保留名、大小写折叠重名或与现有系数变量碰撞均 fail closed。
+`ik` 是一个小写实 backend symbol，命名为物理原子名前加单个 `i`；例如 `P0 -> ip0`。角色来源只允许读取初始化后的 vertex-phase 与 line metadata。复合对象先按该结构拆成独立原子，同一原子在多个顶点或 fixed massless line 中复用时合并来源；cycle line 的 `xi` 是积分变量，不列为外部 backend 坐标，与 fixed massless line 无关的 `ssij`、Gram 坐标和其它空间变量保持不变。fixed 模长若不是独立符号，提示用户用 `KinematicRules` 绑定独立原子后停止导出；保留名、大小写折叠重名或与现有系数变量碰撞也 fail closed。
 
-`postDerivative` 数值路线先冻结物理 active basis 的解析一阶导数和最小 target closure，再把物理规则 `k -> r` 转成 Kira 规则 `ik -> r`，其中 `r` 必须是精确实有理数；同一 manifest 另保存物理求值截面 `k -> -I r`。因此 Kira 内部始终只看到实有理变量值，而 `DSDE` 仍返回物理 `k` 导数矩阵，并额外保存 backend derivative view 的 Jacobian。scaling 直接在实 `ik` 坐标做也不改变 Euler 算符，因为 `k D_k=ik D_ik`。
+`postDerivative` 数值路线先冻结物理 active basis 的解析一阶导数和最小 target closure，再把用户给出的实有理 backend 值 `r` 转成物理截面 `k -> -I r`。需要 formal DE 且包含虚轴运动学映射时，`DSLinear` 必须保持这些物理坐标及其从属 Gram 原子为符号；即使用户准备在 Kira 中使用同一组实有理数，也只能通过 formal `DSKiraPlan` 的 `postDerivative` 规则提供。若 `linearData["coefficientRulesApplied"]` 已消去任一需旋转坐标或从属原子，`DSKiraExport` 会说明时序冲突并拒绝导出。普通、不构造 formal DE 的 numeric linear workflow 仍可在 `DSLinear` 代入精确规则。`DSScaleCheck` 不按 stage 名猜证书范围，而按 manifest 的物理规则实际固定多少个 scaling variables：固定 0 个返回 `certificateScope -> "symbolic"`，固定全部返回 `"exactPoint"`，只固定一部分返回 `"fixedSection"`；只有 `symbolic` 的 `symbolicQ` 为 `True`。定点或固定截面常数矩阵不能外推成全局 DE；所缺的正式符号 scaling 必须另由 active master 的 source-level Euler+time/q-dilation IBP 恒等式给出。
 
-serializer 的固定顺序是：massless phase-momentum 的 `k -> -I ik` 映射、backend 实有理数值规则、剩余 Gaussian integral phase gauge。importer 反向执行：恢复一般 coefficient map、恢复 backend `ik` 到物理动量、再恢复逐积分 Gaussian phase。Gaussian gauge 处理前两步后仍残留的整体积分相位；它适用于实符号有理函数和全数值系统。若 `ibp.kira` 仍含 `I`、`Complex`、`dsii` 或其它虚数替代 token，serializer 必须拒绝导出，不能把改名后的虚数交给 Kira。manifest 必须保存双向动量规则、来源角色、backend/physical 数值截面、普通导数 Jacobian、Euler 不变性、碰撞审计及 Gaussian phase 状态。
+所有由 `KinematicRules` 依赖于 `k` 的内部坐标必须在这个物理截面上重新生成，之后才构造 Kira 规则 `ik -> r`；禁止先数值化内部 Gram 原子再单独旋转公开根号。例如 `kk[1,1]=loopScale^2` 且 `loopScale -> -I r` 时，物理和 backend 方程中都必须使用 `kk[1,1] -> -r^2`，不能保留 `+r^2`。manifest 保存物理截面、backend 规则及坐标一致性检查。因此 Kira 内部始终只看到实有理值，而 `DSDE` 仍返回物理 `k` 导数矩阵，并额外保存 backend kinematic derivative view 的 Jacobian。scaling 直接在实 `ik` 坐标做也不改变 Euler 算符，因为 `k D_k=ik D_ik`。
+
+serializer 的固定顺序是：虚轴运动学的 `k -> -I ik` 映射、backend 实有理数值规则、剩余 Gaussian integral phase gauge。importer 反向执行：恢复一般 coefficient map、恢复 backend `ik` 到物理变量、再恢复逐积分 Gaussian phase。Gaussian gauge 处理前两步后仍残留的整体积分相位；它适用于实符号有理函数和全数值系统。若 `ibp.kira` 仍含 `I`、`Complex`、`dsii` 或其它虚数替代 token，serializer 必须拒绝导出，不能把改名后的虚数交给 Kira。manifest 必须保存双向运动学规则、来源顶点/线、backend/physical 数值截面、普通导数 Jacobian、Euler 不变性、碰撞审计及 Gaussian phase 状态。
 
 Kira 探测的 target 选择必须有界。pre-reduction 初探按 topology 与预估 master 数设置候选范围，不得缺省选择全部积分；没有更具体估计时使用约 1000 的保守上限。formal reduction 只选择 active basis token 与解析一阶导数闭包，不把整个 finite envelope 预约化。
 

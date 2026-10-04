@@ -9,7 +9,7 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
@@ -109,7 +109,8 @@ checks = <|
    "dlogGenerated" -> (Lookup[dlog, "status", "failed"] === "generated"),
    "naiveIBPSolved" -> (Lookup[naiveIBP, "status", "failed"] === "solved"),
    "naiveDEGenerated" -> (Lookup[naiveDE, "status", "failed"] === "generated"),
-   "childSelectorIsRationalContact" -> TrueQ[FullSimplify[childSelector + 1/sE1] === 0],
+   (* child N_s 吸收物理 W_T 后，normalized contact selector 是正的有理 1/sE1。 *)
+   "childSelectorIsRationalContact" -> TrueQ[FullSimplify[childSelector - 1/sE1] === 0],
    "childPhysicalMatchesMetadata" -> TrueQ[FullSimplify[childPhysical - childMetadataPrefactor] === 0],
    "missingStructuralKEPowerRejected" -> MatchQ[
       missingStructuralPrefactor,

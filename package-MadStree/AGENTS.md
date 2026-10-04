@@ -13,7 +13,7 @@
 - 用户明确要求新开或发布版本后，才建立新的 `versions/MadStree-vX.Y/`。新版本建立并验收后，
   工作树只保留该唯一当前版本；此前版本从 Git 历史恢复，不保留旧入口、旧测试或旧任务书。
 - 版本号必须在版本目录名、`VERSION.md`、公开版本字符串、验证任务书、验证目录和验证报告中保持一致。
-- 本规则生效后新建的版本目录必须包含 `UPDATE_NOTES.md`；v0.3 及此前已经存在的版本不追溯补建。更新说明至少列出基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制，不得只写版本号或提交列表。
+- 本规则生效后新建的版本必须在项目根 `历史版本更新日志/` 中保存更新说明；v0.3 及此前已经存在的版本不追溯补建。更新说明至少列出基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制，不得只写版本号或提交列表。升级后删除旧源码目录时不得删除已经归档的旧版更新说明。
 - 建议每个新版本从当前稳定主线建立独立 branch 后再开发和验证。是否创建 branch、是否长期保留以及是否合并回主线均由用户决定；用户未明确要求时，agent 不得自动创建或合并版本 branch。
 
 ## 固定目录结构
@@ -24,10 +24,11 @@ package-MadStree/
 |- README.md
 |- VERSION_INDEX.md
 |- load_current.wl
+|- 历史版本更新日志/
+|  `- MadStree-vX.Y.md
 |- versions/
 |  `- MadStree-vX.Y/
 |     |- VERSION.md
-|     |- UPDATE_NOTES.md
 |     |- README.md
 |     |- Kernel/
 |     |- Backend/
@@ -47,6 +48,7 @@ package-MadStree/
       `- results_temp/
 ```
 
+- `历史版本更新日志/` 是中英文版本更新说明的长期权威归档；当前版本与已删除源码版本的日志都保存在这里。
 - `versions/MadStree-vX.Y/` 保存该版本源码、适配器、手册、examples 和开发测试。版本内临时测试产物只进其 `test/results_test/`；历史遗留或可重跑中间数据只进 `results_temp/`。
 - `independent-validation-task/` 只保留当前版本任务书。任务书不得复制进验证目录。
 - `independent-validation/` 下每项验证单独建目录，目录名必须包含被验证版本号和任务编号。

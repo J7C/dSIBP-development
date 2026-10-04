@@ -1,0 +1,480 @@
+{
+  "schema": "flintnde_0.5.0_validation_05_v1",
+  "status": "passed",
+  "passedCount": 17,
+  "checkCount": 17,
+  "sourceDigestSHA256": "39b0e7956a400faa9bf219ca2d2c81bbb599cc0583f4fe2f58ad5d43142b0225",
+  "settings": {
+    "workingPrecisionDigits": 90,
+    "primaryOrder": 48,
+    "referenceOrder": 68,
+    "targetRelativeError": "1e-25",
+    "parallelTaskCount": 2
+  },
+  "savepoint": {
+    "exactModel": "y'=y/(x+2), y(0)=1, hence y=(x+2)/2 and y(2)=2",
+    "requestedCheckpoints": [
+      "0",
+      "1",
+      "2"
+    ],
+    "coldAdaptiveNodes": [
+      "0",
+      "[0.90000000000000000000000000000000000000000000000000 +/- 1e-55]",
+      "1.0000000000000000000000000000000000000000000000000",
+      "2.0000000000000000000000000000000000000000000000000"
+    ],
+    "resumeAdaptiveNodes": [
+      "1.0000000000000000000000000000000000000000000000000",
+      "2.0000000000000000000000000000000000000000000000000"
+    ],
+    "savedCoordinate": "1.000000000000000000000000000000000000000",
+    "primaryRecord": {
+      "schema": "flintnde_saved_point_v1",
+      "sequence": 1,
+      "coordinate": "1.000000000000000000000000000000000000000",
+      "workingCoordinate": "1.000000000000000000000000000000000000000",
+      "classification": "ordinary",
+      "singularityIdentifier": null,
+      "role": "detour",
+      "resultType": "ordinary_vector",
+      "result": [
+        {
+          "real": "1.500000000000000000000000000000000000000",
+          "imag": "0",
+          "realRadius": "0",
+          "imagRadius": "0"
+        }
+      ]
+    },
+    "referenceRecord": {
+      "schema": "flintnde_saved_point_v1",
+      "sequence": 1,
+      "coordinate": "1.000000000000000000000000000000000000000",
+      "workingCoordinate": "1.000000000000000000000000000000000000000",
+      "classification": "ordinary",
+      "singularityIdentifier": null,
+      "role": "detour",
+      "resultType": "ordinary_vector",
+      "result": [
+        {
+          "real": "1.500000000000000000000000000000000000000",
+          "imag": "0",
+          "realRadius": "0",
+          "imagRadius": "0"
+        }
+      ]
+    },
+    "differences": {
+      "primaryVsCold": "[3.4881207009346770697503160043497954084836120447473e-105 +/- 1.04e-155]",
+      "referenceVsCold": "[3.4881207009346770697503160043497954084836120447473e-105 +/- 1.04e-155]",
+      "primaryVsClosed": "0",
+      "referenceVsClosed": "0"
+    },
+    "coldWallTimeSeconds": 0.00694010010920465,
+    "resumeWallTimeSeconds": 0.015046600019559264,
+    "coldPrimarySeconds": 0.001285600010305643,
+    "coldReferenceSeconds": 0.00212640012614429
+  },
+  "regulator": {
+    "leadingPower": -1,
+    "maximumPower": 1,
+    "internalMaximumPower": 4,
+    "samplePoints": [
+      "[0.1000000000000000000000000000000000000000 +/- 3e-45]",
+      "[0.09000000000000000000000000000000000000000 +/- 3e-45]",
+      "[0.08000000000000000000000000000000000000000 +/- 3e-45]",
+      "[0.07000000000000000000000000000000000000000 +/- 3e-45]",
+      "[0.06000000000000000000000000000000000000000 +/- 3e-46]",
+      "[0.05000000000000000000000000000000000000000 +/- 3e-46]"
+    ],
+    "validationPoints": [
+      "[0.02500000000000000000000000000000000000000 +/- 3e-46]",
+      "[0.02000000000000000000000000000000000000000 +/- 3e-46]"
+    ],
+    "coefficientErrors": {
+      "-1": [
+        "[+/- 5.89e-44]",
+        "[+/- 3.35e-44]"
+      ],
+      "0": [
+        "[+/- 9.33e-43]",
+        "[+/- 5.32e-43]"
+      ],
+      "1": [
+        "[+/- 4.30e-42]",
+        "[+/- 2.49e-42]"
+      ]
+    },
+    "history": [
+      {
+        "round": 1,
+        "internal_maximum_power": 2,
+        "new_production_sample_count": 4,
+        "reused_production_sample_count": 0,
+        "reused_validation_sample_count": 0,
+        "maximum_validation_relative_residual": "[6.94281891085480587116989977042e-5 +/- 8.63e-36]",
+        "passed": false
+      },
+      {
+        "round": 2,
+        "internal_maximum_power": 4,
+        "new_production_sample_count": 2,
+        "reused_production_sample_count": 4,
+        "reused_validation_sample_count": 2,
+        "maximum_validation_relative_residual": "[+/- 4.09e-44]",
+        "passed": true
+      }
+    ],
+    "effectiveParameters": {
+      "goal_digits": 12,
+      "sample_source": "user",
+      "sample_count": 6,
+      "initial_sample_count": 4,
+      "sample_candidate_count": 8,
+      "unused_sample_candidate_count": 2,
+      "base_sample": "user-supplied",
+      "sample_spacing": "0.01",
+      "sample_angle_range": "automatic",
+      "alpha_epsilon": 1.0,
+      "base_precision_digits": 30,
+      "working_precision_digits": 90,
+      "extra_working_precision": 0.0,
+      "transport_order": 8,
+      "transport_extra_order": 4,
+      "transport_sample_count": "automatic",
+      "transport_extra_sample_count": "automatic",
+      "radius_fraction": 0.6,
+      "guard_bits": 32,
+      "validation_source": "user",
+      "validation_sample_count": 2,
+      "validation_scale": null,
+      "validation_tolerance": "[1.00000000000000000000000000000e-20 +/- 3e-54]",
+      "maximum_samples": 100,
+      "fit_extra_order": 2,
+      "initial_internal_maximum_power_requested": 2,
+      "fit_order_increment": 2,
+      "fit_max_rounds": 2,
+      "fit_rounds_used": 2,
+      "rationalize_sample_points": true,
+      "parallel_task_count_requested": 2,
+      "production_parallel_task_count_effective": 2,
+      "validation_parallel_task_count_effective": 2,
+      "precision_target_met": true,
+      "precision_failure_reason": null
+    },
+    "wallTimeSeconds": 0.6497407001443207,
+    "candidateExhaustion": {
+      "schema": "flintnde_series_reconstruction_v1",
+      "series_parameter": "ep",
+      "leading_power": 0,
+      "maximum_power": 0,
+      "internal_maximum_power": 3,
+      "sample_points": [
+        "[0.10000000000000000000000000000000000000000000000000 +/- 3e-55]",
+        "[0.090000000000000000000000000000000000000000000000000 +/- 3e-55]",
+        "[0.080000000000000000000000000000000000000000000000000 +/- 3e-55]",
+        "[0.070000000000000000000000000000000000000000000000000 +/- 3e-55]"
+      ],
+      "validation_points": [
+        "[0.040000000000000000000000000000000000000000000000000 +/- 3e-56]",
+        "[0.030000000000000000000000000000000000000000000000000 +/- 3e-56]"
+      ],
+      "coefficients": {
+        "0": [
+          "[0.999997751998532559264207171491238292563911419 +/- 6.02e-46]",
+          "[0.9999980378468039895294353092587620380881446680 +/- 9.73e-47]"
+        ]
+      },
+      "sample_values": [
+        [
+          "[1.1051709180756476248117078264902466682245471947375 +/- 1.89e-50]",
+          "[0.90483741803595957316424905944643662119470536098040 +/- 9.54e-52]"
+        ],
+        [
+          "[1.0941742837052103578728976235448860118465199087471 +/- 1.50e-50]",
+          "[0.91393118527122818674735354649952061021058519482681 +/- 2.25e-52]"
+        ],
+        [
+          "[1.0832870676749585544359877586748885001987135728366 +/- 6.05e-51]",
+          "[0.92311634638663578291075984957238881004358306314609 +/- 3.52e-51]"
+        ],
+        [
+          "[1.0725081812542164790531039498891146055749589730930 +/- 1.38e-50]",
+          "[0.93239381990594822885797263248496785436006837774846 +/- 2.62e-51]"
+        ]
+      ],
+      "validation_values": [
+        [
+          "[1.0408107741923882267570447579168547440829770503123 +/- 1.22e-50]",
+          "[0.96078943915232320943921069132324588602797209371792 +/- 3.44e-51]"
+        ],
+        [
+          "[1.0304545339535168556124399538311981329050251429882 +/- 2.35e-50]",
+          "[0.97044553354850817693252835195919433348673681552894 +/- 3.64e-51]"
+        ]
+      ],
+      "effective_parameters": {
+        "goal_digits": 12,
+        "sample_source": "user",
+        "sample_count": 4,
+        "initial_sample_count": 2,
+        "sample_candidate_count": 4,
+        "unused_sample_candidate_count": 0,
+        "base_sample": "user-supplied",
+        "sample_spacing": "0.01",
+        "sample_angle_range": "automatic",
+        "alpha_epsilon": 1.0,
+        "base_precision_digits": 30,
+        "working_precision_digits": 90,
+        "extra_working_precision": 0.0,
+        "transport_order": 8,
+        "transport_extra_order": 4,
+        "transport_sample_count": "automatic",
+        "transport_extra_sample_count": "automatic",
+        "radius_fraction": 0.6,
+        "guard_bits": 32,
+        "validation_source": "user",
+        "validation_sample_count": 2,
+        "validation_scale": null,
+        "validation_tolerance": "[1.00000000000000000000000000000e-40 +/- 3e-74]",
+        "maximum_samples": 100,
+        "fit_extra_order": 2,
+        "initial_internal_maximum_power_requested": 1,
+        "fit_order_increment": 2,
+        "fit_max_rounds": 3,
+        "fit_rounds_used": 2,
+        "rationalize_sample_points": true,
+        "parallel_task_count_requested": 2,
+        "production_parallel_task_count_effective": 2,
+        "validation_parallel_task_count_effective": 2,
+        "precision_target_met": false,
+        "precision_failure_reason": "candidate_pool_exhausted"
+      },
+      "diagnostics": {
+        "leading_power_certificate": {
+          "status": "certified",
+          "leading_power": 0,
+          "method": "independent-explicit-laurent-boundary"
+        },
+        "production_solves": [
+          {
+            "sample_point": "[0.10000000000000000000000000000000000000000000000000 +/- 3e-55]",
+            "endpoint": [
+              "[1.1051709180756476248117078264902466682245471947375 +/- 1.88e-50]",
+              "[0.90483741803595957316424905944643662119470536098040 +/- 9.53e-52]"
+            ],
+            "nde_relative_difference": "0",
+            "primary_seconds": 0.0007060000207275152,
+            "reference_seconds": 0.0007291000802069902,
+            "boundary_initialization": null
+          },
+          {
+            "sample_point": "[0.090000000000000000000000000000000000000000000000000 +/- 1e-55]",
+            "endpoint": [
+              "[1.0941742837052103578728976235448860118465199087471 +/- 1.49e-50]",
+              "[0.91393118527122818674735354649952061021058519482681 +/- 2.24e-52]"
+            ],
+            "nde_relative_difference": "0",
+            "primary_seconds": 0.000694299815222621,
+            "reference_seconds": 0.0007337999995797873,
+            "boundary_initialization": null
+          },
+          {
+            "sample_point": "[0.080000000000000000000000000000000000000000000000000 +/- 1e-55]",
+            "endpoint": [
+              "[1.0832870676749585544359877586748885001987135728366 +/- 6.04e-51]",
+              "[0.92311634638663578291075984957238881004358306314609 +/- 3.51e-51]"
+            ],
+            "nde_relative_difference": "0",
+            "primary_seconds": 0.0007174999918788671,
+            "reference_seconds": 0.0007348000071942806,
+            "boundary_initialization": null
+          },
+          {
+            "sample_point": "[0.070000000000000000000000000000000000000000000000000 +/- 1e-55]",
+            "endpoint": [
+              "[1.0725081812542164790531039498891146055749589730930 +/- 1.37e-50]",
+              "[0.93239381990594822885797263248496785436006837774846 +/- 2.61e-51]"
+            ],
+            "nde_relative_difference": "0",
+            "primary_seconds": 0.0006788999307900667,
+            "reference_seconds": 0.0007569000590592623,
+            "boundary_initialization": null
+          }
+        ],
+        "validation_solves": [
+          {
+            "sample_point": "[0.040000000000000000000000000000000000000000000000000 +/- 1e-56]",
+            "endpoint": [
+              "[1.0408107741923882267570447579168547440829770503123 +/- 1.21e-50]",
+              "[0.96078943915232320943921069132324588602797209371792 +/- 3.43e-51]"
+            ],
+            "nde_relative_difference": "0",
+            "primary_seconds": 0.0007106000557541847,
+            "reference_seconds": 0.000734600005671382,
+            "boundary_initialization": null,
+            "predicted": [
+              "[1.040810612342291266749866040125739346786313452 +/- 8.82e-46]",
+              "[0.960789300124973337437496498460236390874143117 +/- 4.19e-46]"
+            ],
+            "series_relative_residual": "[1.55503863884954428893234996184e-7 +/- 3.78e-37]",
+            "passed": false
+          },
+          {
+            "sample_point": "[0.030000000000000000000000000000000000000000000000000 +/- 3e-56]",
+            "endpoint": [
+              "[1.0304545339535168556124399538311981329050251429882 +/- 2.34e-50]",
+              "[0.97044553354850817693252835195919433348673681552894 +/- 3.63e-51]"
+            ],
+            "nde_relative_difference": "0",
+            "primary_seconds": 0.0006829001940786839,
+            "reference_seconds": 0.0007325999904423952,
+            "boundary_initialization": null,
+            "predicted": [
+              "[1.03045415705283074910434363576546464319707366 +/- 3.05e-45]",
+              "[0.9704452084975638545549818389309251497882723352 +/- 6.45e-47]"
+            ],
+            "series_relative_residual": "[3.65761587423429052521100511573e-7 +/- 3.02e-37]",
+            "passed": false
+          }
+        ],
+        "fit_expansion_history": [
+          {
+            "round": 1,
+            "internal_maximum_power": 1,
+            "new_production_sample_count": 2,
+            "reused_production_sample_count": 0,
+            "reused_validation_sample_count": 0,
+            "maximum_validation_relative_residual": "[0.00219326170778151874582955915608 +/- 1.34e-33]",
+            "passed": false
+          },
+          {
+            "round": 2,
+            "internal_maximum_power": 3,
+            "new_production_sample_count": 2,
+            "reused_production_sample_count": 2,
+            "reused_validation_sample_count": 2,
+            "maximum_validation_relative_residual": "[3.65761587423429052521100511573e-7 +/- 3.02e-37]",
+            "passed": false
+          }
+        ],
+        "production_values_reused": 2,
+        "validation_values_reused": 2,
+        "internal_buffer_powers": 3,
+        "interpolation": "square Acb Vandermonde with all production samples",
+        "least_squares_used": false,
+        "precision_target_met": false,
+        "precision_failure_reason": "candidate_pool_exhausted",
+        "precision_warning": "series validation remained above tolerance after incremental fitting through internal power 3: maximum residual [3.65761587423429052521100511573e-7 +/- 3.02e-37], tolerance [1.0000000000000000000e-40 +/- 3e-64]; the explicit sample_points candidate pool was exhausted; no points outside the user-supplied pool were generated. Returning the current best coefficients without precision certification."
+      },
+      "output_file": null
+    },
+    "candidateExhaustionWarnings": [
+      "series validation remained above tolerance after incremental fitting through internal power 3: maximum residual [3.65761587423429052521100511573e-7 +/- 3.02e-37], tolerance [1.0000000000000000000e-40 +/- 3e-64]; the explicit sample_points candidate pool was exhausted; no points outside the user-supplied pool were generated. Returning the current best coefficients without precision certification."
+    ]
+  },
+  "bridge": {
+    "pythonOrdinaryPlanSchema": "flintnde_mathematica_bridge_v1",
+    "pythonOrdinaryResultSchema": "flintnde_mathematica_bridge_v1",
+    "pythonOrdinaryReference": [
+      {
+        "real": "2.0000000000000000000000000000000000000000000000000",
+        "imag": "2.0000000000000000000000000000000000000000000000000",
+        "realRadius": "0",
+        "imagRadius": "0"
+      }
+    ],
+    "pythonSingularTarget": {
+      "coordinate": "1.000000000000000000000000000000000000000",
+      "userPointIndex": 1,
+      "source": "singular_target",
+      "classification": "true_pole",
+      "componentClassifications": [
+        "true_pole"
+      ],
+      "values": [
+        {
+          "text": "Infinity"
+        }
+      ],
+      "report": {
+        "target": "1.000000000000000000000000000000000000000",
+        "classification": "true_pole",
+        "componentClassifications": [
+          "true_pole"
+        ],
+        "sampleExponents": [
+          8,
+          12,
+          16,
+          20,
+          24
+        ],
+        "sampleScale": "[0.1250000000000000000000000000000000000000 +/- 3e-45]",
+        "convergenceRadius": null,
+        "sampleMagnitudes": [
+          [
+            800000000.0,
+            8000000000000.0,
+            8e+16,
+            8e+20,
+            8e+24
+          ]
+        ],
+        "localBasisMethod": "flintnde_singularity_jump_basis_v1",
+        "localBasisOrder": 64,
+        "targetRelativeError": "[1.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e-25 +/- 1.21e-126]"
+      }
+    },
+    "wolfram": {
+      "schema": "flintnde_0.5.0_validation_05_wolfram_v1",
+      "status": "passed",
+      "passedCount": 8,
+      "checkCount": 8,
+      "ordinaryPlanSchema": "flintnde_mathematica_bridge_v1",
+      "ordinaryResultSchema": "flintnde_mathematica_bridge_v1",
+      "ordinaryValueInputForm": "2.`50. + 2.`50.*I",
+      "ordinaryValueHead": "Complex",
+      "infinityValue": "Infinity",
+      "singularClassification": "true_pole",
+      "messageLanguage": "CN",
+      "runtimeRoot": "F:\\Agent-projects-nut\\dSibp_package\\package-FlintNDE\\independent-validation\\FlintNDE-0.5.0-validation-05-savepoint-regulator-and-wolfram-bridge\\results_temp\\wolfram_bridge",
+      "summaryPath": "F:\\Agent-projects-nut\\dSibp_package\\package-FlintNDE\\independent-validation\\FlintNDE-0.5.0-validation-05-savepoint-regulator-and-wolfram-bridge\\results_temp\\wolfram_bridge\\wolfram_summary.json",
+      "checks": {
+        "needsVersion": true,
+        "ordinarySchemas": true,
+        "ordinaryComplexType": true,
+        "ordinaryClosedForm": true,
+        "singularInfinityText": true,
+        "singularClassification": true,
+        "messageLanguageCN": true,
+        "callerLocalOutput": true
+      }
+    },
+    "wolframReturnCode": 0,
+    "wolframWallTimeSeconds": 3.5936724999919534,
+    "stdoutLog": "results_temp/wolfram-stdout.log",
+    "stderrLog": "results_temp/wolfram-stderr.log"
+  },
+  "checks": {
+    "savepointPrimaryRoundTripExact": true,
+    "savepointReferenceRoundTripExact": true,
+    "savepointResultTypes": true,
+    "savepointPrimaryMatchesCold": true,
+    "savepointReferenceMatchesCold": true,
+    "savepointClosedForm": true,
+    "savepointNodeSequence": true,
+    "regulatorPrecisionMet": true,
+    "regulatorCoefficients": true,
+    "regulatorFitValidationDisjoint": true,
+    "regulatorIncrementalExpansion": true,
+    "candidatePoolExhaustionUncertified": true,
+    "wolframRunnerPassed": true,
+    "pythonWolframSchemasMatch": true,
+    "pythonWolframInfinityMatch": true,
+    "pythonWolframMessageLanguage": true,
+    "wolframCallerLocalOutput": true
+  },
+  "wallTimeSeconds": 4.779550600098446
+}

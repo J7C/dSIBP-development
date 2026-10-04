@@ -8,7 +8,7 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 
@@ -30,7 +30,7 @@ singleEdgeCase = <|
    "independentExternalMomenta" -> {p},
    "ibpMode" -> Automatic,
    "ispData" -> {},
-   "zeroPointRules" -> {a0[v1] -> 2 nu, a0[v2] -> 2 nu, b0[1] -> -2 nu},
+   "zeroPointRules" -> {a0[v1] -> 2 nu + ep, a0[v2] -> 2 nu + ep, b0[1] -> -2 nu},
    "symmetryRules" -> {}
    |>;
 
@@ -48,7 +48,7 @@ tadpoleCase = <|
    "independentExternalMomenta" -> {},
    "ibpMode" -> "full",
    "ispData" -> {},
-   "zeroPointRules" -> {a0[v1] -> 2 nu, b0[1] -> -2 nu},
+   "zeroPointRules" -> {a0[v1] -> 2 nu + ep, b0[1] -> -2 nu},
    "symmetryRules" -> {}
    |>;
 

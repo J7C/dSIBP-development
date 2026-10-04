@@ -6,8 +6,8 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = ExpandFileName@FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}];
-exampleDir = FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Examples", "04_pure_massive_bubble_closed_loop"}];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+exampleDir = FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Examples", "04_pure_massive_bubble_closed_loop"}];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
@@ -31,7 +31,7 @@ caseInput = <|
    "ibpMode" -> "full",
    "ispData" -> {},
    "zeroPointRules" -> {
-     a0[v1] -> 2 nu, a0[v2] -> 2 nu,
+     a0[v1] -> 2 nu + ep, a0[v2] -> 2 nu + ep,
      b0[1] -> -2 nu, b0[2] -> -2 nu
      },
    "symmetryRules" -> exampleSymmetryRules0

@@ -11,7 +11,7 @@ $HistoryLength = 0;
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectDirectory = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
-packagePath = dsSmokeResolvePackageFile[FileNameJoin[{projectDirectory, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+packagePath = dsSmokeResolvePackageFile[FileNameJoin[{projectDirectory, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 exampleDirectory = FileNameJoin[{
     projectDirectory, "independent-benchmark", "package", "examples",
     "03_single_massive_sunrise"

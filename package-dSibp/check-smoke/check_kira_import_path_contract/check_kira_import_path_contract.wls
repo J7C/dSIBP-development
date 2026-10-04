@@ -8,7 +8,7 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
@@ -30,7 +30,7 @@ caseInput = <|
    "kinematicRules" -> {sp[k, k] -> ss11^2},
    "ispData" -> {},
    "zeroPointRules" -> {
-     a0[1] -> 2 nu, a0[2] -> 2 nu,
+     a0[1] -> 2 nu + ep, a0[2] -> 2 nu + ep,
      b0[1] -> -2 nu, b0[2] -> -2 nu
      },
    "symmetryRules" -> {}

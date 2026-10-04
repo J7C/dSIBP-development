@@ -7,10 +7,12 @@
 
 ## 版本更新说明与分支
 
-本规则生效后的每个新 FlintNDE 版本必须在对应 `versions/FlintNDE-X.Y.Z/` 中增加
-`UPDATE_NOTES.md`，其中目录版本与 `pyproject.toml` 完全一致。文件至少记录
+本规则生效后的每个新 FlintNDE 版本必须在 `历史版本更新日志/FlintNDE-X.Y.Z.md` 中增加
+更新说明，其中版本号与 `pyproject.toml` 完全一致。文件至少记录
 基线版本、新增功能、修复、公开接口或数值 convention 变化、迁移要求、验证状态和已知限制。
-工作树只保留唯一当前版本，更早版本可从 Git 历史恢复；旧任务书、报告和结果不在现行目录归档。
+工作树只保留唯一当前源码版本，更早源码可从 Git 历史恢复；旧任务书、报告和结果不在现行
+目录归档，但历史更新说明长期保留。当前说明见
+[`FlintNDE-0.5.0.md`](历史版本更新日志/FlintNDE-0.5.0.md)。
 
 建议新版本从稳定主线新建独立 Git branch 开发和验证；branch 是否创建、保留或合并由用户
 决定，不会因版本完成而自动合并到 `main`。
@@ -67,6 +69,7 @@ Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼
 目录分工：
 
 - `versions/FlintNDE-0.5.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
+- `历史版本更新日志/`：当前及历史版本的更新说明；
 - `examples/`：通过顶部路径变量加载程序包的示例；
 - `independent-validation-task/`：版本化独立检验任务书；
 - `independent-validation/`：会先清除自身旧结果再 fresh 运行的独立 runner、summary 和报告；
@@ -104,9 +107,8 @@ python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.5.0
 
 0.5.0 当前回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
 Arb 路径 round-trip、fast multipoint、严格用户节点、双侧奇点 bucket、末端隐藏匹配点、
-有限奇点目标分类、正规化自适应拟合、精度拒绝和运行路径门禁。最终 fresh 计数以
-`UPDATE_NOTES.md` 和根进度表的最新验收记录为准。
-完整验证结果以 `versions/FlintNDE-0.5.0/UPDATE_NOTES.md` 和根进度表的最新记录为准。
+有限奇点目标分类、正规化自适应拟合、精度拒绝和运行路径门禁。最终 fresh 计数与完整
+验证结果以 `历史版本更新日志/FlintNDE-0.5.0.md` 和根进度表的最新记录为准。
 
 2026-08-13 的 0.4.0 历史独立检验检查了 257 点 fast/Horner 单节点桶和 30x30 复网格；
 该旧版本任务书、报告和结果已按唯一当前版本规则从工作树清理，可从 Git 历史追溯。

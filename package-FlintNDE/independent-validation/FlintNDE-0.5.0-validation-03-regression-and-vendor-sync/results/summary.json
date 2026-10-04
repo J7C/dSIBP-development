@@ -1,0 +1,308 @@
+{
+  "schema": "flintnde_0.5.0_validation_03_v1",
+  "status": "passed",
+  "passedCount": 7,
+  "checkCount": 7,
+  "python": {
+    "returnCode": 0,
+    "testCount": 181,
+    "wallTimeSeconds": 10.742533100070432,
+    "stdoutLog": "results_temp/python-unittest-stdout.log",
+    "stderrLog": "results_temp/python-unittest-stderr.log"
+  },
+  "wolfram": {
+    "returnCode": 0,
+    "passedCount": 26,
+    "checkCount": 26,
+    "wallTimeSeconds": 4.1264979999978095,
+    "stdoutLog": "results_temp/wolfram-interface-stdout.log",
+    "stderrLog": "results_temp/wolfram-interface-stderr.log"
+  },
+  "vendorSync": {
+    "independentRoot": "F:\\Agent-projects-nut\\dSibp_package\\package-FlintNDE\\versions\\FlintNDE-0.5.0",
+    "vendorRoot": "F:\\Agent-projects-nut\\dSibp_package\\package-MadStree\\versions\\MadStree-v0.16\\Vendor\\FlintNDE",
+    "sharedFileCount": 44,
+    "independentOnly": [],
+    "vendorOnly": [],
+    "mismatches": [],
+    "files": [
+      {
+        "relativePath": "FlintNDE.m",
+        "independentSHA256": "55253ce0794fe9097ee04d50692dd52adbb4ee2de59b45a1447ae249d62511f5",
+        "vendorSHA256": "55253ce0794fe9097ee04d50692dd52adbb4ee2de59b45a1447ae249d62511f5",
+        "same": true
+      },
+      {
+        "relativePath": "Kernel/init.m",
+        "independentSHA256": "201fcf1652bee0595c96790496a977f85726b00ca993f97896a98c71493cee91",
+        "vendorSHA256": "201fcf1652bee0595c96790496a977f85726b00ca993f97896a98c71493cee91",
+        "same": true
+      },
+      {
+        "relativePath": "Mathematica/FlintNDE.wl",
+        "independentSHA256": "77ea4dfc01cdae4d3c3d41693efd289157b9bd7745134a7cf1302f8396d4ab7f",
+        "vendorSHA256": "77ea4dfc01cdae4d3c3d41693efd289157b9bd7745134a7cf1302f8396d4ab7f",
+        "same": true
+      },
+      {
+        "relativePath": "README.md",
+        "independentSHA256": "470dbc6a671e8254de63b39ad23330f936dded80ec97dd9afc8af6c1bd5e3e5f",
+        "vendorSHA256": "470dbc6a671e8254de63b39ad23330f936dded80ec97dd9afc8af6c1bd5e3e5f",
+        "same": true
+      },
+      {
+        "relativePath": "UPDATE_NOTES.md",
+        "independentSHA256": "05c88560a095c1fcffc66a4e28f1e40f16cd325589776b1cbd53621d2fe4a8a5",
+        "vendorSHA256": "05c88560a095c1fcffc66a4e28f1e40f16cd325589776b1cbd53621d2fe4a8a5",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/__init__.py",
+        "independentSHA256": "7c2d1104612b452526978c2955faf7c2bc6fb09e899e1a8a8d0ad50cbf0cc5e9",
+        "vendorSHA256": "7c2d1104612b452526978c2955faf7c2bc6fb09e899e1a8a8d0ad50cbf0cc5e9",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/asymptotics.py",
+        "independentSHA256": "08e16f3d22cd978f8c6614bc19d78d5ae78f450e3195659030278d7f99356c7b",
+        "vendorSHA256": "08e16f3d22cd978f8c6614bc19d78d5ae78f450e3195659030278d7f99356c7b",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/boundary.py",
+        "independentSHA256": "b4931bc281cfd6275a79b8828edbbd08372cdf0aededa90d298321c5fbb4e7f9",
+        "vendorSHA256": "b4931bc281cfd6275a79b8828edbbd08372cdf0aededa90d298321c5fbb4e7f9",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/core.py",
+        "independentSHA256": "130031cf0fe7ae0ce3bc9a821801e489a684d8fd54cef66d7b89f37d849ad7db",
+        "vendorSHA256": "130031cf0fe7ae0ce3bc9a821801e489a684d8fd54cef66d7b89f37d849ad7db",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/epsilon_jet_de.py",
+        "independentSHA256": "eb4a4908d3d30cb1f330a0155dae4b6d0d1326206367abb11c3d3d0e4750da07",
+        "vendorSHA256": "eb4a4908d3d30cb1f330a0155dae4b6d0d1326206367abb11c3d3d0e4750da07",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/exact_gaussian.py",
+        "independentSHA256": "ba747d43cb5deb199be1b1414baee85eef05751fa6bb870807a14f228ca050fe",
+        "vendorSHA256": "ba747d43cb5deb199be1b1414baee85eef05751fa6bb870807a14f228ca050fe",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/frobenius.py",
+        "independentSHA256": "9f9878fa7e3c14be2a2a429cef9e12f4741ee58e85990cc510401ad72db8b370",
+        "vendorSHA256": "9f9878fa7e3c14be2a2a429cef9e12f4741ee58e85990cc510401ad72db8b370",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/fuchsian.py",
+        "independentSHA256": "64be20f03609e00cc058cb26e21f9548d4b81c402f1a44a0d9073e3405da50d4",
+        "vendorSHA256": "64be20f03609e00cc058cb26e21f9548d4b81c402f1a44a0d9073e3405da50d4",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/local_solutions.py",
+        "independentSHA256": "415c88533383a17e8db40e2498dc3d80d1f8308a029079f0bbf35b44d914a2bf",
+        "vendorSHA256": "415c88533383a17e8db40e2498dc3d80d1f8308a029079f0bbf35b44d914a2bf",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/mathematica_bridge.py",
+        "independentSHA256": "d43d7fce793c28ffaf98911fea601c280037bf2cf5081e5d1007b45c27dbf1b5",
+        "vendorSHA256": "d43d7fce793c28ffaf98911fea601c280037bf2cf5081e5d1007b45c27dbf1b5",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/numeric_structure.py",
+        "independentSHA256": "186a63be23420e00f392d5c0103b0dfd59e4c74016f7c5794269b3b8a7df415a",
+        "vendorSHA256": "186a63be23420e00f392d5c0103b0dfd59e4c74016f7c5794269b3b8a7df415a",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/output_layout.py",
+        "independentSHA256": "97538f24669afdc7f7ab86a4b9abb08644e0554f432c80bf87b0e76bed3a708a",
+        "vendorSHA256": "97538f24669afdc7f7ab86a4b9abb08644e0554f432c80bf87b0e76bed3a708a",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/parallel.py",
+        "independentSHA256": "eb0abff6a857bf228a1dd6fa25757f107c4a283f6f492aad0d21b2a1144bdd09",
+        "vendorSHA256": "eb0abff6a857bf228a1dd6fa25757f107c4a283f6f492aad0d21b2a1144bdd09",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/regular_point_de.py",
+        "independentSHA256": "3c1715984ada9c3e0eb993d19b7567f07d39871fcac090363ce850a7c0d4f4a7",
+        "vendorSHA256": "3c1715984ada9c3e0eb993d19b7567f07d39871fcac090363ce850a7c0d4f4a7",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/regularization.py",
+        "independentSHA256": "a81ada3f1c2dd4e90032c8b64dc90fd6bfe02c9791b707262667967cae77bf6e",
+        "vendorSHA256": "a81ada3f1c2dd4e90032c8b64dc90fd6bfe02c9791b707262667967cae77bf6e",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/routing.py",
+        "independentSHA256": "b46f4ef4920e0772e2136348754b4c0382e46ee982362b5e4285a6e1e80542f4",
+        "vendorSHA256": "b46f4ef4920e0772e2136348754b4c0382e46ee982362b5e4285a6e1e80542f4",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/savepoints.py",
+        "independentSHA256": "dc908dd0abc39ddc803308e3cc5a2acc0dc67a4b8d83ddc9376aa7ba2468d48a",
+        "vendorSHA256": "dc908dd0abc39ddc803308e3cc5a2acc0dc67a4b8d83ddc9376aa7ba2468d48a",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/singular_targets.py",
+        "independentSHA256": "38cc7cd0fbf74a664fa5662494dc69dd41c862264ae24eb4d6bf2e3577ad733c",
+        "vendorSHA256": "38cc7cd0fbf74a664fa5662494dc69dd41c862264ae24eb4d6bf2e3577ad733c",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/singularities.py",
+        "independentSHA256": "8c0909b805abe1f99ca599cc2abe30a4daf69ec04644ba44e70a2507ebe7d702",
+        "vendorSHA256": "8c0909b805abe1f99ca599cc2abe30a4daf69ec04644ba44e70a2507ebe7d702",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/singularity_jump.py",
+        "independentSHA256": "89fd8e5a1049e1484bcf77a520a5d7ed2a6e944c41bd9b7a6c1c696f30e3e343",
+        "vendorSHA256": "89fd8e5a1049e1484bcf77a520a5d7ed2a6e944c41bd9b7a6c1c696f30e3e343",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/systems.py",
+        "independentSHA256": "7ed518512a5a8a6e6cbda261721e1f8990f92174c37763e54f34627fb73203e6",
+        "vendorSHA256": "7ed518512a5a8a6e6cbda261721e1f8990f92174c37763e54f34627fb73203e6",
+        "same": true
+      },
+      {
+        "relativePath": "flintnde/transport.py",
+        "independentSHA256": "f872bf3e00af0f0704bce6e20a74efd3985e843985503ff9b83279c4221a2722",
+        "vendorSHA256": "f872bf3e00af0f0704bce6e20a74efd3985e843985503ff9b83279c4221a2722",
+        "same": true
+      },
+      {
+        "relativePath": "pyproject.toml",
+        "independentSHA256": "2fe6011ab09ef0af250d89d5563d7cc4c5c8a88f7a06bfcfcf95cf0525f87aa6",
+        "vendorSHA256": "2fe6011ab09ef0af250d89d5563d7cc4c5c8a88f7a06bfcfcf95cf0525f87aa6",
+        "same": true
+      },
+      {
+        "relativePath": "tests/_helpers.py",
+        "independentSHA256": "f3677309d8ecd15fed15a5babec513e8d930e20c0bf367e2e32bae1eb0aca821",
+        "vendorSHA256": "f3677309d8ecd15fed15a5babec513e8d930e20c0bf367e2e32bae1eb0aca821",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_asymptotics.py",
+        "independentSHA256": "2fddfd5c119c6e1ace124d302c5b73dd7c52e7f5558a5701ff9185d054600c9a",
+        "vendorSHA256": "2fddfd5c119c6e1ace124d302c5b73dd7c52e7f5558a5701ff9185d054600c9a",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_frobenius.py",
+        "independentSHA256": "fe18423c42975698a2a99d4d41796768eddfeaf35a7ccb3cd5905d91ad1d21ce",
+        "vendorSHA256": "fe18423c42975698a2a99d4d41796768eddfeaf35a7ccb3cd5905d91ad1d21ce",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_general_transport.py",
+        "independentSHA256": "bdc15a5ba2d34ca715e6c726ac5dc51e9090b0e359044ca49198d55196c3a99f",
+        "vendorSHA256": "bdc15a5ba2d34ca715e6c726ac5dc51e9090b0e359044ca49198d55196c3a99f",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_high_pole_local.py",
+        "independentSHA256": "77bb6dcade7bff18bd9c60d3076448a6273be377363b57db48839a6bd188450c",
+        "vendorSHA256": "77bb6dcade7bff18bd9c60d3076448a6273be377363b57db48839a6bd188450c",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_mathematica_bridge.py",
+        "independentSHA256": "5e2d6763cf74a0b76a9ef4540f809f8e8f695a1e9cb5759821a8214ec6337f5f",
+        "vendorSHA256": "5e2d6763cf74a0b76a9ef4540f809f8e8f695a1e9cb5759821a8214ec6337f5f",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_mathematica_interface.wls",
+        "independentSHA256": "a4e6b8aa5d7a19b16d503de21bbc722ddd639b0b5653e0a30a0404ebdfe4b8ac",
+        "vendorSHA256": "a4e6b8aa5d7a19b16d503de21bbc722ddd639b0b5653e0a30a0404ebdfe4b8ac",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_output_layout.py",
+        "independentSHA256": "f3b0755e7e18b6a0e5ec733ede4d7fdb512a0e3408e05f8517733f451a657462",
+        "vendorSHA256": "f3b0755e7e18b6a0e5ec733ede4d7fdb512a0e3408e05f8517733f451a657462",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_parallel.py",
+        "independentSHA256": "975e175f0386abd1c3667966e1cf56ce03bbf9994aadcdf9c781bbe4f5403bba",
+        "vendorSHA256": "975e175f0386abd1c3667966e1cf56ce03bbf9994aadcdf9c781bbe4f5403bba",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_partial_fraction_and_dense_output.py",
+        "independentSHA256": "d400f19247865df9fcf8e67cda6b2c5acf4e3cbbace2059b2b07df9091f6becc",
+        "vendorSHA256": "d400f19247865df9fcf8e67cda6b2c5acf4e3cbbace2059b2b07df9091f6becc",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_planned_path_and_singularity_jump.py",
+        "independentSHA256": "c4e09b0bfd5ef5912a45ee320fe4cebe751e5bbe6502008885aef7ac750aa5c0",
+        "vendorSHA256": "c4e09b0bfd5ef5912a45ee320fe4cebe751e5bbe6502008885aef7ac750aa5c0",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_regularization.py",
+        "independentSHA256": "6346d64b2e9acd9dc16d45f82b546fbd39a9604b9776b4dc91b17dd42940654d",
+        "vendorSHA256": "6346d64b2e9acd9dc16d45f82b546fbd39a9604b9776b4dc91b17dd42940654d",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_save_points.py",
+        "independentSHA256": "6a63b32eed7d3a1050e4357755fdd6c3e0e02a0c96332b1f8de79bfeb7026559",
+        "vendorSHA256": "6a63b32eed7d3a1050e4357755fdd6c3e0e02a0c96332b1f8de79bfeb7026559",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_serializer_contracts.py",
+        "independentSHA256": "9490c982f9e172734ea98dc193020031950c6d4ac52ad44fb5d6bfb7e0ac2597",
+        "vendorSHA256": "9490c982f9e172734ea98dc193020031950c6d4ac52ad44fb5d6bfb7e0ac2597",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_singular_targets.py",
+        "independentSHA256": "f79d86fa3a902278235c4e9349bea11e0c1adf84695027ae137cd6516b7f071f",
+        "vendorSHA256": "f79d86fa3a902278235c4e9349bea11e0c1adf84695027ae137cd6516b7f071f",
+        "same": true
+      },
+      {
+        "relativePath": "tests/test_singularity_routing.py",
+        "independentSHA256": "4ab195b075c7e5219930883bf0dbdac5889d490cbb2fe4fa01a516c4dc747d61",
+        "vendorSHA256": "4ab195b075c7e5219930883bf0dbdac5889d490cbb2fe4fa01a516c4dc747d61",
+        "same": true
+      }
+    ],
+    "passed": true
+  },
+  "testRuntimeExistedAfterRun": true,
+  "testRuntimeCleaned": true,
+  "checks": {
+    "pythonFullSuite": true,
+    "pythonTestCountRecorded": true,
+    "wolframNeedsEndToEnd": true,
+    "wolframCheckCountRecorded": true,
+    "vendorRelativeFileSetExact": true,
+    "vendorAllSHA256Exact": true,
+    "versionRuntimeCleaned": true
+  },
+  "wallTimeSeconds": 14.869031100068241
+}

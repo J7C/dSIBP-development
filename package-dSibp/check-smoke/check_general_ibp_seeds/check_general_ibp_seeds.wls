@@ -8,7 +8,7 @@
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];
-dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}]];
+dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
 
 caseInput = <|
@@ -30,7 +30,7 @@ caseInput = <|
    "kinematicRules" -> {sp[k, k] -> ss11^2},
    "ispData" -> {},
    "zeroPointRules" -> {
-     a0[v1] -> 2 nu, a0[v2] -> 2 nu,
+     a0[v1] -> 2 nu + ep, a0[v2] -> 2 nu + ep,
      b0[1] -> -2 nu, b0[2] -> -2 nu
      },
    "symmetryRules" -> {}
@@ -62,6 +62,64 @@ generalSourceIndices = DeleteDuplicates@Cases[
 
 
 (* ::Chapter:: *)
+(*参考线平移后的 ISP 定义*)
+
+(* 输入 ISP 使用原始 q；参考线 q-k1 被规范为新 q 后，原 q 必须同步成为 q+k1。 *)
+routingCaseInput = <|
+   "name" -> "CheckGeneralIBPSeedsRoutingISP",
+   "vertices" -> {
+     <|"id" -> r1, "vertexType" -> "+", "externalLegEnergy" -> ER1|>,
+     <|"id" -> r2, "vertexType" -> "+", "externalLegEnergy" -> ER2|>
+     },
+   "lines" -> {
+     <|"id" -> 1, "endpoints" -> {r1, r2}, "momentum" -> q - k1,
+       "massType" -> "massless"|>,
+     <|"id" -> 2, "endpoints" -> {r1, r2}, "momentum" -> q - k2,
+       "massType" -> "massless"|>
+     },
+   "loopMomenta" -> {q},
+   "loopExternalMomenta" -> {k1, k2},
+   "independentExternalMomenta" -> {},
+   "ibpMode" -> "full",
+   "ispData" -> {<|"name" -> rho, "expr" -> sp[q, k1], "range" -> {0, 1}|>},
+   "zeroPointRules" -> {
+     a0[r1] -> alpha1 + ep, a0[r2] -> alpha2 + ep,
+     b0[1] -> beta1, b0[2] -> beta2
+     },
+   "symmetryRules" -> {}
+   |>;
+
+routingContext = DSInit[
+   routingCaseInput,
+   RegisterAsCurrent -> False,
+   WriteInitializationFiles -> False,
+   GenerateDerivativeMetadata -> False,
+   ProgressReporting -> False
+   ];
+routingISPExpression = Lookup[routingContext["topology", "ispData"][[1]], "expr", Missing["expr"]];
+routingISPInternal = First[dSIBP`Private`normalizeISPExprs[routingContext["topology"]]];
+routingTopology = routingContext["topology"];
+routingBaseIntegral = dSIBP`Private`makeBaseIntegral[routingTopology];
+routingUserDQQ = SelectFirst[
+   dSIBP`Private`makeIBPGenerators[routingTopology],
+   Lookup[#, "type", ""] === "momentum" && Lookup[#, "vectorType", ""] === "loop" &
+   ];
+routingPrimitiveTerms = Lookup[routingUserDQQ, "normalizedPrimitiveTerms", {}];
+routingAffineActual = dSIBP`Private`applyMomentumGeneratorSeed[
+   routingTopology,
+   routingBaseIntegral,
+   routingUserDQQ
+   ];
+routingAffineExpected = Expand@Total[
+    Lookup[#, "coefficient", 0] dSIBP`Private`applyMomentumGeneratorSeed[
+        routingTopology,
+        routingBaseIntegral,
+        Lookup[#, "generator", <||>]
+        ] & /@ routingPrimitiveTerms
+    ];
+
+
+(* ::Chapter:: *)
 (*验收*)
 
 checks = <|
@@ -72,7 +130,18 @@ checks = <|
    "topMomentumSeedsPresent" -> (Length[momentumRecords] > 0),
    "onlyUnifiedJHead" -> And @@ (MatchQ[Lookup[#, "sourceIntegral", None], _J] & /@ topRecords),
    "continuousIndicesUnassigned" ->
-    ContainsAll[generalSourceIndices, {a[v1], a[v2], b[1], b[2]}]
+    ContainsAll[generalSourceIndices, {a[v1], a[v2], b[1], b[2]}],
+   "routingISPInitialized" -> (Lookup[routingContext, "status", "failed"] === "initialized"),
+   "routingISPInputDefinitionPreserved" ->
+    SameQ[routingISPExpression, sp[k1 + q, k1]],
+   "routingISPInternalShiftPreserved" ->
+    SameQ[Expand[routingISPInternal], kk[1, 1] + qk[1, 1]],
+   "routingUserDQQCompiledToAffineTerms" -> (
+     Lookup[routingPrimitiveTerms, "coefficient", {}] === {1, 1} &&
+      Lookup[Lookup[routingPrimitiveTerms, "generator", {}], "vector", {}] === {q, k1}
+     ),
+   "routingUserDQQAffineIdentity" ->
+    TrueQ[Expand[routingAffineActual - routingAffineExpected] === 0]
    |>;
 
 failed = Keys@Select[checks, Not@TrueQ[#] &];
@@ -82,5 +151,9 @@ Print[InputForm[<|"passed" -> Count[Values[checks], True], "total" -> Length[che
     "topTimeSeedCount" -> Length[timeRecords],
     "topMomentumSeedCount" -> Length[momentumRecords],
     "generalSourceIndices" -> generalSourceIndices,
+    "routingISPExpression" -> routingISPExpression,
+    "routingISPInternal" -> routingISPInternal,
+    "routingPrimitiveTerms" -> routingPrimitiveTerms,
+    "routingAffineResidual" -> Expand[routingAffineActual - routingAffineExpected],
   "checks" -> checks|>]];
 If[Count[Values[checks], True] =!= Length[checks], Exit[1]];

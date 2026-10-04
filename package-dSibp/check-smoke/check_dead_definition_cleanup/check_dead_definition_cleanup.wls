@@ -2,25 +2,29 @@
 
 (***
 文件：check_dead_definition_cleanup.wls
-用途：dSIBP 022 死定义专项验证。加载目标版本后，确认当前核心函数只有生效定义，
+用途：dSIBP 023 死定义专项验证。加载目标版本后，确认当前核心函数只有生效定义，
       已删除的 seed/numeric 私有工作流没有 DownValues，并抽样验证运行时行为。
       （makeBaseIntegral、enumerateDiscreteStates、discreteVarsForLine、
       normalizeNumericRulesForTopology、ds、rep2Integrand）只保留生效定义、
       DownValues 无重复残留，并抽样验证其运行时行为。
 运行：wolframscript -file package-dSibp/check-smoke/check_dead_definition_cleanup/check_dead_definition_cleanup.wls
-      （DSIBP_PACKAGE_FILE 可指向当前 022 模块 loader 或正式 package_022.0.wl）
+      （DSIBP_PACKAGE_FILE 可指向当前 023 模块 loader 或正式 package_023.0.wl）
 边界：本脚本只做结构/行为抽样，不运行 Kira、reduction、DE 或 scaling。
 ***)
+
+
+(* ::Chapter:: *)
+(*加载当前版本并检查生效定义*)
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 
 projectRoot = ExpandFileName[FileNameJoin[{DirectoryName[$InputFileName], "..", ".."}]];
-defaultFile = FileNameJoin[{projectRoot, "versions", "022_dSIBP", "Kernel", "dSIBP.wl"}];
+defaultFile = FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}];
 versionRoot = dsSmokeLoadPackage[defaultFile];
 DSMessagesOff[];
 
 checks = <|
-  "version022" -> ($dSIBPVersion === "022.0"),
+  "version023" -> ($dSIBPVersion === "023.0"),
   "loadPath" -> (
     (StringQ[versionRoot] && DirectoryQ[versionRoot]) ||
     MatchQ[versionRoot, Missing["SingleFilePackage"]]
@@ -46,7 +50,7 @@ checks = <|
 (* 行为抽样：构造最小 time-only two-vertex massive family，
    验证 makeBaseIntegral 的 timeOnly ISP 空槽与 ds/rep2Integrand 可调用。 *)
 caseInput = <|
-   "name" -> "CheckDeadDefinitionCleanup022",
+   "name" -> "CheckDeadDefinitionCleanup023",
    "vertices" -> {
      <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> E1|>,
      <|"id" -> v2, "vertexType" -> "+", "externalLegEnergy" -> E2|>

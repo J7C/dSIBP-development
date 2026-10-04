@@ -55,7 +55,7 @@ paper2411DSIBPPotential = ArrayFlatten[{
 (*dSIBP master 与 normalization authority*)
 
 paper2411DSIBPTwoVertexGppDE = <|
-  "schema" -> "paper2411_dsibp_two_vertex_gpp_v1",
+  "schema" -> "paper2411_dsibp_two_vertex_gpp_v2",
   "paper" -> "arXiv:2411.03088",
   "paperFile" -> "reference/2411.03088-Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations.pdf",
   "erratumFile" -> "reference/2411.03088-勘误.md",
@@ -64,9 +64,14 @@ paper2411DSIBPTwoVertexGppDE = <|
   "variables" -> {k12, k34, ks},
   "parameters" -> {nu0, nu1},
   "paperMasterOrder" -> {I00, I01, I10, I11, IR},
-  "packageToPaperBasisMatrix" -> DiagonalMatrix[{1, -1, -1, 1, 1}],
+  "packageToPaperBasisMatrix" -> IdentityMatrix[5],
   "packageToPaperBasisReason" ->
-    "Each endpoint state n=1 in the dSIBP h convention differs by a minus sign from paper Eq. (4.1).",
+    "Paper Eq. (2.11) and dSIBP both define endpoint state n=1 as partial_x h; no discrete-state sign change is present.",
+  "packageToPaperVariableMap" -> <|
+    "rules" -> {E12 -> -k12, E34 -> -k34, ks -> ks},
+    "derivativeRules" -> {Dk12 -> -DE12, Dk34 -> -DE34, Dks -> Dks},
+    "reason" -> "Paper Eq. (4.1) uses Exp[+I k tau], while dSIBP vertexType + uses Exp[-I E tau]."
+  |>,
   "paperDefinitions" -> {
     "top" -> "Eq. (4.1), state order {{0,0},{0,1},{1,0},{1,1}}",
     "child" -> "Eq. (4.2): IR=-(4 I/Pi) Exp[Pi Im[nu1]] ks^(-2 nu1-1) times the one-time bare integral"

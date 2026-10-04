@@ -1,0 +1,342 @@
+{
+  "schema": "flintnde_0.5.0_validation_04_v1",
+  "status": "passed",
+  "passedCount": 15,
+  "checkCount": 15,
+  "sourceDigestSHA256": "39b0e7956a400faa9bf219ca2d2c81bbb599cc0583f4fe2f58ad5d43142b0225",
+  "settings": {
+    "workingPrecisionDigits": 90,
+    "apparentPrimaryOrder": 40,
+    "apparentReferenceOrder": 56,
+    "exponentialPrimaryOrder": 64,
+    "exponentialReferenceOrder": 88,
+    "targetRelativeError": "1e-22"
+  },
+  "apparentHighPole": {
+    "exactModel": "y2=2; y1=-2/x-1; y(-1)=(1,2); y(1)=(-3,2)",
+    "reduction": {
+      "schema": "flintnde_fuchsian_reduction_v2",
+      "status": "reduced_to_fuchsian",
+      "original_pole_order": 2,
+      "reduced_pole_order": 1,
+      "pole_order_history": [
+        2,
+        1
+      ],
+      "reason": "exact Lee-Moser projector balances reduced and round-trip certified the system",
+      "transformation": {
+        "route": "exact_lee_moser_projector_balance",
+        "convention": "I=Product_k(1-Q_k+Q_k/z) J",
+        "center_exact": "0",
+        "balance_count": 1,
+        "projectors_exact": [
+          [
+            [
+              "1",
+              "0"
+            ],
+            [
+              "0",
+              "0"
+            ]
+          ]
+        ],
+        "projector_idempotency_exact": [
+          true
+        ]
+      }
+    },
+    "exactSystemRoundTrip": true,
+    "path": [
+      "-1.000000000000000000000000000000000000000",
+      "[-0.7500000000000000000000000000000000000000 +/- 1e-45]",
+      "[-0.5625000000000000000000000000000000000000 +/- 1e-45]",
+      "[-0.4218750000000000000000000000000000000000 +/- 1e-45]",
+      "[-0.3333333333333333333333333333333333333333 +/- 3.34e-41]",
+      "[0.3333333333333333333333333333333333333333 +/- 3.34e-41]",
+      "[0.4166666666666666666666666666666666666667 +/- 3.34e-41]",
+      "[0.5208333333333333333333333333333333333333 +/- 3.34e-41]",
+      "[0.6510416666666666666666666666666666666667 +/- 3.34e-41]",
+      "[0.8138020833333333333333333333333333333333 +/- 3.34e-41]",
+      "1.000000000000000000000000000000000000000"
+    ],
+    "primaryErrors": [
+      "[5.1680771128914625008681537198234680958176608984357e-24 +/- 1.04e-74]",
+      "[2.6096084585116734148576897029254342661937131858927e-209 +/- 3.85e-259]"
+    ],
+    "referenceErrors": [
+      "[2.8716425566837269923877943597530057079894430182580e-33 +/- 1.89e-83]",
+      "[3.4307111285072162351589789248800676452985096771705e-209 +/- 2.00e-259]"
+    ],
+    "primarySeconds": 0.2057281001470983,
+    "referenceSeconds": 0.3280144000891596
+  },
+  "exponentialStart": {
+    "exactModel": "y=3 exp(-1/x); y(1)=3/e",
+    "method": "exponential_power_log",
+    "continuationReady": true,
+    "manifest": {
+      "schema": "flintnde_exponential_power_log_v1",
+      "method": "exponential_power_log",
+      "center_exact": "0",
+      "original_pole_order": 2,
+      "constant_basis_convention": "I=S J",
+      "constant_basis_exact": [
+        [
+          "1"
+        ]
+      ],
+      "sectors": [
+        {
+          "sector_index": 1,
+          "component_indices_zero_based": [
+            0
+          ],
+          "exponential": [
+            {
+              "matrix_power": -2,
+              "phi_power": -1,
+              "derivative_coefficient": "1",
+              "phi_coefficient": "-1"
+            }
+          ],
+          "maximum_log_degree": 0,
+          "frobenius": {
+            "schema": "flintnde_exact_frobenius_manifest_v1",
+            "status": "passed",
+            "system_name": "independent-scalar-exponential-exponential-sector-001-at-0",
+            "dimension": 1,
+            "exact_field": "Q(i)",
+            "roots_exact": [
+              "0"
+            ],
+            "root_multiplicities": [
+              1
+            ],
+            "geometric_multiplicities": [
+              1
+            ],
+            "route": "single_root_jordan_exact_gate",
+            "root_exact": "0",
+            "nilpotent_exact": [
+              [
+                "0"
+              ]
+            ],
+            "maximum_log_degree": 0,
+            "projectors_exact": null,
+            "solution_roots_exact": null,
+            "initial_vectors_exact": null,
+            "resonance_gates": {},
+            "gate_series_order": 0
+          }
+        }
+      ],
+      "scope": "exactly decoupled Q(i) exponential sectors; general formal block decoupling and Stokes matching are not inferred",
+      "fuchsian_reduction_attempt": {
+        "schema": "flintnde_fuchsian_reduction_v2",
+        "status": "moser_irreducible",
+        "original_pole_order": 2,
+        "reduced_pole_order": 2,
+        "pole_order_history": [
+          2
+        ],
+        "reason": "highest Laurent coefficient is not nilpotent; a rational Fuchsian gauge does not exist in the unramified meromorphic Lee-Moser class",
+        "transformation": {
+          "route": "exact_lee_moser_projector_balance",
+          "convention": "I=Product_k(1-Q_k+Q_k/z) J",
+          "center_exact": "0",
+          "balance_count": 0,
+          "projectors_exact": [],
+          "projector_idempotency_exact": []
+        }
+      }
+    },
+    "boundary": {
+      "schema": "flintnde_generalized_boundary_v1",
+      "terms": [
+        {
+          "phi": [
+            {
+              "power": -1,
+              "coefficient": "-1"
+            }
+          ],
+          "a": "0",
+          "b": 0,
+          "C": [
+            "3"
+          ]
+        }
+      ],
+      "constant_basis_exact": [
+        [
+          "1"
+        ]
+      ],
+      "canonical_basis_constants": [
+        "3"
+      ],
+      "term_resolutions": [
+        {
+          "term_index": 1,
+          "input": {
+            "a": "0",
+            "b": 0,
+            "C": [
+              "3"
+            ]
+          },
+          "verified_sector": 1,
+          "component_indices_zero_based": [
+            0
+          ],
+          "exponential": [
+            {
+              "matrix_power": -2,
+              "phi_power": -1,
+              "derivative_coefficient": "1",
+              "phi_coefficient": "-1"
+            }
+          ],
+          "power_log_resolution": {
+            "schema": "flintnde_frobenius_boundary_v1",
+            "system_name": "independent-scalar-exponential-exponential-sector-001-at-0",
+            "exact_field": "Q(i)",
+            "terms": [
+              {
+                "a": "0",
+                "b": 0,
+                "C": [
+                  "3"
+                ]
+              }
+            ],
+            "canonical_basis_constants": [
+              "3"
+            ],
+            "term_resolutions": [
+              {
+                "term_index": 1,
+                "input": {
+                  "a": "0",
+                  "b": 0,
+                  "C": [
+                    "3"
+                  ]
+                },
+                "canonical_basis_constants": [
+                  "3"
+                ],
+                "completion": "lower log powers are generated by exp(N log(z))"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "path": [
+      "[0.3333333333333333333333333333333333333333 +/- 3.34e-41]",
+      "[0.4166666666666666666666666666666666666667 +/- 3.34e-41]",
+      "[0.5208333333333333333333333333333333333333 +/- 3.34e-41]",
+      "[0.6510416666666666666666666666666666666667 +/- 3.34e-41]",
+      "[0.8138020833333333333333333333333333333333 +/- 3.34e-41]",
+      "1.000000000000000000000000000000000000000"
+    ],
+    "basisError": "[+/- 6.12e-105]",
+    "primaryError": "[8.2021932710969107393582832863985825073014062799140e-41 +/- 2.52e-91]",
+    "referenceError": "[9.9889793780386625804690345457024718172675248264007e-55 +/- 7.31e-105]",
+    "primarySeconds": 0.18743710010312498,
+    "referenceSeconds": 0.3421772997826338
+  },
+  "failClosed": {
+    "defective": {
+      "error": "high-order pole remains after exact Lee-Moser reduction (exact projector balance did not strictly lower the complete matrix pole order); decoupled exponential route is not certified (leading high-pole matrix is defective; a Jordan/shearing or ramified formal gauge is required); formal rank-one route is not certified (formal rank-one route requires simple pairwise-distinct leading eigenvalues)",
+      "continuationReady": false,
+      "messages": [
+        "Raw endpoints were supplied, so a one-variable path plan was generated; pass an existing plan directly to the execution function.",
+        "Singularity mode: singularity jump (explicit). The selected multivalued branch is equivalent to a detour path and must be confirmed by the user.",
+        "start 'left' is ordinary",
+        "target 'right' is ordinary",
+        "internal singularities on the straight path: finite_001",
+        "unsupported local singularities: finite_001: finite_001: unsupported non_fuchsian_input_basis local basis: high-order pole remains after exact Lee-Moser reduction (exact projector balance did not strictly lower the complete matrix pole order); decoupled exponential route is not certified (leading high-pole matrix is defective; a Jordan/shearing or ramified formal gauge is required); formal rank-one route is not certified (formal rank-one route requires simple pairwise-distinct leading eigenvalues)"
+      ]
+    },
+    "algebraicIndicialRoots": {
+      "error": "independent-algebraic-indicial-roots-at-0: exact Q(i) gate currently requires an indicial spectrum that splits completely over Q(i)",
+      "continuationReady": false,
+      "messages": [
+        "Raw endpoints were supplied, so a one-variable path plan was generated; pass an existing plan directly to the execution function.",
+        "Singularity mode: singularity jump (explicit). The selected multivalued branch is equivalent to a detour path and must be confirmed by the user.",
+        "start 'left' is ordinary",
+        "target 'right' is ordinary",
+        "internal singularities on the straight path: finite_001",
+        "unsupported local singularities: finite_001: finite_001: unsupported regular_singular local basis: independent-algebraic-indicial-roots-at-0: exact Q(i) gate currently requires an indicial spectrum that splits completely over Q(i)"
+      ]
+    },
+    "formalStartOnly": {
+      "method": "formal_exponential_asymptotic",
+      "continuationReady": false,
+      "boundary": {
+        "schema": "flintnde_formal_exponential_boundary_v1",
+        "terms": [
+          {
+            "phi": [
+              {
+                "power": -1,
+                "coefficient": "1"
+              }
+            ],
+            "a": "0",
+            "b": 0,
+            "C": [
+              "0",
+              "1"
+            ]
+          }
+        ],
+        "canonical_basis_constants": [
+          "1",
+          "0"
+        ],
+        "term_resolutions": [
+          {
+            "term_index": 1,
+            "input": {
+              "a": "0",
+              "b": 0,
+              "C": [
+                "0",
+                "1"
+              ]
+            },
+            "verified_sector": 1,
+            "k_exact": "-1",
+            "rho_exact": "0",
+            "canonical_scale": "1"
+          }
+        ]
+      },
+      "internalError": "finite_001: formal_exponential_asymptotic is start-only; internal/target continuation requires Stokes connection data",
+      "targetError": "formal_target: formal_exponential_asymptotic is start-only; internal/target continuation requires Stokes connection data"
+    }
+  },
+  "checks": {
+    "apparentPoleOrderTwo": true,
+    "leeMoserReducedToSimplePole": true,
+    "leeMoserExactSystemRoundTrip": true,
+    "leeMoserProjectorsExact": true,
+    "apparentPrimaryClosedForm": true,
+    "apparentReferenceClosedForm": true,
+    "exponentialMethodAndPhi": true,
+    "exponentialLocalBasisClosedForm": true,
+    "exponentialPrimaryClosedForm": true,
+    "exponentialReferenceClosedForm": true,
+    "defectiveFailsClosed": true,
+    "algebraicExtensionFailsClosed": true,
+    "formalStartOnlyConstructed": true,
+    "formalInternalRequiresStokes": true,
+    "formalTargetRequiresStokes": true
+  },
+  "wallTimeSeconds": 1.2537881000898778
+}

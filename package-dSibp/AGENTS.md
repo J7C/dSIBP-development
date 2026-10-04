@@ -14,6 +14,7 @@
 - `Documentation/dS_IBP_package_plan.md`：总体架构、统一积分表示、IBP 生成流程和拓扑输入格式。
 - `Documentation/dS_IBP_package_design_note.md`：约定体系、设计决定和关键推导索引。
 - `Documentation/dS_IBP_package_tech_note.tex`：完整公式、物理 convention 与证明。
+- `历史版本更新日志/README.md`：长期保留的版本更新说明、文件命名和已恢复版本清单。
 - `Documentation/2026-07-21_common_theta_correctness_todo.md`：共同-theta、`WT`、指标/零点、可达 sector 与下游模块的正确性验收清单。
 - `independent-benchmark/independent-benchmark.md`：交给独立推导者的自包含 benchmark 任务书。
 - `independent-benchmark/README.md`：独立 benchmark 的目录边界、内部/外部检验路线和报告回收规则。
@@ -22,18 +23,22 @@
 
 ## 程序与目录
 
-- 当前开发主线由 `../研究计划与研究进度.md` 指定；当前为模块化目录 `versions/022_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。
-- 当前正式单文件入口是 `independent-benchmark/package/package_022.0.wl`。验收后工作树只保留
-  `versions/022_dSIBP/`；全部更早源码版本只从 Git 历史追溯，不保留当前加载或测试入口。
+- 当前主线是模块化目录 `versions/023_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用
+  `Needs["dSIBP`"]`；正式单文件与手册是 `independent-benchmark/package/package_023.0.wl/.pdf`。
+  工作树只保留 023 源码和 023.0 正式交付；022 及更早版本只从 Git 历史追溯，不保留加载或测试入口。
 - 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。020 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `020.1`、`020.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
-- 本规则生效后新增的 dSIBP 版本都必须附带独立更新说明，至少记录基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制；018.1 及更早资产不追溯补建。新整数代码版本使用 `versions/NNN_dSIBP/UPDATE_NOTES.md`，同一代码版本的新正式发布号使用 `independent-benchmark/package/package_NNN.x_UPDATE_NOTES.md`。
+- 本规则生效后新增的 dSIBP 版本都必须在 `历史版本更新日志/` 附带独立更新说明，至少记录基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制；018.1 及更早资产不追溯补建。发布日志命名为 `dSIBP-NNN.x.md`；代码版本与正式发布日志内容不同时，两份分别保留并在目录 README 中说明。
 - `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；每项可复用检查放入名称直接说明功能的独立子目录，禁止重新堆叠全 family、全 sign/parity、连续指标撒点或完整 reduction 工作树。运行产物只放对应子目录的 `results_test/` 并在任务结束后清理。
 - `check-smoke/` 不属于独立检验工作区。内部或外部独立执行者均不得读取、复制、写入或引用其中的脚本、结果与结论。
 - 根目录 `check/` 专供内部独立会话按完整任务书执行；每轮开始前必须清空旧工作树并从头建立，不得复用上一轮 expected、撒点、reduction 或结果。该目录整体忽略，不作为长期项目资产。
-- `independent-benchmark/package/` 只保留当前版本化程序 `package_<version>.wl`、同版本正式用户手册 `package_<version>.pdf`、本规则生效后的同版本 `package_<version>_UPDATE_NOTES.md` 和少量应用 examples；更新版本时覆盖当前交付并删除旧版本或无版本名副本。018.1 及更早交付不追溯补建更新说明。
+- `independent-benchmark/package/` 只保留当前版本化程序 `package_<version>.wl`、同版本正式用户手册 `package_<version>.pdf` 和少量应用 examples；更新说明统一保存在 `历史版本更新日志/`，不复制进交付目录。更新版本时覆盖当前交付并删除旧版本或无版本名副本。
 - `independent-benchmark/package/` 不得放 expected、验证脚本、开发文档、报告或 reduction 输出。
+- 涉及真实 Kira reduction 的成品 example 只能保留可读输入脚本、轻量输入摘要和轻量最终结果摘要。
+  Wolfram 输入工作树必须位于仓库外，Kira 必须在 WSL 的对应外置目录运行；example 中不得提交
+  `init/`、`kira/`、database、save、日志、reduction table、cache、DE 运行目录或本机绝对路径。
+  README 必须明确说明外置运行边界和发布前已删除的中间产物。
 - 每个发布版本必须维护 `independent-benchmark/package/examples/coverage_manifest.wl`：列出全部需要用户掌握的公开函数及其成品 example；正式检查必须与 package 的 `DSPublicAPI[]` 比较并验证源码调用覆盖，缺项不得发布。
-- 三个典型成品 example 长期保留且不得由全 family 变体取代：`03_single_massive_sunrise/` 是唯一 sunrise example，固定三平行边、单 massive line 和 ISP，只生成 general seeds 与 general 参数微分算符，禁止撒点、`linearData`、Kira、DE 和 scaling；`04_pure_massive_bubble_closed_loop/` 保留 dlog basis、既有 reference 对照及从初始化到 19-master DE/scaling 的完整闭环；`06_mix_bubble_tree/` 固定一条 massive cycle line，其余 cycle/bridge lines massless，覆盖 `kL/kE`、无圈参量、massless convention 与 cycle/bridge contraction。清理 smoke/check 时不得删除、降格或移出 examples。
+- 三个典型成品 example 长期保留且不得由全 family 变体取代：`03_single_massive_sunrise/` 是唯一 sunrise example，固定三平行边、单 massive line 和 ISP，只生成 general seeds 与 general 参数微分算符，禁止撒点、`linearData`、Kira、DE 和 scaling；`04_pure_massive_bubble_closed_loop/` 保留 dlog basis、既有 reference 对照及从初始化到 19-master DE/scaling 的完整闭环；`06_mix_bubble_tree/` 固定一条 massive cycle line，其余 cycle/bridge lines massless，覆盖 `kL/kE`、无圈参量、massless convention、cycle/bridge contraction 及对应 81-master Kira/DE 结果摘要。清理 smoke/check 时不得删除、降格或移出 examples。
 - `000-report/` 是本项目唯一的独立检验报告归档目录；除目录说明 `README.md` 外，不在其它项目目录散放报告。
 
 新建、移动、清理程序目录时遵守 `program-directory-layout` skill：正式可复用结果进 `results/`，临时测试进 `test/results_test/`，可重跑中间产物进 `results_temp/`；不得误删用户未提交改动。
@@ -60,7 +65,7 @@
 - 报告文件名统一为 `{时间}-{版本}-{内部/外部}.md`。
 - 时间使用 `YYYY-MM-DD-HHmm`，版本使用三位程序版本号；例如 `2026-07-21-1600-012-内部.md`、`2026-07-21-1600-012-外部.md`。
 - 报告如有附件，放入与报告同名并追加 `-附件` 的目录；附件不得混入程序、expected 或 package 交付目录。
-- 新一轮检验开始前先确认目标版本；只保留当前 022 对应且未被后续同类证据取代的正式报告。
+- 新一轮检验开始前先确认目标版本；只保留当前 023 对应且未被后续同类证据取代的正式报告。
   旧版本报告、针对报告的 battle/`report-of-report` 和临时争论稿不作为项目资产长期保留。
 
 ## 正确性门禁
@@ -76,13 +81,16 @@
 - 多圈动量 IBP 生成元必须覆盖当前 plan/tech note 规定的完备集合；ISP 由用户定义并在生成关系前验证闭合性。
 - ISP 指数的定义零点固定为 `0`。正指数是 numerator 幂；用户显式选择负 range/target/J 时 package 不阻断。自动 target-to-seed 反推不得把 ISP 下界降到用户给定下界以下，且 `ispN=0` 的 ISP 自身求导必须先精确化为零。
 - topology、sector metadata、canonical seed、`linearData` 和 serializer 之间的状态必须一致；backend 只消费 backend-neutral `linearData`。
-- 用户必须分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。022 不读取其它字段名或别名。
+- 用户必须分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。023 不读取其它字段名或别名。
 - 加减号和复合方向必须保留精确系数。整体反号的无圈动量模长可 canonical 成同一对象，但 `p_1+p_2` 与 `p_1-p_2` 不得合并；实际模长只生成 `sE1,sE2,...` 或 dependent binding，不主动输出外腿交叉点积。
 - 缺省公开 loop 坐标为 `ssij=Sqrt[sp[p_i,p_j]]`，内部原子仍为 `kk[i,j]`。编号只依赖显式输入列表顺序；任一类别总数超过 9 时按总数位宽补零。自定义名称只通过现行 `KinematicRules` 或 `DSRedefineParameters` 给出。
 - 动量列表或动力学规则欠完备时必须红色报错，返回缺失方向/零空间表达式并拒绝初始化；所有下游入口读取 capability gate。过完备时 warning 后允许 symbolic IBP，但 `ds/DSDE` 与唯一反变换必须关闭。
 - root topology 决定圈数、loop space 与 cycle/bridge line-power schema；contact/shrink sector 必须继承这些 metadata，只改变端点代表、pack 状态、零点和对称性，不得重新降圈。
 - 根号坐标求导必须通过链式法则复用平方不变量原子导数：`d/dssij=2 ssij d/d(sp[ki,kj])`；不得复制或重写一套 loop 外动量导数实现。现行自定义规则直接写 `sp[ki,kj]->sij` 时保持单位 Jacobian。
-- 初次 Kira 探测不得把全部积分设为 targets；必须按预估 master 规模设置有界候选范围，未有更具体依据时上限取约 1000，formal 阶段只选择 active basis 及其导数闭包。
+- MMA 在预先声明的合理 seed envelope 内生成并导出完整 canonical IBP 方程，不做 target-directed relation/incidence/frontier 筛选；Kira 通过 `select_mandatory_list` 限定 targets 并自行选择方程。初次 probe 按预估 master 规模使用有界候选范围，未有更具体依据时取自然排序前约 1000 项。
+- 确认 active basis 后先检查首次 Kira reduction table；不论导数积分原先是否被显式列为 mandatory
+  target，只要首轮已有完整左端规则且 RHS 闭合到冻结 active masters，就必须直接复用。只有无规则
+  或未闭合的导数积分才允许组成追加 targets；追加运行仍使用同一完整关系集，不在 MMA 侧另筛关系。
 - 任何进入 Kira reduction 的 family 都必须先实数化。实数化的固定动作是：从 topology/line 的 phase-dependency metadata 结构性识别每个 massless propagator 动量原子 `k`，定义单个实 backend 变量 `ik` 并执行 `k -> -I ik`，不得按符号名猜测；再用可逆积分相位变换消除剩余整体虚相位。`ibp.kira` 出现 `I`、`dsii` 或其它虚数替代 token 时必须拒绝导出；该 convention 只限 Kira 内部，import 后恢复物理变量和导数 Jacobian。实现与检查直接参考已经完成的 massive bubble 路线，不重新构造另一套 convention。
 
 ## Mathematica 实现约定

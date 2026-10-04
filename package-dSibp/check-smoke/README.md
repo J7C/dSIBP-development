@@ -7,9 +7,11 @@
 - `check_general_ibp_seeds/`：构造限定 family 的 general IBP seed templates；single-massive sunrise 子检查逐项核对 6 个 `q·q/q·kL` momentum generators、odd/odd sector 传播和 ISP 不参与 parity。不撒连续指标点，不调用 `DSGenerateIBP` 或 `DSLinear`。
 - `check_isp_numerator_contract/`：检查 ISP 零点固定为 `0`、正幂 numerator、用户显式负 range/target/`J` 可保留，以及自动反推 seed 只能保持或抬高用户下界；不运行 Kira 或 reduction。
 - `check_parameter_derivative_operators/`：用单条 fixed massive line 检查结构化 `kEpower`、参数重定义、normalized contact、`D[Log[N_s]]` 和 `rep2Integrand` 回乘。single-massive sunrise 的 `{ss11,kE}` general 算符由长期 example 直接覆盖，不保留 active-basis wrapper smoke。
+- `check_massive_contact_convention/`：用原始同分支 theta 定义检查 massive raw contact、child normalization 与 normalized contact；覆盖 `++/--`、两个端点、`10/01` 以及 general/pure-time 两条 producer。
 - `check_scaling_relation/`：只读已有 massive-bubble 解析 probe，在唯一固定点检查 Euler/scaling relation；不包含 sunrise，不重新生成 reference，不运行 Kira。
 - `check_public_api_example_coverage/`：比较 `DSPublicAPI[]`、coverage manifest 和成品 example 源码中的实际调用。
 - `check_kira_energy_convention/`：只检查 Kira 内部 `P0 -> -I ip0`、实有理数值映射以及普通导数/Euler 算符的 Jacobian。
+- `check_kira_export_digest_boundary/`：用最小序列化 artifact 检查 export identity 摘要实际写出的 `ibp.kira`，不重新哈希完整 MMA 方程；同时验证文件篡改会被 identity 门禁拒绝。
 - `check_topology_loop_count/`：并列检查普通两顶点单边、自环 tadpole 和三平行边 sunrise 的圈数、cycle/bridge、自环 metadata 与 routing rank。
 - `check_integral_order_authority/`：用两积分合成 linearData 检查 `integralList` 唯一顺序、显式 reindex 和 plan 不二次重排；不写 backend 文件。
 - `check_user_mi_basis/`：复用长期 massive-bubble 的既有积分表，检查 21/19 维 `userMI` 秩、support 双向映射、backend token 和解析导数 closure；不生成 seeds、不运行或读取 reduction。
