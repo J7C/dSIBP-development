@@ -1450,7 +1450,7 @@ sector 对象已按第 3 节定义为 `J_s=N_s I_s`，所以 `delta_s` 必须包
 
 Bubble reference 只复用已有解析结果，不重新生成 reference IBP，也不运行 reference Kira。Phase 2 先按第 13.2 节核验 `full19_connection/DEP0.m`、`full19_connection/DEks.m`、`full19_connection/DEscaleCheck.m`、`basis/MIdlogNote.m` 的 SHA-256，再读取 `reference-results/pure_massive_bubble/reference_probe.wl` 作最后对照。必须依次应用：`P_pkg=-P_ref`；package Kira 截面 `P0_pkg=-I ip0`，故 `D_P0=I D_ip0` 而 Euler 不变；十九项统一权重使 stored 矩阵与 physical dlog basis 直接一致（旧版第 15--18 项显式 `ks` 的 `D[T,ks].Inverse[T]` 恢复在新构造中不存在，`T` 退化为恒等）。`G/R1` 与 normalized `J_s=N_s I_s` 按逐项同定义测试，比例必须全为 1，不允许 post-hoc basis adapter。
 
-Bubble 的唯一固定点为 `ks=ss11=43/17`、`ip0=29/13`、`P0=-29 I/13`；在确认所有分母非零后，physical `P0`、backend `ip0`、physical `ks` 三套 `19 x 19` 比较各报告相等数、非零差值数和首差值。Bubble+tree 的唯一精确点由执行者在进入 Phase 2 full flow 时冻结并记录，不写入 Phase 1 expected。Bubble 不是完整 dlog 系统，不检查 primitive、letters、pole 或 dlog form。
+Bubble 的唯一固定点为 `ks=ss11=43/17`、`ip0=29/13`、`P0=-29 I/13`；在确认所有分母非零后，physical `P0`、backend `ip0`、physical `ks` 三套 `19 x 19` 比较各报告相等数、非零差值数和首差值。Bubble+tree 的唯一精确点由执行者在进入 Phase 2 full flow 时冻结并记录，不写入 Phase 1 expected。Bubble 的完整 19 维 dlog form 由 reference 侧 `full19_dlog/` 单独给出：`x = ks/P0` 上三条非零留数字母 `{x - 1, x, x + 1}`（`DEdlogx19Check` 的残余精确为零）；本流程不重算 primitive、letters、pole 或 dlog form，只对照 connection 矩阵与 scaling。
 
 ### 15.4 限定闭环分组报告与修正门禁
 
