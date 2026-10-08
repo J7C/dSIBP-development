@@ -14,7 +14,7 @@
 - `check_kira_export_digest_boundary/`：用最小序列化 artifact 检查 export identity 摘要实际写出的 `ibp.kira`，不重新哈希完整 MMA 方程；同时验证文件篡改会被 identity 门禁拒绝。
 - `check_topology_loop_count/`：并列检查普通两顶点单边、自环 tadpole 和三平行边 sunrise 的圈数、cycle/bridge、自环 metadata 与 routing rank。
 - `check_integral_order_authority/`：用两积分合成 linearData 检查 `integralList` 唯一顺序、显式 reindex 和 plan 不二次重排；不写 backend 文件。
-- `check_user_mi_basis/`：复用长期 massive-bubble 的既有积分表，检查 21/19 维 `userMI` 秩、support 双向映射、backend token 和解析导数 closure；不生成 seeds、不运行或读取 reduction。
+- `check_user_mi_basis/`：复用长期 massive-bubble 的既有积分表，检查 19 项全 active 的 `userMI` 秩、support 双向映射、backend token 和解析导数 closure；不生成 seeds、不运行或读取 reduction。
 - `check_module_ownership/`：静态扫描指定版本 Kernel 源码，报告同一精确左端跨文件重复定义，并生成模块所有权表；只读源码，不加载 package。
 - `check_dead_definition_cleanup/`：动态加载目标版本（`DSIBP_PACKAGE_FILE` 指向 022），确认曾被跨文件覆盖的 6 个函数只保留生效定义且可调用；不运行 Kira、reduction 或 DE。
 

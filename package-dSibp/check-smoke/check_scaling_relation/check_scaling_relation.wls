@@ -36,9 +36,9 @@ checks = <|
     (packagePoint === {ks -> 43/17, P0 -> -29 I/13}),
    "energyDirectionRecorded" ->
     (Lookup[probe, "energyDirectionConvention", "missing"] === "P_pkg == -P_ref"),
-   "originalDlogKsRestored" ->
-    (Lookup[probe, "physicalDlogExplicitKsDegrees", {}] ===
-      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0}),
+   (* 新 basis 十九项统一权重，不再有旧的第 15--18 项显式 ks 恢复，deltas 全零。 *)
+   "physicalDlogKsDeltasAllZero" ->
+    (Lookup[probe, "physicalDlogExplicitKsDegrees", {}] === ConstantArray[0, 19]),
    "matrixDimensions" ->
     (Dimensions[deP0] === {19, 19} && Dimensions[deKs] === {19, 19}),
    "scalingExact" -> (scalingDifference === ConstantArray[0, {19, 19}])

@@ -617,7 +617,7 @@ $\longrightarrow$
 
 \subsection{零点缺省值}
 
-零点缺省值由 building block 类型决定。验证依据：参考代码 \texttt{001 bubble\_ibp\_sym.m} 的 \texttt{reppara2N} 给出 $a0 \to 2\nu$, $b0 \to -2\nu$。
+零点缺省值由 building block 类型决定。验证依据：参考代码 \texttt{001 bubble\_ibp\_sym\_exp\_full.wl} 的 \texttt{reppara2N} 给出 $a0 \to 2\nu$, $b0 \to -2\nu$。
 
 \begin{align}
   \texttt{"h" 模式:} \quad a0_v &= 2\nu_{\text{ref}}, & b0_e &= -2\nu_e, \label{zeroHmode} \\
@@ -1514,14 +1514,14 @@ prepared = DSUserMI[linearData, expressions, spec]
 \end{equation}
 因此同一 manifest 不得同时含 $k\to-ir$ 与 $x\to+r^2$。例如 \texttt{loopScale->43/17} 在 $\texttt{kk[1,1]}=\texttt{loopScale}^2$ 时生成 \texttt{iloopscale->43/17}、\texttt{loopScale->-43 I/17} 和 \texttt{kk[1,1]->-1849/289}。export 的顺序是物理运动学映射、物理从属坐标重生、backend 有理数值代入、剩余 Gaussian integral phase gauge；importer 依次恢复一般 coefficient map、backend kinematic map 和积分 phase gauge。Gaussian gauge 只允许作为残余相位的后备，并保存全部可逆相位数据；不能代替式~\eqref{eq:kira-real-kinematic-map}。
 
-reference bubble 的数值对照不重新生成 reference IBP 或运行 reference Kira，而是复制并按固定 SHA-256 核验原始 reference 已导出的解析矩阵 \texttt{DEP0.m}、\texttt{DEks.m}、\texttt{DEscaleCheck.m}、\texttt{MIdlogNote.m} 与 \texttt{derivative\_rules\_bubble.m}。设 package 与 reference 的物理能量分别为 $P_{\rm pkg}$、$P_{\rm ref}$，当前 branch 的结构映射为
+reference bubble 的数值对照不重新生成 reference IBP 或运行 reference Kira，而是从 \texttt{code\_final\_version} 的 \texttt{full19\_connection/} 与 \texttt{basis/} 复制并按固定 SHA-256 核验解析矩阵 \texttt{DEP0.m}、\texttt{DEks.m}、\texttt{DEscaleCheck.m} 与 \texttt{MIdlogNote.m}。设 package 与 reference 的物理能量分别为 $P_{\rm pkg}$、$P_{\rm ref}$，当前 branch 的结构映射为
 \begin{equation}
  P_{\rm pkg}=-P_{\rm ref},\qquad
  \frac{\partial}{\partial P_{\rm pkg}}=-\frac{\partial}{\partial P_{\rm ref}}.
 \end{equation}
-因此 package 点 $P_{\rm pkg}=-29i/13$ 对应 reference 解析矩阵中的 $P_{\rm ref}=29i/13$。解析 stored matrix 先用齐次 degree 做 $N A N^{-1}$，不加入 $N'N^{-1}$；再以 $T=\operatorname{diag}(1^{14},k_s^4,1)$ 恢复 \texttt{MIdlogNote} 第 15--18 项的显式 $k_s$，其中 $A_{k_s}$ 必须加入 $T'T^{-1}$。最后由 $A_{ip0}=-iA_{P0}$ 得到 backend view。19 个 master 定义逐项比例均为 $1$，physical $P_0$、backend $ip0$ 与 physical $k_s$ 三套 $19\times19$ 矩阵均有 $361/361$ 个矩阵元精确相等。
+因此 package 点 $P_{\rm pkg}=-29i/13$ 对应 reference 解析矩阵中的 $P_{\rm ref}=29i/13$。当前构造的十九项 basis 统一权重，\texttt{002 bubble\_de\_exp\_full.m} 在符号 $k_s$ 下直接建立 physical 矩阵，stored matrix 与 physical dlog basis 一致，对照只保留能量方向号 $A^{\rm phys}_{P_0}=-A^{\rm stored}_{P_0}$ 与 $A^{\rm phys}_{k_s}=A^{\rm stored}_{k_s}$（旧版齐次 $NAN^{-1}$ 与 $T=\operatorname{diag}(1^{14},k_s^4,1)$ 的第 15--18 项显式 $k_s$ 恢复均已退化）。最后由 $A_{ip0}=-iA_{P0}$ 得到 backend view。19 个 master 定义逐项比例均为 $1$，physical $P_0$、backend $ip0$ 与 physical $k_s$ 三套 $19\times19$ 矩阵均有 $361/361$ 个矩阵元精确相等。
 
-为检验这 19 个 master 不是有限撒点边界留下的假 master，package 侧还必须在不触碰 reference producer 的条件下扩大目标包络。018 验收把两项 $a$ 从 $[-1,4]$ 扩为 $[-2,5]$，两项 $b$ 从 $[-2,5]$ 扩为 $[-3,6]$。fresh 系统含 197232 条生成关系、7850 个 linear 积分、48699 个 Kira 方程和 7871 个导出积分；formal active basis 仍为 19 项。215 个 Kira targets 的精确构成为 19 个 active-basis token 加 196 个 derivative $J$，旧系统的 196 个 derivative 对象在扩张系统中缺失数为零。Kira 2.3 仍选出 backend IDs $1,\ldots,19$，全部 215 targets 约化且 unreduced 为零；回读后的 scaling matrix/source residual 为零，上述三套矩阵再次各通过 $361/361$。
+为检验这 19 个 master 不是有限撒点边界留下的假 master，package 侧还必须在不触碰 reference producer 的条件下扩大目标包络。把两项 $a$ 从 $[-1,4]$ 扩为 $[-2,5]$，两项 $b$ 从 $[-4,6]$ 扩为 $[-5,7]$，即示例包络四条边界各向外移动 1。fresh 系统含 386316 条生成关系、13163 个 linear 积分、40323 个 Kira 方程和 13182 个导出积分；formal active basis 仍为 19 项。300 个 Kira targets 的精确构成为 19 个 active-basis token 加 281 个 derivative $J$，示例系统的 281 个 derivative 对象在扩张系统中缺失数为零。Kira 2.3 仍选出 backend IDs $1,\ldots,19$，全部 300 targets 约化且 unreduced 为零；回读后的 scaling matrix/source residual 为零，上述三套矩阵再次各通过 $361/361$。
 
 设完全同序的主积分列向量为 $\bm I=(I_1,\ldots,I_N)^T$。对外部独立变量 $x$，公开总导数 \texttt{ds[expr,x]} 同时作用于显式系数和积分：
 \begin{equation}
@@ -1578,13 +1578,7 @@ residual/tadpole sector 使用该文 Eq.~(64)
 
 用户用 helper 函数构造 \texttt{symmetryRules} 时，序列化的 topology/checkpoint 保存的是规则表达式，不会自动保存 helper 的 DownValues。因此从 checkpoint 新开 kernel 续跑 \texttt{DSKiraExport} 或 \texttt{DSDE} 前，consumer 必须先加载生成该 topology 的同源 family convention；否则规则头仍存在但条件或右端 helper 无法求值，顶点交换等价的对象会错误地表现成不同 derivative targets。正常单 kernel 全流程没有这一步；只有显式 checkpoint round trip 需要恢复用户定义环境。
 
-reference bubble 还有一个检查侧边界。原始 \texttt{MIdlogNote.m} 的第 15--18 个 dlog 基元显式含 $k_s$，但 \texttt{002 bubble\_de.m} 构造 \texttt{MIdlogSym} 时经 \texttt{reppara2N} 取 $k_s\to1$。因此由 \texttt{DEP0.m/DEks.m} 提取的 stored matrix 即使按齐次次数恢复到一般 $k_s$，仍不是含显式 $k_s$ 的 physical dlog basis。最终对照必须令
-\[
- T=\operatorname{diag}(1^{14},k_s^4,1),\qquad
- A^{\rm phys}_{P_0}=T A^{\rm stored}_{P_0}T^{-1},\qquad
- A^{\rm phys}_{k_s}=(\partial_{k_s}T)T^{-1}+T A^{\rm stored}_{k_s}T^{-1}.
-\]
-相应四个 master 的 Euler degree 各增加一。这个步骤只恢复 reference 源码中原本存在的 $k_s$，不改变 package 的 normalized-$J$ 定义，也不允许从最终差矩阵反解其它 basis adapter。
+reference bubble 的检查侧边界在新构造下消失。\texttt{002 bubble\_de\_exp\_full.m} 全程保留符号 $k_s$，由 \texttt{full19\_connection/DEP0.m}、\texttt{DEks.m} 提取的 stored matrix 已经是含显式 $k_s$ 的 physical dlog basis；旧版 \texttt{002 bubble\_de.m} 经 \texttt{reppara2N} 取 $k_s\to1$ 后再以 $T=\operatorname{diag}(1^{14},k_s^4,1)$ 恢复第 15--18 项 $k_s$ 的检查步骤已随 basis 更换退役。该边界只影响对照提取方式，不改变 package 的 normalized-$J$ 定义，也不允许从最终差矩阵反解其它 basis adapter。
 
 闭环 example 固定选 pure massive bubble reference 的 $--$ branch，并使用与 reference code 相同的 parity-closed subsystem：top sector 中 $n_1+n_2+b_1$ 与 $n_3+n_4+b_2$ 均为偶数；$R_1$ 中 $b_1$ 与 $n_3+n_4+b_2$ 均为偶数。交换对称性、$R_2\to R_1$ 与 parity 必须在前端统一 canonical 中应用，不能在 Kira importer 或 DE 层临时补入。
 

@@ -758,7 +758,7 @@ serializer 的 coefficient domain 只允许实有理函数。`Sqrt[s11]` 这类�
 
 `DSDE[reductionData, vars]` 的每一列对应一个固定 master：先算 `ds[master,var]`，再应用 reduction rules，把内部 `kk/ISP` 系数坐标转换为 family 声明的外部不变量，最后按完全相同的 master 顺序抽系数。该外部化必须发生在 residual/master 分解之前，否则同一物理量会以 `s11` 与 `kk[1,1]` 两个原子进入 Euler check。若存在非齐次项或未约化 `J`，结果状态为 `notClosed`，不得仍返回“已完成”矩阵。
 
-pure massive bubble reference 的 vertex-exchange symmetry 只在 `P1=P2` 成立。reference `Vpm=0` 与 package `--` 的能量参数满足 `P_pkg=-P_ref`；闭环例使用 package 变量 `P0=+I k0`，并把 reference basis 映射为 `P1=P2=-P0=-I k0`，变量权重为 `{s11,P0}->{2,1}`。独立 `P1/P2` family 不得加载该 symmetry。真实结果的 active IDs/master order 均为 `1..19`，辅助关系 `20,21` 不得成为 master。
+pure massive bubble reference 的 vertex-exchange symmetry 只在 `P1=P2` 成立。reference `Vpm=0` 与 package `--` 的能量参数满足 `P_pkg=-P_ref`；闭环例使用 package 变量 `P0=+I k0`，并把 reference basis 映射为 `P1=P2=-P0=-I k0`，变量权重为 `{s11,P0}->{2,1}`。独立 `P1/P2` family 不得加载该 symmetry。真实结果的 active IDs/master order 均为 `1..19`；当前 basis 十九项全部 active、没有辅助关系。
 
 `DSScaleCheck` 以 Euler operator 作用于 master vector，并与 index/zero-point 决定的齐次次数相减。`ScalingRelation->"LoopTopology"` 按 root 圈数和目标 sector 的活动顶点、`a/a0`、full 或 shrunk `b/b0`、二次齐次 ISP 幂以及完整 `sectorPrefactorData` 中的 `N_s` 逐 master 生成次数；非齐次 prefactor 或非齐次 master 组合直接失败。top bubble 与 residual `R1` 仍可使用 reference 专用的 2604.14549 Eq. (51)、(64)。检查对象是 reduction 后的符号矩阵恒等式；数值 probe 只能作为诊断附件。
 
@@ -971,7 +971,7 @@ export 顺序固定为虚轴运动学 map、backend numeric rules、残余 Gauss
 
 实数化合同适用于所有 Kira family，而不只适用于全参数数值点。含符号参数时，Kira 系数可以是实 backend 变量的有理函数，但仍须通过逐积分相位变换消除全部虚轴因子；若同一系数含不可分离的实部和虚部，或输出文本出现 `I`、`Complex`、`dsii`，serializer 必须 fail closed。初次探测 targets 按预估 master 规模设上界，没有更具体依据时不超过约 1000；formal targets 只含 active basis 与导数闭包。
 
-reference 对照的数据源边界与 package reduction 分开：package 侧在关系或 exporter 改变后 fresh reduction；reference 侧直接复用并哈希核验原始程序已导出的解析 `DEP0/DEks`，禁止为数值 probe 重新生成 reference reduction。bubble 的变量方向是 `P_pkg=-P_ref`，所以同一截面为 `P_pkg=-29 I/13`、`P_ref=29 I/13`，且 `D/D P_pkg=-D/D P_ref`；之后再用 `D_P0=I D_ip0` 得到 backend 导数。原始 `MIdlogNote` 第 15--18 项显式 `ks` 的恢复属于 source-defined basis reconstruction，不是 normalization adapter。最终 19 个 master 定义比例全为 1，三套矩阵均 `361/361`。
+reference 对照的数据源边界与 package reduction 分开：package 侧在关系或 exporter 改变后 fresh reduction；reference 侧直接复用并哈希核验原始程序已导出的解析 `DEP0/DEks`，禁止为数值 probe 重新生成 reference reduction。当前对照来源为 `code_final_version` 的 `full19_connection/` 与 `basis/` 四件；新构造十九项统一权重，`DEP0/DEks` 已是恢复后的 physical dlog 矩阵，对照只保留能量方向号 `P_pkg=-P_ref`（同一截面 `P_pkg=-29 I/13`、`P_ref=29 I/13`，`D/D P_pkg=-D/D P_ref`；`D_P0=I D_ip0` 得到 backend 导数），不再有旧版第 15--18 项显式 `ks` 的恢复步骤。最终 19 个 master 定义比例全为 1，三套矩阵均 `361/361`。
 
 ### 21.4 parity generator 与 sector offset
 

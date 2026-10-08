@@ -16,7 +16,7 @@
 - 公开积分统一为 `J[aList,linePacks,ispList]`，并按 `J_s=N_s I_s` 定义。stable kE 编号、`kEpower[...]` 与 `kEParameterExpressions` 分离保存；contact 使用 `c_raw N_source/N_target J_target`，`ds/DSDE` 含 `D[Log[N_s]]`，`rep2Integrand` 把同一 `N_s` 乘回。
 - Root 坐标满足 `ssij=Sqrt[sp[k_i,k_j]]` 与 `partial_ssij=2 ssij partial_sp`；标量积坐标对称，但 `D_ij=k_i.partial_{k_j}` 有序，raw basis 固定 `{D_ij|i<=j}`。不使用 `PowerExpand`。
 - Kira-only 能量映射只作用于初始化识别出的相位能量原子：`k->-I ik`，其中 `ik` 是单个实 backend 变量；普通导数 `D_k=I D_ik`，Euler 算符不变。纯空间坐标不替换。
-- Bubble reference 只在 Phase 2 复制并核验既有解析结果，不重新生成 reference IBP 或运行 reference Kira。必须对齐 `P_pkg=-P_ref`、`P0=-I ip0`、原始 `MIdlogNote` basis 和第 15--18 项显式 `ks` 的 `D[T,ks]T^-1`。
+- Bubble reference 只在 Phase 2 复制并核验既有解析结果，不重新生成 reference IBP 或运行 reference Kira。必须对齐 `P_pkg=-P_ref`、`P0=-I ip0`、当前统一权重 `MIdlogNote` basis（十九项全部 active，无旧版第 15--18 项显式 `ks` 恢复步骤）。
 
 ## 目录与报告
 

@@ -12,13 +12,13 @@
 
 `reference_probe.wl` 返回 Association，主要字段为：
 
-- `"masterBasisNative"`：reference 的 19 个有序 active masters。
+- `"masterBasisNative"`：reference 的 19 个有序 active masters（新构造，统一权重，无辅助关系）。
 - `"deP0"`、`"deIp0"`、`"deKs"`：physical `P0`、backend `ip0`、physical `ks` 的三套精确 `19x19` DE 矩阵。
 - `"scalingDiagonal"`：同序 physical master degrees 的 Euler/scaling 对角矩阵。
 - `"probeRulesReference"`：`{ks->43/17,P0->29 I/13}`。
 - `"probeRulesPackage"`：`{ss11->43/17,P0->-29 I/13}`。
 - `"backendRules"`：`{ip0->29/13}`。
-- `"masterDegrees"`、`"physicalDlogExplicitKsDegrees"`、`"physicalMasterDegrees"`：stored basis、显式 `ks` 与 physical basis 的 degree 数据。
+- `"masterDegrees"`、`"physicalDlogExplicitKsDegrees"`、`"physicalMasterDegrees"`：stored basis、physical `ks` 恢复 deltas 与 physical basis 的 degree 数据；新 basis 十九项全部为统一权重 `-2-2ep`，deltas 全零。
 - `"checks"`：复制来源、矩阵维数、分母、参数残留、Gaussian-rational 和 scaling 门禁。
 
 固定 convention 为 `P_pkg=-P_ref`、`P0_pkg=-I ip0`、`ks=ss11=Sqrt[sp[k,k]]`。因此
@@ -29,19 +29,18 @@ D/D P0_pkg = I D/D ip0
 P0_pkg D/D P0_pkg = ip0 D/D ip0
 ```
 
-既有解析矩阵先按 stored master degrees 做 `N A N^-1` 的 homogeneity lift，不加入 `N' N^-1`。随后恢复原始 `MIdlogNote` 第 15--18 项的显式 `ks`：`A_P0=T A_P0 T^-1`，`A_ks=T' T^-1+T A_ks T^-1`。这是源码定义的 physical dlog basis 恢复，不是 package normalization adapter。19 个 reference/package master 定义比例逐项均为 1。
+新构造的十九项 basis 已统一权重（DEscaleCheck 全部为 `-2-2ep`），stored matrices 直接使用：homogeneity lift 与旧版第 15--18 项的显式 `ks` 恢复都退化为恒等（`e=0`、`delta=0`），固定点提取时只剩能量方向号 `P_pkg=-P_ref`。这是源码定义的 physical dlog basis 直接读取，不是 package normalization adapter。19 个 reference/package master 定义比例逐项均为 1。
 
 ## 来源与完整性
 
-bundle 于 2026-07-25 从 `F:\Agent-projects-nut\dSibp\codebubble\kira_bubble\result\` 的既有解析结果复制并变换；没有重新生成 reference IBP，也没有运行 reference Kira。原始大矩阵不复制到本目录，只在 ignored 维护工作区中按下列 SHA-256 校验：
+bundle 于 2026-10-08 从 `F:\Agent-projects-nut\dSibp\code_final_version\` 的最终构造结果（`full19_connection/` 与 `basis/`）复制并变换；没有重新生成 reference IBP，也没有运行 reference Kira。原始大矩阵不复制到本目录，只在 ignored 维护工作区中按下列 SHA-256 校验：
 
 | source | SHA-256 |
 | --- | --- |
-| `DEP0.m` | `0BFE6B9CC01780C961D31A9488CE203B2A421735E5F6E735E19BAA5F357C8C8A` |
-| `DEks.m` | `D21FE2474AE9A3DAB31B2618DA87AB8E3F98C65A4B0D6CB3CC5937DEE2267BC6` |
-| `DEscaleCheck.m` | `5B1754A5DD285BDABB47068996E726624E137ABD1F298D2756C6EC038D66D573` |
-| `MIdlogNote.m` | `5EF8F2E52A52FBFC06DC06054329E5573622875E6AC71ECB39C798BDF70F3A37` |
-| `derivative_rules_bubble.m` | `00428810E74588A37291B55DBC23A8384927FA61EAE4D90BDC417F1707019FF6` |
-| `reference_probe.wl` | `411D0F4766FF63A43406239C300714531F016115EFE12E2110568508F8B4DE05` |
+| `full19_connection/DEP0.m` | `3BBE60C195E6E12C2EABA224984D21E21FD46FB471EF07DE61177A78232FA1AF` |
+| `full19_connection/DEks.m` | `55F0CCB7B510FD6F7EBFDAC60F1EF6CB71828C6C31E413C0698DF8E79B25CCD2` |
+| `full19_connection/DEscaleCheck.m` | `0C89F900B4E6405F4037AB092DED337C48EF4BF0F6BA1411EF07B5DD9732254D` |
+| `basis/MIdlogNote.m` | `500772CC4666FC9857D3EC6BF8490C15D11675FA0A776435B4AF15FAB0A8014E` |
+| `reference_probe.wl` | `419992D52C762CAF366D6EFAE959F61D9B87FE4D824D943ABC929520E13C3759` |
 
-维护 check 的最终结果为：来源/副本哈希 5/5，分母全非零，无残留参数，reference scaling 精确成立；与 package 比较时 physical `P0`、backend `ip0`、physical `ks` 均为 `361/361` 精确相等、差值 0。
+维护 check 的最终结果为：来源/副本哈希 4/4，分母全非零，无残留参数，reference scaling 精确成立；与 package 比较时 physical `P0`、backend `ip0`、physical `ks` 均为 `361/361` 精确相等、差值 0。

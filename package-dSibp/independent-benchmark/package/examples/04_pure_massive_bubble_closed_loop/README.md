@@ -2,7 +2,7 @@
 
 本例固定 `--` branch、even parity 和等能量约束。package 与 reference 的能量满足 `P_pkg=P0=-P_ref`。两个顶点的零点均加入通用符号 `analyticRegulator`，在符号 seed 生成后才取 `analyticRegulator -> 0`；这使 023 的时间端点门禁能够区分已正规化 family 与未定义的发散 IBP。其余流程从初始化到 formal Kira 输入、外部 reduction、结果取回、19 维微分方程与 Eq. (51)/(64) 标度检查。顶点交换 symmetry 只在本例等能量约束下启用；独立 `P1/P2` family 不得复用。
 
-`reference_user_mi_basis.wl` 只保存 reference 的 21 个候选线性组合、`activeIndices=Range[19]`、physical `ks=ss11`、导数变量和 19 个 scaling degrees。`main.wl` 把这些数据直接交给 package 的 `DSUserMI`；线性秩、可逆 `J/userMI` 映射、backend ID、导数闭包和 manifest 均由 package 生成，example 不实现自己的 basis adapter。`dlog_basis.wl` 只保留 reference-readable 的旧记号，不应单独作为 formal basis。
+`reference_user_mi_basis.wl` 只保存 reference 的 19 个候选线性组合（全部 active，没有辅助关系）、`activeIndices=Range[19]`、physical `ks=ss11`、导数变量和 19 个统一 scaling degrees。`main.wl` 把这些数据直接交给 package 的 `DSUserMI`；线性秩、可逆 `J/userMI` 映射、backend ID、导数闭包和 manifest 均由 package 生成，example 不实现自己的 basis adapter。`dlog_basis.wl` 只保留 reference-readable 记号，不应单独作为 formal basis。
 
 本仓库没有在该 example 目录内运行 Kira。正式检验由 Windows Wolfram 在仓库外工作区生成输入，再由 WSL Kira 2.3 运行。发布副本已删除 `init/`、`kira/`、database、save、日志、reduction table、cache 和 DE 运行目录，只保留 `kira_input_summary.wl` 与 `kira_result_summary.wl` 两份轻量摘要。
 

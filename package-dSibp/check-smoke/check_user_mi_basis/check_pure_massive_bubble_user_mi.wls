@@ -85,16 +85,16 @@ formalPlan = DSKiraPlan[prepared, <|"stage" -> "formal", "activeBasis" -> Automa
 
 checks = <|
    "configured" -> (Lookup[prepared, "status", "failed"] === "generated"),
-   "candidateRank" -> (Lookup[userData, "rank", 0] === 21),
+   "candidateRank" -> (Lookup[userData, "rank", 0] === 19),
    "activeRank" -> (Lookup[userData, "activeRank", 0] === 19),
-   "supportCount" -> (Lookup[userData, "supportCount", 0] === 37),
+   "supportCount" -> (Lookup[userData, "supportCount", 0] === 53),
    "closureProbeFailedClosed" -> (
      Lookup[closureProbe, "reason", None] === "derivativeTargetOutsideLinearSystem" &&
       closureIntegrals =!= {}
      ),
    "reversible" -> TrueQ[Lookup[userData, "reversibleQ", False]],
-   "forwardRoundTrip" -> (Lookup[userData, "forwardRoundTripResiduals", {1}] === ConstantArray[0, 21]),
-   "reverseRoundTrip" -> (Lookup[userData, "reverseRoundTripResiduals", {1}] === ConstantArray[0, 21]),
+   "forwardRoundTrip" -> (Lookup[userData, "forwardRoundTripResiduals", {1}] === ConstantArray[0, 19]),
+   "reverseRoundTrip" -> (Lookup[userData, "reverseRoundTripResiduals", {1}] === ConstantArray[0, 19]),
    "publicTokens" -> (Lookup[userData, "activeTokens", {}] === (userMI /@ Range[19])),
    "backendIDs" -> (Lookup[userData, "activeBackendIDs", {}] === Range[19]),
    "backendTokens" -> (Lookup[userData, "activeBackendTokens", {}] === (Tuserweight /@ Range[19])),

@@ -1232,39 +1232,31 @@ c(s) J_1 + d(s) J_2 + f(s),
 
 ### 13.2 Reference bubble 的 convention 映射
 
-`pure_massive_bubble_reference` 的 reference convention 对照子任务只使用 `--`、even parity 下的 general IBP seeds 与 `{ks,P_pkg}` 参量算符，并且 Phase 1 不读取 reference code。此处的子任务限制不取消第 9.0、13.3、15.1 节规定的两个固定分支以及 direct-h/bare-H/H-to-h 三条 general-object 路线；后者仍须全部冻结和比较。两类 expected 冻结后，Phase 2 为解释 convention 才允许读取下列冻结 source set；解析矩阵只从随后点名的既有 result set 复制并核验，不得运行这些 source 重新生成：
+`pure_massive_bubble_reference` 的 reference convention 对照子任务只使用 `--`、even parity 下的 general IBP seeds 与 `{ks,P_pkg}` 参量算符，并且 Phase 1 不读取 reference code。此处的子任务限制不取消第 9.0、13.3、15.1 节规定的两个固定分支以及 direct-h/bare-H/H-to-h 三条 general-object 路线；后者仍须全部冻结和比较。两类 expected 冻结后，Phase 2 为解释 convention 才允许读取当前参考构造的 source set；解析矩阵只从随后点名的既有 result set 复制并核验，不得运行这些 source 重新生成。当前构造位于仓库外 `F:\Agent-projects-nut\dSibp\code_final_version\`；`reference/ref_code/codebubble/` 的源码快照为旧构造的历史记录，只可用于历史 convention 解释，不是本轮 producer：
 
 ```text
-reference/ref_code/codebubble/001 bubble_ibp_sym.m
-reference/ref_code/codebubble/002 bubble_de.m
-reference/ref_code/codebubble/OmegaR/OmegaR1.m
-reference/ref_code/codebubble/OmegaR/MIsR1.m
-reference/ref_code/codebubble/Omegatau/OmegaFolded.m
-reference/ref_code/codebubble/Omegatau/MIstau.m
+F:\Agent-projects-nut\dSibp\code_final_version\code\001 bubble_ibp_sym_exp_full.wl
+F:\Agent-projects-nut\dSibp\code_final_version\code\002 bubble_de_exp_full.m
+F:\Agent-projects-nut\dSibp\code_final_version\code\OmegaR1.m
+F:\Agent-projects-nut\dSibp\code_final_version\code\MIsR1.m
+F:\Agent-projects-nut\dSibp\code_final_version\code\OmegaFolded.m
+F:\Agent-projects-nut\dSibp\code_final_version\code\MIstau.m
 ```
 
-后四份文件解释 `001` 如何定义 `MIdlogNote`，不是 Phase 1 expected，也不是本轮 producer。Phase 2 只从 `F:\Agent-projects-nut\dSibp\codebubble\kira_bubble\result\` 复制既有的 `DEP0.m`、`DEks.m`、`DEscaleCheck.m`、`MIdlogNote.m` 与 `derivative_rules_bubble.m` 到自己的只读临时区，并逐字核验 `reference/ref_code/codebubble/kira_bubble/README.md` 记录的五个 SHA-256。禁止执行 `001`/`002`、`run.sh` 或 `jobs.yaml`，禁止重建 reference IBP/reduction，也禁止从 package actual、`reference_probe.wl` 或差矩阵反推这些结果。若外部 result root 不可用或 hash 不符，reference 对照记为未完成；不得以重新生成代替复制。
+`OmegaR1/MIsR1/OmegaFolded/MIstau` 解释 `001` 如何定义 `MIdlogNote`，不是 Phase 1 expected，也不是本轮 producer。Phase 2 只从 `F:\Agent-projects-nut\dSibp\code_final_version\` 的 `full19_connection/` 与 `basis/` 复制既有的 `DEP0.m`、`DEks.m`、`DEscaleCheck.m` 与 `MIdlogNote.m` 到自己的只读临时区，并逐字核验 `reference/ref_code/codebubble/kira_bubble/README.md` 记录的四个 SHA-256。禁止执行 `001`/`002`、`run.sh` 或 `jobs.yaml`，禁止重建 reference IBP/reduction，也禁止从 package actual、`reference_probe.wl` 或差矩阵反推这些结果。若外部 result root 不可用或 hash 不符，reference 对照记为未完成；不得以重新生成代替复制。
 
-原始物理 dlog basis 固定为既有 `MIdlogNote.m` 的前 19 项，不是随后代入 `reppara2N` 的 `MIdlogKira`，也不是 stored `DEP0/DEks` basis。执行方必须从哈希一致的复制件逐项提取显式 `ks` 幂并得到
+原始物理 dlog basis 固定为当前 `basis/MIdlogNote.m` 的 19 项（全部 active，没有辅助关系）。当前构造（`002 bubble_de_exp_full.m`）在符号 `ks` 下直接建立 physical dlog basis，`full19_connection/DEP0.m`、`DEks.m` 已是恢复后的 physical 矩阵；统一权重使旧版第 15--18 项那样的显式 `ks` 恢复不再存在，对照变换退化为能量方向号加恒等：
 
 ```text
-explicitKsDegrees = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0}.
+A_P0_physical = -A_P0_export
+A_ks_physical =  A_ks_export
 ```
 
-`reppara2N` 明确含 `ks->1`，而 `002` 在调用 `dks[MIdlogSym]` 前已经对 `MIdlogNote` 应用该规则；因此 stored `DEks` 不含第 15--18 项显式系数的导数。若 `I_dlog=T I_stored`，则
-
-```text
-T = DiagonalMatrix[ks^explicitKsDegrees];
-A_Pref_dlog = T . A_Pref_stored . Inverse[T];
-A_ks_dlog = D[T,ks] . Inverse[T]
-             + T . A_ks_stored . Inverse[T].
-```
-
-这里的 `D[T,ks].Inverse[T]` 是恢复 reference 原始 dlog basis 必需的乘积法则项，不是给 package 追加 normalization，也不能省略为只做 homogeneity lift。执行方必须单独冻结 19 个显式幂、四个非零位置、`D[T,ks].Inverse[T]` 的四个非零对角元，并用直接求 `dks[MIdlogNote]` 的结果交叉验证；只由最终矩阵差值反解 `T` 不通过来源门禁。
+执行方必须单独冻结十九项统一权重（Euler 权重全部 `-2-2ep`）与恒等变换，并用直接求 `dks[MIdlogNote]` 的结果交叉验证；只由最终矩阵差值反解变换不通过来源门禁。
 
 比较前必须显式记录并实施以下映射：
 
-- reference `Vpm=0` 映射 package 的 `--`，两边物理能量满足 `P_pkg=-P_ref`。Kira-only 实变量另按第 15.3 节定义 `P_pkg=-I ip0`，因此同一截面上 `P_ref=+I ip0`；`ip0` 是一个整体变量名，不是 `I*p0`。必须在此映射后逐项检查 reference `dk0Term` 的两个 top 顶点 shift、R1 的系数 2，以及 active 17 和辅助 20/21 中的显式能量系数。
+- reference `Vpm=0` 映射 package 的 `--`，两边物理能量满足 `P_pkg=-P_ref`。Kira-only 实变量另按第 15.3 节定义 `P_pkg=-I ip0`，因此同一截面上 `P_ref=+I ip0`；`ip0` 是一个整体变量名，不是 `I*p0`。必须在此映射后逐项检查 reference `dk0Term` 的两个 top 顶点 shift、R1 的系数 2，以及 active 17 中的显式能量系数。
 - `G[{n1,n2,n3,n4},{a1,a2},{b1,b2}]` 映射 top `J[{a1,a2},{{b1,n1,n2},{b2,n3,n4}},{}]`。
 - `R1`、`R2` 分别映射 line 1、line 2 shrink；reference 在求导 basis 前已执行 `R2->R1`，所以 R2 必须先由 package `symmetry` canonical 到 R1，不能作为携带另一套 sector metadata 的独立 DE basis。
 - top 使用 `a0=2 nu`、`b0=-2 nu`；必须检查 shrink 后 `a0R=2 nu`、shrunk-line `bS0=0`、未缩并线 `b0=-2 nu`。
@@ -1294,7 +1286,7 @@ check/
     results/reference_bubble_de_summary.wl
 ```
 
-第一份 summary 至少保存 source/result hash、21/19/2 候选计数、`explicitKsDegrees`、四个显式导数位置、直接 `dks` residual 和禁止执行 producer 的审计；第二份至少保存 package/version/input hash、Kira equations/independent relations/masters/targets/unreduced、三套矩阵的维数/相等数/非零差值数/首差值、scaling matrix/source residual 与能量映射。两份都是 Phase 2 summary，不反向成为下一轮 expected。
+第一份 summary 至少保存 source/result hash、19/19 候选计数、统一权重（十九项同 `-2-2ep`）、恒等恢复变换、直接 `dks` residual 和禁止执行 producer 的审计；第二份至少保存 package/version/input hash、Kira equations/independent relations/masters/targets/unreduced、三套矩阵的维数/相等数/非零差值数/首差值、scaling matrix/source residual 与能量映射。两份都是 Phase 2 summary，不反向成为下一轮 expected。
 
 ### 13.3 h、裸 H 与 H 经 T 变到 h 的 package 验收
 
@@ -1385,7 +1377,7 @@ Phase 1 的全部 general seeds/operators 冻结并记录哈希后，Phase 2 才
 
 只在第 15.1--15.2 节全部通过后运行两套且仅两套 package fresh reduction；不为其它 family、branch、parity、默认/自定义坐标副本或扩大包络再运行 reduction：
 
-1. `pure_massive_bubble_reference`：固定 `--`、even parity、等顶点能量和缺省根号坐标 `ks=ss11`。直接加载成品 example 同目录的 `reference_user_mi_basis.wl` 候选数据，再调用 package `DSUserMI` 固定前 19 个 active `userMI` 及两个 auxiliary；`DSDE` 变量为 `{ss11,P0}`。只有等能量条件成立时才应用顶点交换 symmetry。
+1. `pure_massive_bubble_reference`：固定 `--`、even parity、等顶点能量和缺省根号坐标 `ks=ss11`。直接加载成品 example 同目录的 `reference_user_mi_basis.wl` 候选数据，再调用 package `DSUserMI` 固定全部 19 个 active `userMI`（新 basis 没有辅助关系）；`DSDE` 变量为 `{ss11,P0}`。只有等能量条件成立时才应用顶点交换 symmetry。
 2. 第 17.4 节 mix bubble+tree：full flow 只取 `+++`。line 1 massive cycle 与 line 2 massless cycle 分别选择全偶子空间，明确输入 `b[e]+n[e,1]+n[e,2]->0`（`e=1,2`）；line 3 是 fixed bridge，不属于圈积分且不得进入 parity constraints。使用 exact 自定义变量 `{loopScale,legScale1,legScale2,E1,E2,E3}` 和一个在 Phase 2 开始时显式列出、冻结顺序与定义的小型 active basis。`++-` 只做 general seeds/operators 比较和 cross/contact guard，不运行 reduction。
 
 两套都按 `DSInit -> DSSeeds -> DSGenerateIBP -> DSLinear -> DSKiraPlan/DSKiraExport -> package 外部 Kira -> DSKiraImport -> DSDE -> scaling check` 执行。`DSKiraExport` 只写后端输入，不得由 package 启动 Kira；每套分别记录 equations、independent relations、masters、targets、unreduced、Kira 版本、命令、wall time 与 artifact hash。Phase 1 不选择 master、不构造 DE expected、不选择数值点。
@@ -1456,7 +1448,7 @@ B' = E'[T] Inverse[T] + T B Inverse[T].
 
 sector 对象已按第 3 节定义为 `J_s=N_s I_s`，所以 `delta_s` 必须包含 `E[N_s]/N_s` 以及 measure、`a+a0`、cycle `b+b0` 和 shrink `bS+bS0` 的全部物理 degree。若 active master 另写成 `M=T J`，再额外加入 `E[T]T^-1`，不得把 `N_s` 重复乘第二次。bubble 权重为 `{1,1}`；bubble+tree 六变量权重均为 1。
 
-Bubble reference 只复用已有解析结果，不重新生成 reference IBP，也不运行 reference Kira。Phase 2 先按第 13.2 节核验原始 `DEP0.m`、`DEks.m`、`DEscaleCheck.m`、`MIdlogNote.m`、`derivative_rules_bubble.m` 的 SHA-256，再读取 `reference-results/pure_massive_bubble/reference_probe.wl` 作最后对照。必须依次应用：`P_pkg=-P_ref`；package Kira 截面 `P0_pkg=-I ip0`，故 `D_P0=I D_ip0` 而 Euler 不变；按 provenance 恢复一般 `ks` homogeneity；再从原始 `MIdlogNote[[;;19]]` 恢复第 15--18 项各自显式的一个 `ks`，使 `A_ks` 包含 `D[T,ks].Inverse[T]`。`G/R1` 与 normalized `J_s=N_s I_s` 按逐项同定义测试，比例必须全为 1，不允许 post-hoc basis adapter。
+Bubble reference 只复用已有解析结果，不重新生成 reference IBP，也不运行 reference Kira。Phase 2 先按第 13.2 节核验 `full19_connection/DEP0.m`、`full19_connection/DEks.m`、`full19_connection/DEscaleCheck.m`、`basis/MIdlogNote.m` 的 SHA-256，再读取 `reference-results/pure_massive_bubble/reference_probe.wl` 作最后对照。必须依次应用：`P_pkg=-P_ref`；package Kira 截面 `P0_pkg=-I ip0`，故 `D_P0=I D_ip0` 而 Euler 不变；十九项统一权重使 stored 矩阵与 physical dlog basis 直接一致（旧版第 15--18 项显式 `ks` 的 `D[T,ks].Inverse[T]` 恢复在新构造中不存在，`T` 退化为恒等）。`G/R1` 与 normalized `J_s=N_s I_s` 按逐项同定义测试，比例必须全为 1，不允许 post-hoc basis adapter。
 
 Bubble 的唯一固定点为 `ks=ss11=43/17`、`ip0=29/13`、`P0=-29 I/13`；在确认所有分母非零后，physical `P0`、backend `ip0`、physical `ks` 三套 `19 x 19` 比较各报告相等数、非零差值数和首差值。Bubble+tree 的唯一精确点由执行者在进入 Phase 2 full flow 时冻结并记录，不写入 Phase 1 expected。Bubble 不是完整 dlog 系统，不检查 primitive、letters、pole 或 dlog form。
 
@@ -1550,9 +1542,10 @@ normalization provenance；本节 dSIBP 数值约化的第五个 master 固定�
    冻结的 `DSUserMI` 候选和公开映射得到同一 basis，不得在看见差矩阵后另加 adapter。
 4. 对这 19 个 master 分别使用 dSIBP 的公开总导数入口构造 `{ss11,P0}` 导数目标；数值规则只能在
    完整乘积法则和解析一阶导数之后应用。用 fresh Kira reduction 约回 19 项并形成数值 DE。
-5. 按 13.2 节冻结的 convention 顺序应用 `P_pkg=-P_ref`、`P0_pkg=-I ip0` 的 Jacobian、一般
-   `ks` homogeneity 恢复，以及 reference 第 15--18 项显式 `ks` 的 `D[T,ks] T^-1` 贡献。
-   在唯一点 `ks=ss11=43/17`、`ip0=29/13`、`P0=-29 I/13` 比较 `P0/ip0/ks` 三套
+5. 按 13.2 节冻结的 convention 顺序应用 `P_pkg=-P_ref` 与 `P0_pkg=-I ip0` 的 Jacobian；
+   当前参考为统一权重构造，stored 矩阵与 physical dlog basis 直接一致，不再有旧版
+   第 15--18 项显式 `ks` 的 `D[T,ks] T^-1` 恢复步骤。在唯一点
+   `ks=ss11=43/17`、`ip0=29/13`、`P0=-29 I/13` 比较 `P0/ip0/ks` 三套
    `19x19` 数值矩阵；各报告相等数、非零数、首差值和 reduction residual。
 6. 保存 Kira 命令、版本、wall time、equation/unknown/rank、master/target/unreduced 数、输入与
    输出 hash。Kira 未 fresh 运行、任一目标未约回、fixed parameter 残留或乘积法则项缺失时，
@@ -1731,7 +1724,7 @@ Phase 2 先对两个分支比较 general seeds/operators。随后只对 `+++` �
 | DE closure | master 同序；无 residual `J`/内部原子；显式系数求导保留 | 15.3, 15.5 | Phase 1 不推 DE matrix | 两套 loop `DSDE`；一个 two-vertex tree naive/dlog | full-loop 与 tree 无 map 时不比较 |
 | 论文两顶点 G++ | 五个 normalized master 同 basis；`E12/E34=-k12/-k34` 及导数 Jacobian；column-vector DE | 15.6 | 公开论文独立 oracle，不读 package/MadStree | dSIBP 数值 IBP-DE 对论文 | 不要求 dSIBP 边界/输运，不重跑其它章节 |
 | Scaling relation | 完整 physical degree 含 `N_s`; normalization 用 `E[T]T^-1` | 15.3 | Phase 1 不做 scaling | 两套 full flow，source-level Euler+IBP 符号恒等式后接 `postDerivative` 唯一精确点 | 不把定点常数矩阵外推成全局符号 DE |
-| Reference basis/energy/`ks` | `P_pkg=-P_ref`; `P0=-I ip0`; 原始 `MIdlogNote`; explicit `ks` 导数恢复 | 13.2, 15.3 | pure massive bubble `--`/even seeds/operators，不读 reference | reference source hash、R2->R1、`T' T^-1`、三套 `361` 比较 | 不反解 adapter，不 fresh reference reduction |
+| Reference basis/energy/`ks` | `P_pkg=-P_ref`; `P0=-I ip0`; 统一权重 `MIdlogNote`（无显式 `ks` 恢复） | 13.2, 15.3 | pure massive bubble `--`/even seeds/operators，不读 reference | reference source hash、R2->R1、统一权重恒等恢复、三套 `361` 比较 | 不反解 adapter，不 fresh reference reduction |
 
 ## 20. single-massive sunrise 的 general-only 边界
 

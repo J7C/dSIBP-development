@@ -18,25 +18,25 @@
     "version" -> "2.3 (Git: 2.3-7-geb541f9)",
     "runtime" -> "WSL",
     "parallelConfig" -> "w10*1",
-    "wallTimeSeconds" -> 91.03,
+    "wallTimeSeconds" -> 109.09,
     "exitStatus" -> 0
   |>,
   "masterIDs" -> Range[19],
   "masterCount" -> 19,
-  "targetCount" -> 215,
-  "selectedEquationCount" -> 1368,
+  "targetCount" -> 300,
+  "selectedEquationCount" -> 2179,
   "unreducedCount" -> 0,
   "deVariables" -> {ss11, P0},
   "deDimensions" -> {{19, 19}, {19, 19}},
   "scalingCertificateScope" -> "symbolic",
-  "sourceIntegralIdentities" -> {33, 33},
+  "sourceIntegralIdentities" -> {53, 53},
   "sourceActiveBasisIdentities" -> {19, 19},
   "referenceMatrixEqualCounts" -> <|
     "P0" -> {361, 361}, "ip0" -> {361, 361}, "ks" -> {361, 361}
   |>,
   "formalValidationManifestSHA256" ->
-    "B780D4BA52388E794855D520C4126BCE70323E535CD66FD3929B5F7642DBA12D",
+    "2E287F7373B117D196EBF664D5C762966BFB30C069A96427CFB31C0F6CE54382",
   "formalValidationReductionSHA256" ->
-    "4F0A55A033C45CAC293F4297D50DEB95BCD6F52668367E84669F96BF677CD5DE",
+    "7E0CD3952664B90C3A76E5F1B2907A074D93D063D38735E40FF477AFD92B5A24",
   "intermediateArtifactsRetainedInRepository" -> False
 |>

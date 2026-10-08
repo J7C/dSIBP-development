@@ -52,8 +52,8 @@ normalization，并增加时间 IBP 小端点整数门禁。公开 topology 格�
   `31/31`，time/momentum/operator 为 `976/1363/64`；19/19 冻结文件与 4/4 authority source
   立即复验通过，accepted digest 为
   `C4B0FD204E3B2951E46471B356A9F7B201BCA241FC63832E90A0060EAA8409A9`。
-- Phase 2 与 WSL Kira full flow 已完成：pure massive bubble 为 19 masters、215 targets、
-  `unreduced=0`、墙钟 `91.03 s`；mixed bubble+tree 为 81 masters、676 targets、
+- Phase 2 与 WSL Kira full flow 已完成：pure massive bubble 为 19 masters、300 targets、
+  `unreduced=0`、墙钟 `109.09 s`；mixed bubble+tree 为 81 masters、676 targets、
   `unreduced=0`、墙钟 `160.11 s`。两者均使用 Kira 2.3 和 `w10*1`，完整 consumer 闭合。
 - 两套 Kira 工作树均在仓库外生成并由 WSL 运行。正式 04/06 examples 只保留输入脚本、轻量
   input/result summary；`init/`、`kira/`、database、save、日志、reduction table、cache 和 DE

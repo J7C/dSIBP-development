@@ -14,7 +14,7 @@
   "case" -> "pureMassiveBubble",
   "packageVersion" -> "023.0",
   "packageSHA256" ->
-    "7B729536E62EC22E8A726F2D245D4A602E73811C531CCDC3982218A80A151740",
+    "F44E63D6909616A9BF548C403032A6CAA0EDD0E92CDA5C7558F547F6C42B5E28",
   "executionBoundary" -> <|
     "wolframInputDirectory" -> "external workspace selected by DSIBP_KIRA_WORKSPACE",
     "kiraRuntime" -> "WSL",
@@ -33,11 +33,11 @@
   },
   "numericStage" -> "postDerivative",
   "seedTemplateCount" -> 88,
-  "canonicalEquationCount" -> 5992,
-  "formalEquationCount" -> 6012,
-  "integralCount" -> 2966,
+  "canonicalEquationCount" -> 14986,
+  "formalEquationCount" -> 15004,
+  "integralCount" -> 5728,
   "activeMasterCount" -> 19,
-  "formalTargetCount" -> 215,
+  "formalTargetCount" -> 300,
   "retainedInputFiles" -> {
     "main.wl", "family_conventions.wl", "reference_user_mi_basis.wl",
     "dlog_basis.wl"
