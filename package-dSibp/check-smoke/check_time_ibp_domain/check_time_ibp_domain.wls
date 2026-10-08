@@ -1,10 +1,10 @@
 (* ::Package:: *)
-(* 本文件定向检查 dSIBP 023 的时间-IBP 小 t 整数端点门禁。它只构造最小 timeOnly
+(* 本文件定向检查 dSIBP 的时间-IBP 小 t 整数端点门禁。它只构造最小 timeOnly
    family，不生成大规模 seed、不调用 Kira，也不读取独立检验 expected。 *)
 
 
 (* ::Chapter:: *)
-(*加载 022 模块包*)
+(*加载模块包*)
 
 checkDirectory = DirectoryName[$InputFileName];
 Get[FileNameJoin[{checkDirectory, "..", "_harness.wls"}]];

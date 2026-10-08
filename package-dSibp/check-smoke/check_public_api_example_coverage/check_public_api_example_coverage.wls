@@ -11,7 +11,7 @@ examplesDirectory = FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Example
 manifestPath = FileNameJoin[{examplesDirectory, "coverage_manifest.wl"}];
 dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 
-manifest = Get[manifestPath];
+manifest = Get[manifestPath, CharacterEncoding -> "UTF-8"];
 coverage = Lookup[manifest, "coverage", <||>];
 publicFunctions = Sort@DeleteDuplicates@Lookup[DSPublicAPI[], "functions", {}];
 declaredFunctions = Sort@DeleteDuplicates@Flatten[Values[coverage]];

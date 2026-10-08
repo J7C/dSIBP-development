@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 本模块为 018 提供图论与动量声明审计。它不生成 IBP，只把 topology 的结构圈数、
+(* 本模块提供图论与动量声明审计。它不生成 IBP，只把 topology 的结构圈数、
    bridge/cycle line、圈动量 routing 以及两类用户外动量列表归一为可供 DSInit 门禁读取的 metadata。 *)
 
 (* ::Chapter:: *)

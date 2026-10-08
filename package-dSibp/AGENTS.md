@@ -25,8 +25,11 @@
 
 - 当前主线是模块化目录 `versions/023_dSIBP/`，标准入口是把该目录加入 `$Path` 后调用
   `Needs["dSIBP`"]`；正式单文件与手册是 `independent-benchmark/package/package_023.0.wl/.pdf`。
-  工作树只保留 023 源码和 023.0 正式交付；022 及更早版本只从 Git 历史追溯，不保留加载或测试入口。
-- 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录。020 内保持接口与 convention 兼容的修订不再新建代码目录，发布号依次记为 `020.1`、`020.2`；版本字符串、单文件名、手册名、manifest 和报告必须使用同一发布号。
+  工作树只保留 `versions/023_dSIBP` 源码与交付件 `package_023.0.wl/.pdf`；022 及更早版本只从 Git 历史追溯，不保留加载或测试入口。
+- 版本号纪律见根 `../AGENTS.md`：`versions/023_dSIBP/` 内外的文件、文件夹与正文不得把当前
+  版本号或开发阶段号用作身份标签；版本目录路径、交付件名 `package_023.0.wl/.pdf`、更新日志、
+  版本索引与版本化验证记录除外。
+- 改变积分表示、sector convention 或物理公式边界时新开三位整数版本目录；同一版本内兼容的修订不再新建代码目录，发布号在 `历史版本更新日志/` 中按 `NNN.x` 顺序记录。代码版本字符串统一写发布版式 `"1.0"`；正式单文件与手册沿用 `package_<发布号>.wl/.pdf` 交付名（当前为 `package_023.0.wl/.pdf`），manifest 与报告使用与代码一致的版本字符串。
 - 本规则生效后新增的 dSIBP 版本都必须在 `历史版本更新日志/` 附带独立更新说明，至少记录基线版本、新增功能、修复、接口或 convention 变化、迁移要求、验证状态和已知限制；018.1 及更早资产不追溯补建。发布日志命名为 `dSIBP-NNN.x.md`；代码版本与正式发布日志内容不同时，两份分别保留并在目录 README 中说明。
 - `check-smoke/` 是维护 agent 日常小范围、轻量 check/test 的唯一目录；每项可复用检查放入名称直接说明功能的独立子目录，禁止重新堆叠全 family、全 sign/parity、连续指标撒点或完整 reduction 工作树。运行产物只放对应子目录的 `results_test/` 并在任务结束后清理。
 - `check-smoke/` 不属于独立检验工作区。内部或外部独立执行者均不得读取、复制、写入或引用其中的脚本、结果与结论。
@@ -65,7 +68,7 @@
 - 报告文件名统一为 `{时间}-{版本}-{内部/外部}.md`。
 - 时间使用 `YYYY-MM-DD-HHmm`，版本使用三位程序版本号；例如 `2026-07-21-1600-012-内部.md`、`2026-07-21-1600-012-外部.md`。
 - 报告如有附件，放入与报告同名并追加 `-附件` 的目录；附件不得混入程序、expected 或 package 交付目录。
-- 新一轮检验开始前先确认目标版本；只保留当前 023 对应且未被后续同类证据取代的正式报告。
+- 新一轮检验开始前先确认目标版本；只保留当前版本对应且未被后续同类证据取代的正式报告。
   旧版本报告、针对报告的 battle/`report-of-report` 和临时争论稿不作为项目资产长期保留。
 
 ## 正确性门禁
@@ -75,13 +78,13 @@
 - package 运行时门禁只放在真实信任边界：用户新输入、尚未推导的数学公式、递推终止、外部 artifact 身份与 reduction/DE 闭合。由同一 producer 生成并带同源状态的 sealed 数据，consumer 缺省只读取状态、计数和 digest 字段，不得重复全量 canonical、parity、coverage、representation、residual 或内容 hash 自证；这些开发证书只在显式 `AuditLevel -> "full"`、`check-smoke/`、独立检验或发布阶段执行。没有实际失败证据或新信任边界时，不得向 package 默认路径追加门禁。
 - 数值交叉检查缺省只使用一个固定、非奇异、精确有理点。`P0`、`ip0`、`ks` 等同一点在不同变量 convention 或导数方向下的矩阵表示不计作多个数值点；除用户明确要求或原点落在奇异面外，不得通过增加数值点堆叠验收。
 - 所有 sector 统一使用 Head `J`，sector 由线状态区分；不得恢复按 sector 复制的 `G/R1/R2` 主实现。
-- 020 的 `ibpMode -> "timeOnly"` 只公开 `J[sectorKey,timeShifts,stateBits]`：第一槽是 root propagator 顺序的定长字符串 key，后两槽分别是 compact 时间幂和离散 building-block 状态。full-loop 保留既有三槽表示；不得为了统一显示而迁移或重写 full-loop Kira/reduction artifact identity。
+- 当前 `ibpMode -> "timeOnly"` 只公开 `J[sectorKey,timeShifts,stateBits]`：第一槽是 root propagator 顺序的定长字符串 key，后两槽分别是 compact 时间幂和离散 building-block 状态。full-loop 保留既有三槽表示；不得为了统一显示而迁移或重写 full-loop Kira/reduction artifact identity。
 - 共同-theta bundle、compiled `WT -> shrinkTerms`、simultaneous contact shift 累加、coincident canonical 和 contact-reachable sector 必须作为一个整体通过专项验收。
 - h/H 模式、质量参数、缩并 prefactor、zero-point 和 H EOM 必须使用当前 tech note 与 preset；不得从历史版本重新引入旧递推。
 - 多圈动量 IBP 生成元必须覆盖当前 plan/tech note 规定的完备集合；ISP 由用户定义并在生成关系前验证闭合性。
 - ISP 指数的定义零点固定为 `0`。正指数是 numerator 幂；用户显式选择负 range/target/J 时 package 不阻断。自动 target-to-seed 反推不得把 ISP 下界降到用户给定下界以下，且 `ispN=0` 的 ISP 自身求导必须先精确化为零。
 - topology、sector metadata、canonical seed、`linearData` 和 serializer 之间的状态必须一致；backend 只消费 backend-neutral `linearData`。
-- 用户必须分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。023 不读取其它字段名或别名。
+- 用户必须分别显式给出 `loopExternalMomenta` 与 `independentExternalMomenta`；不得根据符号名称或统一动量原子表猜角色。当前版本不读取其它字段名或别名。
 - 加减号和复合方向必须保留精确系数。整体反号的无圈动量模长可 canonical 成同一对象，但 `p_1+p_2` 与 `p_1-p_2` 不得合并；实际模长只生成 `sE1,sE2,...` 或 dependent binding，不主动输出外腿交叉点积。
 - 缺省公开 loop 坐标为 `ssij=Sqrt[sp[p_i,p_j]]`，内部原子仍为 `kk[i,j]`。编号只依赖显式输入列表顺序；任一类别总数超过 9 时按总数位宽补零。自定义名称只通过现行 `KinematicRules` 或 `DSRedefineParameters` 给出。
 - 动量列表或动力学规则欠完备时必须红色报错，返回缺失方向/零空间表达式并拒绝初始化；所有下游入口读取 capability gate。过完备时 warning 后允许 symbolic IBP，但 `ds/DSDE` 与唯一反变换必须关闭。

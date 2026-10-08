@@ -1,9 +1,9 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*018 tree vertex-family Private 公式内核*)
+(*tree vertex-family Private 公式内核*)
 
-(* 013 的 vertex-family 公式在冻结核心中；本模块只增加 DSInit context 适配，不复制递推公式。 *)
+(* vertex-family 公式在冻结核心中；本模块只增加 DSInit context 适配，不复制递推公式。 *)
 
 (* 从 root topology 统一建立 sector family，并给每个 family 保存同一个 root 引用。
    direct seed、tagged 迭代和 raw 迭代共用这一个构造，避免回退到旧 loop 投影。 *)
@@ -34,7 +34,7 @@ treeSourceAwareStepFromTopology[
    ];
 
 
-(* 018 的公开 tree overload 统一在 PublicBoundary018.wl 定义。这里仅保留 Private
+(* 公开 tree overload 统一在 PublicBoundary.wl 定义。这里仅保留 Private
    vertex-basis 内核，避免用户绕过三参数 J 的 sector 身份与表示审计。 *)
 
 
@@ -483,4 +483,4 @@ dsTreeMultiSectorDLog[context_Association, seedData_: Automatic, auditLevel_: "s
    ];
 
 
-(* DSTreeDLogDE 的公开定义由 PublicBoundary018.wl 负责把本模块结果映射回统一 J。 *)
+(* DSTreeDLogDE 的公开定义由 PublicBoundary.wl 负责把本模块结果映射回统一 J。 *)

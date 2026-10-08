@@ -4,7 +4,7 @@
 
 
 (* ::Chapter:: *)
-(*加载 023 模块化源码与 mixed bubble+tree topology*)
+(*加载模块化源码与 mixed bubble+tree topology*)
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];

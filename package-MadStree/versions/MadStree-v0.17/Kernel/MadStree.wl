@@ -31,7 +31,7 @@ MSDLogDE::usage = "MSDLogDE[context] returns the ordered master integrals and th
 MSHTohMatrix::usage = "MSHTohMatrix[nu,z,context] returns the local 2x2 transformation from H-states to h-states according to the initialized context.";
 MShToHMatrix::usage = "MShToHMatrix[nu,z,context] returns the local inverse transformation from h-states to H-states according to the initialized context.";
 MSConvertBasis::usage = "MSConvertBasis converts between ordered H/h state vectors locally or for a specified sector; sector conversion always reads the NuConvention of the initialized context, and integral objects continue to fail closed.";
-MSToDSIBPJ::usage = "MSToDSIBPJ[integral,context] losslessly converts a MadStree time-only integral to a lazy dSIBP 020 J[sectorKey,timeShifts,stateBits]; further differentiation requires a dSIBP context matching the same sector/state-slot schema.";
+MSToDSIBPJ::usage = "MSToDSIBPJ[integral,context] losslessly converts a MadStree time-only integral to a lazy dSIBP J[sectorKey,timeShifts,stateBits]; further differentiation requires a dSIBP context matching the same sector/state-slot schema.";
 MSFromDSIBPJ::usage = "MSFromDSIBPJ[j,context] converts a lazy or active dSIBP time-only J back to an MSIntegral in the same context.";
 MSFromDSIBPExpression::usage = "MSFromDSIBPExpression[expr,context] converts a linear dSIBP J expression term by term into a MadStree MSIntegral expression without performing reduction.";
 MSNumericalSystem::usage = "MSNumericalSystem[de,spec] validates the numerical substitutions and boundary vector and constructs the numerical DE data.";
@@ -91,7 +91,7 @@ MadStree::moduleContractMissing = "MadStree module did not provide its required 
 
 Begin["`Private`"];
 
-$MadStreeVersion = "0.17";
+$MadStreeVersion = "1.0";
 $MadStreeKernelDirectory = DirectoryName[$InputFileName];
 
 $MadStreeModuleContracts = {

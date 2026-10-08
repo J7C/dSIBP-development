@@ -2,7 +2,7 @@
 
 English version: [README_en.md](README_en.md)。
 
-当前版本：`v0.17`。本目录从 v0.15 升级；接口变化见
+本目录从 v0.15 升级；接口变化见
 [`../../历史版本更新日志/MadStree-v0.17.md`](../../历史版本更新日志/MadStree-v0.17.md)。
 
 `MadStree`` 是一个直接使用 time-integral tensor formula 的 Wolfram Language 程序包。输入可以是有序 dS 树拓扑，也可以是不积分 loop momentum 的纯 time-only incidence graph；输出包括 contact-reachable sectors、同序主积分、逐步或完整迭代约化、block-triangular dlog connection 和自动边界证书。主算法不生成一般 IBP 方程组，也不调用 Kira。
@@ -262,7 +262,7 @@ energy letter 取倒数。若未来同一个 slot 出现多个不能由同一局
 
 H/Hankel state 与 h state 的公开变换为 `MSHTohMatrix`、`MShToHMatrix` 和 `MSConvertBasis`。局部与全 sector 状态向量都读取 context 中固定的 `NuConvention`；已经积分后的 `MSIntegral` 会同时牵涉基准时间幂，当前不能唯一恢复时明确拒绝。
 
-FlintNDE 0.5.0 数值后端随 v0.17 放在版本目录内，缺省位置只在一个相对路径变量中定义：
+FlintNDE 数值后端作为与独立包同步的副本放在版本目录内，缺省位置只在一个相对路径变量中定义：
 
 ```wl
 MSFlintNDEConfiguration[]
@@ -339,7 +339,7 @@ MSExportEvaluationData[
 - [07_zero_external_leg_energy.wl](Examples/07_zero_external_leg_energy.wl)：无物理外腿的顶点省略
   `externalLegEnergy` 或显式输入 0；私有辅助能量保留在解析 dlog 中并自动输运到物理零点。
 
-七个 examples 已在删除既有 `results/` 与 `results_temp/` 后从 v0.17 路径全部 fresh 运行并退出 `0`；
+七个 examples 已在删除既有 `results/` 与 `results_temp/` 后从当前版本路径全部 fresh 运行并退出 `0`；
 Example 06 自适应检查为 `16/16`，使用 3 个生产点、2 个独立验证点，缺省请求 12 并按实际
 点数自动使用 5 个并行任务。
 
@@ -350,9 +350,9 @@ Example 06 自适应检查为 `16/16`，使用 3 个生产点、2 个独立验�
 - 生产边界不按图名或 master 数分派。单顶点 massiveExternal 也走同一通用路线（2411.03088 Sec.3.3 显式级数仅保留为测试对照基准）；已闭合的 tree/time-only context 统一由 sector DAG、component/slot metadata、normalization 和 strict time rank 生成 nested curve、完整 dlog pullback residue 与 ancestor-sector leading system。公式/dlog/chart 未闭合、late-time 指数不衰减或拉回系统不是 exact regular singular 时结构化 fail closed；有限点定义积分只用于独立验证。
 - FlintNDE 输运要求拉回 connection 属于 exact `Q(i)(s)` 或 `Q(i)(t)`。本轮 fresh 开发检查
   覆盖单顶点、pure massless、massive Full 和 mixed 三顶点，并统一使用当前 generic boundary producer。
-- FlintNDE 0.5.0 保留 exact Lee--Moser、高阶 pole 与奇点折跃能力，并增加按节点覆盖桶的 fast multipoint evaluation 和公开严格用户节点入口。未认证 high-pole、需要 ramification、代数扩域或一般 Stokes connection 的内部点与终点继续 fail closed。
+- FlintNDE 保留 exact Lee--Moser、高阶 pole 与奇点折跃能力，并增加按节点覆盖桶的 fast multipoint evaluation 和公开严格用户节点入口。未认证 high-pole、需要 ramification、代数扩域或一般 Stokes connection 的内部点与终点继续 fail closed。
 
-v0.17 当前 fresh 回归包括 core `61/61`、公式 artifact `24/24`、点序列/规划 `29/29`、
+当前 fresh 回归包括 core `61/61`、公式 artifact `24/24`、点序列/规划 `29/29`、
 normalized/bare integral 定义 `21/21`、二维
 900 点复平面分组 `8/8`、
 单顶点 NDE `13/13`、runtime/export `10/10`、辅助外腿 `6/6` 及 Examples 01--07 `7/7`；

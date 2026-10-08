@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 本模块提供 018 的用户参数 notation 与重定义入口。所有新规则都重新经过 DSKinematics/DSInit，
+(* 本模块提供用户参数 notation 与重定义入口。所有新规则都重新经过 DSKinematics/DSInit，
    因而 seed、ds、DSDE 与序列化 metadata 不会持有彼此不一致的坐标状态。 *)
 
 (* ::Chapter:: *)

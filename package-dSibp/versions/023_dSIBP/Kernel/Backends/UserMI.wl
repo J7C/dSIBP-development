@@ -2,7 +2,7 @@
 (* 用户主积分只定义 J 线性空间中的有序坐标，不建立与 J 并行的物理积分表示。 *)
 
 (* ::Chapter:: *)
-(*018 userMI basis 构造与查询*)
+(*userMI basis 构造与查询*)
 
 DSUserMI::badlinear = "DSUserMI 需要 DSLinear 返回且尚未附加 userMI 的 linearData。";
 DSUserMI::badbasis = "userMI basis 无效：`1`。";

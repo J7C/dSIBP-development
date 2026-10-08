@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*018 初始化与 metadata 序列化*)
+(*初始化与 metadata 序列化*)
 
 Options[DSInit] = {
    WriteInitializationFiles -> False,

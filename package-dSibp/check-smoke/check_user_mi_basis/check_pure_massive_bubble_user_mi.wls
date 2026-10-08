@@ -9,8 +9,8 @@ projectRoot = ExpandFileName@FileNameJoin[{DirectoryName[$InputFileName], "..", 
 exampleDir = FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Examples", "04_pure_massive_bubble_closed_loop"}];
 dsSmokeLoadPackage[FileNameJoin[{projectRoot, "versions", "023_dSIBP", "Kernel", "dSIBP.wl"}]];
 DSMessagesOff[];
-Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}]];
-Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
+Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{exampleDir, "family_conventions.wl"}], CharacterEncoding -> "UTF-8"];
 
 parameterRules = {dim -> 37/11, nu -> 7/13, etaNu -> 23/17};
 caseInput = <|

@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*018 微分方程构造*)
+(*微分方程构造*)
 
 (* DSDE 只消费经 KiraImport 验证的 reduction data；不会从不完整日志猜测 master 或规则。 *)
 
@@ -296,7 +296,7 @@ dsTreeLineMomentumMagnitudeDerivative[int_J, variable_, family_Association] := M
    ];
 
 
-(* 旧 loop 投影只保留为正式 check 的单向 oracle，不再被 018 生产 DE 调用。 *)
+(* loop 投影只保留为单向 oracle，不参与生产 DE。 *)
 dsTreePhaseDerivativeProjectionOracle[loopIntegral_J, variable_, family_Association, rootTopology_Association] := Module[
    {internalVariable, loopDerivative, projectedData, expression},
    internalVariable = scalarProductInputToInternal[variable, family["topology"]];

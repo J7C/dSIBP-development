@@ -14,7 +14,7 @@
 豁免，不追溯补建。建议在独立版本 branch 中完成开发和验证，但是否创建或合并 branch
 完全由用户决定。
 
-## 0.5.0 当前路径与多点求值合同
+## 当前路径与多点求值合同
 
 ### 奇点目标
 
@@ -31,7 +31,7 @@ $\mathbb Q(i)$ 点；分类只读取完整有理矩阵的局部解，不读取�
 分别输运到同一点，再用 `evaluate_singular_target` 分别求值：主链是用户结果，参考链只检查
 逐分量分类、发散状态和有限值误差。
 
-0.5.0 仍面向通用单变量矩阵方程 `Y'(x)=A(x)Y(x)`。对 exact
+当前实现仍面向通用单变量矩阵方程 `Y'(x)=A(x)Y(x)`。对 exact
 `RationalMatrixSystem`，有限奇点、极点阶数和无穷远分类全部由包内部从矩阵元分母发现；
 用户不需要先给出 dlog letters 或奇点位置。程序随后自动验证
 
@@ -81,7 +81,7 @@ winding/monodromy 均在当前 Arb 精度构造，不经过 binary64 几何。�
 `planning_precision_digits`，节点和奇点折跃几何保存 Arb 中点--半径--指数；若执行请求
 高于规划精度，程序拒绝执行并要求按目标精度重新规划，不能声称从低精度 JSON 补回信息。
 
-Wolfram Language 入口已按普通程序包组织。把 0.5.0 版本根加入 `$Path` 后可直接使用：
+Wolfram Language 入口已按普通程序包组织。把当前版本根加入 `$Path` 后可直接使用：
 
 ```wl
 Needs["FlintNDE`"];
@@ -156,7 +156,7 @@ bridge 使用参数列表 `RunProcess` 和显式 `ProcessDirectory`，stdout/std
 
 ```powershell
 # 安装发布的 wheel；用户无需自行构建
-python -m pip install .\flintnde-0.5.0-py3-none-any.whl
+python -m pip install .\flintnde-1.0-py3-none-any.whl
 
 # 从下载的源码普通安装
 python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.5.0"
@@ -756,7 +756,7 @@ python -m unittest discover -s tests -v
 Wolfram `Needs["FlintNDE`"]` 端到端检查为 `26/26`。验证覆盖一般有理矩阵、任意次数
 多项式加简单极点的内部特化、缺省避开奇点、显式奇点折跃、严格消息语言、计划序列化
 精度、执行期不重规划、浅层目录和 Python 前置路径/写入门禁，并覆盖 fast multipoint、
-严格用户节点、符号最低阶证书门禁、增量扩阶与缓存复用。独立包与 MadStree v0.17 Vendor
+严格用户节点、符号最低阶证书门禁、增量扩阶与缓存复用。独立包与 MadStree Vendor
 的 42 个运行时代码文件逐文件 SHA-256 一致；版本更新说明只在独立包根目录集中保存，
 不属于 Vendor 交付文件。
 

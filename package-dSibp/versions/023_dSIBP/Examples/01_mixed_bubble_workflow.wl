@@ -1,11 +1,11 @@
 (* ::Package:: *)
-(* Mixed massive/massless 示例：用 023 统一公开入口完成离散模板、连续撒点和 linearData。 *)
+(* Mixed massive/massless 示例：用统一公开入口完成离散模板、连续撒点和 linearData。 *)
 
 (* ::Chapter:: *)
 (*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{exampleDir, "load_current_package.wl"}]];
+Get[FileNameJoin[{exampleDir, "load_current_package.wl"}], CharacterEncoding -> "UTF-8"];
 
 
 (* ::Chapter:: *)

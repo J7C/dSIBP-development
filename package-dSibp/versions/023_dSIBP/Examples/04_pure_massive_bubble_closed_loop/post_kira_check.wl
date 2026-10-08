@@ -6,7 +6,7 @@
 (*标准 package 与 family convention*)
 
 exampleDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];

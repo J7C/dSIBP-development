@@ -3,7 +3,7 @@
    或 pure-massive-bubble reference convention 生成 master 的齐次次数。 *)
 
 (* ::Chapter:: *)
-(*018 标度关系检查*)
+(*标度关系检查*)
 
 (* 标度证书的范围由实际固定的 Euler 变量决定；postDerivative 也可能只固定非 DE 参数，
    此时 DE 仍可提供全符号证书。 *)

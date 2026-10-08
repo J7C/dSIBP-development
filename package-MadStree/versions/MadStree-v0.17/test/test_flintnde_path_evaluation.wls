@@ -2,7 +2,7 @@
 
 (***
 文件：test_flintnde_path_evaluation.wls
-用途：验证 v0.17 连续复平面分组、FlintNDE 规划开关、fast dense 多点求值和零旧接口。
+用途：验证连续复平面分组、FlintNDE 规划开关、fast dense 多点求值和零旧接口。
 范围：使用单顶点可解析系统；自动规划与严格用户节点必须逐点互检。
 ***)
 
@@ -224,7 +224,7 @@ checks = <|
     MemberQ[Options[MSEvaluatePath], WorkingPrecision -> 200]
 |>;
 
-msTestSummary[checks, "MadStree v0.17 path evaluation"];
+msTestSummary[checks, "MadStree path evaluation"];
 Print["maximumDifference: ", InputForm[maximumDifference]];
 If[! And @@ Values[checks],
   Print["planned: ", InputForm[planned]];

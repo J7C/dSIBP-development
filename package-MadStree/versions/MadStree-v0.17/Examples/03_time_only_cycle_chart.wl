@@ -3,7 +3,7 @@
 (***
 File: 03_time_only_cycle_chart.wl
 Purpose: Demonstrates time-only cycle initialization, the common-theta contact sector, the dlog DE and all strict time-rank chart certificates.
-Source: configuration already executed as v0.3 T5; this file keeps representative public calls without copying validation assertions or private helper checks.
+Structure: representative public calls only; validation assertions and private helper checks are not part of the example.
 Run: execute section by section in the Mathematica front end, or run the whole file with wolframscript -file.
 ***)
 

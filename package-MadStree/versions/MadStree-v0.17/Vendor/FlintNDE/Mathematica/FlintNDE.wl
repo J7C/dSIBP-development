@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 文件用途：FlintNDE 0.5.0 的标准 Wolfram Language 程序包接口。
+(* 文件用途：FlintNDE 的标准 Wolfram Language 程序包接口。
    功能范围：构造通用单变量有理矩阵微分方程、从原始点生成一次路径计划，并直接执行
    已有计划。Python bridge 负责 exact Q(i) 奇点发现、多项式加简单极点结构认证和
    通用有理矩阵输运；本文件不复制数值算法，也不提供一体化规划兼执行入口。 *)
@@ -47,7 +47,7 @@ Begin["`Private`"];
 (* ::Chapter:: *)
 (*程序包位置与通用参数*)
 
-$FlintNDEVersion = "0.5.0";
+$FlintNDEVersion = "1.0";
 $FlintNDEMathematicaDirectory = DirectoryName[$InputFileName];
 $FlintNDEVersionDirectory = DirectoryName[$FlintNDEMathematicaDirectory];
 $FlintNDEPythonModule = "flintnde.mathematica_bridge";

@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 本模块定义 018 唯一积分表示、sector 身份与 massless seed quotient。所有 root
+(* 本模块定义唯一积分表示、sector 身份与 massless seed quotient。所有 root
    line 槽位永久保留；full line 使用三槽，shrunk line 使用单槽，fixed line 用短
    字符串 "F" 标记无整数动量幂。masslessFull 的公开槽仍是 {n1,n2}，但 source
    seed 只枚举 n2->0 的两个代数代表，导数输出再由统一 canonical 映回该代表。 *)
@@ -412,7 +412,7 @@ materializeSectorPrefactor018[data_Association] := Module[
 
 sectorPrefactorDataForIntegral018[topo_Association, int : J[_, linePacks_List, _]] := Module[
    {metadata, frozenData, pattern, shrunkLines},
-   (* 020 time-only 的 sector 身份已经由公开 key 和冻结 metadata 唯一确定；逆转换后的
+   (* time-only 的 sector 身份已经由公开 key 和冻结 metadata 唯一确定；逆转换后的
       旧 pack 只服务 producer，不能再次推断 normalization，否则会丢失 child zero point 幂。 *)
    If[Lookup[topo, "ibpMode", "full"] === "timeOnly",
     metadata = integralSectorMetadata018[topo, int];
@@ -478,8 +478,8 @@ sectorPrefactorRecordForKey018[context_Association, sectorKey_] := Module[
    ];
 
 
-(* 旧 016 metadata builder 已改名为 makeSectorMetadataBase018；此包装层只增加 018
-   不变量，不复制 vertex/line slot 的既有构造。 *)
+(* makeSectorMetadataBase018 保存 vertex/line slot 的基础 metadata；本包装层只在其上追加
+   sector 不变量，不复制既有构造。 *)
 makeSectorMetadata[topo_Association] := Module[
    {base, pattern, shrunkLines, lineSlots, ispSlots, parityData, timeOnlyStateSlots},
    base = makeSectorMetadataBase018[topo];
@@ -614,7 +614,7 @@ publicResolvedDiscreteStateIssues[topo_Association, int : J[_, linePacks_, _]] :
    ];
 
 
-(* 020 time-only 公开对象先按冻结的 sector/state registry 还原为 producer 表示；
+(* time-only 公开对象先按冻结的 sector/state registry 还原为 producer 表示；
    shape 与离散态门禁仍由同一套既有检查负责，避免维护第二套物理规则。 *)
 publicIntegralShapeIssues[topo_Association, int : J[_String, _List, _List]] /;
    Lookup[topo, "ibpMode", "full"] === "timeOnly" := Module[{internal},

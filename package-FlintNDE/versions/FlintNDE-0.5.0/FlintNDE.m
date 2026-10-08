@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 文件用途：FlintNDE 0.5.0 的标准顶层 Wolfram Language 加载入口。
+(* 文件用途：FlintNDE 的标准顶层 Wolfram Language 加载入口。
    公开接口统一由 Mathematica/FlintNDE.wl 定义，本文件不保存第二套实现。 *)
 
 (* ::Chapter:: *)

@@ -1,4 +1,4 @@
-"""检查 0.2.0 的三条新路线：极点--留数递推、嵌入式截断认证与段内 dense output。"""
+"""检查三条路线：极点--留数递推、嵌入式截断认证与段内 dense output。"""
 
 from __future__ import annotations
 

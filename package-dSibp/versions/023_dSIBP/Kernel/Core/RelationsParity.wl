@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 本模块统一 018 的 massless 双端点 relation、sector-aware canonical/求导和 parity seed 域。
+(* 本模块统一 massless 双端点 relation、sector-aware canonical/求导和 parity seed 域。
    parity 只筛选待作用生成元的 seed 点；生成后证书只报告错误，绝不把积分替换为零。 *)
 
 (* ::Chapter:: *)
@@ -1020,7 +1020,7 @@ treeFormulaPendingRederivation018[operation_String, context_Association] := Modu
 
 
 (* ::Chapter:: *)
-(*018 template-only DSSeeds*)
+(*template-only DSSeeds*)
 
 DSSeeds[context_: Automatic, opts : OptionsPattern[]] := Module[
    {resolved, seedSkeleton, templateData, sealedTemplates, seedGroups, seedGroupMetadata,

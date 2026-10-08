@@ -8,6 +8,6 @@
 
 本例不调用 `DSMetaSeedRange`、`DSGenerateIBP`、`DSLinear`、Kira、DE 或 scaling，也不选择数值点、target 或 master，不写任何运行产物。
 
-本例不登记为第三套待运行的 Kira reduction。当前 023.0 的外部 reduction 只包含 pure massive bubble 与 mixed bubble+tree；若将来单独扩展 sunrise 数值约化，必须先另行修改独立检验任务书和版本边界。
+本例不登记为第三套待运行的 Kira reduction。外部 reduction 当前只包含 pure massive bubble 与 mixed bubble+tree；若将来单独扩展 sunrise 数值约化，必须先另行修改独立检验任务书和版本边界。
 
 本目录是 package 中唯一的 sunrise example；其它 examples 不应再复制或改名形成第二套 sunrise 输入。

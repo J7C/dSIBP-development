@@ -140,7 +140,7 @@ MSConvertBasis[
 
 
 (* ::Chapter:: *)
-(*dSIBP 020 time-only J[sectorKey,timeShifts,stateBits] adapter*)
+(*dSIBP time-only J[sectorKey,timeShifts,stateBits] adapter*)
 
 
 (* Input must first pass validation against the current MadStree context; output stays lazy to avoid evaluation when dSIBP is not loaded. *)

@@ -1,12 +1,12 @@
 (* ::Package:: *)
-(* 023 pure massive bubble：固定 -- branch/parity，从 topology 到 formal Kira 输入。
+(* pure massive bubble：固定 -- branch/parity，从 topology 到 formal Kira 输入。
    package 只生成和序列化关系，不启动 reduction；Kira 工作树必须位于仓库外。 *)
 
 (* ::Chapter:: *)
 (*标准 package 加载*)
 
 exampleDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{exampleDir, "dlog_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "reference_user_mi_basis.wl"}]];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
@@ -215,7 +215,7 @@ closedLoopSummary = If[
     "requiredFiles" -> requiredKiraResults
     |>
    ];
-Print["023 pure massive bubble closed-loop summary: ", closedLoopSummary];
+Print["pure massive bubble closed-loop summary: ", closedLoopSummary];
 
 If[! exportReadyQ, Exit[1]];
 

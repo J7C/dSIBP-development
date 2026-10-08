@@ -1393,7 +1393,7 @@ Phase 1 的全部 general seeds/operators 冻结并记录哈希后，Phase 2 才
 自然排序通过后，从预先选定的低复杂度 targets 检查 Kira master 编号。报告必须列出 target 截止
 编号、全部 probe master 编号、代表指标、最大编号和显著编号跃变。不得仅凭连续指标是否为零把
 Kira master 排除为有限-seed 伪 master；物理 basis 截断还必须结合自然编号跃变、seed 边界位置及
-后续 reduction/DE 闭合判断。当前 023 正在重验负连续指标的排序 penalty；只有 fresh producer、
+后续 reduction/DE 闭合判断。当前版本正在重验负连续指标的排序 penalty；只有 fresh producer、
 排序专项与 Kira probe 全部通过后，才把最终公式写入本任务书。
 
 MMA 必须在预先声明的合理 seed envelope 内生成、canonical 化并导出完整 IBP 方程；不得按 target

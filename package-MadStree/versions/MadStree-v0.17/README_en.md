@@ -1,6 +1,6 @@
 # MadStree
 
-Current version: `v0.17`. This directory is upgraded from v0.15; interface changes are listed in
+This directory is upgraded from v0.15; interface changes are listed in
 [`MadStree-v0.17-en.md`](../../历史版本更新日志/MadStree-v0.17-en.md) (Chinese:
 [`MadStree-v0.17.md`](../../历史版本更新日志/MadStree-v0.17.md)).
 
@@ -268,7 +268,7 @@ The formula layer never constructs a generic large matrix inverse. The fixed `si
 
 The public H/Hankel-state to h-state transforms are `MSHTohMatrix`, `MShToHMatrix` and `MSConvertBasis`. Local and all-sector state vectors read the fixed `NuConvention` of the context; an already integrated `MSIntegral` also involves base time powers and is rejected explicitly when it cannot be recovered uniquely.
 
-The FlintNDE 0.5.0 numerical backend ships as a synchronized copy inside this version directory; its default location is defined in a single relative-path variable:
+The FlintNDE numerical backend ships as a synchronized copy inside this version directory; its default location is defined in a single relative-path variable:
 
 ```wl
 MSFlintNDEConfiguration[]
@@ -328,7 +328,7 @@ The full formulas, the massless `4 -> 2` quotient, contact shifts and the top-to
 - [06_massless_three_vertex_ep_regularization.wl](Examples/06_massless_three_vertex_ep_regularization.wl): a massless three-vertex chain with `a1=a2=a3=1+ep`; the symbolic boundary and DE certify leading power zero before numerical NDE work, after which the program selects production/validation points and extracts the finite part.
 - [07_zero_external_leg_energy.wl](Examples/07_zero_external_leg_energy.wl): a vertex without a physical external leg may omit `externalLegEnergy` or set it to zero; a private auxiliary energy remains in the analytic dlog and is transported automatically to the physical zero.
 
-After deleting the existing `results/` and `results_temp/` trees, all seven examples passed fresh v0.17 runs with `Example PASSED` and exit code `0`. Example 06 passed `16/16` checks with three production points and two independent validation points; the default request of 12 workers was automatically capped at the five actual ep tasks.
+After deleting the existing `results/` and `results_temp/` trees, all seven examples passed fresh runs with `Example PASSED` and exit code `0`. Example 06 passed `16/16` checks with three production points and two independent validation points; the default request of 12 workers was automatically capped at the five actual ep tasks.
 
 ## Current boundaries
 
@@ -338,9 +338,9 @@ After deleting the existing `results/` and `results_temp/` trees, all seven exam
 - FlintNDE transport requires the pulled-back connection to be in exact `Q(i)(s)` or `Q(i)(t)`.
   This fresh development run covers single-vertex, pure-massless, massive-Full, and mixed
   three-vertex systems through the current generic boundary producer.
-- FlintNDE 0.5.0 retains exact Lee--Moser, high-pole, and singularity-jump capabilities, and adds node-bucket fast multipoint evaluation plus the public strict user-node route. Uncertified high poles and internal/final points requiring ramification, algebraic extensions, or general Stokes connections continue to fail closed.
+- FlintNDE retains exact Lee--Moser, high-pole, and singularity-jump capabilities, and adds node-bucket fast multipoint evaluation plus the public strict user-node route. Uncertified high poles and internal/final points requiring ramification, algebraic extensions, or general Stokes connections continue to fail closed.
 
-The current fresh v0.17 regression includes core `61/61`, formula artifacts `24/24`,
+The current fresh regression includes core `61/61`, formula artifacts `24/24`,
 point-sequence/planning `29/29`, normalized/bare integral definitions `21/21`, 900-point
 complex-plane grouping `8/8`, single-vertex NDE `13/13`, runtime/export `10/10`, auxiliary
 external-leg energy `6/6`, and Examples 01--07 `7/7`. All 19 Wolfram development scripts, the

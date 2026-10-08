@@ -1,11 +1,11 @@
 (* ::Package:: *)
 (***
-文件：TimeOnlyRepresentation020.wl
-用途：定义 020 time-only 公开积分 J[sectorKey,timeShifts,stateBits] 与内部
+文件：TimeOnlyRepresentation.wl
+用途：定义 time-only 公开积分 J[sectorKey,timeShifts,stateBits] 与内部
       J[aList,linePacks,{}] 的唯一双向转换，并提供表达式/数据容器级转换。
 核心逻辑：sectorKey 只负责 sector 身份；timeShifts 保存当前 sector 的紧致时间幂指标；
           stateBits 按初始化 metadata 冻结的 root line/endpoint 顺序保存离散 n 态。
-边界：full 模式不经过本模块；旧三槽 time-only 对象只允许存在于 Private 内部。
+边界：full 模式不经过本模块；三槽 time-only 对象只允许存在于 Private 内部。
 ***)
 
 

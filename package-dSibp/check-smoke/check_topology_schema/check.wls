@@ -73,7 +73,7 @@ contractedTopology = If[
    ];
 
 checks = <|
-   "version023" -> SameQ[dSIBP`$dSIBPVersion, "023.0"],
+   "version" -> SameQ[dSIBP`$dSIBPVersion, "1.0"],
    "newSchemaParsed" -> AssociationQ[topology],
    "vertexAssociationsRetained" -> SameQ[Lookup[topology["vertices"], "id"], {1, 2}],
    "plusPhaseCoefficient" -> SameQ[dSIBP`Private`vertexExternalPhaseDerivativeCoefficient[topology, 1], -I],

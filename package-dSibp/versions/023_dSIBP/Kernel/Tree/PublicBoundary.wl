@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 本模块把论文 vertex-basis 公式实现限制在 Private 内部，并为 020 的 tree 公开接口提供
+(* 本模块把论文 vertex-basis 公式实现限制在 Private 内部，并为 tree 公开接口提供
    J[sectorKey,timeShifts,stateBits] 适配。它不改变 massive-only 递推或 dlog 公式，也不绕过
    massless quotient 的 PendingRederivation 门禁。 *)
 
@@ -7,7 +7,7 @@
 (*统一 J 与私有 vertex basis 的双向映射*)
 
 (* 公式内核按顶点保存 massive 状态；先构造既有 line-packed producer 对象，再通过
-   020 中央 registry 唯一转换为公开 time-only 表示。 *)
+   中央 registry 唯一转换为公开 time-only 表示。 *)
 dsTreeFormulaIntegralToPublic018[int : J[_List], sectorKey_String, context_Association] := Module[
    {familyContext, family, topo, packs, aList, baseline, linePacks, line, states,
     vertexIndex, legIndex, internalIntegral},

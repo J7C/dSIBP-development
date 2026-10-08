@@ -1,6 +1,6 @@
 # MadStree 文档入口
 
-MadStree 的技术文档随当前版本交付。当前 v0.17 文档位于：
+MadStree 的技术文档随当前版本交付。当前文档位于：
 
 - 公式手册：`../versions/MadStree-v0.17/Documentation/tree_formula.pdf`
 - TeX 源文件：`../versions/MadStree-v0.17/Documentation/tree_formula.tex`

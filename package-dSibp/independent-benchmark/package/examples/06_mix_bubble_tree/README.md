@@ -8,6 +8,6 @@
 
 本例不增加第二条 massive line，避免把 compound topology 的角色、massless convention 和 bridge/cycle contraction 演示混入不必要的 massive function-system 组合。
 
-本例同时保留 023.0 fresh Kira 检验的两份轻量记录：`kira_input_summary.wl` 给出 `+++` 分支、两条 cycle-even parity、formal envelope、精确点和输入规模；`kira_result_summary.wl` 给出 81 masters、676 targets、六张 `81x81` DE、exact-point scaling、Kira 版本、并行配置和墙钟时间。
+本例同时保留 fresh Kira 检验的两份轻量记录：`kira_input_summary.wl` 给出 `+++` 分支、两条 cycle-even parity、formal envelope、精确点和输入规模；`kira_result_summary.wl` 给出 81 masters、676 targets、六张 `81x81` DE、exact-point scaling、Kira 版本、并行配置和墙钟时间。
 
-完整 Kira 输入由 Windows Wolfram 在仓库外验证工作区生成，reduction 在 WSL 中运行，并未在本 example 目录执行。发布前已删除 `init/`、`kira/`、database、save、日志、reduction table、cache 和 DE 运行目录。两份摘要只用于把本例输入与正式结果对应起来，不作为程序包或 importer 输入；实际证明保存在 023.0 独立检验报告中。
+完整 Kira 输入由 Windows Wolfram 在仓库外验证工作区生成，reduction 在 WSL 中运行，并未在本 example 目录执行。发布前已删除 `init/`、`kira/`、database、save、日志、reduction table、cache 和 DE 运行目录。两份摘要只用于把本例输入与正式结果对应起来，不作为程序包或 importer 输入；实际证明保存在独立检验报告中。

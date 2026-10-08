@@ -2,18 +2,18 @@
 (***
 文件：kira_result_summary.wl
 用途：保存 pure massive bubble 的 fresh WSL Kira、DE 与 scaling 最终摘要。
-边界：本文件不保留 reduction table、日志、database 或 cache；正式证据见 023.0 独立检验报告。
+边界：本文件不保留 reduction table、日志、database 或 cache；正式证据见独立检验报告。
 ***)
 
 
 (* ::Chapter:: *)
-(*023.0 正式结果摘要*)
+(*正式结果摘要*)
 
 <|
-  "schema" -> "dsibp_023_example_kira_result_summary_v1",
+  "schema" -> "dsibp_example_kira_result_summary_v1",
   "status" -> "passed",
   "case" -> "pureMassiveBubble",
-  "packageVersion" -> "023.0",
+  "packageVersion" -> "1.0",
   "kira" -> <|
     "version" -> "2.3 (Git: 2.3-7-geb541f9)",
     "runtime" -> "WSL",

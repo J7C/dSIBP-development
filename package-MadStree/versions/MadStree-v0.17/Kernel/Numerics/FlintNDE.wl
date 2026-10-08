@@ -284,7 +284,7 @@ msExecuteFlintNDEAdapter[inputData_Association, pythonExecutable_, runtimeDirect
   If[msEnsureDirectory[transportDirectory] === $Failed,
     Return[msFailure["RuntimeDirectoryCreationFailed", <|"path" -> transportDirectory|>]]
   ];
-  (* v0.17 唯一 evaluate schema 的字段集合由 Python 端严格校验。 *)
+  (* 唯一 evaluate schema 的字段集合由 Python 端严格校验。 *)
   inputWrite = Quiet@Check[Export[inputFile, inputData, "RawJSON"], $Failed];
   If[inputWrite === $Failed || ! FileExistsQ[inputFile],
     Return[msFailure["RuntimeInputWriteFailed", <|

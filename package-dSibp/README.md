@@ -28,14 +28,14 @@ reduction。
 building-block 状态；旧 time-only `J[aList,linePacks,{}]` 不兼容。full-loop 仍使用原三槽
 表示，因此 Kira/reduction 资产不需迁移。022 破坏性删除旧 topology schema：顶点只接受
 `id/vertexType/externalLegEnergy`，line 只接受 `id/massType/endpoints/momentum`，massive
-另需 `nu`；SK、pack、state 与 contact 元数据全部由内部 producer 派生。023 保持该公开 schema，
+另需 `nu`；SK、pack、state 与 contact 元数据全部由内部 producer 派生。当前版本保持该公开 schema，
 但修正 same-branch massive contact 与 child normalization 的 contour sign，并新增时间 IBP
 小端点整数门禁。细节见
 [`历史版本更新日志/dSIBP-023.0.md`](历史版本更新日志/dSIBP-023.0.md)。
 
 ## 目录
 
-- `versions/`：只保留当前 023 模块化源码。
+- `versions/`：只保留当前模块化源码。
 - `历史版本更新日志/`：长期保留各版本更新说明，不随旧源码目录清理。
 - `Documentation/`：plan、design note、技术手册和专项正确性清单。
 - `independent-benchmark/`：独立任务书、当前正式交付、reference results 和 examples。

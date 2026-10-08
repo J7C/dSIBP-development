@@ -1,4 +1,4 @@
-"""验证 MadStree v0.17 到 FlintNDE 0.5.0 的唯一单请求 schema。
+"""验证 MadStree 到 FlintNDE 的唯一单请求 schema。
 
 测试直接加载版本内 adapter，检查自动规划、严格用户节点、逐点互检和旧 schema
 拒绝；不依赖安装态 MadStree，也不生成或恢复路径计划对象。
@@ -72,7 +72,7 @@ def _request(path_planning: bool) -> dict[str, object]:
 
 
 class SingleRequestAdapterTest(unittest.TestCase):
-    """检查 v0.17 单进程分组求值合同。"""
+    """检查单进程分组求值合同。"""
 
     @classmethod
     def setUpClass(cls) -> None:

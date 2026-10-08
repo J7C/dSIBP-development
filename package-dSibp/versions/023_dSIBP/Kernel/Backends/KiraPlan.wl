@@ -5,7 +5,7 @@
 
 
 (* ::Chapter:: *)
-(*018 Kira 两阶段 reduction 计划*)
+(*Kira 两阶段 reduction 计划*)
 
 DSKiraPlan::badlinear = "DSKiraPlan 需要 DSLinear 返回的 backend-neutral linearData。 DSKiraPlan requires backend-neutral linearData returned by DSLinear.";
 DSKiraPlan::badspec = "Kira 计划配置无效：`1`。 The Kira plan specification is invalid: `1`.";

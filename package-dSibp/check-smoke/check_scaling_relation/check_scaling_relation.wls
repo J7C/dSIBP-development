@@ -12,7 +12,7 @@ probeFile = FileNameJoin[{
     "pure_massive_bubble", "reference_probe.wl"
     }];
 If[! FileExistsQ[probeFile], Exit[2]];
-probe = Get[probeFile];
+probe = Get[probeFile, CharacterEncoding -> "UTF-8"];
 
 deP0 = Lookup[probe, "deP0Physical", Lookup[probe, "deP0", Missing["deP0"]]];
 deKs = Lookup[probe, "deKsPhysical", Lookup[probe, "deKs", Missing["deKs"]]];

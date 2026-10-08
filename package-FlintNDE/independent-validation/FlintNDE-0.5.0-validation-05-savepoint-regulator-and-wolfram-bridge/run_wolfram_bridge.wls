@@ -82,7 +82,7 @@ infinityValue = First[singularRecord["values"]];
 (*结构化验收与机器摘要*)
 
 checks = <|
-  "needsVersion" -> $FlintNDEVersion === "0.5.0",
+  "needsVersion" -> $FlintNDEVersion === "1.0",
   "ordinarySchemas" ->
     StringQ[Lookup[ordinaryPlan, "schema", None]] &&
     StringQ[Lookup[ordinaryResult, "schema", None]],

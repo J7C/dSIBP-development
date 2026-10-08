@@ -1,4 +1,4 @@
-"""MadStree v0.17 到 FlintNDE 0.5.0 的数值适配器。
+"""MadStree 到 FlintNDE 的数值适配器。
 
 MadStree 只提交连续复仿射单变量段、exact dlog 拉回、边界和 master 顺序。
 FlintNDE 在本进程内完成边界输运、各段自动规划或顺序直输、dense 多点求值和
@@ -217,7 +217,7 @@ def _validate_boundary(value: Any, dimension: int) -> None:
 
 
 def _validate_request(value: Any) -> dict[str, Any]:
-    """验证 v0.17 唯一请求；旧 schema 一律拒绝。"""
+    """验证唯一请求格式；旧 schema 一律拒绝。"""
 
     data = _exact_keys(value, REQUEST_KEYS, "request")
     if data["schema"] != EVALUATE_SCHEMA:

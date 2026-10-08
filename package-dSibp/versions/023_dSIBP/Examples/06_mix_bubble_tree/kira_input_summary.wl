@@ -7,12 +7,12 @@
 
 
 (* ::Chapter:: *)
-(*023.0 正式输入摘要*)
+(*正式输入摘要*)
 
 <|
-  "schema" -> "dsibp_023_example_kira_input_summary_v1",
+  "schema" -> "dsibp_example_kira_input_summary_v1",
   "case" -> "mixBubbleTree",
-  "packageVersion" -> "023.0",
+  "packageVersion" -> "1.0",
   "packageSHA256" ->
     "7B729536E62EC22E8A726F2D245D4A602E73811C531CCDC3982218A80A151740",
   "executionBoundary" -> <|

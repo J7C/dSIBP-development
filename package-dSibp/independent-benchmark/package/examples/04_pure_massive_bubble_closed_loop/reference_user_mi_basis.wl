@@ -1,6 +1,6 @@
 (* ::Package:: *)
 (* pure massive bubble 的 reference 候选数据；basis 构造、秩审计和映射统一由 DSUserMI 完成。
-   本文件对应当前 code_final_version 的 19 项新 basis：十九项全部 active，没有辅助关系。 *)
+   本文件对应当前外部 bubble reference 的 19 项 basis：十九项全部 active，没有辅助关系。 *)
 
 (* ::Chapter:: *)
 (*Reference 候选与 physical convention*)

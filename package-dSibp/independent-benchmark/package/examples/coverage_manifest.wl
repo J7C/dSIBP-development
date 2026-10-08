@@ -1,12 +1,12 @@
 (* ::Package:: *)
-(* 023.0 example 覆盖清单。键是相对于 examples/ 的文件路径，值是该文件实际演示的
+(* example 覆盖清单。键是相对于 examples/ 的文件路径，值是该文件实际演示的
    公开函数。正式检查会同时核对文件中的调用文本和 package 的 DSPublicAPI[]。 *)
 
 (* ::Chapter:: *)
 (*公开函数与成品例子的覆盖关系*)
 
 <|
- "version" -> "023.0",
+ "version" -> "1.0",
  "coverage" -> <|
    "01_mixed_bubble_workflow.wl" -> {
      "DSInit", "DSSeeds", "DSAllSeeds", "DSGenerateIBP", "DSLinear", "DSReorderIntegrals", "DSKiraPlan"

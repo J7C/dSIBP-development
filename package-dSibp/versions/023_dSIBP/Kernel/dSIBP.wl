@@ -38,7 +38,7 @@ userMI::usage = "userMI[i] 是用户定义主积分坐标的稳定公开 token�
 dtau::usage = "dtau[vertex,expr] 生成指定顶点的时间 IBP；三参数形式接受 parsed topology 或 DSInit context。";
 dqq::usage = "dqq[dLoop,vectorLoop,expr] 生成圈动量沿圈动量方向的 IBP；四参数形式接受 parsed topology 或 DSInit context。";
 dqk::usage = "dqk[dLoop,vectorExternal,expr] 生成圈动量沿外动量方向的 IBP；四参数形式接受 parsed topology 或 DSInit context。";
-ds::usage = "ds[expr,var] 对 exact 初始化 context 的外部变量 var 求总导数；三参数形式接受 parsed topology 或 DSInit context。018 缺省 var 为 loop Gram 根号 ssij 或显式独立无圈模长 sE1,sE2,...，并同时作用于积分指标、sector prefactor 和显式动力学系数。";
+ds::usage = "ds[expr,var] 对 exact 初始化 context 的外部变量 var 求总导数；三参数形式接受 parsed topology 或 DSInit context。缺省 var 为 loop Gram 根号 ssij 或显式独立无圈模长 sE1,sE2,...，并同时作用于积分指标、sector prefactor 和显式动力学系数。";
 rep2innerform::usage = "rep2innerform[expr] 把用户 sp/ssij/sEe 表示转换为当前 topology 的内部坐标；双参数形式接受 parsed topology 或 DSInit context。一般混合或过完备坐标没有唯一反向映射时返回 $Failed。";
 rep2outform::usage = "rep2outform[expr] 把内部标量积坐标按当前规则转换为用户 sp/ssij/sEe 表示；双参数形式接受 parsed topology 或 DSInit context。";
 rep2Integrand::usage = "rep2Integrand[expr] 把统一 J 表示展开为用于核对的形式 integrand；双参数形式接受 parsed topology 或 DSInit context。";
@@ -101,7 +101,7 @@ KiraCompletionFile::usage = "KiraCompletionFile 指定 DSKiraImport 检查的完
 KiraCompletionPatterns::usage = "KiraCompletionPatterns 指定完成日志必须匹配的字符串或 RegularExpression 列表。";
 ScalingRelation::usage = "ScalingRelation 指定 DSScaleCheck 使用的 \"Custom\"、\"LoopTopology\" 或 \"PureMassiveBubble\" 标度关系。";
 ScalingVariables::usage = "ScalingVariables 指定 Euler 算符中的变量顺序。";
-ScalingWeights::usage = "ScalingWeights 指定 Euler 算符中各变量的系数；018 的 ssij 与独立无圈模长 sEi 都是动量一次量，缺省物理权重为 1。";
+ScalingWeights::usage = "ScalingWeights 指定 Euler 算符中各变量的系数；ssij 与独立无圈模长 sEi 都是动量一次量，缺省物理权重为 1。";
 ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数；PureMassiveBubble 可设 Automatic。";
 
 (* ::Chapter:: *)
@@ -110,15 +110,15 @@ ScalingDegrees::usage = "ScalingDegrees 指定各 master 的预期齐次次数�
 Begin["`Private`"];
 
 $dSIBPPackageRoot = DirectoryName[DirectoryName[$InputFileName]];
-$dSIBPVersion = "023.0";
+$dSIBPVersion = "1.0";
 
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "TopologyKinematics018.wl"}], CharacterEncoding -> "UTF-8"];
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "LoopCore013.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "TopologyKinematics.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "LoopCore.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "Context.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "Metadata.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "Loop.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "Tree.wl"}], CharacterEncoding -> "UTF-8"];
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "PureTime018.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "PureTime.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "IBP", "GenerateIBP.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Backends", "KiraExport.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Backends", "UserMI.wl"}], CharacterEncoding -> "UTF-8"];
@@ -128,11 +128,11 @@ Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "DE", "BuildDE.wl"}], CharacterEn
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "DE", "Scaling.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Tree", "VertexFamily.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "KinematicCoordinates.wl"}], CharacterEncoding -> "UTF-8"];
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "SectorModel018.wl"}], CharacterEncoding -> "UTF-8"];
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "TimeOnlyRepresentation020.wl"}], CharacterEncoding -> "UTF-8"];
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "RelationsParity018.wl"}], CharacterEncoding -> "UTF-8"];
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "ParameterInterface018.wl"}], CharacterEncoding -> "UTF-8"];
-Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Tree", "PublicBoundary018.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "SectorModel.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "TimeOnlyRepresentation.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "RelationsParity.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "ParameterInterface.wl"}], CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Tree", "PublicBoundary.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{$dSIBPPackageRoot, "Kernel", "Core", "BilingualMessages.wl"}], CharacterEncoding -> "UTF-8"];
 
 

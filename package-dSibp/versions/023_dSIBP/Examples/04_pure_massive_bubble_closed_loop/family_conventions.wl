@@ -50,8 +50,8 @@ exampleSymmetryRules0 = {
 (* ::Chapter:: *)
 (*Reference top 目标包络*)
 
-(* Reference 四组 top seed 的共同外包范围：a 仍为 [-1,4]；b 随 code_final_version 新构造
-   由 [-2,5] 扩为 [-4,6]（源码 001 的 bMin/bMax 从 1/3 改为 3/4，新的 19 项 basis 其
+(* Reference 四组 top seed 的共同外包范围：a 仍为 [-1,4]；b 随外部 bubble reference 新构造
+   由 [-2,5] 扩为 [-4,6]（reference 源码的 bMin/bMax 从 1/3 改为 3/4，新的 19 项 basis 的
    derivative closure 报告 canonical b1 缺口到 -3）。这里把它作为最终关系的共同目标包络，
    同时用于 lower sectors；DSGenerateIBP 会按每组 shift 反推出更窄的 seed 点域。
    旧脚本给 R1 随手放大的 [-4,8] 不作为缺省输入。 *)

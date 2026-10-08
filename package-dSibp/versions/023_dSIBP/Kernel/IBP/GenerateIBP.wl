@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-(* 本文件实现 018 的模板化连续指标撒点。DSSeeds 先生成完整离散态并执行
+(* 本文件实现模板化连续指标撒点。DSSeeds 先生成完整离散态并执行
    EOM/canonical；本模块只展开 general 连续指标，并保留可供 DSLinear 审计的来源信息。 *)
 
 

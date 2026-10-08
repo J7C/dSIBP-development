@@ -2,7 +2,7 @@
 
 (***
 File: _harness.wls
-Purpose: Shared loading and summary boilerplate for the MadStree v0.17 development tests. Test scripts include it with
+Purpose: Shared loading and summary boilerplate for the MadStree development tests. Test scripts include it with
       Get[FileNameJoin[{DirectoryName[$InputFileName], "_harness.wls"}]],
       then call msTestLoadKernel[] and optionally msTestSummary[checks, title].
 Conventions: msTestSummary unifies passed/total, failed keys and the exit code; case-specific printing stays in the tests.

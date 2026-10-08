@@ -21,21 +21,21 @@
 \newcommand{\cN}{\mathcal N}
 \newcommand{\Emb}{\operatorname{Emb}}
 
-\title{MadStree v0.17: tree formula}
-\author{\texttt{package-MadStree} formula handbook}
+\title{MadStree: tree formula}
+\author{\texttt{MadStree} formula handbook}
 \date{2026-08-21}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This handbook corresponds to \texttt{package-MadStree} v0.17; time-only sectors continue to be identified by fixed-length strings in the order of the root propagators.
-This document is the formula handbook of \texttt{package-MadStree}. The package targets arbitrary massive/massless mixed dS tree graphs. It does not generate a general system of IBP equations; instead, it assembles the master integrals, the iterative reduction and the block-triangular dlog-form differential equation directly from the topology, and a concrete usage guide will be added after the public interface stabilizes. This document rederives the required formulas from the tensor-product structure of the local function systems. The purely massive formulas of Chen--Feng can be understood uniformly as Kronecker sums of several one-dimensional theta-free exponential systems and two-dimensional Hankel systems; each $\ii\chi_bq_b$ is the tensor product of a one-dimensional exponential generator with the identity on all the remaining factors. A massless full propagator containing theta cannot be identified with a single theta-free exponential factor: before reduction, it has $2\otimes2=4$ Hankel states at its two endpoints; after using the massless $00/11$ and $10/01$ relations, these four states are compressed by a constant projection into a two-dimensional state shared by the whole edge. This two-dimensional factor enters the time-IBPs of both endpoints, so a vertex-by-vertex tensor factorization fails, but the tensor-product/Kronecker-sum construction on the full graph still holds. All regular IBPs, iteration matrices and dlog diagonal blocks can therefore be written directly from the topology; theta derivatives only add fixed off-diagonal blocks connecting edge-contracted sectors, without first generating a large IBP system and then extracting the formulas from it.
+This handbook corresponds to \texttt{MadStree}; time-only sectors continue to be identified by fixed-length strings in the order of the root propagators.
+This document is the formula handbook of \texttt{MadStree}. The package targets arbitrary massive/massless mixed dS tree graphs. It does not generate a general system of IBP equations; instead, it assembles the master integrals, the iterative reduction and the block-triangular dlog-form differential equation directly from the topology, and a concrete usage guide will be added after the public interface stabilizes. This document rederives the required formulas from the tensor-product structure of the local function systems. The purely massive formulas of Chen--Feng can be understood uniformly as Kronecker sums of several one-dimensional theta-free exponential systems and two-dimensional Hankel systems; each $\ii\chi_bq_b$ is the tensor product of a one-dimensional exponential generator with the identity on all the remaining factors. A massless full propagator containing theta cannot be identified with a single theta-free exponential factor: before reduction, it has $2\otimes2=4$ Hankel states at its two endpoints; after using the massless $00/11$ and $10/01$ relations, these four states are compressed by a constant projection into a two-dimensional state shared by the whole edge. This two-dimensional factor enters the time-IBPs of both endpoints, so a vertex-by-vertex tensor factorization fails, but the tensor-product/Kronecker-sum construction on the full graph still holds. All regular IBPs, iteration matrices and dlog diagonal blocks can therefore be written directly from the topology; theta derivatives only add fixed off-diagonal blocks connecting edge-contracted sectors, without first generating a large IBP system and then extracting the formulas from it.
 \end{abstract}
 
 \tableofcontents
 
-\section{v0.17 topology input convention}
+\section{Topology input convention}
 
 Every vertex explicitly sets its Schwinger--Keldysh contour branch through
 \texttt{vertexType -> "+"|"-"}. A propagator no longer repeats \texttt{skType},
@@ -1234,7 +1234,7 @@ MadStree's \texttt{MSHTohMatrix[nu,z,context]} and \texttt{MShToHMatrix[nu,z,con
 
 What is transformed here is the same-ordered state vector of the integrand, not the already-integrated \texttt{MSIntegral}. The reason is that the $z^p$ and $z^{p-1}$ of Eq.~\eqref{eq:package-H-to-h} also change the component base time power at the same time; the first version has not built an independent H-family sector metadata, so overloading the integral object explicitly fails closed, and this step cannot be disguised as merely flipping a state bit.
 
-The public time-only representation of dSIBP 020 is \texttt{J[sectorKey,timeShifts,stateBits]}, which corresponds slot by slot to MadStree's \texttt{MSIntegral[sectorKey,timeShifts,stateBits]}; \texttt{stateBits} are discrete states of the $n_i$ type in the full-sector registry and are not required to be grouped by vertex. This correspondence only converts the integral identity and does not replace the normalization: both contexts must use the same $\cN_s$ for every sector, and differentiation must include the $\partial\log\cN_s$ of Eq.~\eqref{eq:normalization-adapter}. The default massless input of MadStree is $\nu=1/2$ with positive prefactor, and the 2401 formulas are assembled with the uniform substitution $\nu\to-\nu=-1/2$. This analytic equivalence does not replace line metadata, theta, or contact normalization.
+The public time-only representation of dSIBP is \texttt{J[sectorKey,timeShifts,stateBits]}, which corresponds slot by slot to MadStree's \texttt{MSIntegral[sectorKey,timeShifts,stateBits]}; \texttt{stateBits} are discrete states of the $n_i$ type in the full-sector registry and are not required to be grouped by vertex. This correspondence only converts the integral identity and does not replace the normalization: both contexts must use the same $\cN_s$ for every sector, and differentiation must include the $\partial\log\cN_s$ of Eq.~\eqref{eq:normalization-adapter}. The default massless input of MadStree is $\nu=1/2$ with positive prefactor, and the 2401 formulas are assembled with the uniform substitution $\nu\to-\nu=-1/2$. This analytic equivalence does not replace line metadata, theta, or contact normalization.
 
 \subsection{Single-vertex families, local inverses and the complete reduction interface}
 
@@ -1846,7 +1846,7 @@ The minimum exact acceptance should include:
   \item the global $U_sM_{0;v,s}U_s^{-1}$ is fully diagonal for a mixed massive/massless tree;
   \item the formula one-step relations equal the naive time-IBP term by term in the exactly same ordered normalized basis;
   \item the formula DE equals the naive DE matrix element by matrix element, all lower-sector residuals are empty, and exact flatness is passed;
-  \item in the mixed three-vertex case, the five $15\times15$ matrices obtained from the public \texttt{ds} of dSIBP 020 through the slot-by-slot adapter and \texttt{MSReduce} are strictly equal to the direct formula DE;
+  \item in the mixed three-vertex case, the five $15\times15$ matrices obtained from the public \texttt{ds} of dSIBP through the slot-by-slot adapter and \texttt{MSReduce} are strictly equal to the direct formula DE;
   \item the physical output basis additionally contains Eq.~\eqref{eq:physical-DE-gauge}, without missing $k$, $k^2$ or the normalization derivative.
 \end{itemize}
 

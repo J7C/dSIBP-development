@@ -36,7 +36,7 @@
   \item 同一代表顶点对的 full lines 按共同 theta 生成 odd-subset contact；sector 只枚举这些事件可达的状态。
 \end{itemize}
 
-当前 020 以既有 loop 物理核心为只读基线，已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/quotient canonical 门禁；time seed 已包含顶点幂次、外部相位、双端点 regular 项、massive/massless theta-boundary shrink、目标 sector coincident 抵消与 sector prefactor normalization，并通过标准 \texttt{dSIBP`} context 提供原子与高层接口。020 只在 time-only 公开边界引入式~\eqref{directPureTimeJ}，不重写这些 producer。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，importer 只验证并读取外部完整 reduction；二者都不替代任何前端关系或运行 reduction。
+当前实现以既有 loop 物理核心为只读基线，已实现 momentum seed 的传播子项、shrunk-line $bS$ 项、z/ISP 吸收、massive/massless building-block 导数与 EOM/quotient canonical 门禁；time seed 已包含顶点幂次、外部相位、双端点 regular 项、massive/massless theta-boundary shrink、目标 sector coincident 抵消与 sector prefactor normalization，并通过标准 \texttt{dSIBP`} context 提供原子与高层接口。020 只在 time-only 公开边界引入式~\eqref{directPureTimeJ}，不重写这些 producer。massive 导数与 shrink 分别只读取由 $A_T/W_T$ 编译的数据。Kira serializer 只转换经过这些门禁的后端中立线性系统，importer 只验证并读取外部完整 reduction；二者都不替代任何前端关系或运行 reduction。
 
 % ============================================================
 \section{h 函数及其性质}
@@ -584,7 +584,7 @@ $\longrightarrow$
 \section{Building Block 参数体系}
 % ============================================================
 
-每条 massive 完整线 $e$ 都带编译后的 \texttt{functionSystem}。公开输入缺省使用 h preset；需要其它系统时，唯一可选字段 \texttt{"functionSystem"} 接受 \texttt{"h"}、\texttt{"H"} 或给出 $P,Q,T,W$ 的完整 Association。023 不读取旧 \texttt{bbType/eomCoefficients}。
+每条 massive 完整线 $e$ 都带编译后的 \texttt{functionSystem}。公开输入缺省使用 h preset；需要其它系统时，唯一可选字段 \texttt{"functionSystem"} 接受 \texttt{"h"}、\texttt{"H"} 或给出 $P,Q,T,W$ 的完整 Association。当前实现不读取旧 \texttt{bbType/eomCoefficients}。
 
 内置缺省值为
 \begin{align}
@@ -1372,7 +1372,7 @@ massless full/cross 线使用各自已固定的端点 phase 符号：full 线按
 \end{equation}
 实现时先把各个 $J_r$ 替换为惰性 token，让 Mathematica 的 \texttt{D} 只作用于显式系数；随后逐项调用单积分导数核心，合并后再统一执行 EOM、symmetry 与 canonical。接口拒绝内部 \texttt{kk[i,j]} 名称及 $J_iJ_j$ 等非线性输入，输出恢复到根号坐标或用户显式声明的兼容表示。
 
-历史 012 阶段曾对十个 family 得到 $468/468$ 的 general-index 总导数比较，并对旧 reference bubble 得到 $80/80$ 的单积分与总导数比较；这些数字只作为旧版本证据保留，不代表当前 023 独立 benchmark 已重跑。当前任务书的 Phase~1 只在固定分支上手推并比较 general IBP seeds 与 general 参数微分算符，其中 single-massive sunrise 到此结束；Phase~2 只有 pure massive bubble 与 mix bubble+tree 进入外部 reduction 流程。两套 Kira 工作树由 Wolfram 写入仓库外目录并在 WSL 运行；成品 examples 只保存 input/result 轻量摘要，不保留完整 reduction 产物。reference bubble 仍先按 reference 顺序由 package \texttt{symmetry} 将 R2 canonical 到 R1，不把它作为另一套 sector metadata 下的独立 DE basis。
+历史 012 阶段曾对十个 family 得到 $468/468$ 的 general-index 总导数比较，并对旧 reference bubble 得到 $80/80$ 的单积分与总导数比较；这些数字只作为旧版本证据保留，不代表当前独立 benchmark 已重跑。当前任务书的 Phase~1 只在固定分支上手推并比较 general IBP seeds 与 general 参数微分算符，其中 single-massive sunrise 到此结束；Phase~2 只有 pure massive bubble 与 mix bubble+tree 进入外部 reduction 流程。两套 Kira 工作树由 Wolfram 写入仓库外目录并在 WSL 运行；成品 examples 只保存 input/result 轻量摘要，不保留完整 reduction 产物。reference bubble 仍先按 reference 顺序由 package \texttt{symmetry} 将 R2 canonical 到 R1，不把它作为另一套 sector metadata 下的独立 DE basis。
 
 % ============================================================
 \section{Convention 汇总}
@@ -1631,7 +1631,7 @@ source 与 target 的时间幂都按 $(-\tau)^A$ 定义，contact 合并只是�
 \section{Tree 的通用迭代关系}
 % ============================================================
 
-\textbf{当前实现边界（023）}：本节公式在 dSIBP 中服务 massive-only time-only family。公开入口 \texttt{DSTreeSeeds}、\texttt{repIterative}、\texttt{DSTreeNaiveIBP}、\texttt{DSTreeNaiveDE} 与 \texttt{DSTreeDLogDE} 均返回当前 \texttt{J[sectorKey,timeShifts,stateBits]} 表示；naive IBP-DE 与直接 dlog DE 使用同序 normalized masters 交叉检查。含 massless full line 的 quotient-basis 公式尚未独立重推，因此公式型迭代与 DE 接口返回 \texttt{PendingRederivation}，但 general \texttt{DSTreeSeeds} 仍可用于 IBP seed 对照。根目录的独立程序包 \texttt{package-MadStree/} 另行实现直接公式、边界和 FlintNDE 输运；dSIBP 不调用它，MadStree 的结果也不构成 dSIBP 自身的 package oracle。
+\textbf{当前实现边界}：本节公式在 dSIBP 中服务 massive-only time-only family。公开入口 \texttt{DSTreeSeeds}、\texttt{repIterative}、\texttt{DSTreeNaiveIBP}、\texttt{DSTreeNaiveDE} 与 \texttt{DSTreeDLogDE} 均返回当前 \texttt{J[sectorKey,timeShifts,stateBits]} 表示；naive IBP-DE 与直接 dlog DE 使用同序 normalized masters 交叉检查。含 massless full line 的 quotient-basis 公式尚未独立重推，因此公式型迭代与 DE 接口返回 \texttt{PendingRederivation}，但 general \texttt{DSTreeSeeds} 仍可用于 IBP seed 对照。根目录的独立程序包 \texttt{package-MadStree/} 另行实现直接公式、边界和 FlintNDE 输运；dSIBP 不调用它，MadStree 的结果也不构成 dSIBP 自身的 package oracle。
 
 定义 $\bm f(a_0)$ 为式~\eqref{eq:tree-master-order} 排序的 $2^p$ 维向量。令 $\Lambda_r^{(i)}$ 表示只在第 $i$ 个二进制因子上作用 Pauli 矩阵 $\sigma_r$。2401.00129 Eq.~(3.37) 给出
 \begin{align}

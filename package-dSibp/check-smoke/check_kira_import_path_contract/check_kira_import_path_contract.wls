@@ -4,7 +4,7 @@
 
 
 (* ::Chapter:: *)
-(*加载 022 程序包与最小 context*)
+(*加载程序包与最小 context*)
 
 Get[FileNameJoin[{DirectoryName[$InputFileName], "..", "_harness.wls"}]];
 projectRoot = DirectoryName[DirectoryName[DirectoryName[$InputFileName]]];

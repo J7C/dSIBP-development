@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*018 上下文、消息、进度与公开 API 清单*)
+(*上下文、消息、进度与公开 API 清单*)
 
 If[! ValueQ[$dSIBPMessagesEnabled], $dSIBPMessagesEnabled = True];
 If[! ValueQ[$dSIBPCurrentContext], $dSIBPCurrentContext = Missing["NotInitialized"]];

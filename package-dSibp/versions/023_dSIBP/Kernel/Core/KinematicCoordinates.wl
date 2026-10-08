@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*016 根号动力学坐标与显式双列表适配层*)
+(*根号动力学坐标与显式双列表适配层*)
 
 (* 本模块把 loop external-momentum 的内部原子 kk[i,j]=sp[k_i,k_j] 暴露为
    ssij=Sqrt[sp[k_i,k_j]]，并把实际出现的无圈动量模长依次暴露为 sE1,sE2,...。
@@ -730,7 +730,7 @@ loopKinematicNamingReport[topo_Association] := <|
    "internalExternalInvariantRules" -> loopKinematicInternalToUserRules[topo],
    "coordinateData" -> loopKinematicCoordinateData[topo],
    "defaultNamingConvention" -> "ssij = Sqrt[sp[k_i,k_j]], where i<=j follows loopExternalMomenta order",
-   "message" -> "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，018 公开缺省坐标为 ssij。"
+   "message" -> "loopExternalMomenta 是用户显式给出的 loop 标量积外向量基；内部仍用 kk[i,j]=sp[k_i,k_j]，公开缺省坐标为 ssij。"
    |>;
 
 
@@ -1133,7 +1133,7 @@ externalLegEnergyNamingReport[topo_Association] := Module[
     "userExternalLegEnergies" -> user,
     "dependencyData" -> dependencies,
     "magnitudeKinematicNamingReport" -> magnitudeKinematicNamingReport[topo],
-     "message" -> "vertices.externalLegEnergy 可使用 loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；022 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"
+     "message" -> "vertices.externalLegEnergy 可使用 loop-external Gram 根号或 independentExternalMomenta 声明的无圈模长；package 不自动生成无圈动量之间的交叉点积。无圈动量变量不进入 loop IBP/ISP。"
      |>
     ];
 

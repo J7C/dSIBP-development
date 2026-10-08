@@ -17,7 +17,7 @@
 建议新版本从稳定主线新建独立 Git branch 开发和验证；branch 是否创建、保留或合并由用户
 决定，不会因版本完成而自动合并到 `main`。
 
-## 当前版本 0.5.0
+## 当前版本
 
 当前源码位于 `versions/FlintNDE-0.5.0/`。FlintNDE 仍是通用单变量矩阵微分方程包：
 `RationalMatrixSystem` 从矩阵元内部发现奇点，并在 exact 验证通过时自动采用
@@ -29,8 +29,8 @@
 奇点折跃；模式只接受 `singularity_jump` / `"SingularityJump"`（以及缺省的
 `avoid` / `"Avoid"`）。Python 导入与 Wolfram 公开入口的缺省工作精度均为 200 位；工作位数为
 `ceil(WorkingPrecisionDigits*log2(10))+32`，序列化计划记录规划精度，执行要求更高精度
-时必须重新规划。0.5.0 另提供按节点覆盖桶的 fast multipoint evaluation，以及不调用
-规划器的公开 `direct_user_point_path`。独立包和 MadStree v0.15 的 Vendor 保持同一实现。
+时必须重新规划。当前实现另提供按节点覆盖桶的 fast multipoint evaluation，以及不调用
+规划器的公开 `direct_user_point_path`。独立包和 MadStree 的 Vendor 保持同一实现。
 
 显式 `singularity_jump` 路线允许精确奇点作为中间用户点：该点不进入普通节点链，同一
 局部基按目标奇点到最近其它奇点的距离覆盖收敛域内双侧用户点，并从出射普通点继续。
@@ -98,14 +98,14 @@ Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼
 wheel、从源码普通安装以及开发者可编辑安装分别为
 
 ```powershell
-python -m pip install .\flintnde-0.5.0-py3-none-any.whl
+python -m pip install .\flintnde-1.0-py3-none-any.whl
 python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.5.0"
 python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.5.0
 ```
 
 前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint` 与 `sympy`。
 
-0.5.0 当前回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
+当前回归覆盖通用有理矩阵、任意次数多项式加简单极点、默认避奇点、显式奇点折跃、
 Arb 路径 round-trip、fast multipoint、严格用户节点、双侧奇点 bucket、末端隐藏匹配点、
 有限奇点目标分类、正规化自适应拟合、精度拒绝和运行路径门禁。最终 fresh 计数与完整
 验证结果以 `历史版本更新日志/FlintNDE-0.5.0.md` 和根进度表的最新记录为准。

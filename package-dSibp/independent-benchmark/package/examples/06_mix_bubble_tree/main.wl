@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 023 mix bubble+tree 示例：bubble 的 cycle momenta 为 l1 与 l1+k1+k2，前者 massive、
+(* mix bubble+tree 示例：bubble 的 cycle momenta 为 l1 与 l1+k1+k2，前者 massive、
    后者 massless；massless bridge 和 bubble 另一外腿均携带 k1+k2，三点顶点另接 k1、k2。
    本例覆盖 kL/kE 角色、参数重定义、massless 三槽 convention、cycle/bridge contact、圈指标全偶
    与坐标完备性；固定 bridge 不属于圈积分，因此不施加 parity。 *)
@@ -8,7 +8,7 @@
 (*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}], CharacterEncoding -> "UTF-8"];
 kiraInputSummary = Get[FileNameJoin[{exampleDir, "kira_input_summary.wl"}]];
 kiraResultSummary = Get[FileNameJoin[{exampleDir, "kira_result_summary.wl"}]];
 
@@ -27,7 +27,7 @@ cycleParityConstraints = {
    independentExternalMomenta 只给 loop Gram 尚未覆盖的实际无圈模长 {k1,k2}，产生 sE1,sE2。
    bridge/bubble 外腿的 |k1+k2| 已由 ss11 覆盖，不再生成 sE3 或 sp[k1,k2]。 *)
 caseInput = <|
-   "name" -> "023MixBubbleTreeK1K2",
+   "name" -> "mixBubbleTreeK1K2",
    "vertices" -> {
      <|"id" -> v1, "vertexType" -> "+", "externalLegEnergy" -> E1|>,
      <|"id" -> v2, "vertexType" -> "+", "externalLegEnergy" -> E2|>,
@@ -142,7 +142,7 @@ templateSectorKeys = DeleteDuplicates[Lookup[templateRecords, "sectorKey", {}]];
    当前参数化选择 |k1|=E0-sE2 的物理支，因此应用区域应满足 E0>sE2>0。 *)
 boundEnergyInput = Join[
    caseInput,
-   <|"name" -> "023BubbleTreeBoundEnergy", "vertices" -> ReplacePart[caseInput["vertices"], {3, "externalLegEnergy"} -> E0]|>
+   <|"name" -> "bubbleTreeBoundEnergy", "vertices" -> ReplacePart[caseInput["vertices"], {3, "externalLegEnergy"} -> E0]|>
    ];
 boundEnergyContext0 = DSInit[
    boundEnergyInput,
@@ -175,7 +175,7 @@ boundEnergyVariables = Lookup[
 singleLegInput = Join[
    caseInput,
    <|
-    "name" -> "023BubbleTreeSingleEffectiveLeg",
+    "name" -> "bubbleTreeSingleEffectiveLeg",
     "extLegs" -> {
       {bubbleLeg, v1, k1 + k2},
       {treeLeg0, v3, p0}

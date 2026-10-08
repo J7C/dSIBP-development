@@ -1,12 +1,12 @@
 (* ::Package:: *)
-(* 020 pure-time 示例：公开积分使用 J[sectorKey,timeShifts,stateBits]。两顶点 massive-only family 演示
+(* pure-time 示例：公开积分使用 J[sectorKey,timeShifts,stateBits]。两顶点 massive-only family 演示
    Private 论文公式适配；atomic massless family 演示 quotient canonical 与公式路线的明确边界。 *)
 
 (* ::Chapter:: *)
 (*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}], CharacterEncoding -> "UTF-8"];
 
 
 (* ::Chapter:: *)

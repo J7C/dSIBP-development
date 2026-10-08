@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*018 Kira 结果取回*)
+(*Kira 结果取回*)
 
 Options[DSKiraImport] = {
    KiraReductionFile -> Automatic,

@@ -5,7 +5,7 @@
 Frobenius、shearing 后 Frobenius 或认证的指数广义幂级数，在入射侧反解局部常数，
 再在出射侧求值。普通段的 Cauchy 圆和步长严格留在最近奇点以内。
 
-0.2.0 新增：``PartialFractionSystem`` 极点--留数递推快速路径；``sample_points``
+快速路径包括：``PartialFractionSystem`` 极点--留数递推；``sample_points``
 段内 dense output（保存点不再需要成为路径节点）；嵌入式单链截断认证
 （``transport_path_refined(..., certification_mode="embedded")``）。
 """

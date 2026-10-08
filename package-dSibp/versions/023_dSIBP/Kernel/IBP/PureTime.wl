@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 本模块保留 016 direct pure-time 公式作为 massive-only 交叉检查；018 生产路径统一使用
+(* 本模块保留 direct pure-time 公式作为 massive-only 交叉检查；生产路径统一使用
    J[aList,linePacks,{}]。regular 项直接由
    vertex-family 的 M1/M0 构造，contact 项直接消费 compiled WT/shrinkTerms 与共同 theta。
    loop 三槽表示仅由独立交叉验证调用，不是本模块的生产路径。 *)
@@ -308,7 +308,7 @@ dsDirectTreeSeedRecord[
 (*Pure-time backend-neutral linearData*)
 
 dsPureTimeTaggedIntegral[term_Association] := dsTreeToken[
-   Lookup[term, "sectorKey", Missing["SectorKeyRequired019"]],
+   Lookup[term, "sectorKey", Missing["SectorKeyRequired"]],
    Lookup[term, "integral", Missing["TreeIntegral"]]
    ];
 
@@ -326,7 +326,7 @@ dsPureTimeLinearEquation[record_Association, integralIndex_Association] := Modul
    <|
     "source" -> "directPureTime",
     "generator" -> Lookup[record, "generator", Missing["generator"]],
-     "sectorKey" -> Lookup[record, "sectorKey", Missing["SectorKeyRequired019"]],
+     "sectorKey" -> Lookup[record, "sectorKey", Missing["SectorKeyRequired"]],
     "referenceTreeIntegral" -> Lookup[record, "treeIntegral", Missing["TreeIntegral"]],
     "coefficientRules" -> Normal[rules],
     "constantTerm" -> 0,

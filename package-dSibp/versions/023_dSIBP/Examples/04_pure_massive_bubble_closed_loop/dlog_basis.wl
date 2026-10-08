@@ -1,10 +1,9 @@
 (* ::Package:: *)
-(* pure massive bubble 的 19 个 reference-readable dlog 候选关系。公式来自
-   code_final_version/basis/MIdlogNote.m 的最终输出：19 项整体构成 002 bubble_de_exp_full.m
-   的完整 active basis，没有辅助关系。保留 reference 的可读记号（ks=Sqrt[s11]、merged energy
-   P1+P2）；闭环中按 P_ref=-P_pkg 取 P1=P2=-P0。formal plan 应加载同目录
-   reference_user_mi_basis.wl，再由 package DSUserMI 构造；不能直接把本文件的平方坐标表达式
-   当作 physical ks basis。 *)
+(* pure massive bubble 的 19 个 reference-readable dlog 候选关系。公式来自外部 bubble dlog
+   参考推导的实际输出：19 项整体构成外部 bubble DE 参考的完整 active basis，没有辅助关系。
+   保留 reference 的可读记号（ks=Sqrt[s11]、merged energy P1+P2）；闭环中按 P_ref=-P_pkg 取
+   P1=P2=-P0。formal plan 应加载同目录 reference_user_mi_basis.wl，再由 package DSUserMI
+   构造；不能直接把本文件的平方坐标表达式当作 physical ks basis。 *)
 
 (* ::Chapter:: *)
 (*Reference 临时记号到统一 J*)

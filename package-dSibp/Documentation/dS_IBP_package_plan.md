@@ -10,11 +10,11 @@
 - EOM 不是后处理选项，而是 seed 生成的一部分；任何 Hankel 二阶导数一旦产生 `n=2`，必须立刻用 EOM 递推消去。
 - time-IBP 与 momentum-IBP 同属必需 seed 来源；缺少 time-IBP 时，不允许声称已经得到完整 IBP 系统。
 - Kira 导出只消费 `makeLinearSystemData` 产生的 linear-system 数据，不直接消费 seed batch。`makeCanonicalSeedBatch` 自动派生并联立全部 contact-reachable shrink sectors，不设置 sector 数量上限；若仍有 `n=2`、sector coverage 不完整或其它 pending feature，则不能进入 linear/Kira 阶段。当前 `makeKiraExportData` 已能写 user-defined system 文件。独立 numeric linear workflow 可先完成数值规则/撒点选择；准备生成 DE 时，所有 derivative variables 及其内部平方原子必须保持符号，只能固定不参与微分的系数参数。
-- 当前 023 使用严格的 `vertices/lines` topology Association、统一三参数 `J`、cycle/fixed 三槽与单槽 shrink schema、sector prefactor、compact lower 导数，以及 massive h/H 与 massless exponential 的 parity transport；用户显式声明两类外动量。common-theta contact、可达 sector 和完整 coincidence canonical 是全部入口共用的正确性门禁。
+- 当前实现使用严格的 `vertices/lines` topology Association、统一三参数 `J`、cycle/fixed 三槽与单槽 shrink schema、sector prefactor、compact lower 导数，以及 massive h/H 与 massless exponential 的 parity transport；用户显式声明两类外动量。common-theta contact、可达 sector 和完整 coincidence canonical 是全部入口共用的正确性门禁。
 
 ### P0 seed 模板与显式撒点边界
 
-023 保持 seed 的“离散状态/EOM 构造”和“连续指标撒点”两个原子步骤。`DSSeeds` 生成各 contact-reachable sector 的全部 time/momentum generator 符号模板；模板阶段对 massive 完整枚举端点 `0,1` 四态，对 masslessFull 先按代数 quotient 只枚举 `n2->0` 的 `00/10` representatives，随后立即应用 EOM、共同-theta/contact canonical、可判定 symmetry 与 parity。它额外返回一维列表 `allSeeds`；该列表由所有内部 `Table` 结果用 `Flatten[...,Infinity]` 磨平，连续指标仍为符号。精确数值系数规则只在 `DSLinear` 的 `CoefficientRules` 或 formal Kira 的 post-derivative 阶段使用。
+当前实现保持 seed 的“离散状态/EOM 构造”和“连续指标撒点”两个原子步骤。`DSSeeds` 生成各 contact-reachable sector 的全部 time/momentum generator 符号模板；模板阶段对 massive 完整枚举端点 `0,1` 四态，对 masslessFull 先按代数 quotient 只枚举 `n2->0` 的 `00/10` representatives，随后立即应用 EOM、共同-theta/contact canonical、可判定 symmetry 与 parity。它额外返回一维列表 `allSeeds`；该列表由所有内部 `Table` 结果用 `Flatten[...,Infinity]` 磨平，连续指标仍为符号。精确数值系数规则只在 `DSLinear` 的 `CoefficientRules` 或 formal Kira 的 post-derivative 阶段使用。
 
 EOM/canonical 可能把某个完整离散态模板化为精确零。密封 `allSeeds` 中的这种 `equation->0` 是应保留的合法恒等式，仍参与模板计数、哈希和离散态完整性审计；只有缺失 equation，或非零且完全不含 `J` 的伪模板才由 `DSGenerateIBP` 拒绝。
 
@@ -215,7 +215,7 @@ $$-(2\nu_e + 1) = \underbrace{-1}_{\text{整数 → 指标}} + \underbrace{(-2\n
 
 ### 3.1 当前实现与目标接口
 
-023 的 massive 线缺省使用 h preset；需要裸 H 或自定义二维函数空间时，只能通过唯一可选字段 `functionSystem -> "H"|"h"|Association` 指定。裸 H 的 `nu^2/x^2` 由 `AT` 的普通 Laurent 项生成，不在 IBP 层特判，也不读取 `bbType/eomCoefficients`。
+massive 线缺省使用 h preset；需要裸 H 或自定义二维函数空间时，只能通过唯一可选字段 `functionSystem -> "H"|"h"|Association` 指定。裸 H 的 `nu^2/x^2` 由 `AT` 的普通 Laurent 项生成，不在 IBP 层特判，也不读取 `bbType/eomCoefficients`。
 
 目标接口不直接让 IBP 接收一阶矩阵，而是让每条 massive 线先给一个标准二阶函数空间：
 
@@ -501,7 +501,7 @@ ispData = {
 5. 输出：按 sector 分组的 IBP seed 文件或 MMA seed batch。后续 linear/Kira 只能读取这些 canonical seed 转成的 linear-system。
 ```
 
-023 不从 topology 读取 `seedRanges/generatorSeedRanges`。统一或逐指标最终关系包络只传给 `DSGenerateIBP`；它按每组实际 shifts 反推 seed 点域，并逐组保存变量顺序、value lists、配置范围、规则数、方程数和来源。
+当前实现不从 topology 读取 `seedRanges/generatorSeedRanges`。统一或逐指标最终关系包络只传给 `DSGenerateIBP`；它按每组实际 shifts 反推 seed 点域，并逐组保存变量顺序、value lists、配置范围、规则数、方程数和来源。
 
 **命名规则**（建议）：`IBP_sector_<shrunkLines>_seed_<seedIndex>.dat`
 
@@ -737,9 +737,9 @@ caseInput = <|
 
 ## 7. 当前主线与工作流
 
-当前权威实现是模块化 `versions/023_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。正式入口为 `independent-benchmark/package/package_023.0.wl`，工作树只保留 023；更早版本从 Git 历史追溯。023 随源码提供 `Examples/`，正式交付同步保留同一组 examples。
+当前权威实现是模块化 `versions/023_dSIBP/`，标准加载入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。正式入口为 `independent-benchmark/package/package_023.0.wl`，工作树只保留当前版本；更早版本从 Git 历史追溯。当前版本随源码提供 `Examples/`，正式交付同步保留同一组 examples。
 
-独立 benchmark 的程序交付位于 `independent-benchmark/package/`；023 晋升后只保留 `package_023.0.wl/pdf` 和少量不含 expected 的应用 examples。真实 Kira 工作区必须位于仓库外并由 WSL 运行，Kira 成品例子只保存可读输入、轻量输入摘要和轻量结果摘要，不保存完整 reduction 产物。版本更新说明长期保存在项目根 `历史版本更新日志/`。独立推导阶段不得读取交付目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
+独立 benchmark 的程序交付位于 `independent-benchmark/package/`；当前版本晋升后只保留 `package_023.0.wl/pdf` 和少量不含 expected 的应用 examples。真实 Kira 工作区必须位于仓库外并由 WSL 运行，Kira 成品例子只保存可读输入、轻量输入摘要和轻量结果摘要，不保存完整 reduction 产物。版本更新说明长期保存在项目根 `历史版本更新日志/`。独立推导阶段不得读取交付目录；结果冻结后才用于单向 package 对照。更新交付时按 `package_<版本号>` 命名，并删除旧版程序、旧版手册和无版本名副本。
 
 正式交付采用候选先行门禁：构建器通过 `DSIBP_BUILD_OUTPUT` 把候选单文件写入 `test/results_test/`，正式检查通过 `DSIBP_PACKAGE_FILE`（phase 2 另用 `DSIBP_PDF_FILE`）显式加载候选。只有候选专项、独立单文件检查和受影响 phase 全部通过后，才用同一候选字节覆盖 `independent-benchmark/package/`，随后在正式路径复验并清理候选。未设置这些环境变量时保留原有正式构建/模块检查合同。
 
@@ -812,7 +812,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 | 项目 | 当前约定 |
 |------|----------|
-| 主线脚本 | 模块化 `versions/023_dSIBP/`；正式单文件按 023.0 candidate-first 发布 |
+| 主线脚本 | 模块化 `versions/023_dSIBP/`；正式单文件按 candidate-first 发布 |
 | 积分 Head | full：`J[aList,linePacks,ispList]`；timeOnly：`J[sectorKey,timeShifts,stateBits]` |
 | cycle line pack | full massive/massless 均为 `{b_e,n_{e1},n_{e2}}`，shrunk 为 `{bS_e}`；root line 位置永久保留 |
 | bridge/fixed line pack | full 为 `{"F",n_{e1},n_{e2}}`，shrunk 为 `{"F"}`；物理幂属于结构化 sector prefactor |

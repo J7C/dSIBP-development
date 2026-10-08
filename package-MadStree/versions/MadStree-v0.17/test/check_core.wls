@@ -57,7 +57,7 @@ record["subMasterCount", MSSectors[masslessContext][[2, "masterCount"]] === 1];
 
 
 (* ::Section:: *)
-(* v0.17 public topology schema *)
+(* public topology schema *)
 
 numericIdContext = MSInitTree[<|
   "vertices" -> {
@@ -298,7 +298,7 @@ record["massiveMinusRecurrenceDLogDerivativeIdentity",
 
 (* ::Section:: *)
 (* Saved 4x1 tree reference of 2401 Eq. (3.68). The paper uses Exp[+I k tau],
-   so the v0.17 public convention maps a "+" vertex through externalLegEnergy=-k. *)
+   so the public convention maps a "+" vertex through externalLegEnergy=-k. *)
 
 referenceContext = MSInitTree[
   <|

@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*018 统一三槽 seed 与 linearData 高层入口*)
+(*统一三槽 seed 与 linearData 高层入口*)
 
 (* DSSeeds 只生产符号 general templates；连续指标域由 DSGenerateIBP 持有，
    数值系数由 DSLinear 的 CoefficientRules 持有。 *)
@@ -55,7 +55,7 @@ dsPublicLoopSeedBatch[seedData_Association, topo_Association] := If[
    ];
 
 
-(* 018 的公开 seed 只有 J[aList,linePacks,ispList]。论文 vertex basis 仍可由 tree
+(* 公开 seed 只有 J[aList,linePacks,ispList]。论文 vertex basis 仍可由 tree
    公式模块内部构造，但不得再决定 DSSeeds/DSLinear 的公开积分形状。 *)
 
 

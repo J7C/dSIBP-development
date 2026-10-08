@@ -107,4 +107,4 @@ checks = <|
     MatchQ[inputWriteFailure, Failure["RuntimeInputWriteFailed", _Association]]
 |>;
 
-msTestSummary[checks, "MadStree v0.17 runtime paths and exports"];
+msTestSummary[checks, "MadStree runtime paths and exports"];

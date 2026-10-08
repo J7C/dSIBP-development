@@ -3,12 +3,12 @@
    目标是先把 topology-driven 的结构层做实：拓扑解析、传播子 metadata、统一 J 指标包、
    离散态枚举、完整圈动量 IBP 生成元列表、标量积/ISP 覆盖性验证。
    当前文件生成 momentum seed、time-core seed 与受保护的自动 shrink-sector seed；EOM、有方向的 per-line massless 单 n 规则与 massive/massless theta boundary shrink 已作为 seed 门禁接入，并提供 backend-neutral linear-system 与 Kira serializer。
-   008 修正 massive ++ Wronskian theta-boundary 的 Vpm 符号，并加入用户 symmetryRules 的原子化单次应用接口。
-   009 进一步按每个 J 的 shrunk packs 重建目标顶点映射，修正跨 sector 的 massless coincident n=1 canonical。
-   010 增加 dtau/dqq/dqk 与 rep2innerform/rep2outform/rep2Integrand 公开 API；底层物理公式继续复用 009 原子模块。
-   011 增加 P,Q,T,W 函数系统编译层；缺省 h 取 T=IdentityMatrix[2]、WT=W_h，Hankel 作为独立 preset。
-   012 增加共同-theta odd-subset contact、contact 可达 sector、massless shrink 幂次修正与 massive coincidence canonical。
-   013 只新增 pure time-IBP/tree 表示、loop-time 投影、通用迭代矩阵与直接 dlog DE；标准 package 和交互工程化留到 014。
+   公开原子 API 为 dtau/dqq/dqk 与 rep2innerform/rep2outform/rep2Integrand；函数系统编译层提供
+   P,Q,T,W，缺省 h 取 T=IdentityMatrix[2]、WT=W_h，Hankel 作为独立 preset。massive ++ Wronskian
+   theta-boundary 的 Vpm 符号、按每个 J 的 shrunk packs 重建的目标顶点映射、跨 sector 的 massless
+   coincident n=1 canonical、共同-theta odd-subset contact 与 contact 可达 sector、massless shrink
+   幂次修正和 massive coincidence canonical 都在本模块内实现。pure time-IBP/tree 表示、loop-time
+   投影、通用迭代矩阵与直接 dlog DE 由本模块与后面的 Tree 章节共同提供。
    性能原则：默认只定义函数和示例输入，不自动运行检查；验证必须是 seed/metadata 层或代数赋值后的小检查。 *)
 
 (* 加载主线脚本不得清空用户 Global` 上下文；开发时需要彻底重载应使用新 kernel。 *)
@@ -49,7 +49,7 @@ kkSym[i_, j_] := If[i <= j, kk[i, j], kk[j, i]];
 (*拓扑输入规范化*)
 
 (* 本章把用户输入的 vertices/lines/extLegs/loopMomenta/ispData 规范化为 Association。
-   顶点和传播子只接受 022 的 Association schema；额外键不进入内部 topology。 *)
+   顶点和传播子只接受 Association schema；额外键不进入内部 topology。 *)
 
 
 (* 顶点相位的唯一公开 authority 是 vertexType；内部保留规范化后的同名字段。 *)
@@ -548,7 +548,7 @@ completeLineMetadata[line_, vertexSignAssoc_] := Module[
    ];
 
 
-(* 将 022 case 解析为通用拓扑对象。公开输入分别声明 loopExternalMomenta 与
+(* 把用户 case 解析为通用拓扑对象。公开输入分别声明 loopExternalMomenta 与
    independentExternalMomenta；额外字段不会进入规范化 topology。 *)
 parseTopology::missingkeys = "case 缺少必需字段：`1`。";
 parseTopology::badinput = "case 输入 preflight 失败：`1`。";
@@ -4093,9 +4093,9 @@ canonicalSeedReadyQ[batch_Association] := TrueQ[
    ];
 
 
-(* 019 record 必须直接携带定长 sectorKey。旧 source 只有收缩集合而没有总位宽，
-   因此不能在新 convention 下无歧义恢复 key，缺字段时明确返回 Missing。 *)
-seedEntrySourceSectorKey[entry_Association] := Lookup[entry, "sectorKey", Missing["SectorKeyRequired019"]];
+(* seed record 必须直接携带定长 sectorKey。只给收缩集合而不给总位宽时无法无歧义恢复 key，
+   因此缺字段直接返回 Missing。 *)
+seedEntrySourceSectorKey[entry_Association] := Lookup[entry, "sectorKey", Missing["SectorKeyRequired"]];
 
 
 seedEntryIBPClass[entry_Association] := Module[{source = ToString[Lookup[entry, "source", "unknown"], InputForm]},
@@ -4142,7 +4142,7 @@ expectedGeneratorsBySector[batch_Association] := Module[
       |>;
    shrinkSummaries = Lookup[Lookup[batch, "shrinkSectorSummary", <||>], "sectorSummaries", {}];
    shrinkEntries = Table[
-     Lookup[summary, "sectorKey", Missing["SectorKeyRequired019"]] -> <|
+     Lookup[summary, "sectorKey", Missing["SectorKeyRequired"]] -> <|
        "qIBP" -> Lookup[Lookup[summary, "momentumSummary", <||>], "generators", {}],
        "tIBP" -> Lookup[Lookup[summary, "timeSummary", <||>], "generators", {}]
        |>,
@@ -5736,7 +5736,7 @@ makeSampledLinearSystemData[batch_Association, topoSpec_: Automatic, OptionsPatt
    ];
 
 (* ::Chapter:: *)
-(*010 公开原子 API 与表示转换*)
+(*公开原子 API 与表示转换*)
 
 (* J 本身不携带 topology；公开短签名必须使用显式注册的 context，不能从指标形状猜测物理类型。 *)
 If[! ValueQ[$dSIBPTopologyContext], $dSIBPTopologyContext = Missing["NotSet"]];
@@ -6102,7 +6102,7 @@ rep2Integrand[expr_] := Module[{topo = resolvePublicTopologyContext[]},
 
 
 (* ::Chapter:: *)
-(*013 Tree 积分表示与 family metadata*)
+(*Tree 积分表示与 family metadata*)
 
 (* 本章只处理单槽 J[vertexPacks]。tree 与 loop 共用 Head，但任何入口都先按 arity 分派；
    tree family 的 massiveLegs 顺序同时固定 binary master 顺序和矩阵 tensor 顺序。 *)

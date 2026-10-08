@@ -8,7 +8,7 @@
 (*加载标准 package 与本例 convention*)
 
 exampleDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}]];
+Get[FileNameJoin[{exampleDir, "..", "load_current_package.wl"}], CharacterEncoding -> "UTF-8"];
 Get[FileNameJoin[{exampleDir, "family_conventions.wl"}]];
 
 

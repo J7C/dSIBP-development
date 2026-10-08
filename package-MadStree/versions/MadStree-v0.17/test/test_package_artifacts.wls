@@ -2,7 +2,7 @@
 
 (***
 File: test_package_artifacts.wls
-Purpose: Checks the v0.17 version-root loading, the built-in FlintNDE configuration and the writing of all-sector formula artifacts.
+Purpose: Checks the version-root loading, the built-in FlintNDE configuration and the writing of all-sector formula artifacts.
 Scope: only constructs a single massless full edge; numerical transport and external derivative operators are not invoked.
 ***)
 
@@ -64,7 +64,7 @@ partialWrite = MSWriteFormulaArtifacts[
 
 configuration = MSFlintNDEConfiguration[];
 checks = <|
-  "version" -> (context["version"] === "0.17" && configuration["version"] === "0.17"),
+  "version" -> (context["version"] === "1.0" && configuration["version"] === "1.0"),
   "context" -> MSContextQ[context],
   "caseName" -> (context["caseName"] === "PackageArtifactSmoke"),
   "vendorAvailable" -> TrueQ[configuration["availableQ"]],

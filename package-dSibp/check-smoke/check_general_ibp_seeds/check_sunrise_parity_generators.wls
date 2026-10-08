@@ -17,8 +17,8 @@ exampleDirectory = FileNameJoin[{
     "03_single_massive_sunrise"
     }];
 
-Get[packagePath];
-Get[FileNameJoin[{exampleDirectory, "family_conventions.wl"}]];
+Get[packagePath, CharacterEncoding -> "UTF-8"];
+Get[FileNameJoin[{exampleDirectory, "family_conventions.wl"}], CharacterEncoding -> "UTF-8"];
 
 
 (* ::Chapter:: *)

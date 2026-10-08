@@ -247,7 +247,7 @@ $T$ 必须对两个独立解相同且可逆；$A_T$ 和 $W_T$ 必须能有限分
 
 time/momentum IBP 只调用 `derivativeTerms`，theta shrink 只调用 `shrinkTerms/WT`。`P,Q,T,W` 不在 seed 层重算；Wronskian 方向固定后，SK/端点符号由 shrink 逻辑另行乘入。这样 h/H 和更一般的二维函数空间都走同一条编译后路径。
 
-023 只接受 `functionSystem`；IBP 层不含旧 `bbType/eomCoefficients` 读取，也不为裸 H 二次 pole 或 h 递推保留兼容分支。
+当前实现只接受 `functionSystem`；IBP 层不含旧 `bbType/eomCoefficients` 读取，也不为裸 H 二次 pole 或 h 递推保留兼容分支。
 
 ## 6. massless 双 theta 与有方向单 `n`
 
@@ -385,7 +385,7 @@ IBP 产生的移位：
 
 子拓扑单独设 range，不假设由 top sector 某个 `b_e = 0` 自动表示。
 
-023 不从 topology 读取 `seedRanges/generatorSeedRanges`。`DSGenerateIBP` 的统一或逐指标 target envelope 是唯一连续撒点合同；每组保存最终变量顺序、value lists、来源和 rule/equation count。
+当前实现不从 topology 读取 `seedRanges/generatorSeedRanges`。`DSGenerateIBP` 的统一或逐指标 target envelope 是唯一连续撒点合同；每组保存最终变量顺序、value lists、来源和 rule/equation count。
 
 
 ### 用户对称性规则的边界
@@ -446,7 +446,7 @@ Kira 编号必须对所有 sector 的积分一起建立，不能先按 sector �
 
 用户自选主积分通过 `DSUserMI[linearData,expressions,spec]` 实现。`userMI[i]` 是 `J` 线性空间的坐标 token，不是新的积分 Head。package 对有序候选和 active 子集分别做精确满行秩检查，在候选 support 中选择 pivot `J`，保存 `userMI -> J` 以及 `pivot J -> userMI + spectator J` 的双向映射、round-trip residual 和顺序 digest；只声称这一 support 坐标替换可逆，不声称较小用户 basis 覆盖全局积分表。之后复用既有 active-basis derivative closure、backend IDs、manifest 和 import/DE 数据流。附加 `userMI` 后禁止再次重排；import 的公开 token 是 `userMI[i]`，Kira token 单独保留。
 
-`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。023 显式执行图论圈数、incidence-cycle、routing rank、两类动量声明的 exact/over/under 及 ISP 坐标闭合审计；不做大规模 reduction。完整 sealed producer 在生成阶段保存 coverage/canonical 摘要和 source digest；`DSLinear` 的 standard 路线只读取 producer 状态、计数与 digest 字段，不重算全部关系，显式 `AuditLevel->"full"` 或 unsealed/raw consumer 才重跑完整 digest/classifier。只有 `completeSystemQ=True` 才能进入 formal Kira。精确数值规则只通过 `DSLinear[...,CoefficientRules->rules]` 或 formal Kira 的 post-derivative 选项传入，不再由 topology/`DSSeeds` 持有。若 Kira 输出要进入 `DSDE`，所有 active-basis derivative variables 及对应内部平方原子必须保持符号；`DSKiraExport` 会联合审计 linear coefficient 和 serializer 规则的左右端。所有适用离散 `n` 状态恒完整枚举后再做即时 EOM canonical，不存在 sample 离散模式。
+`makeTopologyData` 和 `summarizeCase` 还会返回 `validationReport`。当前实现显式执行图论圈数、incidence-cycle、routing rank、两类动量声明的 exact/over/under 及 ISP 坐标闭合审计；不做大规模 reduction。完整 sealed producer 在生成阶段保存 coverage/canonical 摘要和 source digest；`DSLinear` 的 standard 路线只读取 producer 状态、计数与 digest 字段，不重算全部关系，显式 `AuditLevel->"full"` 或 unsealed/raw consumer 才重跑完整 digest/classifier。只有 `completeSystemQ=True` 才能进入 formal Kira。精确数值规则只通过 `DSLinear[...,CoefficientRules->rules]` 或 formal Kira 的 post-derivative 选项传入，不再由 topology/`DSSeeds` 持有。若 Kira 输出要进入 `DSDE`，所有 active-basis derivative variables 及对应内部平方原子必须保持符号；`DSKiraExport` 会联合审计 linear coefficient 和 serializer 规则的左右端。所有适用离散 `n` 状态恒完整枚举后再做即时 EOM canonical，不存在 sample 离散模式。
 
 ## 9. 外腿与传播子统一约定
 
@@ -568,7 +568,7 @@ IBP_sector_<sector_id>/
 
 ### 11.1 标量积约定
 
-外动量-外动量点积在输出端采用变量名，不保持 `sp[k_i,k_j]` 的矢量点积形式。023 未指定 `KinematicRules` 时按 `loopExternalMomenta` 的位置默认生成 `sp[k_i,k_j] -> ssij^2`；其它坐标只通过统一 `KinematicRules` 或 `DSRedefineParameters` 提供。
+外动量-外动量点积在输出端采用变量名，不保持 `sp[k_i,k_j]` 的矢量点积形式。未指定 `KinematicRules` 时按 `loopExternalMomenta` 的位置默认生成 `sp[k_i,k_j] -> ssij^2`；其它坐标只通过统一 `KinematicRules` 或 `DSRedefineParameters` 提供。
 
 对 bubble 拓扑，单外动量 $k$ 的平方默认记为 $s_{11}$（或用户自定义名）。圈动量相关点积仍在用户输入端写作 `sp[p,r]`，输出到线性系数时外-外部分已经替换成这些变量名。
 
@@ -657,7 +657,7 @@ q_1 · Q_2 = q_1 · (q_1 - k) = q_12 - q_1·k = (z_1 + z_2 - k_s2) / 2
 
 ### 13.1 权威实现与公开工作流
 
-当前唯一权威实现是模块化 `versions/023_dSIBP/`，标准入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。023 通过候选检查后晋升为 `independent-benchmark/package/package_023.0.wl`；晋升后工作树只保留 023，全部更早源码版本从 Git 历史追溯。当前 Examples 同时存在于模块版本目录和正式交付目录。
+当前唯一权威实现是模块化 `versions/023_dSIBP/`，标准入口为把该目录加入 `$Path` 后调用 `Needs["dSIBP`"]`。当前版本通过候选检查后晋升为 `independent-benchmark/package/package_023.0.wl`；晋升后工作树只保留当前版本，全部更早源码版本从 Git 历史追溯。当前 Examples 同时存在于模块版本目录和正式交付目录。
 
 - `makeTopologyData`：解析用户 case，验证 topology、动量基和 `z/ISP` 坐标，并预缓存 index maps、seed summary 与 sector metadata。
 - `makeCanonicalSeedBatch`：生成全 sector 的 qIBP/tIBP canonical seed，自动派生受门禁保护的 massive/masslessFull shrink sectors。
@@ -853,7 +853,7 @@ Naive tree DE 是独立的线性求解路径，不是 `repIterative` 的包装�
 
 benchmark 的 expected 必须先由论文公式手推；package actual 只能在第二阶段比较。013 只验证新增 pure-time 内容，不重复此前已通过的 old expected。014 已按更新后的任务书全面重建手推与 package-facing 验证；工程 importer 检查使用小型 synthetic fixture，真实闭环另读取用户在 package 外生成并保留来源 manifest 的完整 Kira 结果。
 
-023 的成品 examples 统一位于 `independent-benchmark/package/examples/`。`05_tree_two_vertex_time_ibp` 继续展示统一三参数 `timeOnly` seed、naive/公式 tree DE 同序比较；原 root-coordinate 例按其实际物理内容命名为 `06_mix_bubble_tree`。04/06 的真实 Kira 工作树不得位于 example 或仓库内：Wolfram 在外置目录写输入，WSL 在同一外置目录运行 Kira，发布副本只保留轻量摘要。`coverage_manifest.wl` 必须与 `DSPublicAPI[]` 双向一致，并由正式检查验证每个公开函数至少出现在一个成品 example 中。
+成品 examples 统一位于 `independent-benchmark/package/examples/`。`05_tree_two_vertex_time_ibp` 继续展示统一三参数 `timeOnly` seed、naive/公式 tree DE 同序比较；原 root-coordinate 例按其实际物理内容命名为 `06_mix_bubble_tree`。04/06 的真实 Kira 工作树不得位于 example 或仓库内：Wolfram 在外置目录写输入，WSL 在同一外置目录运行 Kira，发布副本只保留轻量摘要。`coverage_manifest.wl` 必须与 `DSPublicAPI[]` 双向一致，并由正式检查验证每个公开函数至少出现在一个成品 example 中。
 
 ## 20. 017 统一消息与进度状态
 

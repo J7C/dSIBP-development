@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 文件用途：演示 FlintNDE 0.5.0 标准 Wolfram Language 接口。
+(* 文件用途：演示 FlintNDE 标准 Wolfram Language 接口。
    功能范围：通过 Needs 加载程序包，构造单变量 exact 有理矩阵 DE，先规划路径再执行已有
    计划，并与闭式结果比较。运行期 bridge 文件只写入调用目录的 results_temp。 *)
 

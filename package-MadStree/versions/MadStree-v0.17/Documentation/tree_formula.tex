@@ -20,21 +20,21 @@
 \newcommand{\cN}{\mathcal N}
 \newcommand{\Emb}{\operatorname{Emb}}
 
-\title{MadStree v0.17: tree formula}
-\author{\texttt{package-MadStree} 公式手册}
+\title{MadStree: tree formula}
+\author{\texttt{MadStree} 公式手册}
 \date{2026-08-21}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-本手册对应 \texttt{package-MadStree} v0.17；time-only sector 继续由 root propagator 顺序的定长字符串标识。
-本文是 \texttt{package-MadStree} 的公式手册。该程序包面向任意 massive/massless 混合 dS 树图，不生成一般 IBP 方程组，而由 topology 直接组装主积分、迭代约化和 block-triangular dlog 微分方程；具体使用指南在公开接口稳定后补入。本文从局部函数系统的张量积结构重新推导所需公式。Chen--Feng 的纯 massive 公式可统一理解为若干一维无 theta 指数系统与二维 Hankel 系统的 Kronecker 和；每个 $\ii\chi_bq_b$ 都是一维指数生成元与其余单位矩阵的张量积。含 theta 的 massless full propagator 不能等同于无 theta 的单指数因子：约化前，它在两个端点同样具有 $2\otimes2=4$ 个 Hankel 状态；利用 massless 的 $00/11$、$10/01$ 关系后，这四态被一个常数投影压成整条边共享的二维状态。该二维因子同时出现在两个顶点的 time-IBP 中，故按顶点独立的 tensor factorization 失效，但全图上的 tensor-product/Kronecker-sum 构造仍然成立。所有 regular IBP、迭代矩阵和 dlog 对角块因而可由 topology 直接写出；theta 导数只增加连接缩边 sector 的固定非对角块，无需先生成大规模 IBP 系统再反推出公式。
+本手册对应 \texttt{MadStree}；time-only sector 继续由 root propagator 顺序的定长字符串标识。
+本文是 \texttt{MadStree} 的公式手册。该程序包面向任意 massive/massless 混合 dS 树图，不生成一般 IBP 方程组，而由 topology 直接组装主积分、迭代约化和 block-triangular dlog 微分方程；具体使用指南在公开接口稳定后补入。本文从局部函数系统的张量积结构重新推导所需公式。Chen--Feng 的纯 massive 公式可统一理解为若干一维无 theta 指数系统与二维 Hankel 系统的 Kronecker 和；每个 $\ii\chi_bq_b$ 都是一维指数生成元与其余单位矩阵的张量积。含 theta 的 massless full propagator 不能等同于无 theta 的单指数因子：约化前，它在两个端点同样具有 $2\otimes2=4$ 个 Hankel 状态；利用 massless 的 $00/11$、$10/01$ 关系后，这四态被一个常数投影压成整条边共享的二维状态。该二维因子同时出现在两个顶点的 time-IBP 中，故按顶点独立的 tensor factorization 失效，但全图上的 tensor-product/Kronecker-sum 构造仍然成立。所有 regular IBP、迭代矩阵和 dlog 对角块因而可由 topology 直接写出；theta 导数只增加连接缩边 sector 的固定非对角块，无需先生成大规模 IBP 系统再反推出公式。
 \end{abstract}
 
 \tableofcontents
 
-\section{v0.17 拓扑输入约定}
+\section{拓扑输入约定}
 
 每个顶点必须用 \texttt{vertexType -> "+"|"-"} 指定 Schwinger--Keldysh 轮廓支。
 传播子不再重复输入 \texttt{skType}、\texttt{sigma} 或端点符号；公开
@@ -1229,7 +1229,7 @@ MadStree 的 \texttt{MSHTohMatrix[nu,z,context]}、\texttt{MShToHMatrix[nu,z,con
 
 这里变换的是被积函数的同序状态向量，不是已经积分后的 \texttt{MSIntegral}。原因是式 \eqref{eq:package-H-to-h} 的 $z^p$ 与 $z^{p-1}$ 会同时改变 component base time power；首版没有建立独立的 H-family sector metadata，因此积分对象重载明确 fail closed，不能把这一步伪装成只翻转 state bit。
 
-dSIBP 020 的 public time-only 表示为 \texttt{J[sectorKey,timeShifts,stateBits]}，与 MadStree 的 \texttt{MSIntegral[sectorKey,timeShifts,stateBits]} 逐槽对应；\texttt{stateBits} 是全 sector registry 中的 $n_i$ 类离散态，不要求按顶点分组。该对应只转换积分身份，不替换 normalization：两边 context 必须对每个 sector 使用同一 $\cN_s$，且求导时都包含式~\eqref{eq:normalization-adapter} 的 $\partial\log\cN_s$。MadStree 的缺省 massless 输入是 $\nu=1/2$ 和正 prefactor，组装 2401 公式时统一代入 $\nu\to-\nu=-1/2$。这一解析等价不替代 line metadata、theta 或 contact normalization。
+dSIBP 的 public time-only 表示为 \texttt{J[sectorKey,timeShifts,stateBits]}，与 MadStree 的 \texttt{MSIntegral[sectorKey,timeShifts,stateBits]} 逐槽对应；\texttt{stateBits} 是全 sector registry 中的 $n_i$ 类离散态，不要求按顶点分组。该对应只转换积分身份，不替换 normalization：两边 context 必须对每个 sector 使用同一 $\cN_s$，且求导时都包含式~\eqref{eq:normalization-adapter} 的 $\partial\log\cN_s$。MadStree 的缺省 massless 输入是 $\nu=1/2$ 和正 prefactor，组装 2401 公式时统一代入 $\nu\to-\nu=-1/2$。这一解析等价不替代 line metadata、theta 或 contact normalization。
 
 \subsection{单顶点函数族、局部逆与完整约化接口}
 
@@ -1791,7 +1791,7 @@ $a_1=a_2=a_3=1+\epsilon$，用户只指定 \texttt{MaximumEpPower->0}。程序�
   \item mixed massive/massless tree 的全局 $U_sM_{0;v,s}U_s^{-1}$ 全部对角；
   \item 公式单步关系与 naive time-IBP 在完全相同 ordered normalized basis 下逐项相等；
   \item 公式 DE 与 naive DE 逐矩阵元相等，所有 lower-sector residual 为空，并通过 exact flatness；
-  \item mixed 三顶点中，dSIBP 020 的公开 \texttt{ds} 经逐槽 adapter 和 \texttt{MSReduce} 得到的五个 $15\times15$ 矩阵，与直接公式 DE 严格相等；
+  \item mixed 三顶点中，dSIBP 的公开 \texttt{ds} 经逐槽 adapter 和 \texttt{MSReduce} 得到的五个 $15\times15$ 矩阵，与直接公式 DE 严格相等；
   \item 物理输出 basis 额外包含式 \eqref{eq:physical-DE-gauge}，没有遗漏 $k$、$k^2$ 或 normalization derivative。
 \end{itemize}
 

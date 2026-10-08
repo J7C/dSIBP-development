@@ -297,7 +297,7 @@ python -m pip install FlintNDE
 \end{verbatim}
 or install a downloaded source tree once with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.5.0
+python -m pip install path/to/FlintNDE
 \end{verbatim}
 Editable development mode uses the same command with \texttt{-e}.  A calling script may
 then live in any directory and simply \texttt{import flintnde}; the package source is not
@@ -312,8 +312,8 @@ MadStree, AMFlow, or any other paper.  A file-protocol adapter may set
 \texttt{FLINTNDE\_SUPPRESS\_CITATION\_NOTICE=1} before import and preserve its own citation
 list in response metadata; the notice must never be mixed into machine-readable stdout.
 
-The source tree also provides a standard Wolfram Language package.  Add the 0.5.0 version
-root to \texttt{\$Path}, then evaluate
+The source tree also provides a standard Wolfram Language package.  Add the directory that
+contains \texttt{FlintNDE.m} to \texttt{\$Path}, then evaluate
 \begin{verbatim}
 Needs["FlintNDE`"];
 system = FlintNDERationalSystem[{{1/(x-1)}}, x];
@@ -1316,15 +1316,15 @@ python -m pip install FlintNDE
 \end{verbatim}
 or from a downloaded wheel with
 \begin{verbatim}
-python -m pip install ./flintnde-0.5.0-py3-none-any.whl
+python -m pip install ./flintnde-1.0-py3-none-any.whl
 \end{verbatim}
 A downloaded source checkout can be installed normally with
 \begin{verbatim}
-python -m pip install path/to/package-FlintNDE/versions/FlintNDE-0.5.0
+python -m pip install path/to/FlintNDE
 \end{verbatim}
 and developers may instead select editable mode with
 \begin{verbatim}
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.5.0
+python -m pip install -e path/to/FlintNDE
 \end{verbatim}
 Neither the wheel nor source-install route requires the user to build the package manually;
 \texttt{pip} installs the declared \texttt{python-flint} dependency automatically.

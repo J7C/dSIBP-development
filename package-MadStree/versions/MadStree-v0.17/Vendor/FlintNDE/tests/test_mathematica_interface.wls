@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* 文件用途：从标准 Needs 入口端到端验证 FlintNDE 0.5.0 的 Wolfram 接口。
+(* 文件用途：从标准 Needs 入口端到端验证 FlintNDE 的 Wolfram 接口。
    覆盖一般有理矩阵、内部自动特化、任意次多项式、缺省避奇点、显式奇点折跃、
    EN/CN 语言记录以及已有计划直接执行。 *)
 
@@ -199,7 +199,7 @@ inputWriteFailure = Block[{
 ];
 
 checks = <|
-  "needsVersion" -> $FlintNDEVersion === "0.5.0",
+  "needsVersion" -> $FlintNDEVersion === "1.0",
   "automaticWorkDirectoryShallow" ->
     FileNameTake[automaticWorkDirectory] === "results_temp" &&
     Count[FileNameSplit[automaticWorkDirectory], "results_temp"] === 1,

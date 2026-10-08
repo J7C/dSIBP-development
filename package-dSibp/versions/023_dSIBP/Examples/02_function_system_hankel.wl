@@ -5,7 +5,7 @@
 (*加载标准 package*)
 
 exampleDir = DirectoryName[$InputFileName];
-Get[FileNameJoin[{exampleDir, "load_current_package.wl"}]];
+Get[FileNameJoin[{exampleDir, "load_current_package.wl"}], CharacterEncoding -> "UTF-8"];
 
 
 (* ::Chapter:: *)

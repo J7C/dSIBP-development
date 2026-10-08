@@ -1,7 +1,7 @@
 (* ::Package:: *)
 
 (* ::Chapter:: *)
-(*018 Kira 导出边界*)
+(*Kira 导出边界*)
 
 Options[DSKiraExport] = Join[Options[makeKiraExportData], {
    KiraActiveBasis -> None,
