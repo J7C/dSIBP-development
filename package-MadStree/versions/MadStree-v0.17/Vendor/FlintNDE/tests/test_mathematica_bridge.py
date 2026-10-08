@@ -261,7 +261,9 @@ def test_plan_request_rejects_missing_current_field() -> None:
     request = _plan_request(system, ["1/2"])
     del request["messageLanguage"]
 
-    with _ASSERTIONS.assertRaisesRegex(ValueError, "missing=.*messageLanguage"):
+    with _ASSERTIONS.assertRaisesRegex(
+        ValueError, r"missing the required fields \['messageLanguage'\]"
+    ):
         bridge.run_request(request)
 
 

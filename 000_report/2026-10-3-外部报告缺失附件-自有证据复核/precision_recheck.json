@@ -1,0 +1,104 @@
+{
+	"schema":"flintnde_external_report_precision_recheck_v1",
+	"wolframVersion":"15.0.0 for Microsoft Windows (64-bit) (May 19, 2026)",
+	"flintndeVersion":"0.5.0",
+	"decodeDigits":"40",
+	"sourceFlintNDEwl":"6E40F0212A1A541C434DEC486B857086265A7D089B1A3A62850FB1C8196C71F1",
+	"partA":{
+		"preFixZeroLiteralPrecisionIsMachine":true,
+		"preFixZeroLiteralPrecision":"MachinePrecision",
+		"shippedDecoderAnyMachinePrecision":false,
+		"decodeTable":[
+			{
+				"label":"high-precision real, zero imag",
+				"case":{
+					"real":"0.7346938775510204081632653061224489795918",
+					"imag":"0",
+					"realPrecision":"40.",
+					"imagPrecision":"Infinity",
+					"complexPrecision":"40.",
+					"complexIsMachine":false,
+					"complexIsExactZero":false
+				}
+			},
+			{
+				"label":"zero real, pure imaginary",
+				"case":{
+					"real":"0",
+					"imag":"0.7346938775510204081632653061224489795918",
+					"realPrecision":"Infinity",
+					"imagPrecision":"40.",
+					"complexPrecision":"40.",
+					"complexIsMachine":false,
+					"complexIsExactZero":false
+				}
+			},
+			{
+				"label":"both components nonzero",
+				"case":{
+					"real":"0.7346938775510204081632653061224489795918",
+					"imag":"0.7346938775510204081632653061224489795918",
+					"realPrecision":"40.",
+					"imagPrecision":"40.",
+					"complexPrecision":"40.",
+					"complexIsMachine":false,
+					"complexIsExactZero":false
+				}
+			},
+			{
+				"label":"both components zero",
+				"case":{
+					"real":"0",
+					"imag":"0",
+					"realPrecision":"Infinity",
+					"imagPrecision":"Infinity",
+					"complexPrecision":"Infinity",
+					"complexIsMachine":false,
+					"complexIsExactZero":true
+				}
+			}
+		]
+	},
+	"partB":{
+		"status":"complete",
+		"certificationMode":"certified",
+		"relativeDifferenceInf":"[3.399755260127307384994466924021641823698e-45 +\/- 4.79e-86]",
+		"targetRelativeErrorMet":true,
+		"primaryFinalVector":"{0.5`40., 0.7346938775510204081632653061224489795918000000000000000001`40.}",
+		"precisionList":"{40., 40.}",
+		"anyComponentMachinePrecision":false,
+		"absErrorVsClosedForm":"0``39.83286358359725",
+		"absErrorBelowTarget":true
+	},
+	"partC":{
+		"status":"complete",
+		"parallelTaskCountEffective":"3",
+		"inputOrderPreserved":true,
+		"anyReturnedVectorMachinePrecision":false,
+		"maxAbsDiffVsClosedForm":"4.111106139867534404`0.2627570278611939*^-40",
+		"maxAbsDiffBelowTarget":true,
+		"perEp":[
+			{
+				"ep":"1\/5",
+				"primaryPrecision":"40.",
+				"referencePrecision":"40.",
+				"primaryIsMachine":false,
+				"absDiffVsClosedForm":"0``39.63876400520322"
+			},
+			{
+				"ep":"1\/6",
+				"primaryPrecision":"40.",
+				"referencePrecision":"40.",
+				"primaryIsMachine":false,
+				"absDiffVsClosedForm":"4.111106139867534404`0.2627570278611939*^-40"
+			},
+			{
+				"ep":"1\/7",
+				"primaryPrecision":"40.",
+				"referencePrecision":"40.",
+				"primaryIsMachine":false,
+				"absDiffVsClosedForm":"3.266007801241655146`0.16998293700622039*^-40"
+			}
+		]
+	}
+}

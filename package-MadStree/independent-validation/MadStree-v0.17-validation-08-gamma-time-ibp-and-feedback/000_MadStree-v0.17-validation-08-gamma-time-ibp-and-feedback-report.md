@@ -1,7 +1,7 @@
 # MadStree v0.17 Validation-08 独立报告
 
 - 状态：**passed**，30/30。
-- 源码聚合 SHA-256：`7c9cc813b0c6d3eaffb85ce567f00bdb763cedc20ea904ebeb7337f258fbea11`。
+- 源码聚合 SHA-256：`3de16f042776207d8560e620ad32afff1373d51297029df9f8f24a6dc2bace5c`。
 - 独立来源：Gamma 积分、固定 h 小时间两支表、外腿指数因子的定义求导。
 
 ## Gamma 与时间-IBP
@@ -24,4 +24,4 @@ massive `sigma2/T`、massless quotient `sigma1/Hadamard` 及 mixed Kronecker 基
 
 本 case 只有 regulator 部分调用数值 NDE；边界阶 18、主/参考输运阶 120/170、工作精度 200、目标相对误差 `1e-5`。其余检查为 exact symbolic 或隔离 mock，不适用普通物理路径。
 每个生产/验证 ep 点的实际边界路径、输运节点、段数、奇点跳跃次数、主/参考差值和分项耗时保存在 `results/summary.wl` 的 `regulator.pointPathSummaries`；完整重型 point evaluation 不进入正式 summary。
-regulator wall time：`4.8696 s`；三顶点定义求导：`1.9367 s`；总 wall time：`9.07293 s`。
+regulator wall time：`5.39216 s`；三顶点定义求导：`2.534 s`；总 wall time：`13.2156 s`。

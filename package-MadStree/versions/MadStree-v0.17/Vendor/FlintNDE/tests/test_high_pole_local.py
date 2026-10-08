@@ -696,7 +696,9 @@ class HighPoleLocalTest(unittest.TestCase):
                 NamedPoint("target", "3/10"),
                 max_step_over_radius=0.25,
             )
-        with self.assertWarnsRegex(UserWarning, "five-order block ratio"):
+        with self.assertWarnsRegex(
+            UserWarning, "ratio between consecutive five-term blocks"
+        ):
             result = transport_path(
                 system,
                 exponential_boundary([{"phi": [{"power": -1, "coefficient": 1}], "a": 0, "b": 0, "C": [0, 1]}]),
@@ -774,7 +776,9 @@ class HighPoleLocalTest(unittest.TestCase):
                 singularity_mode="singularity_jump",
             )
         self.assertFalse(plan.continuation_ready)
-        self.assertTrue(any("start-only" in message for message in plan.messages))
+        self.assertTrue(
+            any("can only be used as a path start" in message for message in plan.messages)
+        )
 
     def test_path_plan_certifies_supported_exponential_high_pole(self) -> None:
         """规划器应预检指数局部基，并把可执行高阶 pole 标为 continuation-ready。"""

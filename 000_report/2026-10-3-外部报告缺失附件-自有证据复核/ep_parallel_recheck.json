@@ -1,0 +1,35 @@
+{
+ "schema": "flintnde_external_report_ep_parallel_recheck_v1",
+ "examplePath": "package-FlintNDE\\examples\\ep_parallel.py",
+ "pythonVersion": "3.12.7",
+ "exampleExitCode": 0,
+ "examplePrintedPassed": true,
+ "gate": {
+  "primaryOrder": 112,
+  "referenceOrder": 128,
+  "targetRelativeError": "1e-40",
+  "passedConditionSource": "result[\"target_relative_error_met\"]\n            and relative_error < arb(TARGET_RELATIVE_ERROR)",
+  "gateUsesTargetRelativeErrorMet": true,
+  "gateComparesAgainstDeclaredTarget": true,
+  "hardcodedAbsDiff1e30GatePresent": false
+ },
+ "epResults": [
+  {
+   "ep": "1/5",
+   "relativeDifference": "[2.4692024280546987997e-43 +/- 1.95e-63]",
+   "passed": true
+  },
+  {
+   "ep": "1/6",
+   "relativeDifference": "[2.5147197707357946098e-43 +/- 1.17e-63]",
+   "passed": true
+  },
+  {
+   "ep": "1/7",
+   "relativeDifference": "[2.4838634060285297885e-43 +/- 6.99e-64]",
+   "passed": true
+  }
+ ],
+ "allEpPassed": true,
+ "stdout": "FlintNDE ep task pool: you requested 12 parallel workers and 3 of them will run, because only that many ep values were submitted; the default request is 12, and queued values start automatically as workers finish.\nparallel requested/effective: 12/3\n{'ep': '1/5', 'value': '[1.14869835499703500679862694677792758944385061 +/- 4.54e-45]', 'expected': '[1.14869835499703500679862694677792758944385089 +/- 9.03e-46]', 'absolute_difference': '[2.8363687672611171928e-43 +/- 1.54e-64]', 'relative_difference': '[2.4692024280546987997e-43 +/- 1.95e-63]', 'passed': True}\n{'ep': '1/6', 'value': '[1.12246204830937298143353304967917951623241083 +/- 1.66e-45]', 'expected': '[1.12246204830937298143353304967917951623241111 +/- 6.15e-46]', 'absolute_difference': '[2.8226775047841768376e-43 +/- 2.12e-63]', 'relative_difference': '[2.5147197707357946098e-43 +/- 1.17e-63]', 'passed': True}\n{'ep': '1/7', 'value': '[1.10408951367381233764950538762334472132532633 +/- 3.47e-45]', 'expected': '[1.10408951367381233764950538762334472132532660 +/- 7.81e-46]', 'absolute_difference': '[2.7424075399942185263e-43 +/- 1.40e-64]', 'relative_difference': '[2.4838634060285297885e-43 +/- 6.99e-64]', 'passed': True}\nep_parallel.py: PASSED\n"
+}

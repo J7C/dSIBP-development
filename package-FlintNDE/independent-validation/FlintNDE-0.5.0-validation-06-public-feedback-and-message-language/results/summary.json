@@ -1,0 +1,1562 @@
+{
+  "schema": "flintnde_0.5.0_validation_06_v1",
+  "status": "passed",
+  "passedCount": 121,
+  "checkCount": 121,
+  "sourceDigestSHA256": "ffa2465cb781dded5fd3e5a8712abd70f1f17cb1d7c7528fb83a1f05b2719e03",
+  "settings": {
+    "workingPrecisionDigits": 90,
+    "guardBits": 50,
+    "wolframPlanningDigits": 60,
+    "wolframExecutionDigitsRequested": 90,
+    "cliOrder": [
+      "D:\\anaconda\\python.exe",
+      "-m",
+      "flintnde.mathematica_bridge"
+    ],
+    "mathematicaExecutable": "D:\\Wolfram Research\\Wolfram\\15.0\\math.exe",
+    "packageVersion": "0.5.0"
+  },
+  "exitMatrix": {
+    "counts": {
+      "dynamic": 48,
+      "staticOnly": 13,
+      "cannotSafelyTrigger": 4
+    },
+    "rows": [
+      {
+        "section": "wolframFailureTag",
+        "name": "BridgeFailure",
+        "site": "Mathematica/FlintNDE.wl:426",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "BridgeLaunchFailed",
+        "site": "Mathematica/FlintNDE.wl:370",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "BridgeOutputInvalid",
+        "site": "Mathematica/FlintNDE.wl:408",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "BridgeOutputMissing",
+        "site": "Mathematica/FlintNDE.wl:398",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "ConsistentSquareMatricesRequired",
+        "site": "Mathematica/FlintNDE.wl:238",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "EpJobListEmpty",
+        "site": "Mathematica/FlintNDE.wl:799",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InexactRationalMatrixEntry",
+        "site": "Mathematica/FlintNDE.wl:169",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidBridgeResult",
+        "site": "Mathematica/FlintNDE.wl:417",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidEpBatchArguments",
+        "site": "Mathematica/FlintNDE.wl:850",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidEpJob",
+        "site": "Mathematica/FlintNDE.wl:756",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidExecuteArguments",
+        "site": "Mathematica/FlintNDE.wl:720",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidExecutionPlan",
+        "site": "Mathematica/FlintNDE.wl:645",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidMessageLanguage",
+        "site": "Mathematica/FlintNDE.wl:110",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidPartialFractionSystemArguments",
+        "site": "Mathematica/FlintNDE.wl:271",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidPlanArguments",
+        "site": "Mathematica/FlintNDE.wl:520",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidPythonExecutable",
+        "site": "Mathematica/FlintNDE.wl:60",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidRationalSystemArguments",
+        "site": "Mathematica/FlintNDE.wl:209",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidSingularityMode",
+        "site": "Mathematica/FlintNDE.wl:129",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "InvalidWorkDirectory",
+        "site": "Mathematica/FlintNDE.wl:71",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "NonRationalMatrixEntry",
+        "site": "Mathematica/FlintNDE.wl:156",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "ParallelTaskCountPositiveIntegerRequired",
+        "site": "Mathematica/FlintNDE.wl:805",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "PlannedPathPrecisionInsufficient",
+        "site": "Mathematica/FlintNDE.wl:680",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "PlannedPathPrecisionMissing",
+        "site": "Mathematica/FlintNDE.wl:659",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "PoleResidueLengthMismatch",
+        "site": "Mathematica/FlintNDE.wl:247",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "PolynomialMatrixListRequired",
+        "site": "Mathematica/FlintNDE.wl:226",
+        "classification": "static-only"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "PythonFlintUnavailable",
+        "site": "Mathematica/FlintNDE.wl:381",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "RuntimeInputWriteFailed",
+        "site": "Mathematica/FlintNDE.wl:330",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "RuntimePathTooLong",
+        "site": "Mathematica/FlintNDE.wl:93",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "SquareMatrixRequired",
+        "site": "Mathematica/FlintNDE.wl:192",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "UnknownOption",
+        "site": "Mathematica/FlintNDE.wl:483",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframFailureTag",
+        "name": "WorkDirectoryCreationFailed",
+        "site": "Mathematica/FlintNDE.wl:322",
+        "classification": "static-only"
+      },
+      {
+        "section": "wolframMessageTemplate",
+        "name": "FlintNDEBridgeError::error",
+        "site": "Mathematica/FlintNDE.wl:30",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframMessageTemplate",
+        "name": "FlintNDEBridgeError::launchFailed",
+        "site": "Mathematica/FlintNDE.wl:36",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframMessageTemplate",
+        "name": "FlintNDEBridgeError::outputMissing",
+        "site": "Mathematica/FlintNDE.wl:39",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframMessageTemplate",
+        "name": "FlintNDEBridgeError::pythonFlintMissing",
+        "site": "Mathematica/FlintNDE.wl:33",
+        "classification": "dynamic"
+      },
+      {
+        "section": "wolframMessageTemplate",
+        "name": "FlintNDEBridgeError::usage",
+        "site": "Mathematica/FlintNDE.wl:28",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/numeric_structure.py:266",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/regularization.py:1524",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/routing.py:1386",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/routing.py:1606",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/singularity_jump.py:1751",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/transport.py:303",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/transport.py:1096",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/transport.py:1185",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/transport.py:1271",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/transport.py:1330",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonWarningSite",
+        "name": "warnings.warn",
+        "site": "flintnde/transport.py:1375",
+        "classification": "static-only"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY15",
+        "site": "flintnde/core.py:38",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY04",
+        "site": "flintnde/core.py:53",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY14",
+        "site": "flintnde/mathematica_bridge.py:537",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY13",
+        "site": "flintnde/mathematica_bridge.py:761",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY06",
+        "site": "flintnde/routing.py:1030",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY01",
+        "site": "flintnde/routing.py:32",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY02",
+        "site": "flintnde/routing.py:45",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY09",
+        "site": "flintnde/routing.py:668",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY08",
+        "site": "flintnde/routing.py:958",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY10",
+        "site": "flintnde/savepoints.py:325",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY03",
+        "site": "flintnde/singularities.py:437",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "PY05",
+        "site": "flintnde/transport.py:658",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "CLI01/CLI02",
+        "site": "flintnde/mathematica_bridge.py:676",
+        "classification": "dynamic"
+      },
+      {
+        "section": "pythonRaiseSite",
+        "name": "CLI07",
+        "site": "flintnde/mathematica_bridge.py:861",
+        "classification": "dynamic"
+      },
+      {
+        "section": "cannotSafelyTrigger",
+        "name": "路径长度门禁的非 Windows 分支：本机为 Windows，只读验证无法切换操作系统",
+        "site": "Mathematica/FlintNDE.wl:88",
+        "classification": "cannot-safely-trigger"
+      },
+      {
+        "section": "cannotSafelyTrigger",
+        "name": "规划器内部不变量：公开输入无法在不修改源码的情况下构造违例路径",
+        "site": "flintnde/routing.py:1339",
+        "classification": "cannot-safely-trigger"
+      },
+      {
+        "section": "cannotSafelyTrigger",
+        "name": "序列化器内部守卫：公开 schema 请求产生的结果均为 JSON 型，无法安全触达",
+        "site": "flintnde/mathematica_bridge.py:838",
+        "classification": "cannot-safely-trigger"
+      },
+      {
+        "section": "cannotSafelyTrigger",
+        "name": "savepoint 写盘时磁盘满/权限中途丢失：无法在本机安全模拟磁盘满",
+        "site": "flintnde/savepoints.py:347",
+        "classification": "cannot-safely-trigger"
+      }
+    ]
+  },
+  "triggers": [
+    {
+      "id": "PY01",
+      "channel": "python",
+      "category": "input-type",
+      "language": null,
+      "raised": true,
+      "exceptionType": "TypeError",
+      "raiseSite": "routing.py:32",
+      "message": "message_language must be a string",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY02",
+      "channel": "python",
+      "category": "input-type",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "routing.py:45",
+      "message": "singularity_mode must be exactly \"avoid\" or \"singularity_jump\"",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY03",
+      "channel": "python",
+      "category": "dimension",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "singularities.py:437",
+      "message": "rational matrix must be nonempty and square",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY04",
+      "channel": "python",
+      "category": "precision",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "core.py:53",
+      "message": "decimal_digits must be positive and guard_bits nonnegative",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY05",
+      "channel": "python",
+      "category": "path",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "transport.py:658",
+      "message": "transport path needs at least two points",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY06",
+      "channel": "python",
+      "category": "singularity",
+      "language": "CN",
+      "raised": true,
+      "exceptionType": "AdaptivePathSingularityError",
+      "raiseSite": "routing.py:1030",
+      "message": "缺省避开奇点模式拒绝生成可执行路径。经过奇点的路段为：leg 1 (0 -> 2.000000000000000000000000000000000000000): finite_001。请通过 detour_points 给出明确绕行点；也可显式设置 singularity_mode='singularity_jump' 使用奇点折跃。奇点折跃选择的多值分支等价于某一绕行路径，必须由用户确认。",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY07",
+      "channel": "python",
+      "category": "singularity",
+      "language": "EN",
+      "raised": true,
+      "exceptionType": "AdaptivePathSingularityError",
+      "raiseSite": "routing.py:1030",
+      "message": "Default avoid-singularity mode refuses to build an executable path. Singular legs: leg 1 (0 -> 2.000000000000000000000000000000000000000): finite_001. Supply explicit detour_points, or set singularity_mode='singularity_jump' explicitly. A singularity jump selects a multivalued branch equivalent to a detour path; the user must confirm it.",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY08",
+      "channel": "python",
+      "category": "singularity",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "routing.py:958",
+      "message": "singular intermediate points must carry the save tag; unsupported points: detour_001",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY09",
+      "channel": "python",
+      "category": "serialization",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "routing.py:668",
+      "message": "the serialized adaptive path declares transition method 'quantum_tunnel', which this version does not recognize; regenerate the plan with the current version (supported methods are 'ordinary_taylor' and 'regular_singular_bridge')",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY10",
+      "channel": "python",
+      "category": "savepoint+file-write",
+      "language": null,
+      "raised": true,
+      "exceptionType": "FileExistsError",
+      "raiseSite": "savepoints.py:325",
+      "message": "the save output directory 'D:\\Agent-projects-nut\\dSibp_package\\package-FlintNDE\\independent-validation\\FlintNDE-0.5.0-validation-06-public-feedback-and-message-language\\results_temp\\py10_file_write_blocker.txt\\subdir' cannot be created because a non-directory file already occupies that path; remove the blocking file or pass a different save_output_directory, then rerun",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY11-CN",
+      "channel": "python",
+      "category": "notice",
+      "language": "CN",
+      "raised": false,
+      "exceptionType": "UserWarning",
+      "raiseSite": "flintnde/routing.py:1386",
+      "message": "输入为原始端点，已自动规划单变量路径；已有计划应直接交给执行函数。; 当前使用避开奇点模式（缺省）。; 起点 'start' 分类为普通点; 终点 'target' 分类为普通点; 步长不超过收敛半径的 0.45 倍; 直线路径不含内部奇点; 每一步输运都不超过局部收敛半径的 0.45 倍；路径上实际的步长/半径比为 [0.45, 0.034482758620689655]，最大值为 0.45",
+      "warningCount": 1,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY11-EN",
+      "channel": "python",
+      "category": "notice",
+      "language": "EN",
+      "raised": false,
+      "exceptionType": "UserWarning",
+      "raiseSite": "flintnde/routing.py:1386",
+      "message": "Raw endpoints were supplied, so the one-variable path was planned automatically; pass an existing plan directly to the execution function.; Singularity mode: avoid (default).; start 'start' is an ordinary point; target 'target' is an ordinary point; step length is limited by 0.45 times the convergence radius; the straight path contains no internal singularity; every transport step stays within 0.45 times the local convergence radius; the actual step-to-radius ratios along the path are [0.45, 0.034482758620689655], with a maximum of 0.45",
+      "warningCount": 1,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY13",
+      "channel": "python",
+      "category": "unsupported-capability",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "mathematica_bridge.py:761",
+      "message": "FlintNDE bridge request action must be exactly \"plan\", \"execute\", \"evaluate\", or \"ep_batch\"",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY14",
+      "channel": "python",
+      "category": "precision",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "mathematica_bridge.py:537",
+      "message": "execution working precision 90 exceeds planned precision 60; replan at the requested working precision",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "PY15",
+      "channel": "python",
+      "category": "serialization",
+      "language": null,
+      "raised": true,
+      "exceptionType": "ValueError",
+      "raiseSite": "core.py:38",
+      "message": "The plan request record does not match the current schema, because it is missing the required fields ['matchFraction', 'maxSingularityJumps', 'maxStepOverRadius', 'radiusFraction', 'singularityJumpThreshold']; supply exactly the required fields of the current schema.",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "CLI01",
+      "channel": "cli",
+      "category": "serialization",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "unsupported bridge request schema: flintnde_mathematica_request_v0_bogus",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: unsupported bridge request schema: flintnde_mathematica_request_v0_bogus Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    {
+      "id": "CLI02",
+      "channel": "cli",
+      "category": "unsupported-capability",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "FlintNDE bridge request action must be exactly \"plan\", \"execute\", \"evaluate\", or \"ep_batch\"",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: FlintNDE bridge request action must be exactly \"plan\", \"execute\", \"evaluate\", or \"ep_batch\" Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    {
+      "id": "CLI03",
+      "channel": "cli",
+      "category": "serialization",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "The plan request record does not match the current schema, because it is missing the required fields ['matchFraction', 'maxSingularityJumps']; supply exactly the required fields of the current schema.",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: The plan request record does not match the current schema, because it is missing the required fields ['matchFraction', 'maxSingularityJumps']; supply exactly the required fields of the current schema. Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    {
+      "id": "CLI04",
+      "channel": "cli",
+      "category": "input-type",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "messageLanguage must be exactly \"EN\" or \"CN\"",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: messageLanguage must be exactly \"EN\" or \"CN\" Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    {
+      "id": "CLI05",
+      "channel": "cli",
+      "category": "singularity",
+      "language": "CN",
+      "raised": false,
+      "exceptionType": "status=singularPathRefused",
+      "raiseSite": null,
+      "message": "缺省避开奇点模式拒绝执行：以下用户折线路段经过奇点：(0 -> 2.00000000000000000000000000000)。请修改用户路径使各段避开奇点；也可显式设置 singularity_mode='singularity_jump' 启用奇点折跃。奇点折跃选择的多值分支等价于某一绕行路径，必须由用户确认。",
+      "exitCode": 0,
+      "status": "singularPathRefused",
+      "stderr": "",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    {
+      "id": "CLI06",
+      "channel": "cli",
+      "category": "singularity",
+      "language": "EN",
+      "raised": false,
+      "exceptionType": "status=singularPathRefused",
+      "raiseSite": null,
+      "message": "Default avoid-singularity mode refuses to run: poles lie on user polyline segments (0 -> 2.00000000000000000000000000000). Reroute the user points, or explicitly set singularity_mode='singularity_jump'. A singularity jump selects a multivalued branch equivalent to a detour path; the user must confirm it.",
+      "exitCode": 0,
+      "status": "singularPathRefused",
+      "stderr": "",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    {
+      "id": "CLI07",
+      "channel": "cli",
+      "category": "file-write",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": "flintnde/mathematica_bridge.py:861",
+      "message": "[Errno 2] No such file or directory: 'D:\\\\Agent-projects-nut\\\\dSibp_package\\\\package-FlintNDE\\\\independent-validation\\\\FlintNDE-0.5.0-validation-06-public-feedback-and-message-language\\\\results_temp\\\\cli\\\\CLI07-absent.json'",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: [Errno 2] No such file or directory: 'D:\\\\Agent-projects-nut\\\\dSibp_package\\\\package-FlintNDE\\\\independent-validation\\\\FlintNDE-0.5.0-validation-06-public-feedback-and-message-language\\\\results_temp\\\\cli\\\\CLI07-absent.json' Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    }
+  ],
+  "wolframCases": [
+    {
+      "id": "WM-nonRational",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "NonRationalMatrixEntry",
+      "keys": [
+        "entry",
+        "variable",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "某个矩阵元素化简后分子或分母不是变量的多项式，因此不是有理函数；请把该元素改为变量的有理函数后重试。 After simplification, one matrix entry has a numerator or denominator that is not a polynomial in the variable, so it is not a rational function; replace that entry with a rational function of the variable and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-inexact",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InexactRationalMatrixEntry",
+      "keys": [
+        "entry",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "某个矩阵元素的系数中含有近似实数，而精确系统只接受精确有理数；请把该元素改写为精确有理系数后重试。 A matrix entry has approximate real numbers among its coefficients, while the exact system accepts only exact rationals; rewrite that entry with exact rational coefficients and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-nonSquare",
+      "channel": "wolfram",
+      "category": "dimension",
+      "isFailure": true,
+      "tag": "SquareMatrixRequired",
+      "keys": [
+        "dimensions",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "输入矩阵必须是方阵，当前矩阵为空或各行长度不一致；请传入 n 行 n 列的方阵后重试。 The input matrix must be square, but it is empty or its rows have different lengths; pass an n-by-n square matrix and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-badLanguage",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidMessageLanguage",
+      "keys": [
+        "value",
+        "acceptedValues",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "MessageLanguage 只接受 \"EN\" 或 \"CN\"，当前值不在其中；请把 MessageLanguage 改为 \"EN\" 或 \"CN\" 后重试。 MessageLanguage accepts only \"EN\" or \"CN\", and the current value is neither; set MessageLanguage to \"EN\" or \"CN\" and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-badModeString",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidSingularityMode",
+      "keys": [
+        "value",
+        "acceptedValues",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "SingularityMode 只接受字符串 \"Avoid\" 或 \"SingularityJump\"，当前字符串不在其中；请改用这两个模式之一后重试。 SingularityMode accepts only the string \"Avoid\" or \"SingularityJump\", and the given string is neither; use one of these two modes and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-badModeType",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidSingularityMode",
+      "keys": [
+        "value",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "SingularityMode 必须是字符串 \"Avoid\" 或 \"SingularityJump\"，当前收到的是非字符串值；请改用这两个模式之一后重试。 SingularityMode must be the string \"Avoid\" or \"SingularityJump\", and the given value is not a string; use one of these two modes and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-unknownOption",
+      "channel": "wolfram",
+      "category": "unsupported-capability",
+      "isFailure": true,
+      "tag": "UnknownOption",
+      "keys": [
+        "function",
+        "options",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDEPlanPath 收到了其当前 Options 之外的未知选项；请删除多余规则或改用 FlintNDEPlanPath 的合法选项后重试。 FlintNDEPlanPath received option names that are not in its current Options; remove the extra rules or use only valid FlintNDEPlanPath options and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-badPythonType",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidPythonExecutable",
+      "keys": [
+        "value",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "Python 选项只接受 Automatic 或解释器命令字符串，当前收到的是其它类型的无效值；请把 Python 改为 Automatic 或有效的命令字符串后重试。 The Python option accepts only Automatic or an interpreter command string, and the given value is of another, invalid kind; set Python to Automatic or a valid command string and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-badWorkDirType",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidWorkDirectory",
+      "keys": [
+        "value",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "WorkDirectory 选项只接受 Automatic 或目录路径字符串，当前收到的是其它类型的无效值；请把 WorkDirectory 改为 Automatic 或有效路径后重试。 The WorkDirectory option accepts only Automatic or a directory path string, and the given value is of another, invalid kind; set WorkDirectory to Automatic or a valid path and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-pathTooLong",
+      "channel": "wolfram",
+      "category": "file-write",
+      "isFailure": true,
+      "tag": "RuntimePathTooLong",
+      "keys": [
+        "path",
+        "pathLength",
+        "safeMaximum",
+        "suggestion",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "某个运行时文件路径超过 Windows 的 259 字符安全上限，该检查发生在启动 Python 之前；请通过 WorkDirectory 指定更短的运行目录后重试。 A runtime file path exceeds the Windows 259-character safe maximum, and this check runs before Python is launched; specify a shorter runtime directory via WorkDirectory and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-workDirWriteBlocked",
+      "channel": "wolfram",
+      "category": "file-write",
+      "isFailure": true,
+      "tag": "RuntimeInputWriteFailed",
+      "keys": [
+        "path",
+        "pathLength",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "bridge 请求文件写入失败，可能是运行目录不可写或磁盘已满；请检查所列路径的写权限与磁盘剩余空间后重试。 Writing the bridge request file failed, possibly because the runtime directory is not writable or the disk is full; check write permission for the listed path and the free disk space, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-launchFailed",
+      "channel": "wolfram",
+      "category": "file-write",
+      "isFailure": true,
+      "tag": "BridgeLaunchFailed",
+      "keys": [
+        "process",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "Python 后端进程根本未能启动，通常是 Python 选项指向的解释器不存在或不可执行；请核对解释器路径后重试。 The Python backend process could not be started at all, usually because the interpreter given by the Python option does not exist or is not executable; verify the interpreter path and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-invalidPlanAssoc",
+      "channel": "wolfram",
+      "category": "serialization",
+      "isFailure": true,
+      "tag": "InvalidExecutionPlan",
+      "keys": [
+        "reason",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "plan 参数不是 FlintNDEPlanPath 返回的完整规划结果，缺少要求的 schema、status、operation 或 plan 字段；请把 FlintNDEPlanPath 的返回值原样传入后重试。 The plan argument is not the complete result returned by FlintNDEPlanPath; the required schema, status, operation or plan field is missing. Pass the FlintNDEPlanPath result through unchanged and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-precisionMissing",
+      "channel": "wolfram",
+      "category": "precision",
+      "isFailure": true,
+      "tag": "PlannedPathPrecisionMissing",
+      "keys": [
+        "requestedPrecisionDigits",
+        "reason",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "该计划没有记录规划精度，无法与本次执行请求的精度比较；请重新运行 FlintNDEPlanPath 生成带精度记录的计划后重试。 The plan does not record its planning precision, so it cannot be compared with the precision requested for execution; rerun FlintNDEPlanPath to produce a plan that records its precision and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-epBatchEmpty",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "EpJobListEmpty",
+      "keys": [
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDEEvaluateEpBatch 收到了空的任务列表；请至少提供一个包含 ep、system、start、points 和 initialVector 的任务后重试。 FlintNDEEvaluateEpBatch received an empty job list; provide at least one job containing ep, system, start, points and initialVector, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-epJobMissing",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidEpJob",
+      "keys": [
+        "missingKeys",
+        "job",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "某个 ep 任务缺少必需字段（ep、system、start、points、initialVector 中的一项或多项）；请为每个任务补齐全部必需字段后重试。 An ep job is missing one or more required fields among ep, system, start, points and initialVector; complete every required field for each job and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-parallelCount",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "ParallelTaskCountPositiveIntegerRequired",
+      "keys": [
+        "value",
+        "default",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "ParallelTaskCount 必须是正整数（缺省为 12），当前值不是；请把 ParallelTaskCount 改为不小于 1 的整数后重试。 ParallelTaskCount must be a positive integer (default 12), and the current value is not; set ParallelTaskCount to an integer of at least 1 and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-invalidPlanArguments",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidPlanArguments",
+      "keys": [
+        "usage",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDEPlanPath 收到的参数不符合调用形态，它需要一个系统、一个起点和一个目标点列表；请按 FlintNDEPlanPath[system, start, {point1,...}] 传入系统、起点与目标点列表后重试。 FlintNDEPlanPath received arguments that do not match its calling form, which needs a system, a start point and a list of target points; call it as FlintNDEPlanPath[system, start, {point1,...}] with a system, a start and a list of points, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-invalidSystemArguments",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidRationalSystemArguments",
+      "keys": [
+        "usage",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDERationalSystem 收到的参数不符合调用形态，它需要一个由变量的有理函数组成的方阵和一个变量符号；请按 FlintNDERationalSystem[matrix, variable] 传入有理函数方阵与变量后重试。 FlintNDERationalSystem received arguments that do not match its calling form, which needs a square matrix of rational functions in the variable together with a variable symbol; call it as FlintNDERationalSystem[matrix, variable] with a rational-function square matrix and a variable, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-pfNonList",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidPartialFractionSystemArguments",
+      "keys": [
+        "usage",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDEPartialFractionSystem 收到的参数不符合调用形态，它需要多项式系数矩阵列表 {P0,P1,...}、留数列表和极点列表共三个参数；请按 FlintNDEPartialFractionSystem[{P0,P1,...}, residues, poles] 传入这三个列表后重试。 FlintNDEPartialFractionSystem received arguments that do not match its calling form, which needs three arguments: a list {P0,P1,...} of polynomial coefficient matrices, a list of residues and a list of poles; call it as FlintNDEPartialFractionSystem[{P0,P1,...}, residues, poles] with those three lists, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-pfDimensions",
+      "channel": "wolfram",
+      "category": "dimension",
+      "isFailure": true,
+      "tag": "ConsistentSquareMatricesRequired",
+      "keys": [
+        "dimensions",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "多项式系数矩阵与留数矩阵必须全部是同一维数的方阵，当前维度不一致或不是方阵；请把所有矩阵统一为同一 n 行 n 列维数后重试。 The polynomial coefficient matrices and residue matrices must all be square with one common dimension, but the current dimensions differ or are not square; make every matrix the same n-by-n size and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-pfPoleMismatch",
+      "channel": "wolfram",
+      "category": "dimension",
+      "isFailure": true,
+      "tag": "PoleResidueLengthMismatch",
+      "keys": [
+        "residueCount",
+        "poleCount",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "留数矩阵个数与极点个数不相等，二者无法一一配对；请把 residues 与 poles 调整为相同长度后重试。 The number of residue matrices differs from the number of poles, so they cannot be paired one-to-one; adjust residues and poles to the same length and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-pfArguments",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidPartialFractionSystemArguments",
+      "keys": [
+        "usage",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDEPartialFractionSystem 收到的参数不符合调用形态，它需要多项式系数矩阵列表 {P0,P1,...}、留数列表和极点列表共三个参数；请按 FlintNDEPartialFractionSystem[{P0,P1,...}, residues, poles] 传入这三个列表后重试。 FlintNDEPartialFractionSystem received arguments that do not match its calling form, which needs three arguments: a list {P0,P1,...} of polynomial coefficient matrices, a list of residues and a list of poles; call it as FlintNDEPartialFractionSystem[{P0,P1,...}, residues, poles] with those three lists, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-executeArguments",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidExecuteArguments",
+      "keys": [
+        "usage",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDEExecutePath 收到的参数不符合调用形态，它需要一个系统、一个初始向量和一份已有计划；请按 FlintNDEExecutePath[system, initialVector, plan] 传入系统、初始向量与计划后重试。 FlintNDEExecutePath received arguments that do not match its calling form, which needs a system, an initial vector and an existing plan; call it as FlintNDEExecutePath[system, initialVector, plan] with a system, an initial vector and a plan, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-epBatchArguments",
+      "channel": "wolfram",
+      "category": "input-type",
+      "isFailure": true,
+      "tag": "InvalidEpBatchArguments",
+      "keys": [
+        "usage",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "FlintNDEEvaluateEpBatch 收到的参数不符合调用形态，它需要一个 ep 任务列表，并可选地用 ParallelTaskCount 指定并行上限；请按 FlintNDEEvaluateEpBatch[{job1,...}, ParallelTaskCount->12] 传入任务列表后重试。 FlintNDEEvaluateEpBatch received arguments that do not match its calling form, which needs a list of ep jobs and optionally a ParallelTaskCount setting for the parallel limit; call it as FlintNDEEvaluateEpBatch[{job1,...}, ParallelTaskCount->12] with a job list, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-stub-flintMissing",
+      "channel": "wolfram",
+      "category": "unsupported-capability",
+      "isFailure": true,
+      "tag": "PythonFlintUnavailable",
+      "keys": [
+        "process",
+        "requestFile",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "Python 已启动但无法导入 python-flint；请在该解释器环境中安装 python-flint，或用 Python 选项指向已装好它的解释器后重试。 Python started but could not import python-flint; install python-flint in that interpreter environment, or point the Python option at an interpreter that already has it, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-stub-noOutput",
+      "channel": "wolfram",
+      "category": "file-write",
+      "isFailure": true,
+      "tag": "BridgeOutputMissing",
+      "keys": [
+        "process",
+        "requestFile",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "Python 后端已退出但没有生成输出文件；请检查 WorkDirectory 是否可写、磁盘是否有余量，并按日志报错修正后重试。 The Python backend exited without creating its output file; check that WorkDirectory is writable and has free disk space, fix what the log reports, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-stub-exitNonzero",
+      "channel": "wolfram",
+      "category": "file-write",
+      "isFailure": true,
+      "tag": "BridgeLaunchFailed",
+      "keys": [
+        "process",
+        "requestFile",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "Python 后端以非零退出码结束且没有写出结果文件，具体原因见进程日志；请按日志修正 Python 环境或输入后重试。 The Python backend exited with a nonzero code and wrote no result file; see the process log for the cause, fix the Python environment or input accordingly, and try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-stub-badOutput",
+      "channel": "wolfram",
+      "category": "serialization",
+      "isFailure": true,
+      "tag": "BridgeOutputInvalid",
+      "keys": [
+        "path",
+        "process",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "后端输出文件存在但无法作为 Wolfram 表达式读取，内容可能已损坏；请检查该文件内容与进程日志后重试。 The backend output file exists but cannot be read as a Wolfram expression and may be corrupted; inspect the file contents and the process log, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-stub-symbolOutput",
+      "channel": "wolfram",
+      "category": "serialization",
+      "isFailure": true,
+      "tag": "InvalidBridgeResult",
+      "keys": [
+        "result",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "后端输出可以读取，但没有定义符合 bridge schema 的 Association 结果；请核对后端模块与请求 schema 版本是否匹配后重试。 The backend output was readable but did not define a schema-conforming Association result; check that the backend module matches the request schema version, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-stub-errorStatus",
+      "channel": "wolfram",
+      "category": "unsupported-capability",
+      "isFailure": true,
+      "tag": "BridgeFailure",
+      "keys": [
+        "message",
+        "process"
+      ],
+      "messageTemplate": null,
+      "message": "simulated backend failure for the validation-06 runner",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-workDirCreationBadName",
+      "channel": "wolfram",
+      "category": "file-write",
+      "isFailure": true,
+      "tag": "RuntimeInputWriteFailed",
+      "keys": [
+        "path",
+        "pathLength",
+        "MessageTemplate"
+      ],
+      "messageTemplate": "bridge 请求文件写入失败，可能是运行目录不可写或磁盘已满；请检查所列路径的写权限与磁盘剩余空间后重试。 Writing the bridge request file failed, possibly because the runtime directory is not writable or the disk is full; check write permission for the listed path and the free disk space, then try again.",
+      "message": "None",
+      "status": null,
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-refusedCN",
+      "channel": "wolfram",
+      "category": "singularity",
+      "isFailure": false,
+      "status": "singularPathRefused",
+      "message": "用户点 1 与极点 1.00000000000000000000000000000 重合，避开奇点模式无法直接通过；请显式改用 singularity_mode='singularity_jump' 后重试。",
+      "messageLanguage": "CN",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-refusedEN",
+      "channel": "wolfram",
+      "category": "singularity",
+      "isFailure": false,
+      "status": "singularPathRefused",
+      "message": "user point 1 coincides with pole 1.00000000000000000000000000000; select singularity_mode='singularity_jump' explicitly",
+      "messageLanguage": "EN",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-precisionCN",
+      "channel": "wolfram",
+      "category": "precision",
+      "isFailure": true,
+      "tag": "PlannedPathPrecisionInsufficient",
+      "message": "执行请求 90 位十进制精度，但该路径只按 60 位规划。已序列化节点不能补回精度；请按所需精度重新运行 FlintNDEPlanPath。",
+      "messageLanguage": "CN",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-precisionEN",
+      "channel": "wolfram",
+      "category": "precision",
+      "isFailure": true,
+      "tag": "PlannedPathPrecisionInsufficient",
+      "message": "Execution requests 90 decimal digits, but this path was planned at 60. Serialized nodes cannot gain precision; rerun FlintNDEPlanPath at the requested precision.",
+      "messageLanguage": "EN",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    },
+    {
+      "id": "WM-epBatchRefused",
+      "channel": "wolfram",
+      "category": "singularity",
+      "status": "complete",
+      "epFirstStatus": "planFailed",
+      "epFirstPlanStatus": "singularPathRefused",
+      "message": "user point 1 coincides with pole 1.00000000000000000000000000000; select singularity_mode='singularity_jump' explicitly",
+      "naturalLanguageOk": true,
+      "noFalseSuccess": true
+    }
+  ],
+  "wolframMessageTemplates": {
+    "error": "FlintNDE 的 Python 后端返回失败，后端信息为：`1`。请按该信息修正输入后重新调用同一函数。 The FlintNDE Python backend returned a failure with the message: `1`. Correct the input accordingly and call the same function again.",
+    "pythonFlintMissing": "Python 已启动但无法导入 python-flint，后端日志为：`1`。请在该环境中安装 python-flint，或用 Python 选项指向已装好它的解释器后重试。 Python started but could not import python-flint; the backend log is: `1`. Install python-flint in that environment, or point the Python option at an interpreter that already has it, then try again.",
+    "launchFailed": "无法启动 FlintNDE 的 Python 后端，日志为：`1`。请检查 Python 选项指向的解释器是否存在且可执行，并确认 WorkDirectory 可写后重试。 The FlintNDE Python backend could not be launched; the log is: `1`. Check that the interpreter given by the Python option exists and is executable, and that WorkDirectory is writable, then try again.",
+    "outputMissing": "FlintNDE 的 Python 后端已退出但没有生成输出文件，日志为：`1`。请检查 WorkDirectory 是否可写、磁盘是否有余量，并按日志报错修正后重试。 The FlintNDE Python backend exited without creating its output file; the log is: `1`. Check that WorkDirectory is writable and has free disk space, fix what the log reports, then try again."
+  },
+  "cli": {
+    "CLI01": {
+      "id": "CLI01",
+      "channel": "cli",
+      "category": "serialization",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "unsupported bridge request schema: flintnde_mathematica_request_v0_bogus",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: unsupported bridge request schema: flintnde_mathematica_request_v0_bogus Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    "CLI02": {
+      "id": "CLI02",
+      "channel": "cli",
+      "category": "unsupported-capability",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "FlintNDE bridge request action must be exactly \"plan\", \"execute\", \"evaluate\", or \"ep_batch\"",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: FlintNDE bridge request action must be exactly \"plan\", \"execute\", \"evaluate\", or \"ep_batch\" Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    "CLI03": {
+      "id": "CLI03",
+      "channel": "cli",
+      "category": "serialization",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "The plan request record does not match the current schema, because it is missing the required fields ['matchFraction', 'maxSingularityJumps']; supply exactly the required fields of the current schema.",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: The plan request record does not match the current schema, because it is missing the required fields ['matchFraction', 'maxSingularityJumps']; supply exactly the required fields of the current schema. Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    "CLI04": {
+      "id": "CLI04",
+      "channel": "cli",
+      "category": "input-type",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": null,
+      "message": "messageLanguage must be exactly \"EN\" or \"CN\"",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: messageLanguage must be exactly \"EN\" or \"CN\" Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    "CLI05": {
+      "id": "CLI05",
+      "channel": "cli",
+      "category": "singularity",
+      "language": "CN",
+      "raised": false,
+      "exceptionType": "status=singularPathRefused",
+      "raiseSite": null,
+      "message": "缺省避开奇点模式拒绝执行：以下用户折线路段经过奇点：(0 -> 2.00000000000000000000000000000)。请修改用户路径使各段避开奇点；也可显式设置 singularity_mode='singularity_jump' 启用奇点折跃。奇点折跃选择的多值分支等价于某一绕行路径，必须由用户确认。",
+      "exitCode": 0,
+      "status": "singularPathRefused",
+      "stderr": "",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    "CLI06": {
+      "id": "CLI06",
+      "channel": "cli",
+      "category": "singularity",
+      "language": "EN",
+      "raised": false,
+      "exceptionType": "status=singularPathRefused",
+      "raiseSite": null,
+      "message": "Default avoid-singularity mode refuses to run: poles lie on user polyline segments (0 -> 2.00000000000000000000000000000). Reroute the user points, or explicitly set singularity_mode='singularity_jump'. A singularity jump selects a multivalued branch equivalent to a detour path; the user must confirm it.",
+      "exitCode": 0,
+      "status": "singularPathRefused",
+      "stderr": "",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    },
+    "CLI07": {
+      "id": "CLI07",
+      "channel": "cli",
+      "category": "file-write",
+      "language": null,
+      "raised": false,
+      "exceptionType": "status=error",
+      "raiseSite": "flintnde/mathematica_bridge.py:861",
+      "message": "[Errno 2] No such file or directory: 'D:\\\\Agent-projects-nut\\\\dSibp_package\\\\package-FlintNDE\\\\independent-validation\\\\FlintNDE-0.5.0-validation-06-public-feedback-and-message-language\\\\results_temp\\\\cli\\\\CLI07-absent.json'",
+      "exitCode": 1,
+      "status": "error",
+      "stderr": "The FlintNDE Wolfram bridge failed: [Errno 2] No such file or directory: 'D:\\\\Agent-projects-nut\\\\dSibp_package\\\\package-FlintNDE\\\\independent-validation\\\\FlintNDE-0.5.0-validation-06-public-feedback-and-message-language\\\\results_temp\\\\cli\\\\CLI07-absent.json' Check the request file path and its schema field, correct the problem, then rerun the bridge.",
+      "noFalseSuccess": true,
+      "naturalLanguageOk": true
+    }
+  },
+  "cliPresence": {
+    "consoleScripts": [],
+    "guiScripts": [],
+    "hasMainModule": false,
+    "publicCliExists": false,
+    "cliChannelUsed": [
+      "D:\\anaconda\\python.exe",
+      "-m",
+      "flintnde.mathematica_bridge",
+      "<request.json>",
+      "<output.m>"
+    ],
+    "statement": "not applicable / no public CLI"
+  },
+  "unittest": {
+    "command": [
+      "D:\\anaconda\\python.exe",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests",
+      "-t",
+      "tests"
+    ],
+    "cwd": "D:\\Agent-projects-nut\\dSibp_package\\package-FlintNDE\\versions\\FlintNDE-0.5.0",
+    "exitCode": 0,
+    "testsRun": 181,
+    "ok": true,
+    "tail": "package-FlintNDE\\versions\\FlintNDE-0.5.0\\tests\\test_planned_path_and_singularity_jump.py:410: UserWarning: embedded certification upgraded to independent primary/reference chains: singular bridges cannot be reused; low-order state errors cannot be propagated by segment prefixes\n  result = transport_planned_path_refined(\n..............................................................................\n----------------------------------------------------------------------\nRan 181 tests in 13.210s\n\nOK"
+  },
+  "findings": [],
+  "checks": {
+    "PY01RaisesExpectedType": true,
+    "PY01MessageCompliant": true,
+    "PY02RaisesExpectedType": true,
+    "PY02MessageCompliant": true,
+    "PY03RaisesExpectedType": true,
+    "PY03MessageCompliant": true,
+    "PY04RaisesExpectedType": true,
+    "PY04MessageCompliant": true,
+    "PY05RaisesExpectedType": true,
+    "PY05MessageCompliant": true,
+    "PY06RaisesExpectedType": true,
+    "PY06MessageCompliant": true,
+    "PY07RaisesExpectedType": true,
+    "PY07MessageCompliant": true,
+    "py06py07BilingualRefusal": true,
+    "PY08RaisesExpectedType": true,
+    "PY08MessageCompliant": true,
+    "PY09RaisesExpectedType": true,
+    "PY09MessageCompliant": true,
+    "PY10RaisesExpectedType": true,
+    "PY10MessageCompliant": true,
+    "py11NoticesBilingual": true,
+    "PY13RaisesExpectedType": true,
+    "PY13MessageCompliant": true,
+    "PY14RaisesExpectedType": true,
+    "PY14MessageCompliant": true,
+    "py14NoTransportAfterGate": true,
+    "PY15RaisesExpectedType": true,
+    "PY15MessageCompliant": true,
+    "py15SchemaSentence": true,
+    "CLI01ErrorAssociation": true,
+    "CLI01MessageCompliant": true,
+    "CLI02ErrorAssociation": true,
+    "CLI02MessageCompliant": true,
+    "CLI03ErrorAssociation": true,
+    "CLI03MessageCompliant": true,
+    "CLI04ErrorAssociation": true,
+    "CLI04MessageCompliant": true,
+    "CLI05MessageCompliant": true,
+    "CLI06MessageCompliant": true,
+    "cli05RefusalCN": true,
+    "cli06RefusalEN": true,
+    "cli07MissingRequestFile": true,
+    "CLI07MessageCompliant": true,
+    "WM-nonRationalFailure": true,
+    "WM-nonRationalTemplateBilingual": true,
+    "WM-inexactFailure": true,
+    "WM-inexactTemplateBilingual": true,
+    "WM-nonSquareFailure": true,
+    "WM-nonSquareTemplateBilingual": true,
+    "WM-badLanguageFailure": true,
+    "WM-badLanguageTemplateBilingual": true,
+    "WM-badModeStringFailure": true,
+    "WM-badModeStringTemplateBilingual": true,
+    "WM-badModeTypeFailure": true,
+    "WM-badModeTypeTemplateBilingual": true,
+    "WM-unknownOptionFailure": true,
+    "WM-unknownOptionTemplateBilingual": true,
+    "WM-badPythonTypeFailure": true,
+    "WM-badPythonTypeTemplateBilingual": true,
+    "WM-badWorkDirTypeFailure": true,
+    "WM-badWorkDirTypeTemplateBilingual": true,
+    "WM-pathTooLongFailure": true,
+    "WM-pathTooLongTemplateBilingual": true,
+    "WM-workDirWriteBlockedFailure": true,
+    "WM-workDirWriteBlockedTemplateBilingual": true,
+    "WM-launchFailedFailure": true,
+    "WM-launchFailedTemplateBilingual": true,
+    "WM-invalidPlanAssocFailure": true,
+    "WM-invalidPlanAssocTemplateBilingual": true,
+    "WM-precisionMissingFailure": true,
+    "WM-precisionMissingTemplateBilingual": true,
+    "WM-epBatchEmptyFailure": true,
+    "WM-epBatchEmptyTemplateBilingual": true,
+    "WM-epJobMissingFailure": true,
+    "WM-epJobMissingTemplateBilingual": true,
+    "WM-parallelCountFailure": true,
+    "WM-parallelCountTemplateBilingual": true,
+    "WM-invalidPlanArgumentsFailure": true,
+    "WM-invalidPlanArgumentsTemplateBilingual": true,
+    "WM-invalidSystemArgumentsFailure": true,
+    "WM-invalidSystemArgumentsTemplateBilingual": true,
+    "WM-pfNonListFailure": true,
+    "WM-pfNonListTemplateBilingual": true,
+    "WM-pfDimensionsFailure": true,
+    "WM-pfDimensionsTemplateBilingual": true,
+    "WM-pfPoleMismatchFailure": true,
+    "WM-pfPoleMismatchTemplateBilingual": true,
+    "WM-pfArgumentsFailure": true,
+    "WM-pfArgumentsTemplateBilingual": true,
+    "WM-executeArgumentsFailure": true,
+    "WM-executeArgumentsTemplateBilingual": true,
+    "WM-epBatchArgumentsFailure": true,
+    "WM-epBatchArgumentsTemplateBilingual": true,
+    "WM-stub-flintMissingFailure": true,
+    "WM-stub-flintMissingTemplateBilingual": true,
+    "WM-stub-noOutputFailure": true,
+    "WM-stub-noOutputTemplateBilingual": true,
+    "WM-stub-exitNonzeroFailure": true,
+    "WM-stub-exitNonzeroTemplateBilingual": true,
+    "WM-stub-badOutputFailure": true,
+    "WM-stub-badOutputTemplateBilingual": true,
+    "WM-stub-symbolOutputFailure": true,
+    "WM-stub-symbolOutputTemplateBilingual": true,
+    "WM-stub-errorStatusFailure": true,
+    "WM-workDirCreationBadNameFailure": true,
+    "WM-workDirCreationBadNameTemplateBilingual": true,
+    "wmWorkDirCreationAttempt": true,
+    "wmRefusalsMachineDecidable": true,
+    "WM-refusedENMessageCompliant": true,
+    "wmPlan60Complete": true,
+    "wmPrecisionGateBilingual": true,
+    "wmEpBatchRefusedNoFalseSuccess": true,
+    "wmMessageTemplatesBilingual": true,
+    "wmMessageTemplatesEmitted": true,
+    "wmPlanningNoticePrinted": true,
+    "wolframRunnerLocalOutput": true,
+    "noPublicConsoleScriptCli": true,
+    "unittestSuiteOk": true,
+    "unittestCountMatchesExpected181": true,
+    "exitMatrixComplete": true
+  },
+  "wallTimeSeconds": 25.94319220003672
+}
