@@ -84,6 +84,6 @@ cache/
 # development repository must never track it.
 /packages-final/
 
-# Paper drafts are authored and compiled off-repo by the user; the development
-# repository must not track them (figures are multi-MB binaries).
-/papers/
+# Paper drafts for the two package papers. They are tracked by the development
+# repository (decided 2026-10-10); the LaTeX intermediates they generate are
+# already covered by the "*.aux / *.log / *.out / *.toc / *.bbl / *.blg" rules above.
