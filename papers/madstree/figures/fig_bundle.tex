@@ -1,28 +1,32 @@
 % Standalone source of the common-theta bundle sketch used in Sec. 3.6 of the paper.
 % Compile: pdflatex fig_bundle.tex   (produces fig_bundle.pdf, included by paper.tex)
-\documentclass[border=8pt]{standalone}
+\documentclass[border=14pt]{standalone}
 \usepackage{tikz}
 \usepackage{amsmath,amssymb}
 \begin{document}
 \begin{tikzpicture}[line width=0.9pt]
-  % The two vertices of the bundle; neither carries an external line.
-  \coordinate (U) at (0,1.8);
-  \coordinate (V) at (0,-1.8);
-  % Outer two lines: the left and right halves of one circle.
-  \draw (U) arc (90:270:1.8);
-  \draw (U) arc (90:-90:1.8);
-  % Inner two lines: near-vertical chords joining the same pair of vertices.
-  \draw (U) to[bend right=14] (V);
-  \draw (U) to[bend left=14] (V);
+  % The two vertices of the bundle, sitting at the two ends of one horizontal
+  % chord; neither of them carries an external line.
+  \coordinate (U) at (-1.8,0);
+  \coordinate (V) at ( 1.8,0);
+  % Outer two lines: the upper and the lower half of one circle of radius 1.8.
+  \draw (U) arc [start angle=180, end angle=0,   radius=1.8]
+        node[midway, fill=white, inner sep=1.6pt] {$e_1$};
+  \draw (U) arc [start angle=180, end angle=360, radius=1.8]
+        node[midway, fill=white, inner sep=1.6pt] {$e_4$};
+  % Inner two lines: flatter arcs joining the same pair of vertices, pushed far
+  % enough apart to leave the middle of the figure free for the vertical dots.
+  \draw (U) to[bend left=55]
+        node[midway, fill=white, inner sep=1.6pt] {$e_2$} (V);
+  \draw (U) to[bend right=55]
+        node[midway, fill=white, inner sep=1.6pt] {$e_3$} (V);
+  % Vertical dots between the inner two lines: any number of further lines may
+  % be sandwiched between them, all carrying the same theta argument.
+  \node[scale=1.5] at (0,0) {$\vdots$};
   % Vertices.
   \fill (U) circle (2.6pt);
   \fill (V) circle (2.6pt);
-  \node[above] at (U) {$u$};
-  \node[below] at (V) {$v$};
-  % Line labels.
-  \node[left] at (-1.8,0) {$e_1$};
-  \node[left] at (-0.44,0) {$e_2$};
-  \node[right] at (0.44,0) {$e_3$};
-  \node[right] at (1.8,0) {$e_4$};
+  \node[above left] at (U) {$u$};
+  \node[above right] at (V) {$v$};
 \end{tikzpicture}
 \end{document}
