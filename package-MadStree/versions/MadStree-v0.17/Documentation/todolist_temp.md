@@ -363,7 +363,7 @@ M16 完成记录（2026-08-20）：专项、core、package artifact 分别通过
 
 ### A. 数学输入表与最小门禁
 
-- [x] 先从现行手册和 2401 公式冻结 `h(ν,0)`、`h(ν,1)=∂z h(ν,0)` 在小 `t` 的两支
+- [x] 先从现行手册和 2401.00129 公式冻结 `h(ν,0)`、`h(ν,1)=∂z h(ν,0)` 在小 `t` 的两支
   领头幂次表；生产代码只查表并求和，不重算 Frobenius 级数、常系数或次领头项。
 - [x] 对每个 reachable sector/component、每个实际 state-bit master 和全部 `2^n` 个局部
   分支组合记录 `alpha`；只在 `alpha+requestedShift` 为非正整数时拒绝 MadStree 的该次递推。

@@ -83,3 +83,7 @@ cache/
 # published as its own repository (git@github.com:J7C/dSIBP-Packages.git), so the
 # development repository must never track it.
 /packages-final/
+
+# Paper drafts are authored and compiled off-repo by the user; the development
+# repository must not track them (figures are multi-MB binaries).
+/papers/

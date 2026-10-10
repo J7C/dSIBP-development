@@ -49,7 +49,7 @@ record["requiredTreeInputFields",
 ];
 record["deterministicContext", MSInitTree[masslessSpec]["masterDigest"] === masslessContext["masterDigest"]];
 record["positiveNuDefault", masslessContext["lines"][[1, "hankelOrder"]] === 1/2];
-record["paperFormulaNu", masslessContext["lines"][[1, "formulaNu"]] === -1/2];
+record["positiveFormulaNu", masslessContext["lines"][[1, "formulaNu"]] === 1/2];
 record["sectorCount", Length[MSSectors[masslessContext]] === 2];
 record["topSharedSlot", MSSectors[masslessContext][[1, "slotCount"]] === 1];
 record["topMasterCount", MSSectors[masslessContext][[1, "masterCount"]] === 2];
@@ -297,7 +297,7 @@ record["massiveMinusRecurrenceDLogDerivativeIdentity",
 
 
 (* ::Section:: *)
-(* Saved 4x1 tree reference of 2401 Eq. (3.68). The paper uses Exp[+I k tau],
+(* Saved 4x1 tree reference of 2401.00129 Eq. (3.68). The paper uses Exp[+I k tau],
    so the public convention maps a "+" vertex through externalLegEnergy=-k. *)
 
 referenceContext = MSInitTree[

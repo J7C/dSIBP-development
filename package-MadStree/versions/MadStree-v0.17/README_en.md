@@ -10,16 +10,17 @@ The default conventions are
 
 ```text
 time power: (-tau)^A
-nu: |nu|
-h(nu,0;z): z^nu H_nu(z)
+nu: the Hankel order, used verbatim, never an absolute value
+h(nu,0;z): z^(sNu nu) H_nu(z)
+formulaNu: sNu nu, with sNu=+1 by default
 NuConvention: "Positive"
 ```
 
-Only the function name `h` is used. `NuConvention -> "Negative"` selects the negative-prefactor convention of 2401.00129; the two formula sets are related by the uniform replacement `nu -> -nu`.
+Only the function name `h` is used, with `h(nu,0;z)=z^(sNu nu) H_nu(z)`: the input `nu` is the Hankel order verbatim, never an absolute value. The baseline formulas are written in the `+nu` (sNu=+1) shape, and every position where the order appears reads `formulaNu := sNu nu`. `NuConvention -> "Negative"` selects the negative-prefactor convention of 2401.00129, where `formulaNu=-nu`; the two formula sets differ only by the sign of `formulaNu`, while the Hankel order itself never changes.
 
 `NuConvention` is chosen only at `MSInitTree` initialization. Once a context is built, the formula matrices, recurrence, dlog and all-sector H/h basis changes read this value fixed; there is no per-call convention override.
 
-### User points at finite singularities
+## User points at finite singularities
 
 `MSEvaluatePath` sends each maximal continuous complex-affine segment to FlintNDE. Candidate
 singularities are determined only from the exact rational matrix or letters obtained by pulling back
@@ -234,7 +235,7 @@ vertexValue = MSEvaluatePath[
 ];
 ```
 
-Here `First[ki]` is the theta-free external-leg exponent parameter and `First[nui]` is the base power of `(-tau)`; the remaining entries give one by one the momentum and `nu=|nu|` of each h block. The explicit model uses
+Here `First[ki]` is the theta-free external-leg exponent parameter and `First[nui]` is the base power of `(-tau)`; the remaining entries give one by one the momentum and the Hankel order `nu`, used verbatim, of each h block. The explicit model uses
 `externalLegEnergy/timePower/hBlocks/exponentialBlocks/vertexType/normalization`; each h block has
 `id/momentum/nu/hankelBranch`, and each extra exponential block has
 `id/momentum/exponentType`. This initialization schema differs from tree `vertices/lines`
@@ -253,7 +254,7 @@ reduction = MSReduce[
 ];
 ```
 
-`MSReduce` handles only valid `MSIntegral[sectorKey,timeShifts,stateBits]` objects in a fixed initialized context: `sectorKey` must belong to the contact-reachable sector DAG, `timeShifts` are integer shifts per component of that sector, and `stateBits` traverse all two-dimensional slots of the sector in the 2401 binary order. It also accepts `List`, regular `Table`, empty lists and ragged nested lists; `result`, per-element `coefficientVector/masterRules`, residuals and remaining shifts preserve the input shape and share one recursion memo. A failed element reports its exact position. It does not support new propagator powers, new discrete indices, sectors outside the context, or another function family. Reduction recurses along the shift/contact DAG to the zero-shift masters and caches repeated subproblems. For scalar input, the returned `masterBasis`, `coefficientVector` and `masterRules` are strictly ordered; `result` is an explicit linear combination of master integrals; `nonMasterResidual` and `remainingShiftedIntegrals` must both be empty for a complete reduction. `MasterBasis` may be any permutation of all context masters, but missing, duplicated or extra objects are rejected. `singularLayers` records stepwise the direction, component and denominators: raising toward zero reports only the `M0` energy letters, and lowering toward zero reports only the `M1` eigenvalues.
+`MSReduce` handles only valid `MSIntegral[sectorKey,timeShifts,stateBits]` objects in a fixed initialized context: `sectorKey` must belong to the contact-reachable sector DAG, `timeShifts` are integer shifts per component of that sector, and `stateBits` traverse all two-dimensional slots of the sector in the binary order of 2401.00129. It also accepts `List`, regular `Table`, empty lists and ragged nested lists; `result`, per-element `coefficientVector/masterRules`, residuals and remaining shifts preserve the input shape and share one recursion memo. A failed element reports its exact position. It does not support new propagator powers, new discrete indices, sectors outside the context, or another function family. Reduction recurses along the shift/contact DAG to the zero-shift masters and caches repeated subproblems. For scalar input, the returned `masterBasis`, `coefficientVector` and `masterRules` are strictly ordered; `result` is an explicit linear combination of master integrals; `nonMasterResidual` and `remainingShiftedIntegrals` must both be empty for a complete reduction. `MasterBasis` may be any permutation of all context masters, but missing, duplicated or extra objects are rejected. `singularLayers` records stepwise the direction, component and denominators: raising toward zero reports only the `M0` energy letters, and lowering toward zero reports only the `M1` eigenvalues.
 
 Initialization uses the known two leading small-time powers of h to store a safe time-IBP shift
 lower bound for every reachable component. A zero-shift master whose Gamma argument is already a
@@ -329,6 +330,32 @@ The full formulas, the massless `4 -> 2` quotient, contact shifts and the top-to
 - [07_zero_external_leg_energy.wl](Examples/07_zero_external_leg_energy.wl): a vertex without a physical external leg may omit `externalLegEnergy` or set it to zero; a private auxiliary energy remains in the analytic dlog and is transported automatically to the physical zero.
 
 After deleting the existing `results/` and `results_temp/` trees, all seven examples passed fresh runs with `Example PASSED` and exit code `0`. Example 06 passed `16/16` checks with three production points and two independent validation points; the default request of 12 workers was automatically capped at the five actual ep tasks.
+
+## Statement on AI use
+
+The notation, the functionality and the public interfaces of this package were designed by the
+authors, who also specified the derivation recorded in
+[Documentation/tree_formula.pdf](Documentation/tree_formula.pdf) and audited every formula against
+it. The implementation was produced under their direction by a number of different agent programs
+driven by large language models, and the authors designed the verification tasks that establish the
+reliability of what those programs produced. Only the tasks that cross-check computed results are
+listed here, together with the source of the reference data in each case.
+
+- **Single-vertex families and the massive two-vertex correlator**: the exact differential equations,
+  the boundary coefficients and the numerically transported results are compared with the known
+  results of [arXiv:2411.03088](https://arxiv.org/abs/2411.03088), which are computed by an
+  independent multivariate hypergeometric construction.
+- **The massive three-vertex tree graph**: the reference data were produced by an agent program that
+  generalized the previously hand-written two-vertex code to three vertices along an independent
+  route. Its output was first verified against the published eight-branch result of
+  [arXiv:2309.10849](https://arxiv.org/abs/2309.10849) and only then used to check the package, so
+  neither the reference nor the package shares a derivation.
+- **IBP relations and differential equations**: these are compared with the `dSIBP` package (in
+  preparation, released in the same repository as this one,
+  [github.com/J7C/dSIBP-Packages](https://github.com/J7C/dSIBP-Packages)). `dSIBP` samples naive IBP
+  seeds and solves the resulting linear reduction system, whereas the present package applies the
+  general formulas derived in the handbook directly and never re-solves an IBP system, so the
+  agreement tests the closed formulas themselves.
 
 ## Current boundaries
 

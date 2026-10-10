@@ -2,7 +2,7 @@
 
 (***
 File: test_flintnde_massive_vertex.wls
-Purpose: Verifies the 2411 infinity boundary and FlintNDE transport of a single-massive external Hankel family under the positive nu prefactor.
+Purpose: Verifies the 2411.03088 infinity boundary and FlintNDE transport of a single-massive external Hankel family under the positive nu prefactor.
 Run: wolframscript -file package-MadStree/versions/MadStree-v0.17/test/test_flintnde_massive_vertex.wls
 ***)
 

@@ -2,7 +2,7 @@
 
 (***
 File: test_flintnde_massive_full_edge.wls
-Purpose: Verifies the four-state top of a theta-carrying massive full edge, the contact subsector, the 2411 infinity boundary and the FlintNDE transport.
+Purpose: Verifies the four-state top of a theta-carrying massive full edge, the contact subsector, the 2411.03088 infinity boundary and the FlintNDE transport.
 Run: wolframscript -file package-MadStree/versions/MadStree-v0.17/test/test_flintnde_massive_full_edge.wls
 ***)
 

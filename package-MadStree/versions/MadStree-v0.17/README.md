@@ -11,12 +11,17 @@ English version: [README_en.md](README_en.md)。
 
 ```text
 time power: (-tau)^A
-nu: |nu|
-h(nu,0;z): z^nu H_nu(z)
+nu: 原样作为 Hankel order，不取绝对值
+h(nu,0;z): z^(sNu nu) H_nu(z)
+formulaNu: sNu nu，缺省 sNu=+1
 NuConvention: "Positive"
 ```
 
-### 奇点用户点输出
+只使用函数名 `h`，且 `h(nu,0;z)=z^(sNu nu) H_nu(z)`：输入的 `nu` 原样作为 Hankel order，不取绝对值。基准公式写在 `sNu=+1` 的 `+nu` 形式上，公式中凡出现阶的位置统一读取 `formulaNu := sNu nu`。`NuConvention -> "Negative"` 选择 2401.00129 的负 prefactor convention，此时 `formulaNu=-nu`；两套公式的差别只是 `formulaNu` 换号，Hankel order 始终不变。
+
+`NuConvention` 只在 `MSInitTree` 初始化时选择。context 建立后，公式矩阵、递推、dlog 与全 sector H/h 换基都固定读取该值，不提供逐调用修改 convention 的入口。
+
+## 奇点用户点输出
 
 `MSEvaluatePath` 仍把最大连续复仿射段交给 FlintNDE。候选奇点只由该段完整解析 dlog DE
 拉回后的 exact 有理矩阵/letters 决定；变量名、坐标是否为 0、图名和顶点数都不参与判定。
@@ -25,10 +30,6 @@ NuConvention: "Positive"
 `singularityClassifications` 表中列出坐标、用户点序号、局部基阶数、分量分类和判定样本；
 该表与 `pointResults` 中的处理方式一一对应。分类与继续输运使用同一通用 FlintNDE 路线，
 不包含针对 `k0`、`k2=0` 或某个 topology 的生产分支。
-
-只使用函数名 `h`。`NuConvention -> "Negative"` 选择 2401.00129 的负 prefactor convention；两套公式由统一替换 `nu -> -nu` 联系。
-
-`NuConvention` 只在 `MSInitTree` 初始化时选择。context 建立后，公式矩阵、递推、dlog 与全 sector H/h 换基都固定读取该值，不提供逐调用修改 convention 的入口。
 
 ## 加载
 
@@ -227,7 +228,7 @@ vertexValue = MSEvaluatePath[
 ];
 ```
 
-这里 `First[ki]` 是附着外腿的无 theta 指数参数，`First[nui]` 是 `(-tau)` 的基准幂；其余位置一一给出 h block 的动量和 `nu=|nu|`。显式模型改用
+这里 `First[ki]` 是附着外腿的无 theta 指数参数，`First[nui]` 是 `(-tau)` 的基准幂；其余位置一一给出 h block 的动量和原样取用的 Hankel 阶 `nu`。显式模型改用
 `externalLegEnergy/timePower/hBlocks/exponentialBlocks/vertexType/normalization`，其中每个 h block
 给 `id/momentum/nu/hankelBranch`，每个额外指数 block 给 `id/momentum/exponentType`。这套初始化
 schema 与树图的 `vertices/lines` 不同，因为它定义的是单个顶点上的函数积而不是 incidence graph；
@@ -245,7 +246,7 @@ reduction = MSReduce[
 ];
 ```
 
-`MSReduce` 只处理固定初始化 context 内的合法 `MSIntegral[sectorKey,timeShifts,stateBits]`：`sectorKey` 必须属于 contact-reachable sector DAG，`timeShifts` 是该 sector 每个 component 的整数平移，`stateBits` 按 2401 的二进制顺序遍历该 sector 全部二维 slots。它可线性处理有限多个这样的对象，也可直接接受 `List`、规则 `Table`、空列表和 ragged 嵌套列表；返回的 `result`、逐元素 `coefficientVector/masterRules`、residual 和 remaining shifts 保持输入形状，并共享同一次调用的递归 memo。任一元素失败时会报告其精确位置。它不支持新增传播子幂、新离散指标、context 外 sector 或另一个函数族。约化沿 shift/contact DAG 递归到零 shift masters，并缓存重复子问题。标量返回的 `masterBasis`、`coefficientVector` 和 `masterRules` 严格同序；`result` 是显式主积分线性组合；`nonMasterResidual` 与 `remainingShiftedIntegrals` 必须同时为空才是完全约化。`MasterBasis` 可给 context 全部 masters 的任意排列，但缺项、重复或额外对象都会拒绝。`singularLayers` 逐步保存方向、分量和分母：正 shift 向零的 raising 只报告 `M0` energy letters，负 shift 向零的 lowering 只报告 `M1` 本征值。
+`MSReduce` 只处理固定初始化 context 内的合法 `MSIntegral[sectorKey,timeShifts,stateBits]`：`sectorKey` 必须属于 contact-reachable sector DAG，`timeShifts` 是该 sector 每个 component 的整数平移，`stateBits` 按 2401.00129 的二进制顺序遍历该 sector 全部二维 slots。它可线性处理有限多个这样的对象，也可直接接受 `List`、规则 `Table`、空列表和 ragged 嵌套列表；返回的 `result`、逐元素 `coefficientVector/masterRules`、residual 和 remaining shifts 保持输入形状，并共享同一次调用的递归 memo。任一元素失败时会报告其精确位置。它不支持新增传播子幂、新离散指标、context 外 sector 或另一个函数族。约化沿 shift/contact DAG 递归到零 shift masters，并缓存重复子问题。标量返回的 `masterBasis`、`coefficientVector` 和 `masterRules` 严格同序；`result` 是显式主积分线性组合；`nonMasterResidual` 与 `remainingShiftedIntegrals` 必须同时为空才是完全约化。`MasterBasis` 可给 context 全部 masters 的任意排列，但缺项、重复或额外对象都会拒绝。`singularLayers` 逐步保存方向、分量和分母：正 shift 向零的 raising 只报告 `M0` energy letters，负 shift 向零的 lowering 只报告 `M1` 本征值。
 
 初始化会用已知 h 两支小时间领头幂次，为每个 reachable component 保存时间-IBP 安全 shift
 下界。零 shift master 已命中 Gamma 非正整数时立即拒绝；正整数起点仍可初始化，但实际约化
@@ -342,6 +343,23 @@ MSExportEvaluationData[
 七个 examples 已在删除既有 `results/` 与 `results_temp/` 后从当前版本路径全部 fresh 运行并退出 `0`；
 Example 06 自适应检查为 `16/16`，使用 3 个生产点、2 个独立验证点，缺省请求 12 并按实际
 点数自动使用 5 个并行任务。
+
+## 开发与验证说明
+
+本程序包的记号、功能与对外接口由作者设计，[Documentation/tree_formula.pdf](Documentation/tree_formula.pdf)
+记录的推导亦由作者给出，实现由作者指导的多个大语言模型 agent 程序完成，每条公式都对照推导审阅过。
+可靠性由作者设计的验证任务确立；下面只列出交叉验证计算结果的任务及其参照数据来源。
+
+- **单顶点函数族与两顶点 massive 关联函数**：精确微分方程、边界系数与数值输运结果与
+  [arXiv:2411.03088](https://arxiv.org/abs/2411.03088) 的已知结果比较，后者由独立的多变量
+  超几何构造给出。
+- **三顶点 massive 树图**：参照数据由一个 agent 程序仅依据此前手写的两顶点代码，沿独立路线
+  推广到三顶点得到；其输出先与 [arXiv:2309.10849](https://arxiv.org/abs/2309.10849) 发表的
+  八分支结果核对通过，再用于检验本程序包，因此参照数据与本程序包不共享推导。
+- **IBP 关系与微分方程**：与 `dSIBP` 程序包（in preparation，与本包一同发布于
+  [github.com/J7C/dSIBP-Packages](https://github.com/J7C/dSIBP-Packages)）比较。`dSIBP` 采样
+  naive IBP 种子并求解所得线性约化系统，本程序包直接套用推导所得的通用公式、不再次求解 IBP，
+  因此一致性检验的是闭式公式本身。
 
 ## 当前边界
 
