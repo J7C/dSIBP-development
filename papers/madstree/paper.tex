@@ -95,10 +95,11 @@ underlying the package. We review the definition of the vertex integral family a
 \label{sec:ai-use}
 
 The notation, the functionality and the public interfaces of this package were designed by the
-authors, who also specified the derivation recorded in Sec.~\ref{sec:method} and audited every
-formula against it. The implementation was written under their direction by several agent programs
-driven by large language models. Its reliability rests on verification tasks that the authors
-designed; we list below the ones that cross-check computed results, together with the source of the
+authors, who also indicated the overall direction and the strategy of the derivation recorded in
+Sec.~\ref{sec:method}; the concrete derivation was then worked out by agent programs driven by
+large language models. The package was implemented by those same programs on the basis of the
+authors' guidance and of the derivation results above; to verify the reliability of the package,
+the authors designed the following verification tasks, listed together with the source of the
 reference data in each case.
 
 \begin{itemize}
@@ -106,11 +107,12 @@ reference data in each case.
         differential equations, the boundary coefficients and the numerically transported results
         are compared with the known results of \cite{Chen:2024glu}, which are computed by an
         independent multivariate hypergeometric construction.
-  \item \textbf{The massive three-vertex tree graph.} The reference data were produced by an agent
-        program that received only the previously hand-written two-vertex code and generalized it to
-        three vertices along an independent route. Its output was first checked against the
-        published eight-branch result of \cite{Xianyu:2023ytd}, and only then used to check the
-        package, so the reference and the package share no derivation.
+  \item \textbf{The massive three-vertex tree graph.} The package results are checked against two
+        independent sources at once: the output of an agent program that received only the
+        previously hand-written two-vertex code and generalized it to three vertices along its own
+        route, and the published eight-branch result of \cite{Xianyu:2023ytd}. The agent output was
+        itself first checked against that published result before being used as a reference, so the
+        package is validated both by independently generated code and by the published numbers.
   \item \textbf{IBP relations and differential equations.} These are compared with the
         \texttt{dSIBP} package \cite{dSIBP:inPreparation}, which is released in the same repository
         as this one, \url{https://github.com/J7C/dSIBP-Packages}. \texttt{dSIBP} samples naive IBP
@@ -849,8 +851,15 @@ strictly lower sector, never the reverse.
 \label{sec:boundary}
 The last ingredient is the boundary condition at the large-energy limit. The factor
 $e^{\ii p_{0,v}\tau_v}$ is suppressed when $k_{0,v}\to\infty$ after a Wick rotation, so in this
-limit only the region $\tau\to0$ contributes. In a $V$-vertex correlator there are $V$ exponential
-factors with energies $k_{0,v}$; assuming the ordering
+limit only the region $\tau\to0$ contributes. Taken at face value this is one multivariate limit in
+which all energies diverge together, and the point it approaches is in general a multivariate
+degenerate singularity of the differential equation: several singular divisors meet there, so a
+direct series expansion about that point is not legitimate. The expansion is made legitimate by
+blowing the point up first; the nested coordinates introduced below are exactly the blow-up charts
+that replace the degenerate point by a chain of one-energy limits. This continues the route taken
+in \cite{Chen:2024glu}, where the boundary condition of the multivariate hypergeometric system is
+fixed by the same resolution of its degenerate point. In a $V$-vertex correlator there are $V$
+exponential factors with energies $k_{0,v}$; assuming the ordering
 \begin{equation}
   k_{\sigma(1)}\gg k_{\sigma(2)}\gg\cdots\gg k_{\sigma(V)}\gg1,
   \label{eq:energy-rank}
@@ -932,7 +941,20 @@ two or more full lines whose endpoints lie on the same pair of current component
 them carry the identical theta argument $\Delta=\tau_u-\tau_v$; the package groups exactly such
 lines into a \emph{common-theta bundle} $\cB$, with $|\cB|\ge2$, and a time-order cycle is the
 typical source. This case is absent from \cite{Chen:2023iix}, where each contact is a single edge.
-The handling is best summarized in four steps, with the details in App.~\ref{app:theta}.
+Figure~\ref{fig:bundle} draws the minimal such graph: two vertices, no external lines, and four
+full lines that all join the same pair of vertices. The handling is best summarized in four steps,
+with the details in App.~\ref{app:theta}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.32\textwidth]{figures/fig_bundle.pdf}
+  \caption{A common-theta bundle of four full lines. The vertices $u$ and $v$ carry no external
+  lines, and every line $e_1,\ldots,e_4$ joins this same pair of vertices, hence the same pair of
+  current components at every stage of the reduction. All four lines therefore carry the identical
+  theta argument $\Delta=\tau_u-\tau_v$ and form one bundle $\cB$ with $|\cB|=4$. The outer two
+  lines are drawn as the halves of one circle and the inner two as vertical chords.}
+  \label{fig:bundle}
+\end{figure}
 
 Write the bundle as, per edge $e$, an ordered pair of endpoint products $\alpha_e$ (coefficient of
 $\theta(\Delta)$) and $\beta_e$ (coefficient of $\theta(-\Delta)$).
