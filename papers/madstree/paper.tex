@@ -1549,6 +1549,13 @@ and \texttt{MSReconstructEpSeries[context, ep, pointTemplate, MaximumEpPower -> 
 reconstructs the coefficients $c_{n_{\min}},\ldots,c_m$. The user supplies no
 $\varepsilon$ values; the lowest power is not a numerical fit parameter.
 
+This route follows the one used by \texttt{AMFlow} \cite{Liu:2022chg,Huang:2026rjb}. The transport
+is numerical, while the regulator dependence of the result has to stay analytic, and carrying that
+analytic dependence through every matrix multiplication of a long path would dominate the cost.
+Each sample is therefore solved purely numerically at a fixed value of $\varepsilon$, and the
+coefficients of \eqref{eq:regulator-laurent} are recovered afterwards from the final numbers of the
+whole set of runs, which is what keeps a multi-order expansion affordable.
+
 \paragraph{Certification of the lowest power.}
 Before any numerical solve at nonzero $\varepsilon$, MadStree constructs a support
 certificate from the symbolic boundary conditions and the d log-form DE of the production
