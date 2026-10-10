@@ -83,18 +83,18 @@ $J_s(\mathbf n;\mathbf a)$; the same three entries uniquely identify the bare in
 $I_s(\mathbf n;\mathbf a)$. `MSMasterIntegrals` directly reports the exact `normalization`
 and $J_s=\text{normalization}\,I_s$ for every master. Use
 `MSIntegralDefinition[MSIntegral[sectorKey,timeShifts,stateBits],context]` for one shifted integral.
-For a contracted massive Full line, this normalization contains its one contour factor: after
+For a contracted massive Full propagator, this normalization contains its one contour factor: after
 suppressing the common momentum power, a `++` child is `-4 I/Pi` and a `--` child is `+4 I/Pi`.
 This sign is not multiplied again into the dlog contact block.
-A two-state factor is either a massive endpoint or the quotient state shared by a whole massless Full edge; `MSSlotRegistry` gives their bit order. The $++/--$ h combinations are defined once in the manual and are not expanded in every record.
+A two-state factor is either the two-dimensional state of one vertex of a massive propagator, or the quotient state shared by a whole massless Full propagator; `MSSlotRegistry` gives their bit order. The $++/--$ h combinations are defined once in the manual and are not expanded in every record.
 
 `"vertexType" -> "+"|"-"` is the vertex's Schwinger--Keldysh contour branch and is
 required explicitly on every vertex. A propagator no longer accepts `skType`, `sigma`, or
-endpoint-sign input. Its Full/Cross/External class, contour label, overall sign, endpoint signs,
-and default Hankel branches are derived from the vertices listed in `"endpoints"`. Public line
-`"type"` accepts only `"massive"` or `"massless"`. Propagators have no public ID field; MadStree
-always assigns `1,2,...` internally in the exact `"lines"` input order. Only an explicit
-`thetaBundles` declaration refers to propagators through these position numbers.
+vertex-sign input. Its Full/Cross/External class, contour label, overall sign, the signs of
+its two vertices, and default Hankel branches are derived from the vertices listed in `"endpoints"`.
+The public `"type"` of a propagator accepts only `"massive"` or `"massless"`. Propagators have no
+public ID field; MadStree always assigns `1,2,...` internally in the exact `"lines"` input order.
+Only an explicit `thetaBundles` declaration refers to propagators through these position numbers.
 
 `"externalLegEnergy"` does not mean that a vertex itself carries an energy. It is the
 parameter of the theta-free external-leg exponential attached to the vertex.
@@ -190,19 +190,19 @@ Any multipoint transport through intermediate nodes is a jump; only a crossing o
 
 Generic entries never dispatch on graph ids, vertex counts, master counts or paper numerical points. They fail closed in a structured way only when the dlog is not closed, the rank/chart does not pass the normal-crossing certificate, the late-time exponents do not decay, the pullback system is not an exact regular singularity, or the target/anchor lies on a DE letter.
 
-When both endpoints lie on the same contour branch, a public `"massless"` line is internally
-derived as `masslessFull` and uniquely contributes one shared quotient two-state slot. The
-four-state endpoint product is used only to derive the quotient in the manual; it is neither a
-program input nor a second production representation. The current interface has no representation
-selection option.
+When both vertices of a propagator lie on the same contour branch, a public `"massless"`
+propagator is internally derived as `masslessFull` and uniquely contributes one quotient
+two-state slot shared by the whole propagator. The product of the four vertex states is used
+only to derive the quotient in the manual; it is neither a program input nor a second
+production representation. The current interface has no representation selection option.
 
-The `sectorKey` of every sector is a fixed-length string in the root `lines` order: `0` means the propagator is contracted and `1` means it is not; lines that cannot undergo contact shrink keep bit `1`. The top is the all-`1` string. Leading zeros are part of the identity and the key must never be treated as an integer. `context["sectorKeySchema"]` gives `rootLineOrder`, the width and the bit semantics; for example, contracting `{e1,e2,e4}` in `{e1,e2,e3,e4}` gives `"0010"`. The full identity of a master is `MSIntegral[sectorKey,timeShifts,stateBits]`, so different subsectors are never the same integral even if their local shifts/bits coincide. The `sectorIdentityCertificate` of `MSInitTree` checks at once the contraction sets, sector keys, full masters, global indices and an SHA-256 digest over the full master order; collisions reject initialization. The massless top-to-sub dlog contact atoms multiply by `(-1)^N` for the actual number of selected massless lines in the event; simultaneous contacts use no graph-specific symbol table.
+The `sectorKey` of every sector is a fixed-length string in the root `lines` order: `0` means the propagator is contracted and `1` means it is not; propagators that cannot undergo contact shrink keep bit `1`. The top is the all-`1` string. Leading zeros are part of the identity and the key must never be treated as an integer. `context["sectorKeySchema"]` gives `rootLineOrder`, the width and the bit semantics; for example, contracting `{e1,e2,e4}` in `{e1,e2,e3,e4}` gives `"0010"`. The full identity of a master is `MSIntegral[sectorKey,timeShifts,stateBits]`, so different subsectors are never the same integral even if their local shifts/bits coincide. The `sectorIdentityCertificate` of `MSInitTree` checks at once the contraction sets, sector keys, full masters, global indices and an SHA-256 digest over the full master order; collisions reject initialization. The massless top-to-sub dlog contact atoms multiply by `(-1)^N` for the actual number of massless propagators contracted in the event; simultaneous contacts use no graph-specific symbol table.
 
 `MSBoundaryChartCertificate[context,targetRules]` builds the nested blow-up `1/K[sigma[j]]=Product[x[r],{r,j,V}]` before the boundary computation, fixes all thetas sector by sector, and checks that the complete dlog letters, normalization, coordinate Jacobian and the new denominators from shifted contacts are coordinate monomials times a nonzero boundary unit. `RankOrder -> All` checks all root-time strict charts; `MSBoundaryData` returns `BoundaryChartNotCertified` when the certificate fails.
 
 ## Common theta and time-only cycles
 
-Full lines on the same current component pair automatically form a common-theta bundle. The program generates only nonempty odd-subset events with coefficient `2^(1-Length[selected])`; one event deletes the selected lines and merges the vertices exactly once. Sectors come from an event BFS, not the full-line power set. After merging, an unselected massless full line keeps only the even state, a massive full line uses the `10 -> 01` equal-time canonical form, and the raw tensor matrix is projected onto the true master space with the stored projection/embedding.
+Full propagators on the same current component pair automatically form a common-theta bundle. The program generates only nonempty odd-subset events with coefficient `2^(1-Length[selected])`; one event deletes the selected propagators and merges the vertices exactly once. Sectors come from an event BFS, not the power set of Full propagators. After merging, an unselected massless Full propagator keeps only the even state, a massive Full propagator uses the `10 -> 01` equal-time canonical form, and the raw tensor matrix is projected onto the true master space with the stored projection/embedding.
 
 Pure time-only cycles use the dedicated entry:
 
@@ -213,7 +213,7 @@ cycleContext = MSInitTimeGraph[<|
 |>];
 ```
 
-It allows only time integrals over fixed line momenta and neither reads nor generates loop momenta, ISPs, Landau or threshold data. Active self-loops no longer trigger contacts; multiple paths to the same vertex partition/contracted set are canonicalized to one sector.
+It allows only time integrals over fixed propagator momenta and neither reads nor generates loop momenta, ISPs, Landau or threshold data. Active self-loop propagators no longer trigger contacts; multiple paths to the same vertex partition/contracted set are canonicalized to one sector.
 
 ## Single-vertex function families
 
@@ -265,7 +265,7 @@ regulator leaves that parameter symbolic and permits the family to proceed.
 
 If the top-to-sub `R^(1)` lands on a child with a nonzero shift, `MSDLogDE` calls the same formula recurrence column by column, builds the reduction matrix from the shifted child to the global ordered masters, and right-composes it with the contact block. Each contact block keeps `shiftReductionRecords`, the residual, remaining shifts and singular layers; if any column does not close, the dlog status is `contactShiftReductionFailed` and no falsely closed connection is emitted.
 
-The formula layer never constructs a generic large matrix inverse. The fixed `sigma2` of a massive endpoint uses the paper's `2x2` transform and its explicit inverse, while the fixed `sigma1` of a massless shared quotient slot uses the self-inverse Hadamard; an all-sector matrix is only the Kronecker product of these local matrices. `M1` takes reciprocals of diagonal entries in the state-bit basis and `M0` takes reciprocals letter by letter in the corresponding local tensor basis. If a future slot contains multiple components that cannot be diagonalized by the same local transform, this fast path must fail closed.
+The formula layer never constructs a generic large matrix inverse. The fixed `sigma2` of the two-dimensional state at one vertex of a massive propagator uses the paper's `2x2` transform and its explicit inverse, while the fixed `sigma1` of the quotient slot shared by a whole massless Full propagator uses the self-inverse Hadamard; an all-sector matrix is only the Kronecker product of these local matrices. `M1` takes reciprocals of diagonal entries in the state-bit basis and `M0` takes reciprocals letter by letter in the corresponding local tensor basis. If a future slot contains multiple components that cannot be diagonalized by the same local transform, this fast path must fail closed.
 
 The public H/Hankel-state to h-state transforms are `MSHTohMatrix`, `MShToHMatrix` and `MSConvertBasis`. Local and all-sector state vectors read the fixed `NuConvention` of the context; an already integrated `MSIntegral` also involves base time powers and is rejected explicitly when it cannot be recovered uniquely.
 

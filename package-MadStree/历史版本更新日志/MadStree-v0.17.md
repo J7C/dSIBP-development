@@ -5,11 +5,11 @@
 ## 修复
 
 - `MSBoundaryData` 删除 massive contact 深度的重复因子 `I^n`。`sector["normalization"]`、
-  Hankel endpoint coefficient 和 component 定义积分已经给出完整相位；旧实现会让 single
+  Hankel 顶点系数和 component 定义积分已经给出完整相位；旧实现会让 single
   pinch 多 `I`、double pinch 多 `-1`。
 - massive child normalization 删除重复的 `Exp[Pi Im[formulaNu]]`。该因子属于论文的共轭阶
-  endpoint basis；MadStree 用共同 Hankel 阶表示两个端点，换基恒等式已经吸收该因子。
-- massive Full line 收缩后的 sector/master normalization 补回其唯一需要的 `fullContourSign`：
+  顶点 basis；MadStree 用共同 Hankel 阶表示两个顶点，换基恒等式已经吸收该因子。
+- massive Full 传播子收缩后的 sector/master normalization 补回其唯一需要的 `fullContourSign`：
   省略共同动量幂时，`++` child 为 `-4 I/Pi`，`--` child 为 `+4 I/Pi`。该符号只定义
   `J_s=calN_s I_s`，不进入 normalized-master DE 或 recurrence event。
 - contact recurrence 与 dlog DE 物理删除 pure-massive event 的额外 contour sign；轮廓信息只从
@@ -26,7 +26,7 @@
 - 中英文手册按 2411.03088 Eq. (4.2) 的定义积分使用
   `(-I)^(p+1) Gamma[p+1]`。
 - 论文印刷 Eq. (4.11) 相对这个直接积分多一个 `I`；该差异只作为独立诊断，不写入生产边界。
-- Eq. (4.2) 中的 `Exp[Pi Im[nu]]` 在论文 endpoint basis 中不是勘误；只有在转到 MadStree
+- Eq. (4.2) 中的 `Exp[Pi Im[nu]]` 在论文顶点 basis 中不是勘误；只有在转到 MadStree
   共同 Hankel 阶 basis 后再次保留它才是重复 normalization。
 
 ## 独立验证
@@ -48,7 +48,7 @@
 
 ## 接口与迁移
 
-- massless Full line 现在只保留 shared two-state quotient。旧四态 endpoint 表示、
+- massless Full 传播子现在只保留 shared two-state quotient。旧四态顶点表示、
   `masslessRepresentation` 输入、专用 slot、normalization、adapter 和测试均已物理删除；不提供
   兼容入口或定向拒绝。
 - `MSReduce` 新增 List/Table/空列表/ragged 嵌套输入，保持逐元素输出形状并共享递归 memo。

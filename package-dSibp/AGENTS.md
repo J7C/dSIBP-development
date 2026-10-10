@@ -41,7 +41,7 @@
   `init/`、`kira/`、database、save、日志、reduction table、cache、DE 运行目录或本机绝对路径。
   README 必须明确说明外置运行边界和发布前已删除的中间产物。
 - 每个发布版本必须维护 `independent-benchmark/package/examples/coverage_manifest.wl`：列出全部需要用户掌握的公开函数及其成品 example；正式检查必须与 package 的 `DSPublicAPI[]` 比较并验证源码调用覆盖，缺项不得发布。
-- 三个典型成品 example 长期保留且不得由全 family 变体取代：`03_single_massive_sunrise/` 是唯一 sunrise example，固定三平行边、单 massive line 和 ISP，只生成 general seeds 与 general 参数微分算符，禁止撒点、`linearData`、Kira、DE 和 scaling；`04_pure_massive_bubble_closed_loop/` 保留 dlog basis、既有 reference 对照及从初始化到 19-master DE/scaling 的完整闭环；`06_mix_bubble_tree/` 固定一条 massive cycle line，其余 cycle/bridge lines massless，覆盖 `kL/kE`、无圈参量、massless convention、cycle/bridge contraction 及对应 81-master Kira/DE 结果摘要。清理 smoke/check 时不得删除、降格或移出 examples。
+- 三个典型成品 example 长期保留且不得由全 family 变体取代：`03_single_massive_sunrise/` 是唯一 sunrise example，固定三条平行传播子、单条 massive 传播子和 ISP，只生成 general seeds 与 general 参数微分算符，禁止撒点、`linearData`、Kira、DE 和 scaling；`04_pure_massive_bubble_closed_loop/` 保留 dlog basis、既有 reference 对照及从初始化到 19-master DE/scaling 的完整闭环；`06_mix_bubble_tree/` 固定一条 massive cycle 传播子，其余 cycle/bridge 传播子 massless，覆盖 `kL/kE`、无圈参量、massless convention、cycle/bridge contraction 及对应 81-master Kira/DE 结果摘要。清理 smoke/check 时不得删除、降格或移出 examples。
 - `000-report/` 是本项目唯一的独立检验报告归档目录；除目录说明 `README.md` 外，不在其它项目目录散放报告。
 
 新建、移动、清理程序目录时遵守 `program-directory-layout` skill：正式可复用结果进 `results/`，临时测试进 `test/results_test/`，可重跑中间产物进 `results_temp/`；不得误删用户未提交改动。
@@ -88,19 +88,19 @@
 - 加减号和复合方向必须保留精确系数。整体反号的无圈动量模长可 canonical 成同一对象，但 `p_1+p_2` 与 `p_1-p_2` 不得合并；实际模长只生成 `sE1,sE2,...` 或 dependent binding，不主动输出外腿交叉点积。
 - 缺省公开 loop 坐标为 `ssij=Sqrt[sp[p_i,p_j]]`，内部原子仍为 `kk[i,j]`。编号只依赖显式输入列表顺序；任一类别总数超过 9 时按总数位宽补零。自定义名称只通过现行 `KinematicRules` 或 `DSRedefineParameters` 给出。
 - 动量列表或动力学规则欠完备时必须红色报错，返回缺失方向/零空间表达式并拒绝初始化；所有下游入口读取 capability gate。过完备时 warning 后允许 symbolic IBP，但 `ds/DSDE` 与唯一反变换必须关闭。
-- root topology 决定圈数、loop space 与 cycle/bridge line-power schema；contact/shrink sector 必须继承这些 metadata，只改变端点代表、pack 状态、零点和对称性，不得重新降圈。
+- root topology 决定圈数、loop space 与 cycle/bridge 传播子幂次 schema；contact/shrink sector 必须继承这些 metadata，只改变顶点代表、pack 状态、零点和对称性，不得重新降圈。
 - 根号坐标求导必须通过链式法则复用平方不变量原子导数：`d/dssij=2 ssij d/d(sp[ki,kj])`；不得复制或重写一套 loop 外动量导数实现。现行自定义规则直接写 `sp[ki,kj]->sij` 时保持单位 Jacobian。
 - MMA 在预先声明的合理 seed envelope 内生成并导出完整 canonical IBP 方程，不做 target-directed relation/incidence/frontier 筛选；Kira 通过 `select_mandatory_list` 限定 targets 并自行选择方程。初次 probe 按预估 master 规模使用有界候选范围，未有更具体依据时取自然排序前约 1000 项。
 - 确认 active basis 后先检查首次 Kira reduction table；不论导数积分原先是否被显式列为 mandatory
   target，只要首轮已有完整左端规则且 RHS 闭合到冻结 active masters，就必须直接复用。只有无规则
   或未闭合的导数积分才允许组成追加 targets；追加运行仍使用同一完整关系集，不在 MMA 侧另筛关系。
-- 任何进入 Kira reduction 的 family 都必须先实数化。实数化的固定动作是：从 topology/line 的 phase-dependency metadata 结构性识别每个 massless propagator 动量原子 `k`，定义单个实 backend 变量 `ik` 并执行 `k -> -I ik`，不得按符号名猜测；再用可逆积分相位变换消除剩余整体虚相位。`ibp.kira` 出现 `I`、`dsii` 或其它虚数替代 token 时必须拒绝导出；该 convention 只限 Kira 内部，import 后恢复物理变量和导数 Jacobian。实现与检查直接参考已经完成的 massive bubble 路线，不重新构造另一套 convention。
+- 任何进入 Kira reduction 的 family 都必须先实数化。实数化的固定动作是：从 topology 的顶点与传播子 phase-dependency metadata 结构性识别每个 massless propagator 动量原子 `k`，定义单个实 backend 变量 `ik` 并执行 `k -> -I ik`，不得按符号名猜测；再用可逆积分相位变换消除剩余整体虚相位。`ibp.kira` 出现 `I`、`dsii` 或其它虚数替代 token 时必须拒绝导出；该 convention 只限 Kira 内部，import 后恢复物理变量和导数 Jacobian。实现与检查直接参考已经完成的 massive bubble 路线，不重新构造另一套 convention。
 
 ## Mathematica 实现约定
 
 - 原始替换规则命名为 `rep****0`，可直接用于 `/.`；函数形式命名为 `rep****[expr_]`。
 - 函数名表达物理或数学含义，不用数字编号区分不同物理操作。
-- 拓扑性质、奇偶筛选、线数和顶点数必须参数化，不在通用函数中硬编码特定 topology。
+- 拓扑性质、奇偶筛选、传播子数和顶点数必须参数化，不在通用函数中硬编码特定 topology。
 - 优先用 `//` 展示清晰的数据流；按“定义与初始化、物理规则、生成与导出”等逻辑功能组织章节。
 - 注释说明原因、约定来源或非显然边界，不复述代码动作。
 - 不为各 sector 复制实现，不建立与 `J` 并行的积分 Head。

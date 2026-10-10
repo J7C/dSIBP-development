@@ -14,10 +14,10 @@
   Python 进程内完成边界初始化、可选路径规划、输运和多点求值。
 - 拓扑接口：顶点用 `"vertexType" -> "+"|"-"` 指定轮廓支并以
   `"externalLegEnergy"` 给出外腿指数参数；传播子只输入
-  `"type" -> "massive"|"massless"`，内部 SK 分类完全由端点派生。
+  `"type" -> "massive"|"massless"`，内部 SK 分类完全由该传播子所连接的顶点派生。
 - 兼容策略：v0.17 不读取、不转发也不保留旧 `energy`、`phaseSign`、`skType`、`sigma`、
-  `phaseSigns`；它们作为额外键出现时被忽略，不能替代必需字段或覆盖端点派生值。六种带
-  Full/Cross/External 后缀的旧公开线型因非法 `type` 取值失败。
+  `phaseSigns`；它们作为额外键出现时被忽略，不能替代必需字段或覆盖由顶点派生的值。六种带
+  Full/Cross/External 后缀的旧公开传播子类型因非法 `type` 取值失败。
 
 ## 工作树保留
 

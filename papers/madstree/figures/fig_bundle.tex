@@ -6,22 +6,22 @@
 \begin{document}
 \begin{tikzpicture}[line width=0.9pt]
   % The two vertices of the bundle, sitting at the two ends of one horizontal
-  % chord; neither of them carries an external line.
+  % chord; neither of them carries an external leg.
   \coordinate (U) at (-1.8,0);
   \coordinate (V) at ( 1.8,0);
-  % Outer two lines: the upper and the lower half of one circle of radius 1.8.
+  % Outer two propagators: the upper and the lower half of one circle of radius 1.8.
   \draw (U) arc [start angle=180, end angle=0,   radius=1.8]
         node[midway, fill=white, inner sep=1.6pt] {$e_1$};
   \draw (U) arc [start angle=180, end angle=360, radius=1.8]
         node[midway, fill=white, inner sep=1.6pt] {$e_4$};
-  % Inner two lines: flatter arcs joining the same pair of vertices, pushed far
+  % Inner two propagators: flatter arcs joining the same pair of vertices, pushed far
   % enough apart to leave the middle of the figure free for the vertical dots.
   \draw (U) to[bend left=55]
         node[midway, fill=white, inner sep=1.6pt] {$e_2$} (V);
   \draw (U) to[bend right=55]
         node[midway, fill=white, inner sep=1.6pt] {$e_3$} (V);
-  % Vertical dots between the inner two lines: any number of further lines may
-  % be sandwiched between them, all carrying the same theta argument.
+  % Vertical dots between the inner two propagators: any number of further propagators
+  % may be sandwiched between them, all carrying the same theta argument.
   \node[scale=1.5] at (0,0) {$\vdots$};
   % Vertices.
   \fill (U) circle (2.6pt);

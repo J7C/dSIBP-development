@@ -67,7 +67,7 @@ reference；额外乘 `Exp[Pi Im[nu]]` 的路线只作必须失败的反事实�
 
 主算法只组装局部矩阵、Kronecker 嵌入、contact 映射和 sector DAG，不生成一般 IBP 方程组，也不调用 Kira 或其它 reduction 后端。
 
-边界条件与 blow-up 层按任意有限 time-variable graph 设计，不依赖传播子 incidence graph 无圈。`MSInitTree` 保留树输入门禁，`MSInitTimeGraph` 已开放“空间动量保持为参数、只计算所有 time integrals”的圈图，并完成 cyclic topology、重复 contact partition 与 active self-edge canonicalization。若还要积分 loop momentum，则其 Landau/阈值奇点不在本边界定理内。
+边界条件与 blow-up 层按任意有限 time-variable graph 设计，不依赖传播子 incidence graph 无圈。`MSInitTree` 保留树输入门禁，`MSInitTimeGraph` 已开放“空间动量保持为参数、只计算所有 time integrals”的圈图，并完成 cyclic topology、重复 contact partition 与 active 自环传播子的 canonicalization。若还要积分 loop momentum，则其 Landau/阈值奇点不在本边界定理内。
 
 本项目复用 `dSIBP`` 的物理 convention 和输入语义，但不读取其 loop momentum、ISP、scalar-product closure、general seed、`linearData` 或 backend metadata。MadStree 的公式、约化与 dlog 实现均由本包当前模块提供。
 
@@ -80,10 +80,10 @@ reference；额外乘 `Exp[Pi Im[nu]]` 的路线只作必须失败的反事实�
 - 输入的 `nu` 原样作为 Hankel order（实数、纯虚 `I mu` 或复数均可），任何一层公式与程序都不对 `nu` 取绝对值或取实部；只使用一个函数名 `h`：`h(nu,0;z)=z^(sNu nu) H_nu(z)`。`NuConvention -> "Positive"` 是缺省并令 `sNu=+1`；`"Negative"` 令 `sNu=-1`，即 2401.00129 的 prefactor convention。正负只标记 prefactor convention，不写在函数名上。
 - 基准公式一律写在 `sNu=+1` 的 `+nu` 形式上；公式中凡出现阶的位置统一读取 `formulaNu := sNu nu`。因此两套 convention 的 EOM、Wronskian、`M1`、contact 幂次、递推和 dlog 公式只差 `formulaNu -> -formulaNu`。与 2401.00129 印刷式逐字对照时，把其中的同名参数记作 `nu_ref=-nu`，即 `formulaNu=nu_ref`；这只是 `sNu` 换号的代数后果，不改变程序存储的 Hankel 阶。
 - massless 指数核的公开输入是 `nu=1/2`；缺省正 prefactor 下内部 `formulaNu=+1/2`，所以基准式中的 `1-2 formulaNu=0`。
-- 内部派生类型 `masslessFull` 不是外腿指数，并且唯一使用由两个端点四态 quotient 得到的整条边共享二维 slot。四态空间只用于推导，不是公开输入或生产表示。
-- 默认 package quotient 中，有序边 `e=(u,v)` 的 regular generator 为
+- 内部派生类型 `masslessFull` 不是外腿指数，并且唯一使用由两个顶点的四态 quotient 得到的整条传播子共享二维 slot。两个顶点各自的二维态构成的四态空间只用于推导，不是公开输入或生产表示。
+- 默认 package quotient 中，有序传播子 `e=(u,v)` 的 regular generator 为
   `Q[u,e]=+I sigma[e] q[e] sigma1`、`Q[v,e]=-I sigma[e] q[e] sigma1`，contact 权重为 `-2`、`+2`。
-- 内部派生类型 `masslessCross`/`masslessExternal` 不含 theta，不产生共享 full-edge contact slot；其端点符号由传播子连接的顶点 `vertexType` 唯一推导并保存为内部 metadata。
+- 内部派生类型 `masslessCross`/`masslessExternal` 不含 theta，不产生整条 Full 传播子共享的 contact slot；其顶点符号由该传播子所连接的顶点 `vertexType` 唯一推导并保存为内部 metadata。
 
 ### 2.2 原生积分
 
@@ -98,7 +98,7 @@ MSIntegral[sectorKey, aShifts, stateBits]
 - `stateBits` 按该 sector 的全图 slot registry 排列；
 - 每个主积分均取 `aShifts == 0`，所有二进制状态按同一 bit 顺序遍历。
 
-dSIBP 020 的 time-only `J[sectorKey,timeShifts,stateBits]` 只通过显式 adapter 输入/输出；它与 `MSIntegral` 三个槽逐项对应，`stateBits` 是全 sector registry 的离散 `n_i` 态而不是按顶点 pack。该映射要求两边 context 的 sector normalization 已统一；adapter 不把 normalization 乘入积分表达式。MadStree 内部不携带 `b`、ISP 或 root-line 三槽占位结构，也不再构造 019 的 `J[aList,linePacks,{}]`。
+dSIBP 020 的 time-only `J[sectorKey,timeShifts,stateBits]` 只通过显式 adapter 输入/输出；它与 `MSIntegral` 三个槽逐项对应，`stateBits` 是全 sector registry 的离散 `n_i` 态而不是按顶点 pack。该映射要求两边 context 的 sector normalization 已统一；adapter 不把 normalization 乘入积分表达式。MadStree 内部不携带 `b`、ISP 或 root 传播子的三槽占位结构，也不再构造 019 的 `J[aList,linePacks,{}]`。
 
 当前读取合同沿用现有完整记号 `J_s(n;a)=MSIntegral[s,n,a]`，并补足
 `J_s(n;a)=calN_s I_s(n;a)`；`calN_s` 只表示 normalization，二态因子数量改记为
@@ -111,23 +111,23 @@ dSIBP 020 的 time-only `J[sectorKey,timeShifts,stateBits]` 只通过显式 adap
 初始化入口为 `MSInitTree[spec]`。最小 `spec` 包含：
 
 - `vertices`：有序 vertex id、顶点所附外腿无 theta 指数参数 `externalLegEnergy`、root time base power，以及必填的轮廓支 `vertexType="+"|"-"`；`externalLegEnergy` 不是顶点自身能量；`+` 支给 `Exp[-I externalLegEnergy tau]`，`-` 支给 `Exp[+I externalLegEnergy tau]`；
-- `lines`：两个有序端点或单端点、公开类型 `type="massive"|"massless"`、用户命名的模长、非负 `nu` 及可选 normalization/contact 数据；公开接口不定义 line id，内部始终按输入位置编号；
-- 可选 `thetaBundles`：每项以 `lines` 输入位置给出共享同一 root theta argument 的传播子编号；未显式给出的 full lines 按当前相同端点自动成 bundle，事件由非空奇数子集自动生成；
+- `lines`：该传播子的两个有序顶点或单个顶点、公开类型 `type="massive"|"massless"`、用户命名的模长、非负 `nu` 及可选 normalization/contact 数据；公开接口不定义传播子 ID，内部始终按输入位置编号；
+- 可选 `thetaBundles`：每项以 `lines` 输入位置给出共享同一 root theta argument 的传播子编号；未显式给出的 Full 传播子按当前相同的两个顶点自动成 bundle，事件由非空奇数子集自动生成；
 - 可选 `normalization`：root/sector normalization 规则；缺省为 1。
 
-公开输入不接受 `skType`、`sigma`、`phaseSigns`，也不接受下列内部类型。程序按有序端点对应的 `vertexType` 唯一派生：
+公开输入不接受 `skType`、`sigma`、`phaseSigns`，也不接受下列内部类型。程序按有序顶点对应的 `vertexType` 唯一派生：
 
-- 相同支的双端点线派生为 `massiveFull` 或 `masslessFull`；`++` 的内部整体符号为 `+1`，`--` 为 `-1`；
-- 不同支的双端点线派生为 `massiveCross` 或 `masslessCross`，端点次序确定 `+-` 或 `-+`；
-- 单端点线派生为 `massiveExternal` 或 `masslessExternal`，唯一端点确定 `+` 或 `-`；
-- `massiveFull` 有两个独立 endpoint h slots 且可 contact；`masslessFull` 唯一使用整条边共享的二维 quotient slot；
-- Cross 类型不 contact，External 类型只有一个端点。
+- 连接两个同支顶点的传播子派生为 `massiveFull` 或 `masslessFull`；`++` 的内部整体符号为 `+1`，`--` 为 `-1`；
+- 连接两个异支顶点的传播子派生为 `massiveCross` 或 `masslessCross`，两个顶点的先后次序确定 `+-` 或 `-+`；
+- 只挂在一个顶点上的传播子派生为 `massiveExternal` 或 `masslessExternal`，该唯一顶点确定 `+` 或 `-`；
+- `massiveFull` 在两个顶点各有一个独立的二维 h slot 且可 contact；`masslessFull` 唯一使用整条传播子共享的二维 quotient slot；
+- Cross 类型不 contact，External 类型只有一个顶点。
 
 `massiveFull` 收缩后的物理 child master normalization 含一次上述内部整体符号：省略共同动量幂时，
 `++` 为 `-4 I/Pi`，`--` 为 `+4 I/Pi`。该符号只属于 `J_s=calN_s I_s` 的 sector/master
 normalization；normalized-master dlog contact block 和 recurrence event 不再重复乘它。
 
-输入检查只覆盖公式真正依赖的边界：树入口必须为 connected tree，time-only 入口允许 connected cycle；每个顶点显式给出合法 `vertexType`；端点存在；公开 line type 只能是 `massive` 或 `massless`；显式 bundle 只能引用内部派生的 Full lines 且必须共享 theta argument；每个二维 massive slot 有 Hankel 阶 `nu`（原样取用，可以是实数、纯虚或复数，程序不取绝对值）和动量模长；每个 contact event 有确定 odd-subset 系数与时间幂贡献。Association 键顺序任意，额外字段忽略；旧字段不能替代必需字段或覆盖派生值，旧六类公开 line type 仍因非法取值失败。
+输入检查只覆盖公式真正依赖的边界：树入口必须为 connected tree，time-only 入口允许 connected cycle；每个顶点显式给出合法 `vertexType`；每条传播子所指顶点必须存在；公开传播子 type 只能是 `massive` 或 `massless`；显式 bundle 只能引用内部派生的 Full 传播子且必须共享 theta argument；每个二维 massive slot 有 Hankel 阶 `nu`（原样取用，可以是实数、纯虚或复数，程序不取绝对值）和动量模长；每个 contact event 有确定 odd-subset 系数与时间幂贡献。Association 键顺序任意，额外字段忽略；旧字段不能替代必需字段或覆盖派生值，旧六类公开传播子 type 仍因非法取值失败。
 
 ### 3.1 单顶点函数族专用输入
 
@@ -141,18 +141,18 @@ MSInitVertexFamily[<|
 |>, NuConvention -> "Positive"]
 ```
 
-要求 `Length[ki]==Length[nui]`，`hankelBranches` 的长度比它们少一。紧凑模型只使用 `ki`、`nui`、`hankelBranches`、`exponentialBlocks`、`vertexType` 和 `normalization`；其中首个 `ki/nui` 元素给出顶点所附外腿指数参数和基准 `(-tau)` 幂，其余三元组定义 h blocks。显式模型只使用 `externalLegEnergy`、`timePower`、`hBlocks`、`exponentialBlocks`、`vertexType` 和 `normalization`。h block 的字段为 `id/momentum/nu/hankelBranch`，附加指数 block 的字段为 `id/momentum/exponentType`；`vertexType` 表示顶点轮廓支，`exponentType` 只表示相应附加指数自身的正负。每个模型及嵌套 block 都拒绝多余字段。每个纯指数 block 保存为 `1x1` metadata 并只平移 effective external-leg energy；每个 h block 是一个 `2x2` massive endpoint slot。专用初始化内部复用同一 sector、master、矩阵、递推、dlog 和边界 producer；数值计算统一使用 `MSEvaluatePath`。
+要求 `Length[ki]==Length[nui]`，`hankelBranches` 的长度比它们少一。紧凑模型只使用 `ki`、`nui`、`hankelBranches`、`exponentialBlocks`、`vertexType` 和 `normalization`；其中首个 `ki/nui` 元素给出顶点所附外腿指数参数和基准 `(-tau)` 幂，其余三元组定义 h blocks。显式模型只使用 `externalLegEnergy`、`timePower`、`hBlocks`、`exponentialBlocks`、`vertexType` 和 `normalization`。h block 的字段为 `id/momentum/nu/hankelBranch`，附加指数 block 的字段为 `id/momentum/exponentType`；`vertexType` 表示顶点轮廓支，`exponentType` 只表示相应附加指数自身的正负。每个模型及嵌套 block 都拒绝多余字段。每个纯指数 block 保存为 `1x1` metadata 并只平移 effective external-leg energy；每个 h block 是一个 `2x2` massive 顶点态 slot。专用初始化内部复用同一 sector、master、矩阵、递推、dlog 和边界 producer；数值计算统一使用 `MSEvaluatePath`。
 
 ## 4. Sector DAG 与幂次基准
 
 ### 4.1 Sector identity
 
-sector 由已收缩 full edges 的 canonical 集合确定。收缩后顶点是 root vertices 在 contracted-edge forest 下的连通分量；分量按其最小 root vertex 位置排序。sector 顺序固定为：剩余 full edge 多者在前，再按 contracted line position 的字典序排列。
+sector 由已收缩 Full 传播子的 canonical 集合确定。收缩后的 component 是 root vertices 按已收缩传播子的连通森林合并出的连通分量；分量按其最小 root vertex 位置排序。sector 顺序固定为：剩余 Full 传播子多者在前，再按被收缩传播子的输入位置字典序排列。
 
 每个 sector 保存：
 
 - `vertexComponents`、`vertexOrder`、`rootToComponent`；
-- active lines、active slots、slot order 和维数；
+- active 传播子、active slots、slot order 和维数；
 - 每个 component 的 external energy 和 master base time power；
 - parent/child contact events；
 - normalization、normalization ratio 和 dlog 认证状态。
@@ -177,9 +177,9 @@ A_child = A_u + A_v + lambda_e + 1.
 a_child = a_u + a_v - 1.
 ```
 
-于是 parent 的 `R^(0)` 落到 child shift `-1`，而任一端点 IBP 的 `R^(1)` 恰好落到 child shift `0`。参考 bubble 中 raw contact 的 `a1+a2-2 nu-1` 与 subsector 基准 `a0R=2 a0-2 nu` 正是这一规则。
+于是 parent 的 `R^(0)` 落到 child shift `-1`，而任一顶点 IBP 的 `R^(1)` 恰好落到 child shift `0`。参考 bubble 中 raw contact 的 `a1+a2-2 nu-1` 与 subsector 基准 `a0R=2 a0-2 nu` 正是这一规则。
 
-对于普通树图的逐边 contact，任一 contracted component `C` 的 master base 因而是
+对于普通树图逐条传播子的 contact，任一 contracted component `C` 的 master base 因而是
 
 ```text
 Sum[rootBasePower[v], v in C]
@@ -189,34 +189,34 @@ Sum[rootBasePower[v], v in C]
 
 该式与收缩顺序无关。
 
-### 4.3 共同 theta / 多边 contact
+### 4.3 共同 theta / 同时收缩多条传播子的 contact
 
-一次 event 同时收缩多边而只产生一个 delta 时，不能机械地给每条边各加 1。初始化必须解 event 约束
+一次 event 同时收缩多条传播子而只产生一个 delta 时，不能机械地给每条传播子各加 1。初始化必须解 event 约束
 
 ```text
 A_target(newComponent)
 = Sum[A_source(component)] + lambda_event + 1.
 ```
 
-共同 bundle 使用 `Product[A]-Product[B]` 的非空奇数子集展开；子集 $S$ 的系数为 `2^(1-Length[S])`。奇偶性的来源是：同一 bundle 的所有 full line 共享一个 theta 宗量，`theta^2=theta`、`theta(Delta)theta(-Delta)=0`，故乘开后只有两项；一次求导只给一个 delta，其系数正是 `A<->B` 的反对称差 `Product[A]-Product[B]`。该差裂项后每项恰含一个 `D_e=A_e-B_e`，而 `D_e` 在 `A<->B` 下变号、`J_e=(A_e+B_e)/2` 不变号，所以只有含奇数个 `D` 的项存活，空集与偶数子集的系数 `1-(-1)^Length[S]` 为零。一个 event 只把两个当前 components 合并一次，因此最终 component 内真正的合并次数恒为 `Length[C]-1`，上述 base power 只依赖最终 partition 与 contracted set。sector 由 event BFS 枚举；active self-edge 不再触发 contact，多条合法路径 canonical 到同一 key。
+共同 bundle 使用 `Product[A]-Product[B]` 的非空奇数子集展开；子集 $S$ 的系数为 `2^(1-Length[S])`。奇偶性的来源是：同一 bundle 的所有 Full 传播子共享一个 theta 宗量，`theta^2=theta`、`theta(Delta)theta(-Delta)=0`，故乘开后只有两项；一次求导只给一个 delta，其系数正是 `A<->B` 的反对称差 `Product[A]-Product[B]`。该差裂项后每项恰含一个 `D_e=A_e-B_e`，而 `D_e` 在 `A<->B` 下变号、`J_e=(A_e+B_e)/2` 不变号，所以只有含奇数个 `D` 的项存活，空集与偶数子集的系数 `1-(-1)^Length[S]` 为零。一个 event 只把两个当前 components 合并一次，因此最终 component 内真正的合并次数恒为 `Length[C]-1`，上述 base power 只依赖最终 partition 与 contracted set。sector 由 event BFS 枚举；active 的自环传播子不再触发 contact，多条合法收缩路径 canonical 到同一 key。
 
-合并后未选的 coincident massless full line 删除 odd shared state；coincident massive full line把 `10` canonical 到 `01`。每个 sector 保存 raw state order、canonical state order、embedding `S` 和 projection `P`，并要求 `P.S==IdentityMatrix[masterCount]`。
+合并后未选的 coincident massless Full 传播子删除 odd shared state；coincident massive Full 传播子把 `10` canonical 到 `01`。每个 sector 保存 raw state order、canonical state order、embedding `S` 和 projection `P`，并要求 `P.S==IdentityMatrix[masterCount]`。
 
 ## 5. Slot registry、basis 与主积分
 
 初始化先建立全图 slot registry，再由每个 sector 过滤 active slots。slot 只有两类：
 
-1. 每个 massive endpoint h system 一个二维 `massiveEndpoint` slot；
-2. 每条未缩并 `masslessFull` 由 massless relations quotient 成唯一的共享二维 `masslessShared` slot。
+1. 每个 massive 顶点的二维 h system 一个 `massiveEndpoint` slot；
+2. 每条未缩并的 `masslessFull` 传播子由 massless relations quotient 成唯一的共享二维 `masslessShared` slot。
 
-不带 theta 的指数不建立 slot：每个顶点只有一个 `externalLegEnergy`，即手册 `eq:phase-exponent-block` 的 $k_{0,v}$，其取值是附着在该顶点的各条外腿动量模长之和；massless cross/external 分支的端点动量按该端点 contour sign 一并合入所在 component 的 signed energy，见手册 `eq:component-energy`。矩阵层只消费这一个标量，因此 `dim V_s = 2^slotCount` 与指数参数个数无关。`MSInitVertexFamily` 的 `exponentialBlocks` 只是输入层写法，初始化时即按字面 `exponentType` 符号并入 effective external-leg energy，其后不再有独立编号。
+不带 theta 的指数不建立 slot：每个顶点只有一个 `externalLegEnergy`，即手册 `eq:phase-exponent-block` 的 $k_{0,v}$，其取值是附着在该顶点的各条外腿动量模长之和；massless cross/external 分支的顶点动量按该顶点 contour sign 一并合入所在 component 的 signed energy，见手册 `eq:component-energy`。矩阵层只消费这一个标量，因此 `dim V_s = 2^slotCount` 与指数参数个数无关。`MSInitVertexFamily` 的 `exponentialBlocks` 只是输入层写法，初始化时即按字面 `exponentType` 符号并入 effective external-leg energy，其后不再有独立编号。
 
-每个 slot 保存稳定编号、root line/vertex 来源、维数、basis、用户动量名与 Hankel branch/内部轮廓 metadata；每个 root vertex 另存其关联 slot 编号和 endpoint incidence。`masslessShared` 的同一编号同时出现在两个端点的 vertex incidence list 中，不能复制成两个二维因子。
+每个 slot 保存稳定编号、所属 root 传播子或顶点、维数、basis、用户动量名与 Hankel branch/内部轮廓 metadata；每个 root vertex 另存其关联 slot 编号和顶点 incidence。`masslessShared` 的同一编号同时出现在两个顶点的 vertex incidence list 中，不能复制成两个二维因子。
 
 每个 sector 的二维 slot 顺序固定为：
 
-1. 依 root line 顺序列出 active massive endpoint slots，每条线内按有序端点；
-2. 依 root line 顺序列出 active `masslessFull` slots；每条边只有一个 shared quotient slot。
+1. 依 root 传播子输入顺序列出 active massive 顶点 slots，同一条传播子的两个顶点按有序次序；
+2. 依 root 传播子输入顺序列出 active `masslessFull` slots；每条传播子只有一个 shared quotient slot。
 
 Kronecker 顺序采用左侧 slot 慢变、右侧 slot 快变；`stateBits` 使用同序二进制列表。维数为 `2^slotCount`。
 
@@ -242,7 +242,7 @@ Kronecker 顺序采用左侧 slot 慢变、右侧 slot 快变；`stateBits` 使�
 
 独立原子 API 包括 Pauli 矩阵、projector、`T/TInverse`、Hadamard、任意 slot 嵌入和 Kronecker identity。不带 theta 的指数不需要独立原子，它只以标量 `I p0` 乘 identity 进入 `M0`。所有高函数族由 slot registry 参数化，不按 fold 数复制函数。
 
-对 root vertex `v`，用户以 `vertexType[v]` 指定轮廓支。初始化后分别保存外腿指数符号 `vertexSign[+] = -1`、`vertexSign[-] = +1` 与 SK 权重 `contourSign[+] = +1`、`contourSign[-] = -1`。顶点所附无 theta 指数统一写成 `Exp[I vertexSign[v] externalLegEnergy[v] tau[v]]`；传播子的 Full/Cross/External、端点符号和整体符号从 `contourSign` 派生，不形成第二个用户 authority。
+对 root vertex `v`，用户以 `vertexType[v]` 指定轮廓支。初始化后分别保存外腿指数符号 `vertexSign[+] = -1`、`vertexSign[-] = +1` 与 SK 权重 `contourSign[+] = +1`、`contourSign[-] = -1`。顶点所附无 theta 指数统一写成 `Exp[I vertexSign[v] externalLegEnergy[v] tau[v]]`；传播子的 Full/Cross/External、顶点符号和整体符号从 `contourSign` 派生，不形成第二个用户 authority。
 
 对 sector `s` 和 active component `v`，组装 package `(-tau)^A` convention 下的
 
@@ -250,8 +250,8 @@ Kronecker 顺序采用左侧 slot 慢变、右侧 slot 快变；`stateBits` 使�
 -M1[v,s,A] F_s(a-e_v) + M0[v,s] F_s(a) + R[v,s,a] = 0.
 ```
 
-- `M1` 只含时间幂和 active massive endpoint projectors；公开 `nu=+1/2`、缺省正 prefactor 下 `formulaNu=+1/2` 的 shared massless slot不进入 `M1`。
-- `M0` 是 component 一维指数 generator、massive endpoint generator 与 shared massless endpoint generator 的全图 Kronecker 和。单个顶点仍可直接应用同一个递推公式；massless 的影响只是两个顶点的 `M0` 作用在同一 shared slot，而不是各自拥有一份副本。
+- `M1` 只含时间幂和 active massive 顶点的 projectors；公开 `nu=+1/2`、缺省正 prefactor 下 `formulaNu=+1/2` 的 shared massless slot不进入 `M1`。
+- `M0` 是 component 一维指数 generator、massive 顶点 generator 与 massless 共享 slot generator 的全图 Kronecker 和。单个顶点仍可直接应用同一个递推公式；massless 的影响只是两个顶点的 `M0` 作用在同一 shared slot，而不是各自拥有一份副本。
 - 论文 h-state 中每个二维 `M0` 原子只含 `sigma2`；package quotient 中 massive block 仍含 `sigma2`，massless shared block 只含 `sigma1`。同一 slot 内绝不同时出现两个不对易 Pauli 方向。因此按 block 分别使用 `T` 或 Hadamard 后，所有 `M0[v,s]` 仍由一个全局常数矩阵 `U_s` 同时对角化，energy letters 从其对角元直接读取。
 - 共同对角化不是“任意 Pauli Kronecker 和都可以”的结论。若未来某个 block 的待求逆矩阵在同一 slot 同时含两个不平行 Pauli 方向，或不同 vertex 在同一 shared slot 上使用不可共同对角化的方向，则必须先证明新的共同谱分解；否则禁止使用逐 slot 取倒数的快速路径。
 
@@ -264,7 +264,7 @@ contact 分两层保存：
 1. `rawContactMap`：记录 event、source/target sector、被删 slots、状态 injection、系数、normalization ratio 和 target `aShift`；
 2. `masterContactMap`：把 raw target shift 递归约到 target master，并保留沿 sector DAG 产生的更低 sector 项。
 
-普通单边 event 在 `R^(1)` 情形下 target shift 应严格为零；这是 dlog 快速路径。若不是零，则必须实际调用 target sector 的公式递推，不能静默丢掉 shift。
+普通单条传播子的 event 在 `R^(1)` 情形下 target shift 应严格为零；这是 dlog 快速路径。若不是零，则必须实际调用 target sector 的公式递推，不能静默丢掉 shift。
 
 已实现迭代入口为：
 
@@ -281,7 +281,7 @@ MSReduce[integralOrExpression, context, MasterBasis -> Automatic]
 
 `MSReduce` 只接受固定 context 所张成的合法对象：contact-reachable `sectorKey`、该 sector 每个 component 的整数 time shift，以及按 2401.00129 二进制顺序排列的全部 state bits。它可处理这些合法 `MSIntegral` 的有限线性组合，但不生成新的传播子幂、离散指标、context 外 sector 或另一函数族。memoized recursion 自动处理 contact DAG。输出固定包含 `result`、`masterBasis`、`masterRules`、同序 `coefficientVector`、`nonMasterResidual`、`remainingShiftedIntegrals`、`memoizedIntegralCount` 和方向敏感的 `singularLayers`。`MasterBasis` 只能是 context 全部 masters 的完整排列；不完整、重复或含外部 master 时 fail closed。
 
-局部逆已经编码为三类原子：massive endpoint 用 `msPaperT/msPaperTInverse` 对角化固定 `sigma2`；massless shared quotient slot 用自逆 Hadamard 对角化固定 `sigma1`；纯指数是 `1x1`。全 sector `U` 是这些局部矩阵的 Kronecker 积。`M1` 在 state-bit basis 对角，`M0` 在相应局部张量基对角，因此 Formula/DE 路线不调用一般大矩阵 `Inverse`。若后续 building block 使同一个 slot 出现不能由同一局部变换对角化的多个组分，初始化必须拒绝这条局部逆快速路径。
+局部逆已经编码为三类原子：massive 顶点态用 `msPaperT/msPaperTInverse` 对角化固定 `sigma2`；整条 massless Full 传播子共享的 quotient slot 用自逆 Hadamard 对角化固定 `sigma1`；纯指数是 `1x1`。全 sector `U` 是这些局部矩阵的 Kronecker 积。`M1` 在 state-bit basis 对角，`M0` 在相应局部张量基对角，因此 Formula/DE 路线不调用一般大矩阵 `Inverse`。若后续 building block 使同一个 slot 出现不能由同一局部变换对角化的多个组分，初始化必须拒绝这条局部逆快速路径。
 
 ## 8. dlog DE 与主积分同步输出
 
@@ -308,11 +308,11 @@ MSReduce[integralOrExpression, context, MasterBasis -> Automatic]
 M0 J(A+1) = M1 J(A) - R,
 ```
 
-则参数微分中的 contact 项是 `+I M0^-1 R`。因此把 2401.00129 的 `tau^nu` 公式适配到本包时，top-to-sub potential 必须包含该整体符号。这个符号已由单 massless full edge 的定义积分有限差分检验，当前公式的 residual 只剩有限差分误差。
+则参数微分中的 contact 项是 `+I M0^-1 R`。因此把 2401.00129 的 `tau^nu` 公式适配到本包时，top-to-sub potential 必须包含该整体符号。这个符号已由单条 massless Full 传播子的定义积分有限差分检验，当前公式的 residual 只剩有限差分误差。
 
 只有所有 block 都通过第 5 步，才返回 `dlogStatus -> "certifiedByFormulaChecks"`。若 normalization ratio、shift reduction或共同 theta 使 residue 依赖运动学，仍返回完整 connection candidate 和 obstruction，但状态为 `"requiresGaugeTransformation"`，不把它称为 dlog DE。
 
-这一块的论文 authority 是 2401.00129 第 3.7.2 节的 Eq. (3.65)、(3.68)：subsector master 特意包含 pinching 产生的动量/时间幂 prefactor，因而 top 对 sub 的系数仍是 dlog。`reference/ref_code/codebubble/Omega_tau_generator.m` 中的 `buildTopToSubsectorBlock` 实现了相同的 bit 删除、补 `1-bit`、`(-1)^bit` 和两端点求和结构，并由 `OmegaTopToR1/OmegaTopToR2` 组装 bubble 的 off-diagonal block；该文件注释把来源误标成 Eq. (3.27)，新包不得沿用这个错误编号。
+这一块的论文 authority 是 2401.00129 第 3.7.2 节的 Eq. (3.65)、(3.68)：subsector master 特意包含 pinching 产生的动量/时间幂 prefactor，因而 top 对 sub 的系数仍是 dlog。`reference/ref_code/codebubble/Omega_tau_generator.m` 中的 `buildTopToSubsectorBlock` 实现了相同的 bit 删除、补 `1-bit`、`(-1)^bit` 和对两个顶点求和的结构，并由 `OmegaTopToR1/OmegaTopToR2` 组装 bubble 的 off-diagonal block；该文件注释把来源误标成 Eq. (3.27)，新包不得沿用这个错误编号。
 
 ## 9. H/h/time-only 变换
 
@@ -331,7 +331,7 @@ T(H->h) = {{z^nu, 0}, {nu z^(nu-1), z^nu}}.
 
 这里 `nu` 是本包输入的 Hankel order 本身，不取绝对值；`NuConvention` 选择 prefactor exponent `+nu/-nu`，Hankel order 保持 `nu`。负 prefactor 时把上式中的 `nu` 换成 `-nu`。
 
-`MSConvertBasis` 提供局部二态和全 sector 同序状态向量的正反变换。全 sector 变换按 slot registry 组装 Kronecker 矩阵，每个 massive endpoint 使用自己的 `z=-k tau_component`；massless shared quotient 保持单位作用。`NuConvention` 只在 `MSInitTree` 时选择，全 sector 换基固定读取 context，不接受逐调用覆盖。已经积分后的 `MSIntegral` 还会同时改变 component base time power，首版没有独立的 H-family metadata，因此这一重载必须 fail closed，不能把非整数时间幂变化伪装成普通 bit 变换。
+`MSConvertBasis` 提供局部二态和全 sector 同序状态向量的正反变换。全 sector 变换按 slot registry 组装 Kronecker 矩阵，每个 massive 顶点使用自己的 `z=-k tau_component`；一条 massless Full 传播子共享的 quotient slot 保持单位作用。`NuConvention` 只在 `MSInitTree` 时选择，全 sector 换基固定读取 context，不接受逐调用覆盖。已经积分后的 `MSIntegral` 还会同时改变 component base time power，首版没有独立的 H-family metadata，因此这一重载必须 fail closed，不能把非整数时间幂变化伪装成普通 bit 变换。
 
 另提供 `MSIntegral[sectorKey,timeShifts,stateBits]` 与 dSIBP 020 `J[sectorKey,timeShifts,stateBits]` 的双向 adapter。adapter 只转换同一 sector/state-slot schema 下可唯一解析的对象；含 loop/ISP/b-slot 或不唯一 sector 的输入拒绝转换。
 
@@ -385,11 +385,11 @@ rank[C] = Max[rank[v], v in C].
 
 严格全序下，`K[C]` 由 `C` 内 rank 最大的 root vertex 主导。delta 合并只改变 component、base time power 和 contact normalization；边界 chart 始终由同一套 root rank 诱导，不能在每个 subsector 独立重选一个不兼容的 rank。剩余 theta 连接两个 components 时，比较它们各自主导 root 的 rank。
 
-每个 sector 的边界按自己的 top sector 计算：先使用其 normalization 和 contact 后的 base time power，再把固定为 0/1 的 theta 分支拆成 component vertex families。bottom sector 先算；parent 的非齐次边界再由 block-triangular Frobenius leading system 或等价的 theta/delta 端点展开递归确定。不能只给 top homogeneous product 而遗漏 lower-sector solution 对 parent components 的领先贡献。
+每个 sector 的边界按自己的 top sector 计算：先使用其 normalization 和 contact 后的 base time power，再把固定为 0/1 的 theta 分支拆成 component vertex families。bottom sector 先算；parent 的非齐次边界再由 block-triangular Frobenius leading system 或等价的 theta/delta 顶点展开递归确定。不能只给 top homogeneous product 而遗漏 lower-sector solution 对 parent components 的领先贡献。
 
 ### 10.4 非退化证书
 
-由 sector diagonal 公式，任意运动学 letter 都是 component 指数能量加 signed line energies。由 2401.00129 Eq. (3.68) 的 top-to-sub 公式，非对角块只用 parent 的同一组 `Log[kappa]` 乘常数 contact map，不产生新 log argument；若 child shift 需要递推，只会再引入 child sector 的同型 letters。因此对 contact DAG 归纳后，完整 connection 的每个含 `K` 分母均有一般形式
+由 sector diagonal 公式，任意运动学 letter 都是 component 指数能量加各传播子的 signed energy。由 2401.00129 Eq. (3.68) 的 top-to-sub 公式，非对角块只用 parent 的同一组 `Log[kappa]` 乘常数 contact map，不产生新 log argument；若 child shift 需要递推，只会再引入 child sector 的同型 letters。因此对 contact DAG 归纳后，完整 connection 的每个含 `K` 分母均有一般形式
 
 ```text
 D[alpha,s] = Q[alpha,s] + Sum[c[alpha,s,v] K[v], v],
@@ -429,7 +429,7 @@ raising recurrence 使用 `M0^-1`，而
 Det[M0[C]] proportional to Product[kappa[C,s], s].
 ```
 
-所以 `k0[v]=0` 并非自动普通。单条 full edge 的 top letters 是 `k0[u] +/- q`、`k0[v] +/- q`，但缩边 sector 还有 `k0[u]+k0[v]`；两辅助能量同时取零时，top 可非奇异而 child 必为奇异。更一般地，任一 sector component 在目标点没有剩余二维 slot且总指数能量为零时，必有零 letter。
+所以 `k0[v]=0` 并非自动普通。单条 Full 传播子的 top letters 是 `k0[u] +/- q`、`k0[v] +/- q`，但收缩该传播子后的 sector 还有 `k0[u]+k0[v]`；两辅助能量同时取零时，top 可非奇异而 child 必为奇异。更一般地，任一 sector component 在目标点没有剩余二维 slot且总指数能量为零时，必有零 letter。
 
 `M1` 的 general-index 零层必须直接由其对角本征值枚举，而不是笼统标成边界发散。它只阻断使用 `M1^-1` 的 lowering；同一点若 raising 只使用 `M0^-1 M1`，则 `M1=0` 只令相应 numerator/rank 降低，不产生求逆 pole。反向地，`M0=0` 阻断 raising，却不阻断只使用 `M1^-1 M0` 的 lowering。程序返回方向、当前 shift、state bits、零本征值和原始 IBP constraint；不自动增加 master，也不把离散 shift resonance 混入共同 `K -> infinity` 边界。
 
@@ -437,7 +437,7 @@ Det[M0[C]] proportional to Product[kappa[C,s], s].
 
 ### 10.6 自动边界到用户普通点
 
-最终入口让用户按初始化时的变量给出一个目标普通点，并可另给 preferred 起点；两者都必须给齐所有顶点所附无 theta 指数参数和所有传播子模长，package 对外继续使用用户的变量名交流。初始化保存可逆坐标映射，数值层才按 `vertexType` 派生的 `vertexSign` 转换为内部 `K[v]=I vertexSign[v] k0User[v]`，把 line momenta 原样带入 signed-energy letters。程序按以下顺序工作：
+最终入口让用户按初始化时的变量给出一个目标普通点，并可另给 preferred 起点；两者都必须给齐所有顶点所附无 theta 指数参数和所有传播子模长，package 对外继续使用用户的变量名交流。初始化保存可逆坐标映射，数值层才按 `vertexType` 派生的 `vertexSign` 转换为内部 `K[v]=I vertexSign[v] k0User[v]`，把传播子动量原样带入 signed-energy letters。程序按以下顺序工作：
 
 1. 若用户给 preferred 起点，在 `Re[K[v]]>0` 的前提下按 `Re[K]` 从大到小选择首选 strict rank；相等时依次用 `Abs[K]` 和 root vertex order 确定性破缺。该能量降序对应 `Abs[tau]` 升序；
 2. 对所有与 theta 相容的 strict charts 做普通点和 normal-crossing 证书；首选 rank 只是让 boundary 到 preferred point 的第一段尽量匹配该点的尺度层级，可能减少需要绕开的 letters，但不声称全局最优；
@@ -494,7 +494,7 @@ recurrence metadata、完整解析 dlog DE 与 manifest 写入
 传播两条链的状态，禁止用参考链末点覆盖主链或重启下一段主链。
 
 FlintNDE 的位置只由 `$MSFlintNDERelativePath` 定义，缺省为版本目录内的 `Vendor/FlintNDE`（与独立 FlintNDE 0.5.0 同步）；`MSSetFlintNDERelativePath` 可显式覆盖。adapter 只接受当前单请求 schema `madstree_flintnde_evaluate_v1`。`MSRuntimeDirectory` 明确表示临时运行根本身；`Automatic` 解析为调用脚本旁唯一的 `results_temp/`，内部只追加 `nde/` 和 `cache/`。Windows 完整路径在目录创建和 Python 启动前检查；超过 259 字符时独立返回 `RuntimePathTooLong`。输入写入、缺少 `python-flint`、启动失败、无输出和损坏输出分别 fail closed。版本源码目录不接收用户结果。
-自动入口不猜测额外的 late-time 常数；它严格使用初始化时固定的 Hankel/SK branch、sector normalization 和论文 endpoint coefficients。手动入口未给 boundary data 时仍返回结构化 `Missing["BoundaryData"]`。dlog/chart 未认证、late-time 指数不衰减、拉回奇点非 exact/Fuchsian 或 FlintNDE capability preflight 失败时均 fail closed；能力边界不再用图名或固定维数描述。
+自动入口不猜测额外的 late-time 常数；它严格使用初始化时固定的 Hankel/SK branch、sector normalization 和论文的顶点 coefficient。手动入口未给 boundary data 时仍返回结构化 `Missing["BoundaryData"]`。dlog/chart 未认证、late-time 指数不衰减、拉回奇点非 exact/Fuchsian 或 FlintNDE capability preflight 失败时均 fail closed；能力边界不再用图名或固定维数描述。
 
 ## 12. 模块与公开接口
 
@@ -544,9 +544,9 @@ package-MadStree/versions/MadStree-v0.17/
 ### Phase B：矩阵与主积分
 
 - 实现张量原子、`M1/M0/U`、energy letters、sector masters。
-- 实现 massless `4->2` embedding/projection 与 package quotient endpoint/contact 原子。
+- 实现 massless `4->2` embedding/projection 与 package quotient 的顶点态及 contact 原子。
 
-验收：`P.S==I2`；两端 generator 符号相反；每个 slot 有稳定 id，无 theta 指数只以 component signed energy 进入 `M0`；正/负顶点的内部 `vertexSign` 只改变 signed energy 和用户坐标 Jacobian；单顶点任意 fold 与参考 `Tn/M1n/M0n/Omegan` 的适用子集一致。
+验收：`P.S==I2`；两个顶点的 generator 符号相反；每个 slot 有稳定 id，无 theta 指数只以 component signed energy 进入 `M0`；正/负顶点的内部 `vertexSign` 只改变 signed energy 和用户坐标 Jacobian；单顶点任意 fold 与参考 `Tn/M1n/M0n/Omegan` 的适用子集一致。
 
 ### Phase C：contact 与递推
 
@@ -565,7 +565,7 @@ package-MadStree/versions/MadStree-v0.17/
 - 对每个二维 slot 检查所有 vertex-local Pauli directions 共线；只有通过共同对角化条件时才使用逐 letter 取逆的快速路径。
 - 非零 `R^(1)` child shift 逐列调用 `MSReduce`，抽取到全局 master order 的 reduction matrix 后右复合 contact block；任何 residual/remaining shift 返回 `contactShiftReductionFailed`。
 
-验收：pure massive two-vertex 适用子集与参考 `Omega_tau_generator.m` 同序比较；单 massless full edge 的 top 维数由 4 降为 2，subsector master 与 contact block 维数正确；所有声称 dlog 的 block residue 为常数。
+验收：pure massive two-vertex 适用子集与参考 `Omega_tau_generator.m` 同序比较；单条 massless Full 传播子的 top 维数由 4 降为 2，subsector master 与 contact block 维数正确；所有声称 dlog 的 block residue 为常数。
 
 ### Phase E：变换、数值边界与文档
 
@@ -582,15 +582,15 @@ package-MadStree/versions/MadStree-v0.17/
 - [x] 实现裸坐标普通保存点、临时点与奇点 LO 点语义；二阶 pole 等未认证起点在普通输运前 fail closed。
 - [x] 实现逐个辅助顶点能量移除；普通零点走普通输运，有限奇点零点进入 FlintNDE 局部分类/双侧 bucket，超出局部能力或分支不唯一时 fail closed。
 
-验收：复现文献两顶点 chart `x=k34/k12, y=1/k34`、五维 leading system 和边界 factorization；正/负顶点分别以 `k0=-I pik0`、`k0=+I mik0` 得到同一 `Exp[-K t]`；preferred 点的能量降序与 time 尺度升序一致；单 massless full edge 的 top/child 零点判定正确；任意小树每个 sector 的 strict transforms 均通过 normal-crossing 检查；输出边界向量与 `MSDLogDE` master digest 完全一致。
+验收：复现文献两顶点 chart `x=k34/k12, y=1/k34`、五维 leading system 和边界 factorization；正/负顶点分别以 `k0=-I pik0`、`k0=+I mik0` 得到同一 `Exp[-K t]`；preferred 点的能量降序与 time 尺度升序一致；单条 massless Full 传播子的 top/child 零点判定正确；任意小树每个 sector 的 strict transforms 均通过 normal-crossing 检查；输出边界向量与 `MSDLogDE` master digest 完全一致。
 
 ### Phase G：time-only 圈图输入扩展
 
-- [x] 在不引入 loop-momentum IBP 的前提下，由 `MSInitTimeGraph` 允许传播子 incidence graph 含圈，所有 line momenta 仍作为固定参数。
-- [x] canonicalize contact 产生的 vertex partitions，处理多条收缩路径到同一 sector、active self-edge 和循环 theta 乘积归零。
+- [x] 在不引入 loop-momentum IBP 的前提下，由 `MSInitTimeGraph` 允许传播子 incidence graph 含圈，所有传播子动量仍作为固定参数。
+- [x] canonicalize contact 产生的 vertex partitions，处理多条收缩路径到同一 sector、active 的自环传播子和循环 theta 乘积归零。
 - [x] 复用 Phase F 的 affine-linear denominator 证明和同一个 boundary producer，不复制 tree-only 路线。
 
-验收：triangle time graph 和至少一个含平行边的圈图中，严格 time 总序把所有 theta 项化为 `0/1`；所有 reachable partitions 的 `K`-dependent strict transforms 都为 units；与直接被积函数 leading region 和公式 DE 的 divisor 集逐项一致。仍不运行或声称完成 loop-momentum integration。
+验收：triangle time graph 和至少一个含两条平行传播子的圈图中，严格 time 总序把所有 theta 项化为 `0/1`；所有 reachable partitions 的 `K`-dependent strict transforms 都为 units；与直接被积函数 leading region 和公式 DE 的 divisor 集逐项一致。仍不运行或声称完成 loop-momentum integration。
 
 ## 14. 首轮检查矩阵
 
@@ -600,16 +600,16 @@ package-MadStree/versions/MadStree-v0.17/
 正规化复角开区间、候选池容量不足保留结果和 UTF-8 输出。旧版本任务书只从 Git 历史追溯。
 
 1. 单顶点 0-fold/1-fold/一般 p-fold：维数、bit order、`M1/M0/U` 和 letters。
-2. 纯 massive 两顶点单 full edge：top/subsector master、`R^(0)/R^(1)` shift、block DE。
-3. 单 massless full edge：四态 quotient、共享 slot、两端 regular/contact 符号、top `2` 个而非 `4` 个 master。
-4. mixed 三顶点链：同一 massless slot同时进入两端 `M0`，sector DAG 和多级 contact 自动终止。
+2. 纯 massive 两顶点之间的一条 Full 传播子：top/subsector master、`R^(0)/R^(1)` shift、block DE。
+3. 单条 massless Full 传播子：两个顶点的四个二维态 quotient 成一个共享 slot、两个顶点各自的 regular/contact 符号、top `2` 个而非 `4` 个 master。
+4. mixed 三顶点链：同一 massless slot同时进入两个顶点的 `M0`，sector DAG 和多级 contact 自动终止。
 5. H->h->H：正/负 prefactor 下局部矩阵恒等；全 sector 状态向量在 massive 支持子集的 round trip residual 为零；`MSIntegral` 重载明确 fail closed。
 6. dlog：矩阵维数等于 master 数；sector offsets 无间隙；非对角块只指向严格 lower sector；`omegaPotential` 对所有 `Log[letter]` 的 residual 为零。
 
 ### Phase H：连续同复直线分组与组内 dense output
 
 - [x] 以多变量坐标向量的 exact 复线性相关为判据，把输入顺序中的连续点划为最大复仿射直线组；
-  两点总能定义起始方向，后续点不共线时在前一公共端点断组。
+  两点总能定义起始方向，后续点不共线时在前一个公共点上断组。
 - [x] 每组选择一个非零方向并求 exact 复参数 s_i；只构造一次 x(s)=x0+s v 的 dlog 拉回，
   将全部 s_i 一次性交给 FlintNDE。
 - [x] 保存每个 userIndex 对应的 node snapshot 或 dense sample assignment。执行期只恢复计划，

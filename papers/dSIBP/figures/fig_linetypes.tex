@@ -1,6 +1,7 @@
-% The four internal-line types of the in-in (SK) rules: rows are mass types, columns are SK branch combinations.
+% The four internal-propagator types of the in-in (SK) rules: rows are mass types, columns are SK branch combinations.
 % The SK branch of a vertex is carried by its fill colour: black = +, white = -, gray = general.
-% Full lines carry the theta pair, cross lines carry none. The conjugate assignments give the same line types.
+% Full propagators carry the theta pair, cross propagators carry none. The conjugate assignments give
+% the same two types.
 \documentclass[tikz,border=6pt]{standalone}
 \usetikzlibrary{calc,positioning}
 \begin{document}
@@ -20,7 +21,7 @@
     \node[lab,anchor=north] at (0,-0.15) {$\tau_u$};
     \node[lab,anchor=north] at (2.2,-0.15) {$\tau_v$};
     \node[font=\footnotesize,anchor=south] at (1.1,0.12) {$\theta(\tau_u-\tau_v)$, $\theta(\tau_v-\tau_u)$};
-    \node[plab,anchor=north] at (1.1,-0.75) {$G^{++}$: full};
+    \node[plab,anchor=north] at (1.1,-0.75) {$G_{++}$: full};
     \node[plab,anchor=north] at (1.1,-1.12) {$\{b_e,n_{e,1},n_{e,2}\}$};
   \end{scope}
   % ============ massive / cross ============
@@ -31,7 +32,7 @@
     \node[lab,anchor=north] at (0,-0.15) {$\tau_u$};
     \node[lab,anchor=north] at (2.2,-0.15) {$\tau_v$};
     \node[font=\footnotesize,anchor=south] at (1.1,0.12) {no $\theta$};
-    \node[plab,anchor=north] at (1.1,-0.75) {$G^{+-}$: cross};
+    \node[plab,anchor=north] at (1.1,-0.75) {$G_{+-}$: cross};
     \node[plab,anchor=north] at (1.1,-1.12) {$\{b_e,n_{e,1},n_{e,2}\}$};
   \end{scope}
   % ============ massless / full ============
@@ -42,7 +43,7 @@
     \node[lab,anchor=north] at (0,-0.15) {$\tau_u$};
     \node[lab,anchor=north] at (2.2,-0.15) {$\tau_v$};
     \node[font=\footnotesize,anchor=south] at (1.1,0.12) {$\theta(\tau_u-\tau_v)$, $\theta(\tau_v-\tau_u)$};
-    \node[plab,anchor=north] at (1.1,-0.75) {$G^{++}$: full};
+    \node[plab,anchor=north] at (1.1,-0.75) {$G_{++}$: full};
     \node[plab,anchor=north] at (1.1,-1.12) {$\{b_e,n_{e,1},n_{e,2}\}$, $n_2\to0$ quotient};
   \end{scope}
   % ============ massless / cross ============
@@ -53,7 +54,7 @@
     \node[lab,anchor=north] at (0,-0.15) {$\tau_u$};
     \node[lab,anchor=north] at (2.2,-0.15) {$\tau_v$};
     \node[font=\footnotesize,anchor=south] at (1.1,0.12) {no $\theta$};
-    \node[plab,anchor=north] at (1.1,-0.75) {$G^{+-}$: cross};
+    \node[plab,anchor=north] at (1.1,-0.75) {$G_{+-}$: cross};
     \node[plab,anchor=north] at (1.1,-1.12) {$\{b_e,0,0\}$};
   \end{scope}
   % row labels

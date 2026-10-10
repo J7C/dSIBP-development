@@ -11,7 +11,7 @@
 - 奇点：`SingularityMode -> "Automatic"` 缺省忠实处理用户输入的有限奇点。
 - 消息语言：`MessageLanguage -> "EN"|"CN"`，缺省英文。
 
-本版修复 massive contact/pinch sector 的边界 coefficient：不再在 sector normalization、Hankel
-endpoint coefficient 和 component 定义积分之外按收缩线数重复乘 `I^n`。master 定义、
+本版修复 massive contact/pinch sector 的边界系数：不再在 sector normalization、Hankel
+顶点系数和 component 定义积分之外按被收缩的传播子数重复乘 `I^n`。master 定义、
 normalization、recurrence 与 dlog DE 不变；完整变化与验证状态见
 `../../历史版本更新日志/MadStree-v0.17.md`。

@@ -6,13 +6,13 @@ result readers for v0.15.
 ## Fix
 
 - `MSBoundaryData` no longer multiplies massive contact sectors by an additional depth factor
-  `I^n`. The sector normalization, Hankel endpoint coefficients, and component defining
+  `I^n`. The sector normalization, Hankel vertex coefficients, and component defining
   integrals already contain the complete phase. The removed factor shifted a single pinch by
   `I` and a double pinch by `-1`.
 - The massive child normalization no longer repeats `Exp[Pi Im[formulaNu]]`. That factor belongs
-  to the conjugate-order endpoint basis used by the paper; MadStree represents both endpoints in
+  to the conjugate-order vertex basis used by the paper; MadStree represents both vertices in
   a common Hankel order, whose basis identity has already absorbed it.
-- The sector/master normalization of a contracted massive Full line now retains its one required
+- The sector/master normalization of a contracted massive Full propagator now retains its one required
   `fullContourSign`: after suppressing the common momentum power, a `++` child is `-4 I/Pi` and a
   `--` child is `+4 I/Pi`. This sign defines `J_s=calN_s I_s` only; it does not enter the
   normalized-master DE or recurrence event.
@@ -28,7 +28,7 @@ result readers for v0.15.
   `(-I)^(p+1) Gamma[p+1]`.
 - The printed Eq. (4.11) differs from that direct integral by an extra factor `I`. This remains an
   independent diagnostic and is not inserted into the production boundary.
-- `Exp[Pi Im[nu]]` in Eq. (4.2) is not an erratum in the paper endpoint basis. It becomes a
+- `Exp[Pi Im[nu]]` in Eq. (4.2) is not an erratum in the paper vertex basis. It becomes a
   duplicated normalization only if it is retained again after conversion to the common-Hankel-order
   MadStree basis.
 
@@ -53,7 +53,7 @@ result readers for v0.15.
 
 ## Interface and migration
 
-- A massless Full line now has only the shared two-state quotient. The old four-state endpoint
+- A massless Full propagator now has only the shared two-state quotient. The old four-state vertex
   representation, `masslessRepresentation` input, dedicated slots, normalization, adapters, and
   tests were physically removed; there is no compatibility entry or directed legacy rejection.
 - `MSReduce` now accepts List/Table/empty/ragged nested input, preserves per-element output shape,

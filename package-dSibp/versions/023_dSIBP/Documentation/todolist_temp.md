@@ -26,8 +26,8 @@
 ## 公开接口
 
 - 顶点：`<|"id"->1,"vertexType"->"+","externalLegEnergy"->E1|>`。
-- 标准线：`id/massType/endpoints/momentum`；massive 线再需 `nu`。
-- 高级 massive 线：可用唯一 `functionSystem -> "h"|"H"|Association`。
+- 标准传播子：`id/massType/endpoints/momentum`；massive 传播子再需 `nu`。
+- 高级 massive 传播子：可用唯一 `functionSystem -> "h"|"H"|Association`。
 - 圈外向量：`loopExternalMomenta`。
 - 无圈模长基：`independentExternalMomenta`。
 - 运动学坐标重定义：唯一 `kinematicRules`。
@@ -36,9 +36,9 @@
 
 ## 必须删除
 
-- 旧公开 `vertexData`、`vertexEnergies`、`lineData` 和 line 五元组入口。
+- 旧公开 `vertexData`、`vertexEnergies`、`lineData` 和传播子五元组入口。
 - `bbType`、`eomCoefficients`、line-local `shrinkPrefactor`。
-- 用户 line 的 `skType/packType/state/thetaConvention/thetaBoundarySignOffset`。
+- 用户传播子的 `skType/packType/state/thetaConvention/thetaBoundarySignOffset`。
 - 旧公开/内部 `externalMomenta/externalLegMomenta`；公开只保留
   `loopExternalMomenta/independentExternalMomenta`，内部统一使用
   `effectiveLoopExternalMomenta/effectiveIndependentExternalMomenta`。
@@ -52,14 +52,14 @@
 ## 实施要点
 
 1. `parseTopology` 只接受 `vertices/lines/loopMomenta` 三个 root 必需键；每个 vertex 必须含
-   `id/vertexType/externalLegEnergy`，每条 line 必须含 `id/massType/endpoints/momentum`。
-   massive 线另需 `nu`，可选 `functionSystem`；massless 线忽略额外键但绝不读取
+   `id/vertexType/externalLegEnergy`，每条传播子必须含 `id/massType/endpoints/momentum`。
+   massive 传播子另需 `nu`，可选 `functionSystem`；massless 传播子忽略额外键但绝不读取
    `nu/functionSystem`。Association 键顺序任意，额外键不进入内部 topology。
 2. `vertexType` 在 parser 内唯一规范化成 vertex sign：`+ -> -1`、`- -> +1`，使外腿指数
-   统一为 `Exp[I sign externalLegEnergy tau]`。line 的 SK、pack、endpoint state 和 contact
-   系数只从端点顶点及 contraction 状态派生。
+   统一为 `Exp[I sign externalLegEnergy tau]`。传播子的 SK、pack、顶点态和 contact 系数只从
+   其两端顶点及 contraction 状态派生。
 3. root topology 只保存后续模块实际消费的规范化键。sector constructor 直接接收 root
-   topology 与 contracted-line set，生成新的 active vertices、代表映射、line packs、零点和
+   topology 与缩并传播子集合，生成新的 active vertices、代表映射、传播子 pack、零点和
    normalization；不得构造 Association 再回调公开 parser。
 4. `seedPreset/seedRanges/generatorSeedRanges` 移入 seed/IBP 入口选项；`numericRules` 移入
    sampled/numeric linear-data 与检查入口；`kiraOrdering` 只由 Kira plan/export 入口读取。
@@ -267,7 +267,7 @@ D17 完成记录（2026-08-20）：合法 022 topology 和额外无关键保持�
 - [x] 让 child sector 的 complete `N_s` 吸收同一个 `contourSign W`，并检查 raw、normalized、
   `DSSeeds`、pure-time recurrence 与 direct dlog 共用同一 convention；`++/--` 不得再靠错误相消。
 
-专项完成记录（2026-08-27）：模块化 `023.0` 对 `++/--`、两个端点、`10/01`、general/pure-time、
+专项完成记录（2026-08-27）：模块化 `023.0` 对 `++/--`、两个顶点、`10/01`、general/pure-time、
 raw/child/normalized 三层恒等式通过 `6/6`；tree normalization、naive/direct dlog 闭合通过
 `14/14`。全部 17 个维护侧 smoke 从 `023_dSIBP` 新路径运行，失败数为 0。
 - [x] 更正独立 Phase 1 的 massive coincidence canonical 和分阶段公共根号替换；已确认
@@ -277,7 +277,7 @@ raw/child/normalized 三层恒等式通过 `6/6`；tree normalization、naive/di
   accepted digest 是 `C4B0FD204E3B2951E46471B356A9F7B201BCA241FC63832E90A0060EAA8409A9`。
 - [x] fresh 重跑 Phase 2 general/tree/guard：从空结果目录得到 general `15/15`、tree/guard
   `11/11`，Kira 2.3/Fermat 探测可用，preflight 按职责返回 `pending_external`。
-- [x] 完成 arXiv:2411.03088 两顶点 targeted IBP-DE。论文与 package 的 endpoint `n=1` 定义相同，
+- [x] 完成 arXiv:2411.03088 两顶点 targeted IBP-DE。论文与 package 的顶点 `n=1` 定义相同，
   basis map 为单位矩阵；显式应用 `E12/E34=-k12/-k34` 及导数 Jacobian 后，三张 `5x5` 矩阵
   均 `25/25`，非零差均为 0。
 - [x] 外部 Kira full flow 的范围已更正为 pure massive bubble 与 mix bubble+tree 两套；原先把
@@ -288,7 +288,7 @@ raw/child/normalized 三层恒等式通过 `6/6`；tree normalization、naive/di
 - [x] 修复 mixed lower-sector 导数的 compact `aList` 槽映射：以 sector metadata 的
   `vertexIdToCompactASlot` 为唯一职责源，拒绝不存在或超出当前 `aList` 长度的槽；active-basis
   导数构造若产生任何 Mathematica message 必须返回 `basisDerivativeFailed`，不得继续导出。
-- [x] 增加收缩 line 2 后 `{v1,v2}` 合并、`E3` 仍映射到 compact slot 2 的专项；专项 `10/10`，
+- [x] 增加收缩传播子 2 后 `{v1,v2}` 合并、`E3` 仍映射到 compact slot 2 的专项；专项 `10/10`，
   30 个 active masters 对六变量的 180 条导数为 message `0`、失败 `0`。根因修复只允许公开 `ds`
   从 root topology 选择一次 sector，旧重复 sector helper 已物理删除；候选 SHA-256 为
   `DF2AA818A385230FF84FD0722D9E4B1FD12EE4171AE1CAB648970647F4586841`。
@@ -298,7 +298,7 @@ raw/child/normalized 三层恒等式通过 `6/6`；tree normalization、naive/di
   `LoopTopology` scaling；若 extra masters 进入 RHS，则继续扩 target closure seed，不能把
   `unreduced=0` 或只导出 30 个 active basis 误记为闭合。
 - [x] D18.1. 逐线性项分离显式 coefficient 与裸 `J`，只对裸积分执行 sector-aware
-  EOM/coincident/endpoint canonical 和 symmetry，随后乘回 coefficient；不得扩宽裸积分 helper
+  EOM/coincident/顶点 canonical 和 symmetry，随后乘回 coefficient；不得扩宽裸积分 helper
   的 pattern，也不得保留旧分支。
 - [x] D18.2. Kira active-basis producer 在写 manifest 前拒绝仍含 `shiftVertexA` 等内部执行 helper
   的导数结果，并返回说明具体残留对象的结构化失败信息。
@@ -311,7 +311,7 @@ raw/child/normalized 三层恒等式通过 `6/6`；tree normalization、naive/di
   中积分、reduction 左端和 `repKira2J` 对象的 `SameQ`、完整 symbol context、目标 ID 与规则覆盖。
   首版裸 `_J` 诊断存在 context 歧义，不据其 153 项统计扩大 seed或修改 frozen basis。
 - [x] D18.5 诊断完成：153 个 residual 全部 `SameQ` 命中 integral map，且都是 215 个 active basis
-  外 global masters 的子集；不存在 reduction 左端符合 Kira master 语义。先定向扩展两个 cycle-line
+  外 global masters 的子集；不存在 reduction 左端符合 Kira master 语义。先定向扩展两个 cycle 传播子
   的负 `b` 截断，不修改 import、30 个 frozen active masters 或其它参数方向。
 - [x] D18.6. `b[1],b[2]>=-4` 的 fresh Kira 得到 121,636 条方程、68,982 个积分、228 个全局
   masters、248 个 targets、`unreduced=0`，墙钟 `156.73 s`；正式 import 通过但 DE 仍有 130 个
@@ -337,7 +337,7 @@ backend 方程、98,685 个积分和 248 个 formal targets；Kira 初选 master
   formal basis；Phase 1 general seed/operator authority 未改变，不重冻 expected，也不从 package
   actual 反向拟合 adapter。
 
-D18.8 当前定责（2026-08-27）：来源隔离的 Phase 1 general seed 显示两条 cycle power 的 momentum
+D18.8 当前定责（2026-08-27）：来源隔离的 Phase 1 general seed 显示两条 cycle 传播子连续幂的 momentum
 shift 跨度最高为 `[-2,2]`。上界为 4 的 156 个 Kira 初选 masters 中没有 `b[2]=3,4`，且数量相对
 上界 3 不再下降；126 个额外项只在 top/e2/e3 sector，并与原 30 项组成 156 项有限截断候选。
 156 项对六变量的解析导数检查为 `156x6=936`，message/失败/helper residue 均为 0，`Put/Get
@@ -358,7 +358,7 @@ D18.9 失败诊断记录（2026-08-27）：旧 fixed-target 路线固定 30 项 
 
 - [ ] D18.10. 撤回把 fixed-target workspace 的 `1..30 -> 36` 解释成主积分跃变的判断。
   `DSUserMI` 会人为插入 30 个前缀 backend ID，并把自然积分 ID 整体后移；同时旧
-  `integralSortKey` 用 `_b|_bS`、`_n` 匹配已经数值化的 line pack，实际没有让连续 `b` 和离散
+  `integralSortKey` 用 `_b|_bS`、`_n` 匹配已经数值化的传播子 pack，实际没有让连续 `b` 和离散
   `n` 进入排序。先修正数值 pack 槽位排序并通过专项，再从空 mixed probe 工作区按未插入
   `userMI` 的自然顺序重跑。候选后的下一 master 编号至少达到候选末编号约三倍，且排序键复杂度
   同时明显上升，才允许冻结 basis；否则继续报告 basis 未确定，不生成 DE/scaling。
@@ -382,7 +382,7 @@ D18.11 旧排序首轮记录（2026-08-28，已作废）：Kira 2.3 对自然 ID
 
 D18.11 旧排序扩展轮记录（2026-08-28，已作废）：2500-target Kira 在 `297.7 s` 完成，`unreduced=0`，得到 226 个
 masters。新增 43 项中 40 项直接命中 `a=4`，其余 3 项是边界方程移出的 `a=5,6`；但旧自然排序
-先穷举 `b=0` 的整条 `a` 塔，前 2500 项没有任何非零连续 line power，故 `704 -> 1026=1.4574`
+先穷举 `b=0` 的整条 `a` 塔，前 2500 项没有任何非零连续传播子幂，故 `704 -> 1026=1.4574`
 不能作为合格跃变。修正自然 key：`a/b/ISP` 先按联合绝对复杂度排序，再以各分量作稳定 tie-break；
 离散 building-block `n` 保持独立计权。更新排序专项和技术手册后，必须从空目录重生 producer/Kira，
 旧两轮只保留为发现排序缺陷的诊断证据。
@@ -454,7 +454,7 @@ master 编号和指标表示判断截断；probe targets 固定为自然排序�
   148 项且旧项一项未消失，新增项延伸到 penalty level 6；因此“负指标排序干扰”已经排除，但正
   幂次 basis 尚未闭合。不得按指标正负、编号或单个 gap 删除这些候选。
 - [x] D18.17. 作废把 contact 后 compact `a/b` 直接与 root `a=-1/4,b=-2/5` 比较的边界统计。
-  使用 sector representative map、root line 状态及每条 shrink affine shift，为 492 个 master 反解
+  使用 sector representative map、root 传播子状态及每条 shrink affine shift，为 492 个 master 反解
   root 指标前像；分别记录是否存在所有 root 指标均严格位于目标包络内部的前像，以及哪些 root
   指标被迫命中边界。只有该 provenance 或现有关系的精确闭合证据指向 seed 截断时，才扩大 root
   包络；否则继续检查排序与关系方向。
@@ -480,8 +480,8 @@ master 编号和指标表示判断截断；probe targets 固定为自然排序�
   的 83 masters 为 targets。fresh Kira 恰好约掉两项高层候选，其余 81 项逐积分稳定，RHS 闭合且
   `unreduced=0`，因此冻结这 81 项作为 mixed formal-flow active-basis 候选。
 - [x] D18.22. 修正 Kira 实数化对 fixed massless bridge 模长的漏识别。通用 producer 必须结构性
-  合并顶点外腿相位参数与 `massType=="massless"`、`linePowerMode=="fixed"` 的传播子模长；cycle
-  line 的 `xi` 是积分变量，不作为外部 backend 坐标。内部对象、manifest、import 与 DE derivative
+  合并顶点外腿相位参数与 `massType=="massless"`、`linePowerMode=="fixed"` 的传播子模长；
+  cycle 传播子的 `xi` 是积分变量，不作为外部 backend 坐标。内部对象、manifest、import 与 DE derivative
   view 统一改称 kinematic convention，不保留旧 energy-only helper 或字段。fixed 模长若不是独立
   `Symbol`，导出须停止，并用自然语言提示用户通过 `KinematicRules` 绑定独立原子坐标。
 - [x] D18.23. 补最小 smoke：fixed massless bridge 的 `loopScale` 与 `E1/E2/E3` 一同执行
@@ -499,7 +499,7 @@ master 编号和指标表示判断截断；probe targets 固定为自然排序�
   fresh `ibp.kira`；两个 time block 的诊断重建目前停在 `phaseTransformNotReal`，尚不能判为 export
   缺失。扩充诊断记录每个 coefficient 的积分/ID、formal map 与 phase metadata 覆盖、原始轴相位及
   row phase 0/1 结果，并核对 shifted time seed 的 formal envelope 与 producer canonical/normalization
-  顺序。找到首个真实差异后只修对应职责层；line 1、2 分别全偶，tree bridge line 3 不进入 parity。
+  顺序。找到首个真实差异后只修对应职责层；传播子 1、2 分别全偶，tree bridge 传播子 3 不进入 parity。
 - [x] D18.25. 根因已由反事实确认：实际提前数值化的实点 time blocks 为 `2/2` 命中；manifest 声明的
   虚轴点与实际 Kira 方程不一致。给 `DSKiraExport` 增加门禁，拒绝在 linearData 阶段已消去需虚轴转换
   的物理坐标或依赖内部坐标；mixed formal producer 改为符号 `DSLinear`，精确实 backend 点仅由 formal
@@ -526,7 +526,7 @@ residual 逐项 exact zero；master 1 的两条 time blocks 与一条 q-dilation
   决定范围；删除同时返回伪符号和定点 residual 的旧合同。
   mixed 的全符号齐次性由 81/81 source-level Euler+time/q-IBP 恒等式单独认证；consumer 同时读取这份
   source-isolated summary 与 exact-point `DSScaleCheck`。专项覆盖三个 scope 和错误反例，重建候选后
-  复用未改变的 Kira artifact 重跑 consumer；line 1、2 分别全偶，tree bridge line 3 不进入 parity。
+  复用未改变的 Kira artifact 重跑 consumer；传播子 1、2 分别全偶，tree bridge 传播子 3 不进入 parity。
 - [x] D18.28. pure massive bubble 的 formal plan 同样是 `postDerivative`。新增 19-master source-level
   Euler+time/q-IBP 证书；由于规则只固定非 scaling 参数而保留 `{ss11,P0}`，finish consumer 应联合
   source-level 证书与 reduction 的 symbolic `DSScaleCheck`，并让
@@ -538,7 +538,7 @@ D18.27--D18.28 完成记录（2026-08-29）：当前候选单文件 SHA-256 为
 `symbolic/fixedSection/exactPoint` 三分类为 `22/22`，原 scaling 回归为 `7/7`。pure massive
 bubble 的 source-level Euler+time/q-IBP 为 33 个不同积分 `33/33`、active basis `19/19`，
 reduction 证书为 `symbolic`；mix bubble+tree 为 `81/81`，reduction 证书为 `exactPoint`。
-mixed 的 parity 只有两条圈传播子各自全偶；fixed tree bridge line 3 的 `b[3]` 不属于圈积分，
+mixed 的 parity 只有两条圈传播子各自全偶；fixed tree bridge 传播子 3 的 `b[3]` 不属于圈积分，
 未加入 parity。single-massive sunrise 的实际调用追踪未命中任何禁止入口，Kira case 恰好只有
 pure massive bubble 与 mix bubble+tree 两套。
 
@@ -550,7 +550,7 @@ pure massive bubble 与 mix bubble+tree 两套。
 - [x] D18.30. 新建第 16--17 节 capability 正式套件：mixed triangle exact/under/over、
   fixed/dependent-binding exact、bubble+tree exact/under/over。undercomplete 必须拒绝初始化并关闭
   下游；overcomplete 只允许任务书声明的 symbolic producer，且 `ds/DSDE/rep2innerform/DSKiraExport`
-  明确拒绝。两条 bubble+tree cycle line 分别全偶，tree bridge 不进入 parity。若公开 capability
+  明确拒绝。两条 bubble+tree cycle 传播子分别全偶，tree bridge 不进入 parity。若公开 capability
   或下游门禁与合同不符，先修生产职责层并重建候选，再 fresh 重跑本套件。
 - [x] D18.31. fresh 重跑 arXiv:2411.03088 两顶点 `G++` targeted IBP-DE，保存绑定当前候选的
   三张 `25/25` exact summary；按任务书第 21 节建立公开门禁与用户可见自然语言反馈矩阵，实际
@@ -575,7 +575,7 @@ formal workspace 重生 818217 条 canonical 关系、818297 条 formal 方程�
 active basis、595 个 derivative targets 与 676 个 formal targets。Kira 2.3 以 `w10*1` 完整退出 0，
 81 masters 恰为 IDs `1..81`，`unreduced=0`，墙钟 `160.11 s`。公开 consumer 得到六张 `81x81`
 DE，exact-point matrix/source residual 均为零；扫描 310688 个普通积分和全部 active masters 未发现
-fixed bridge line 3 被当作圈幂或 parity 槽。line 1、2 的两条 cycle parity 分别保持全偶。fresh
+fixed bridge 传播子 3 被当作圈幂或 parity 槽。传播子 1、2 的两条 cycle parity 分别保持全偶。fresh
 manifest/reduction SHA-256 分别为
 `B3C9ED791EB2C0247A114FA2AC29B526A860DB77FD9B1C6921E8AA412A7A7106`、
 `7D66B032E78EB724B7EA643092CEAA1DCACA81AA3A6C2968D362E8127FD9C5BD`。正式报告及轻量附件已归档；

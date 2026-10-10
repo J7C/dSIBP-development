@@ -75,7 +75,7 @@ Integration-By-Parts (IBP) relations were generalized from polynomial integrands
 integrand case. In \cite{Chen:2024glu} the iterative IBP reduction and the d log-form
 differential equations of arbitrary tree-level correlators were given in uniform, closed form, and
 the boundary conditions were determined by power series expansions together with blow-up. Once the differential equation and the boundary conditions are known, the master integrals can be solved
-numerically at any ordinary point of the kinematic space. As a complement to \cite{Chen:2023iix}, we will show the derivation of these methods for massless internal lines. Compared with the analytic methods, this IBP-based method is faster when we want the numeric value of a large number of points. In addition, since this method is also based on the differential equation, it is easy to do analytic continuation using numeric techniques.
+numerically at any ordinary point of the kinematic space. As a complement to \cite{Chen:2023iix}, we will show the derivation of these methods for massless internal propagators. Compared with the analytic methods, this IBP-based method is faster when we want the numeric value of a large number of points. In addition, since this method is also based on the differential equation, it is easy to do analytic continuation using numeric techniques.
 
 \texttt{MadStree} is a Mathematica package that numerically evaluates arbitrary tree-level
 cosmological correlators of scalar fields in de~Sitter space. The evaluation implements the
@@ -137,9 +137,9 @@ Hankel block carries $z^{+\nu}$ rather than the $z^{-\nu}$ of the printed formul
 \cite{Chen:2023iix,Chen:2024glu}; relative to those papers this is the single simultaneous
 replacement $\nu\to-\nu$ in every occurrence, and after performing it no further translation is
 needed anywhere below (Sec.~\ref{sec:notation}). Second, the one and only structural difference
-from \cite{Chen:2023iix} is the massless internal line: that reference never uses the extra
-reduction relations of a massless bulk propagator to compress the four endpoint states of a
-massless \emph{full} propagator into a single two-state factor shared by the whole edge, while the
+from \cite{Chen:2023iix} is the massless internal propagator: that reference never uses the extra
+reduction relations of a massless bulk propagator to compress the four states at the two vertices of a
+massless \emph{full} propagator into a single two-state factor shared by the whole propagator, while the
 package does. We therefore build the IBP relations from the start out of the three local building
 blocks of Sec.~\ref{sec:ibp} rather than re-deriving the single-vertex family, and we mark every
 quantity quoted from \cite{Chen:2023iix} before that extra relation is imposed by a superscript
@@ -165,22 +165,22 @@ vertex. With the positive-frequency mode function
 where $k=|\bm k|$ and $\nu^2=d^2/4-m^2/H_{\rm Hubble}^2$ for a minimally coupled scalar in $d$
 spatial dimensions ($\nu$ is real or imaginary for $d=3$), the bulk-to-bulk propagators are
 \begin{equation}
-  G^>(k;\tau_1,\tau_2)\equiv u(\tau_1,k)u^*(\tau_2,k),\qquad
-  G^<(k;\tau_1,\tau_2)\equiv u^*(\tau_1,k)u(\tau_2,k),
+  G_{>}(k;\tau_1,\tau_2)\equiv u(\tau_1,k)u^*(\tau_2,k),\qquad
+  G_{<}(k;\tau_1,\tau_2)\equiv u^*(\tau_1,k)u(\tau_2,k),
   \label{eq:bulk-bulk-propagators}
 \end{equation}
 and the time-ordered combinations used by the in-in rules are
 \begin{align}
-  G^{++}&=G^>\theta(\tau_1-\tau_2)+G^<\theta(\tau_2-\tau_1),
-  &G^{--}&=G^<\theta(\tau_1-\tau_2)+G^>\theta(\tau_2-\tau_1),
+  G_{++}&=G_{>}\theta(\tau_1-\tau_2)+G_{<}\theta(\tau_2-\tau_1),
+  &G_{--}&=G_{<}\theta(\tau_1-\tau_2)+G_{>}\theta(\tau_2-\tau_1),
   \notag\\
-  G^{+-}&=G^<,
-  &G^{-+}&=G^>.
+  G_{+-}&=G_{<},
+  &G_{-+}&=G_{>}.
   \label{eq:sk-propagators}
 \end{align}
 Throughout, $\theta_{ij}\equiv\theta(\tau_i-\tau_j)$ denotes the theta function of the time
 difference of vertices $i$ and $j$. Bulk-to-boundary propagators of massless fields,
-$G^\pm\propto(1\mp\ii k\tau)e^{\pm\ii k\tau}$, enter only as pure-exponential blocks. The Hankel
+$G_\pm\propto(1\mp\ii k\tau)e^{\pm\ii k\tau}$, enter only as pure-exponential blocks. The Hankel
 functions obey
 \begin{equation}
   \partial_\tau^2H^{(1,2)}_\nu(-k\tau)
@@ -236,8 +236,8 @@ those two papers, $\nu_{\rm ref}=-\nu$ \emph{everywhere at once} --- in the equa
 below, in the Wronskian, in $\text{M}_1$, in the contact powers, in the recurrences and in the
 d log potentials. For a heavy field $\nu=\ii\mu$ with real $\mu$ this reduces to
 $e^{-\pi\mu}H^{(2)}_{-\ii\mu}(z)=H^{(2)}_{\ii\mu}(z)$, and we shall use exactly this identity in
-Sec.~\ref{sec:remaining} to trade the conjugate-order endpoint basis of \cite{Chen:2024glu} for the
-common-order basis of the package.
+Sec.~\ref{sec:remaining} to trade the conjugate-order basis at the two vertices of a contracted propagator
+in \cite{Chen:2024glu} for the common-order basis of the package.
 
 Since the Hankel equation involves $\nu^2$ only, the two normalizations satisfy different
 first-order systems but the same second-order one up to $\nu\to-\nu$. In the convention
@@ -269,7 +269,7 @@ family) reads
 where the indices have the following meanings, which we reuse for the whole graph:
 \begin{itemize}
   \item $\nu_0$ is the power of the vertex time, $s_i\in\{1,2\}$ is the Hankel branch chosen at
-        leg $i$ by the SK type of the line that ends there, $a_i\in\{0,1\}$ is the \emph{state bit}
+        leg $i$ by the SK type of the propagator that ends there, $a_i\in\{0,1\}$ is the \emph{state bit}
         --- the index of the two components of \eqref{eq:h-definition} --- and $a_0$ is the integer
         \emph{shift} of the vertex time power;
   \item $p_0=\varsigma k_0$ is the signed energy of the vertex (Sec.~\ref{sec:ibp}), and
@@ -285,7 +285,9 @@ where the indices have the following meanings, which we reuse for the whole grap
   \texttt{IntegerDigits[...,2,n]} and the same order is used for the whole graph.
 \end{itemize}
 For a graph the same three kinds of index are kept, only made global. Fix a sector $s$ (defined
-below) with $c_s$ time components and $n^{\rm slot}_s$ two-state slots, and write a master as
+below) with $c_s$ time components and $n^{\rm slot}_s$ two-state slots --- one for each massive
+propagator at each of the two vertices it joins, and one shared by the two vertices of a massless
+full propagator --- and write a master as
 \begin{equation}
   \text{I}_{\tilde{\bm r}}\equiv \text{I}_{s}(\bm n;\bm a),
   \qquad \bm n\in\mathbb Z^{c_s},\quad \bm a\in\{0,1\}^{n^{\rm slot}_s},
@@ -328,10 +330,10 @@ are fixed once and for all at initialization and never re-enter the algebra:
         the two terms of \eqref{eq:hankel-tau0};
   \item the sector normalization $\cN_s$: the object the package propagates is
         $J_s=\cN_s\text{I}_s$, with $\cN_s$ the product of the pinch factors of the contracted
-        massive full edges (Sec.~\ref{sec:remaining}) and of a per-sector constant;
-  \item the SK contour signs: the vertex phase sign $\varsigma_v$, the ordered-endpoint incidence
-        $\epsilon_{ve}$ and the edge sign $\sigma_e$ of \eqref{eq:sk-propagators} are fixed by the
-        vertex types and by the endpoint order of each line, and enter only through the signed
+        massive full propagators (Sec.~\ref{sec:remaining}) and of a per-sector constant;
+  \item the SK contour signs: the vertex phase sign $\varsigma_v$, the incidence
+        $\epsilon_{ve}$ and the propagator sign $\sigma_e$ of \eqref{eq:sk-propagators} are fixed by the
+        vertex types and by the vertex order of each propagator, and enter only through the signed
         energies $p_{0,v}$ and the letters $\kappa$;
   \item the theta chamber: at a boundary chart each theta is frozen to $0$ or $1$ by the strict
         energy order (Sec.~\ref{sec:boundary}), and inside the bulk the ordering of a bundle is
@@ -350,8 +352,8 @@ independent of the kinematics-independent constants that were absorbed.
 
 \paragraph{The relative normalization of the recurrences.}
 Compared with \cite{Chen:2023iix} there is exactly one difference, already stated in
-Sec.~\ref{sec:method}: that paper treats every propagator endpoint as an independent two-state
-factor, including both endpoints of a massless full propagator, and never imposes the extra
+Sec.~\ref{sec:method}: that paper gives each vertex of a propagator its own independent
+two-state factor, including the two vertices of a massless full propagator, and never imposes the extra
 massless relations that identify them. Everything else is its construction, translated to the
 $+\nu$ convention and to the $(-\tau)^{\nu_0}$ time power of \eqref{eq:vertex-integral-family}.
 Note this last point: with $(-\tau)^{A}$ instead of $\tau^{\nu_0}$, the derivative of the explicit
@@ -373,17 +375,18 @@ Each vertex $v$ carries exactly \emph{one} theta-free exponential factor,
 so that a \texttt{"+"} vertex gives $e^{-\ii k_{0,v}\tau_v}$ and a \texttt{"-"} vertex gives
 $e^{+\ii k_{0,v}\tau_v}$, as quoted around \eqref{eq:sk-propagators}. Here $k_{0,v}$ is the
 \emph{single summed} external-energy parameter of the vertex, the modulus sum of all theta-free
-external legs and theta-free cross-line endpoints attached to $v$; eq.~(3.1) of \cite{Chen:2023iix}
+external legs and theta-free cross propagators attached to $v$; eq.~(3.1) of \cite{Chen:2023iix}
 likewise writes one $k_0$ per vertex, and this document never introduces per-leg or per-block
 exponential parameters, nor any sum over them. After a contact has merged a set $C$ of vertices
 into one component, the same scalar becomes the component energy
 \begin{equation}
   p_{0,C}=\sum_{v\in C}\varsigma_vk_{0,v}
-  +\!\!\sum_{\substack{\text{theta-free lines }e\ \text{with exactly one end in }C}}\!\!
-  (-\varsigma_{v_e})\,q_e,
+  +\!\!\sum_{\substack{\text{theta-free propagators }e\\[-1pt]
+  \text{with exactly one vertex in }C}}\!\!(-\varsigma_{v_e})\,q_e,
   \label{eq:component-energy}
 \end{equation}
-where $q_e=|\bm q_e|$ is the momentum modulus of the line and $v_e$ its endpoint inside $C$; the
+where $q_e=|\bm q_e|$ is the momentum modulus of the propagator and $v_e$ is the vertex of $e$ that
+lies in $C$; the
 second sum collects the massless cross and external branches, which create no slot and only add
 their moduli, each with the contour sign of the vertex that holds them, into the same scalar. For a
 one-vertex component \eqref{eq:component-energy} reduces to $p_{0,v}$.
@@ -391,30 +394,32 @@ one-vertex component \eqref{eq:component-energy} reduces to $p_{0,v}$.
 Because $\dim\cE_v=1$, this block creates no state bit and no slot: it contributes nothing to
 $\text{M}_1$ and contributes the scalar $\ii p_{0,v}\Id$ to $\text{M}_0$.
 
-\paragraph{Block (ii): the massive endpoint $h$ system.}
-A massive propagator of order $\nu$ contributes, at each of its endpoints, one two-state system
+\paragraph{Block (ii): the $h$ system of a massive propagator.}
+A massive propagator of order $\nu$ contributes, at each of the two vertices it joins, one two-state
+system
 \eqref{eq:h-definition} in the $\cH\simeq\mathbb C^2$ of generators
 \eqref{eq:h-first-order-system}. This is the block of \cite{Chen:2023iix} unchanged, with $1-2\nu$
-replacing the printed $2\nu+1$. Only the branch $s\in\{1,2\}$, fixed by the SK type of the line,
-differs between the two endpoints of a full or cross line, and it does not change the generator
+replacing the printed $2\nu+1$. Only the branch $s\in\{1,2\}$, fixed by the SK type of the
+propagator, differs between the two vertices it joins, and it does not change the generator
 $-\ii k\sigma_2$.
 
-\paragraph{Block (iii): the massless full propagator, before the extra relations.}
-Before the extra massless relations are imposed, a massless full line $e=(u_e,v_e)$ is exactly
-like a massive one: the endpoint $u_e$ carries two states $a\in\{0,1\}$, the endpoint $v_e$ carries
-two states $b\in\{0,1\}$, and the local space of the edge is
+\paragraph{Block (iii): the massless full propagator.}
+\label{sec:massless}
+Before the extra massless relations are imposed, a massless full propagator $e=(u_e,v_e)$ is exactly
+like a massive one: the vertex $u_e$ carries two states $a\in\{0,1\}$, the vertex $v_e$ carries two
+states $b\in\{0,1\}$, and the local space of this propagator is
 $\cH_{e,u}\otimes\cH_{e,v}\simeq\mathbb C^4$ with, in the natural order,
 \begin{equation}
   \bm F_e^{(4)}=(F_{00},F_{01},F_{10},F_{11})^T .
   \label{eq:four-state}
 \end{equation}
-Writing the unreduced full-graph space as the tensor product of all such endpoint factors and of
+Writing the unreduced full-graph space as the tensor product of all such two-state factors and of
 the one-dimensional vertex exponentials, and the corresponding vertex matrices as
 \ie
   \cV_s^{\,\rm unreduced}
-  &=\bigotimes_{v\in V_s}\cE_v\otimes\bigotimes_{\text{active endpoints }i}\cH_i,
+  &=\bigotimes_{v\in V_s}\cE_v\otimes\bigotimes_{\text{active two-state factors }i}\cH_i,
   \qquad
-  \dim\cV_s^{\,\rm unreduced}=2^{\#\{\text{endpoints}\}},
+  \dim\cV_s^{\,\rm unreduced}=2^{\#\{\text{two-state factors}\}},
   \label{eq:unreduced-space}\\
   \text{M}_{1;v}^{\,\rm unreduced}
   &=\nu_{0,v}\Id-\sum_{i\in I_v}(1-2\nu_i)\Emb_i(P_1),
@@ -423,14 +428,16 @@ the one-dimensional vertex exponentials, and the corresponding vertex matrices a
   &=\ii p_{0,v}\Id-\ii\sum_{i\in I_v}k_i\Emb_i(\sigma_2),
   \fe
 reproduces \cite{Chen:2023iix} verbatim in our convention: the superscript ${\rm unreduced}$ means
-``each endpoint of every propagator, massive or massless, is an independent two-state factor, with
+``the two states at each vertex of every propagator, massive or massless, form an independent
+two-state factor, with
 the $+\nu$ prefactor \eqref{eq:h-definition} and the $(-\tau)^{\nu_0}$ time power'', $I_v$ is the
-set of endpoints attached to $v$, and $V_s$ is the set of active vertices of the sector $s$.
+set of two-state factors contributed by the propagators that end on $v$, and $V_s$ is the set of
+active vertices of the sector $s$.
 Here $\Emb_i(A)$ is the embedding of a local operator,
 $\Emb_i(A)=\Id\otimes\cdots\otimes A\otimes\cdots\otimes\Id$ with $A$ in the $i$-th factor.
 
-\paragraph{Block (iii), reduced: four endpoint states to one shared two-state.}
-\label{sec:massless}
+Imposing the extra massless relations is what reduces these four states at the two vertices to one
+shared two-state system.
 At the conformal value $\nu=1/2$ the positive-prefactor block degenerates:
 $h^{(1,2)}(1/2,0;z)=z^{1/2}H^{(1,2)}_{1/2}(z)\propto e^{\pm\ii z}$, \eqref{eq:h-dimensionless-eom}
 becomes $h''+h=0$, and the derivative state is a branch eigenstate of the zeroth-order state,
@@ -442,12 +449,29 @@ becomes $h''+h=0$, and the derivative state is a branch eigenstate of the zeroth
 \end{equation}
 so the two states are the exponentials $e^{\pm\ii z}$. More generally every half-integer order is
 a polynomial times an exponential and reduces to $\nu=1/2$. Applied to the four states of a
-massless full edge, \eqref{eq:h-branch-eigenvalues} gives the two extra relations
+massless full propagator of momentum modulus $q$, \eqref{eq:h-branch-eigenvalues} turns the two
+extra relations into identities among explicit integrands. Writing them out, the four entries of
+\eqref{eq:four-state} are
 \begin{equation}
-  F_{01}=-F_{10},\qquad F_{11}=F_{00},
+  F_{ab}=\int_{-\infty}^{0}\!\!\dd\tau_u\int_{-\infty}^{0}\!\!\dd\tau_v\;\Phi_e\,
+  h^{(1)}\!\left(\tfrac12,a;-q\tau_u\right)h^{(2)}\!\left(\tfrac12,b;-q\tau_v\right),
+  \qquad a,b\in\{0,1\},
+  \label{eq:massless-four-states}
+\end{equation}
+where $\Phi_e$ collects every other factor of the integrand: the vertex exponentials of $u$ and $v$,
+the theta of this propagator, and the factors of all the remaining propagators. The first branch
+sits at $u_e$ and the second at $v_e$ for $G_{++}$; for $G_{--}$ the two branches are exchanged.
+Each differentiated state is one factor $\pm\ii$ times the undifferentiated one at the same vertex
+by \eqref{eq:h-branch-eigenvalues}, so
+\begin{equation}
+  F_{10}=\ii F_{00}=-F_{01},\qquad
+  F_{11}=\ii(-\ii)F_{00}=F_{00}
+  \qquad(G_{++}),
   \label{eq:massless-relations}
 \end{equation}
-so only two of the four are independent. Choosing the shared two-state
+and for $G_{--}$ the two factors $\ii$ and $-\ii$ are interchanged, which leaves the same two
+identities $F_{10}=-F_{01}$ and $F_{11}=F_{00}$. Only two of the four states are therefore
+independent. Choosing the shared two-state
 $\bm g_e=(F_{00},F_{10})^T\in\cM_e\simeq\mathbb C^2$, the constant embedding and projection are
 \begin{equation}
   \bm F^{(4)}_e=S_e\bm g_e,\qquad
@@ -464,9 +488,10 @@ reduces to $P_eOS_e$. In particular
   P_e(\Id_2\otimes\sigma_2)S_e=-\sigma_2,
   \label{eq:endpoint-projections}
 \end{equation}
-so the two endpoints of a massless full edge act with \emph{the same} $\sigma_2$ on
+so the two vertices joined by a massless full propagator act with \emph{the same} $\sigma_2$ on
 \emph{the same} two-dimensional slot, with opposite signs. This is the point of the reduction: the
-shared slot carries one bit $r_e$ that appears at both endpoints of $e$ and cannot be duplicated
+shared slot carries one bit $r_e$ that enters the state string of both vertices joined by $e$ and
+cannot be duplicated
 into two independent two-state factors. Consequently the full-graph tensor structure survives, but
 the vertex-by-vertex factorization
 $\cV_s\stackrel{?}{=}\bigotimes_{v\in V_s}\cV_v$ fails, because $\cM_e$ cannot belong to both $u_e$
@@ -478,20 +503,27 @@ and $v_e$ at once. The reduced space of a sector is
   \qquad \dim\cV_s=2^{|H(s)|+|E_m(s)|},
   \label{eq:reduced-space}
 \end{equation}
-where $H(s)$ is the set of still-active massive endpoint $h$ slots of $s$ and $E_m(s)$ the set of
-its uncontracted massless full edges.
+where $H(s)$ is the set of two-state factors that the massive propagators of $s$ still contribute
+and $E_m(s)$ the set of its uncontracted massless full propagators.
 
 The contact vector of a theta derivative is $\bm\rho_e^{(4)}=(0,-1,+1,0)^T$, and
 \eqref{eq:SP-massless} identifies it exactly as
 $\bm\rho_e^{(4)}=S_e|1\rangle_e$ with the fixed column $|1\rangle_e=(0,1)^T$; the contact selector of
-the shared slot therefore needs no further computation. With $\sigma_e=+1$ for $G^{++}$ and
-$\sigma_e=-1$ for $G^{--}$, the ordered first and second endpoints carry the weights
+the shared slot therefore needs no further computation. What remains to fix is the numerical factor
+which this derivative carries at each of the two vertices. With $\sigma_e=+1$ for $G_{++}$ and
+$\sigma_e=-1$ for $G_{--}$, the two vertices $u_e$ and $v_e$, taken in that order, carry the
+\emph{contact weights}
 \begin{equation}
   w_{e}^{(u_e)}=+2\ii\sigma_e,\qquad w_{e}^{(v_e)}=-2\ii\sigma_e,
   \label{eq:contact-weight}
 \end{equation}
-in the $h$-state basis of \eqref{eq:h-definition}. The package quotient instead factors the
-endpoint derivative phase out of each state, which is the constant basis change
+in the $h$-state basis of \eqref{eq:h-definition}. They are the numbers that multiply the local
+selector of the contracted propagator in the injection matrix $C^{(v,1)}_{st}$ of a contact event,
+which is the object built in \eqref{eq:contact-injection} and carried into the contact block
+$\Omega^{\rm contact}_{st}$ of \eqref{eq:contact-omega}; the phase $\chi_v$ of
+\eqref{eq:contact-phase} records how the pair \eqref{eq:contact-weight} changes once the package
+basis is used. The package quotient instead factors the derivative phase of each vertex out of its
+state, which is the constant basis change
 $D_{\sigma_e}=\diag(1,\ii\sigma_e)$; it turns $-\ii q_e\sigma_2$ into
 $\pm\ii\sigma_eq_e\sigma_1$ and \eqref{eq:contact-weight} into the pair $(-2,+2)$, and it is
 diagonalized by the Hadamard matrix
@@ -500,42 +532,55 @@ $\text T$. Both bases give the same set of energy letters, since $D_{\sigma_e}$ 
 shared bit.
 
 \paragraph{Local generators and the full-graph $\text{M}_1$, $\text{M}_0$.}
-For each ordered massless full edge $e=(u_e,v_e)$ define the incidence
+For each massless full propagator, whose two vertices we order as $(u_e,v_e)$, define the incidence
 \begin{equation}
   \epsilon_{ve}=\begin{cases}+1,&v=u_e,\\-1,&v=v_e,\\0,&v\notin e,\end{cases}
   \label{eq:incidence}
 \end{equation}
-and let $H_v(s)$ be the massive slots of $s$ that end on $v$. Each building block then contributes
-to the vertex $v$ the pair of atoms
+and let $H_v(s)$ be the set of two-state factors that the massive propagators of $s$ contribute at
+$v$. Each building block then contributes to the vertex $v$ the pair of atoms
 \begin{align}
   \Delta\text{M}_{1}^{(E_v)}&=0, & \Delta\text{M}_{0}^{(E_v)}&=\ii p_{0,v}\Id,
-  &&\text{vertex exponential }\cE_v,
+  &&\text{the exponential of the vertex }v,
   \label{eq:phase-block-M10}\\
   \Delta\text{M}_{1}^{(h_i)}&=-(1-2\nu_i)P_1, & \Delta\text{M}_{0}^{(h_i)}&=-\ii k_i\sigma_2,
-  &&\text{massive endpoint }i,
+  &&\text{a massive propagator of order }\nu_i\text{ at }v,
   \label{eq:massive-h-block-M10}\\
   \Delta\text{M}_{1}^{(\cM_e)}&=0, &
   \Delta\text{M}_{0}^{(\cM_e)}&=-\ii\epsilon_{ve}q_e\sigma_2,
-  &&\text{massless shared slot }e.
+  &&\text{a massless propagator }(\nu=\tfrac12)\text{ at }v.
   \label{eq:massless-shared-block-M10}
 \end{align}
-The massless row is written once for each of the two ends: in \eqref{eq:massless-shared-block-M10}
+The second row is one of the two states that a massive propagator contributes at the vertex $v$ it
+ends on; the third is the internal propagator whose $\nu$ is a half-integer, i.e.\ a massless one.
+The massless row is written once for each of the two vertices: in
+\eqref{eq:massless-shared-block-M10}
 the factor $\epsilon_{ve}$ carries the sign with which the same operator $\Emb_e(\sigma_2)$ appears
-in the rows of $u_e$ and of $v_e$. A massless shared slot does not enter $\text{M}_1$ at all: the
-default $\nu=1/2$ makes $1-2\nu$ vanish identically in \eqref{eq:massive-h-block-M10}. The two
-complete matrices of a vertex $v$ in a sector $s$ are Kronecker sums over the blocks incident to
-$v$,
+in the rows of $u_e$ and of $v_e$. A massless internal propagator does not enter $\text{M}_1$ at
+all: its $\nu=1/2$ makes $1-2\nu$ vanish identically in \eqref{eq:massive-h-block-M10}. The two
+complete matrices of a vertex $v$ in a sector $s$ are then the sum of these atoms, each embedded in
+the slot it acts on, together with the $\nu_{0,v}\Id_s$ of the vertex time power,
 \begin{align}
   \text{M}_{1;v,s}(\nu_{0,v})
+  &=\nu_{0,v}\Id_s+\Emb_{\cE_v}\!\left(\Delta\text{M}_{1}^{(E_v)}\right)
+  +\sum_{i\in H_v(s)}\Emb_i\!\left(\Delta\text{M}_{1}^{(h_i)}\right)\nn\\
+  &\quad+\sum_{e\in E_m(s)}\Emb_e\!\left(\Delta\text{M}_{1}^{(\cM_e)}\right)\nn\\
   &=\nu_{0,v}\Id_s-\sum_{i\in H_v(s)}(1-2\nu_i)\Emb_i(P_1),
   \label{eq:global-M1}\\
   \text{M}_{0;v,s}
-  &=\ii p_{0,v}\Id_s+\sum_{i\in H_v(s)}\Emb_i(-\ii k_i\sigma_2)
-  +\sum_{e\in E_m(s)}\Emb_e(-\ii\epsilon_{ve}q_e\sigma_2).
+  &=\Emb_{\cE_v}\!\left(\Delta\text{M}_{0}^{(E_v)}\right)
+  +\sum_{i\in H_v(s)}\Emb_i\!\left(\Delta\text{M}_{0}^{(h_i)}\right)
+  +\sum_{e\in E_m(s)}\Emb_e\!\left(\Delta\text{M}_{0}^{(\cM_e)}\right)\nn\\
+  &=\ii p_{0,v}\Id_s+\sum_{i\in H_v(s)}\Emb_i(-\ii k_i\sigma_2)\nn\\
+  &\quad+\sum_{e\in E_m(s)}\Emb_e(-\ii\epsilon_{ve}q_e\sigma_2).
   \label{eq:global-M0}
 \end{align}
+The first line of \eqref{eq:global-M1} and the first line of \eqref{eq:global-M0} are just the
+atoms \eqref{eq:phase-block-M10}--\eqref{eq:massless-shared-block-M10} collected at $v$; the second
+line of each is what they give once those atoms are inserted.
 The per-vertex form is what \eqref{eq:unreduced-space} already gives, and the reduction only
-replaces the two endpoint factors of a massless edge by one shared factor: $\partial_{\tau_v}$ acts
+replaces the two two-state factors at the two vertices of a massless propagator by one shared factor:
+$\partial_{\tau_v}$ acts
 on the blocks belonging to $v$ and on nothing else, so the vertex generators remain Kronecker
 \emph{sums} on the common space \eqref{eq:reduced-space} and different vertices meet only on a
 shared massless slot, where they carry the same $\sigma_2$ and opposite $\epsilon_{ve}$.
@@ -555,6 +600,16 @@ $\{\bm F_s(\bm 0)\}$. They obey a $\nd\log$-form DE,
  =  \Omega_{{\rm ex},s} - \ii \sum_{v\in V_s}U_s^{-1}\cdot  \widetilde{\Omega}_{0;v,s} \cdot  U_s \cdot \text{M}_{1;v,s}(\nu_{0,v}+1) \, ,\label{eq:ndlogDE}
 \end{align}
 where $x$ runs over the independent kinematic variables and $\Omega_x=\partial_x\Omega$.
+The derivation is that of \cite{Chen:2023iix}: differentiate the master vector, reduce the
+differentiated integrals back onto the masters by applying the one-step recurrence
+\eqref{eq:one-step-ibp} iteratively, and read off the connection. The massless reduction changes
+nothing in that route except the two matrices the answer is expressed through:
+$\text{M}_{1;v,s}$ and $\text{M}_{0;v,s}$ are now built on the reduced space
+\eqref{eq:reduced-space}, and the diagonalizer of \cite{Chen:2023iix} is replaced by the $U_s$ of
+\eqref{eq:global-M0-diagonal}, which carries an extra factor on every shared slot. Because the
+reduced generators still commute slot by slot, that one $U_s$ diagonalizes every vertex matrix at
+once, so \eqref{eq:ndlogDE} follows from the printed formula of \cite{Chen:2023iix} by this single
+replacement.
 The two ingredients are diagonal matrices indexed by the state bits,
 \ie \label{eq:omega-form}
 &\left( \widetilde{\Omega}_{0;v,s} \right)_{\bm{b}\bm{a}}  \equiv \begin{cases} - \ii \log \kappa_{v,s;\bm{a}} , & \bm{b}=\bm{a} \\
@@ -573,8 +628,8 @@ with the energy letters
 \end{equation}
 in which $\bm a$ abbreviates the full bit string, massive bits $a_i$ and shared bits $r_e$
 together. The same $r_e$ enters the letters of $u_e$ and $v_e$ with opposite signs: this is the
-whole regular content of the shared-edge correlation, and it is why the letter set of a graph with
-shared slots is still a set of linear forms in the momenta. Only massive endpoints contribute to
+whole regular content of the correlation carried by one shared propagator, and it is why the letter set of a graph with
+shared slots is still a set of linear forms in the momenta. Only the states of massive propagators contribute to
 $\Omega_{\rm ex}$, because a massless slot has $1-2\nu=0$.
 
 $\text{M}_{1;v,s}$ is diagonal in the original basis and all $\text{M}_{0;v,s}$ are made of
@@ -617,20 +672,20 @@ generated by the $D_{\sigma_e}$.
 Three statements isolate the effect of the massless reduction on the DE. (1) A massless shared slot
 contributes nothing to $\Omega_{\rm ex}$ and nothing to $\text{M}_1$, so the diagonal logarithmic
 structure in the orders $\nu_i$ is exactly the massive one. (2) It contributes one state bit $r_e$
-to the letters of both endpoints with opposite incidence \eqref{eq:global-energy-letter}, so the
+to the letters of both vertices with opposite incidence \eqref{eq:global-energy-letter}, so the
 two vertices share a bit while their recurrences stay separate closed-form matrices. (3) The
-theta derivative of a full edge, massive or massless, is not a regular operator: it injects the
+theta derivative of a full propagator, massive or massless, is not a regular operator: it injects the
 parent relation into strictly lower sectors, which produces the off-diagonal blocks
 \eqref{eq:contact-omega}; and the time power of the merged component counts vertex merges, not
-contracted edges, so the base power of a component $C$ is
+contracted propagators, so the base power of a component $C$ is
 \begin{equation}
   A_{C,s}=\sum_{v\in C}\nu_{0,v}+\sum_{e\in E_s(C)}r_e+|C|-1,
   \label{eq:base-power}
 \end{equation}
-where $E_s(C)$ is the set of edges contracted into $C$, and $r_e$ is the raw contact power of the
-edge --- $r_e=2\nu_e-1$ for a massive full edge and $r_e=0$ for a massless one, as read off from
+where $E_s(C)$ is the set of propagators contracted into $C$, and $r_e$ is the raw contact power of the
+propagator --- $r_e=2\nu_e-1$ for a massive full propagator and $r_e=0$ for a massless one, as read off from
 \eqref{eq:R-two-vertex} and \eqref{eq:massless-relations}. The last term is the number of vertex
-merges that actually occur, which is why a simultaneous contact of $k$ shared-theta edges
+merges that actually occur, which is why a simultaneous contact of $k$ shared-theta propagators
 contributes once and not $k$ times (App.~\ref{app:theta}).
 
 \paragraph{Iterative reduction.}
@@ -644,7 +699,7 @@ vector of the component that contains $v$, the complete one-step IBP at $v$ is
   \label{eq:one-step-ibp}
 \end{equation}
 where the minus in front of $\text{M}_1$ is the $(-\tau)^A$ derivative and $\cR_{v,s}$ collects the
-theta contact terms of the edges incident to $v$ (next subsection). The two directions are
+theta contact terms of the propagators incident to $v$ (next subsection). The two directions are
 \begin{align}
   A_{-,v,s}(\bm n)&=-\text{M}_{1;v,s}(\nu_{0,v}+n_v)^{-1}\text{M}_{0;v,s},
   \label{eq:global-Aminus}\\
@@ -689,9 +744,9 @@ off-diagonal blocks of the DE must be built from $\cR^{(1)}$}; substituting $\cR
 wrong sign and a non-closing expression.
 
 \paragraph{The two-vertex massive contraction.}
-Take two vertices $u,v$ joined by one massive full line with orders $\nu$ at both ends, momentum
-modulus $k$, endpoint legs $i$ of $u$ and $j$ of $v$; the two other legs are collected in
-$\bm a_{\hat\imath}$ and $\bm b_{\hat\jmath}$. The SK combination of the two endpoint blocks is,
+Take two vertices $u,v$ joined by one massive full propagator with order $\nu$ at each of its two vertices, momentum
+modulus $k$, the legs $i$ at $u$ and $j$ at $v$; the two other legs are collected in
+$\bm a_{\hat\imath}$ and $\bm b_{\hat\jmath}$. The SK combination of the two $h$ systems at $u$ and $v$ is,
 with the branch convention \eqref{eq:sk-propagators},
 \ie
 &h(\nu_{i},a_i,-k\tau_u)\,\theta^{(i,j)}_{uv}\,h(\nu_{j},b_j,-k\tau_v)
@@ -702,7 +757,7 @@ h^{(1)}(\nu_{i},a_i,-k\tau_u)\,\theta_{uv}\,h^{(2)}(\nu_{j},b_j,-k\tau_v)
 \nn\\
 &\nu_{i}=\nu_{j}\equiv\nu, \qquad k_{i}=k_{j}\equiv k,
 \fe
-where the relative sign between the two terms is that of $G^{++}$, and $G^{--}$ exchanges the
+where the relative sign between the two terms is that of $G_{++}$, and $G_{--}$ exchanges the
 branches. Differentiating with respect to $\tau_u$ produces, besides the regular generators,
 $\partial_{\tau_u}\theta_{uv}=\delta(\tau_u-\tau_v)$ and
 $\partial_{\tau_u}\theta_{vu}=-\delta(\tau_u-\tau_v)$, so the delta sets the two times equal,
@@ -739,7 +794,8 @@ term of the lowering row is therefore
   \qquad \tilde{\bm r}=\bm a_{\hat\imath}\bm b_{\hat\jmath},
   \label{eq:R-two-vertex}
 \end{equation}
-where $\sigma_e=+1$ for $G^{++}$ and $\sigma_e=-1$ for $G^{--}$, and $\bm f^{(-1)}_{\tilde{\bm r}}$ is
+where the sign $\sigma_e$ is the propagator sign of \eqref{eq:contact-weight}, and
+$\bm f^{(-1)}_{\tilde{\bm r}}$ is
 the one-component child master of the merged vertex with state bits $\tilde{\bm r}$ and base power
 $\nu_{0,u}+\nu_{0,v}+2\nu-1$, i.e.\ child shift $-1$ with respect to
 \eqref{eq:base-power}. The version needed by the DE is \eqref{eq:R-two-vertex} with
@@ -749,11 +805,11 @@ $\nu_{0,u}+\nu_{0,v}+2\nu$ and which is an actual master of the child sector.
 Two comments on the relation to \cite{Chen:2024glu} are in order. First, the printed form of this
 equation in that reference carries an extra Boltzmann factor $e^{\pi\operatorname{Im}\nu}$ and the
 power $k^{-2\nu-1}$: it is written in the negative-prefactor convention, which replaces
-$k^{2\nu-1}\to k^{-2\nu-1}$, and its endpoint basis uses conjugate Hankel orders at the two ends
-of the contracted line. Our basis \eqref{eq:h-definition} uses the same order $\nu$ at both
-ends, and the two bases are related by the constant identity
+$k^{2\nu-1}\to k^{-2\nu-1}$, and its basis of states at the two vertices of the contracted
+propagator uses conjugate Hankel orders. Our basis \eqref{eq:h-definition} uses the same order
+$\nu$ at both vertices, and the two bases are related by the constant identity
 $e^{-\pi\mu}H^{(2)}_{-\ii\mu}=H^{(2)}_{\ii\mu}$ for $\nu=\ii\mu$, so that in the common-order
-basis the explicit Boltzmann factor is absorbed into the endpoint basis change and does not appear
+basis the explicit Boltzmann factor is absorbed into this change of basis and does not appear
 in \eqref{eq:R-two-vertex}. Second, the same constant $-\sigma_e\frac{4\ii}{\pi}k^{2\nu-1}$ is what
 the package assigns to the sector normalization $\cN_s$ of the child as its pinch factor; because
 the contact blocks of the normalized masters $J_s=\cN_s\text{I}_s$ carry the ratio
@@ -768,8 +824,8 @@ For a general graph the contact part of the row at $v$ is a sum over lower secto
 \end{equation}
 where $C^{(v,1)}_{st}$ is the constant injection matrix of the event that takes $s$ to $t$ when
 acted on by $\partial_{\tau_v}$: it is the tensor product of the local contact selectors of the
-selected edges --- $|1\rangle_e$ on a massless shared slot, the complementary-bit selector of
-\eqref{eq:R-two-vertex} on a pair of massive endpoints --- times the weights
+selected propagators --- $|1\rangle_e$ on a massless shared slot, the complementary-bit selector of
+\eqref{eq:R-two-vertex} on a pair of massive-propagator states --- times the weights
 \eqref{eq:contact-weight}, embedded in the global bit order with all spectator bits preserved by
 Kronecker deltas, and times the odd-subset coefficient of Sec.~\ref{sec:common-theta}. By the
 choice of base power, the child appears at vanishing shift and the right-hand side of
@@ -811,29 +867,29 @@ purely off-diagonal potential. Reading off the coefficient of $\bm F_t(\bm 0)$,
   \qquad t\prec s,
   \label{eq:contact-omega}
 \end{equation}
-where $E_{st}$ is the set of edges actually selected by that simultaneous event and the phase
+where $E_{st}$ is the set of propagators actually selected by that simultaneous event and the phase
 $\chi_v$ separates the two ways a shared slot enters:
 \begin{equation}
   \chi_v(E_{st})=\begin{cases}
-  \varsigma_v,&\text{if }E_{st}\text{ contains no massless full edge},\\
+  \varsigma_v,&\text{if }E_{st}\text{ contains no massless full propagator},\\
   (-1)^{N_0(E_{st})},&\text{otherwise},
   \end{cases}
   \label{eq:contact-phase}
 \end{equation}
-where $N_0(E_{st})=\#\{e\in E_{st}:e\ \text{massless full}\}$ is the number of massless full edges
+where $N_0(E_{st})=\#\{e\in E_{st}:e\ \text{massless full}\}$ is the number of massless full propagators
 contracted by the event.
 For a purely massive event the only sign left in the derivative is that of the exponential
 quotient of the differentiated vertex, which is $\varsigma_v$; a pure-massive component after a
 contact must have a single $\varsigma$, and a mixture of positive and negative phases in one
-component is not a case the formula describes. For an event that contracts massless full edges,
+component is not a case the formula describes. For an event that contracts massless full propagators,
 the $-2,+2$ contact weights of the package quotient relative to the $\pm2\ii\sigma_e$ of
 \eqref{eq:contact-weight} contribute one sign per shared slot, hence $(-1)^{N_0}$. All remaining
 sign correlations are already inside $C^{(v,1)}_{st}$. Differentiating the defining integral of a
-single pure-massless full edge with respect to both vertex energies and substituting
+single pure-massless full propagator with respect to both vertex energies and substituting
 \eqref{eq:contact-omega} makes the DE residual vanish component by component, which is the
 independent check the package runs on this block.
 
-Ordering the sectors by the number of remaining full edges, the complete connection is block
+Ordering the sectors by the number of remaining full propagators, the complete connection is block
 triangular,
 \begin{equation}
   \nd
@@ -891,10 +947,10 @@ hence $k_u\gg k_v$ implies $\tau_u>\tau_v$, and therefore
  \theta(\tau_v-\tau_u)\longrightarrow0.
  \label{eq:theta-rank-rule}
 \end{equation}
-For $G^{++}$ or $G^{--}$, \eqref{eq:theta-rank-rule} must be applied to every explicit theta in the
-propagator expansion according to the order of its argument, and for a bundle of lines sharing one
+For $G_{++}$ or $G_{--}$, \eqref{eq:theta-rank-rule} must be applied to every explicit theta in the
+propagator expansion according to the order of its argument, and for a bundle of propagators sharing one
 theta it is applied to that single theta, which is the boundary counterpart of
-Sec.~\ref{sec:common-theta}: the bundle contributes one frozen $0$ or $1$, not one per line. All
+Sec.~\ref{sec:common-theta}: the bundle contributes one frozen $0$ or $1$, not one per propagator. All
 thetas in an arbitrary time graph therefore become $0$ or $1$. If a term requires a cyclic
 inequality, for example
 \begin{equation}
@@ -906,7 +962,7 @@ boundary region.
 
 Applying the analysis above fixes every theta to $0$ or $1$ according to the strict energy order,
 so all master integrals --- in the top sector as well as in every subsector --- factorize into a
-product of one-dimensional time integrals, one per massive leg or massless shared edge and one per
+product of one-dimensional time integrals, one per massive leg or massless shared propagator and one per
 theta-free exponential. At the boundary $\tau\to0$ the massive legs behave like
 \eqref{eq:hankel-tau0} and a massless leg contributes its leading power or a pure exponential, so
 each one-dimensional integral has the form
@@ -930,41 +986,41 @@ point at once, so this is a single transport in the enlarged coordinate space ra
 succession of limits. No re-derivation takes place, and the user never supplies or sees this
 coordinate. Transporting to zero is a limit inside the solution, and it can land on a singular
 point: if the only nonzero signed energy of some component was auxiliary, its letters vanish at
-$k_{0,v}^{\rm aux}=0$. Such a finite singular endpoint returns either a finite value or an explicit
+$k_{0,v}^{\rm aux}=0$. Such a finite singular point returns either a finite value or an explicit
 divergence instead of silently producing a number.
 
 \subsection{Several propagators sharing one theta}
 \label{sec:common-theta}
 
-Up to now every contact has been attached to one full line. A tree graph can nevertheless contain
-two or more full lines whose endpoints lie on the same pair of current components, so that all of
+Up to now every contact has been attached to one full propagator. A tree graph can nevertheless contain
+two or more full propagators whose two vertices lie on the same pair of current components, so that all of
 them carry the identical theta argument $\Delta=\tau_u-\tau_v$; the package groups exactly such
-lines into a \emph{common-theta bundle} $\cB$, with $|\cB|\ge2$, and a time-order cycle is the
-typical source. This case is absent from \cite{Chen:2023iix}, where each contact is a single edge.
-Figure~\ref{fig:bundle} draws the minimal such graph: two vertices, no external lines, and four
-full lines that all join the same pair of vertices, the vertical dots between the inner two lines
-marking that any number of further lines may sit inside the same bundle. The handling is best
+propagators into a \emph{common-theta bundle} $\cB$, with $|\cB|\ge2$, and a time-order cycle is the
+typical source. This case is absent from \cite{Chen:2023iix}, where each contact is a single propagator.
+Figure~\ref{fig:bundle} draws the minimal such graph: two vertices, no external legs, and four
+full propagators that all join the same pair of vertices, the vertical dots between the inner two propagators
+marking that any number of further propagators may sit inside the same bundle. The handling is best
 summarized in four steps, with the details in App.~\ref{app:theta}.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.32\textwidth]{figures/fig_bundle.pdf}
-  \caption{A common-theta bundle of four full lines. The vertices $u$ and $v$ carry no external
-  lines, and every line $e_1,\ldots,e_4$ joins this same pair of vertices, hence the same pair of
-  current components at every stage of the reduction. All four lines therefore carry the identical
+  \caption{A common-theta bundle of four full propagators. The vertices $u$ and $v$ carry no external
+  legs, and every propagator $e_1,\ldots,e_4$ joins this same pair of vertices, hence the same pair of
+  current components at every stage of the reduction. All four propagators therefore carry the identical
   theta argument $\Delta=\tau_u-\tau_v$ and form one bundle $\cB$ with $|\cB|=4$. The two vertices
-  sit at the left and the right end, the outer two lines make up the halves of one circle, and the
-  vertical dots between the inner two lines stand for any number of further lines joining the same
-  pair, so the bundle is not restricted to the four lines drawn.}
+  sit at the left and the right end, the outer two propagators make up the halves of one circle, and the
+  vertical dots between the inner two propagators stand for any number of further propagators joining the same
+  pair, so the bundle is not restricted to the four propagators drawn.}
   \label{fig:bundle}
 \end{figure}
 
-Write the bundle as, per edge $e$, an ordered pair of endpoint products $\alpha_e$ (coefficient of
+Write the bundle as, per propagator $e$, an ordered pair of products $\alpha_e$ (coefficient of
 $\theta(\Delta)$) and $\beta_e$ (coefficient of $\theta(-\Delta)$).
 \begin{enumerate}
   \item \emph{Multiply the thetas out first.} Since inside a bundle all thetas are the same
         function, $\theta(\Delta)^2=\theta(\Delta)$ and $\theta(\Delta)\theta(-\Delta)=0$, the
-        product of $|\cB|$ lines collapses to \emph{two} terms rather than $2^{|\cB|}$,
+        product of $|\cB|$ propagators collapses to \emph{two} terms rather than $2^{|\cB|}$,
         \begin{equation}
           \prod_{e\in\cB}\Big(\theta(\Delta)\alpha_e+\theta(-\Delta)\beta_e\Big)
           =\theta(\Delta)\prod_{e\in\cB}\alpha_e
@@ -976,7 +1032,7 @@ $\theta(\Delta)$) and $\beta_e$ (coefficient of $\theta(-\Delta)$).
         $\alpha\leftrightarrow\beta$,
         $\partial_\Delta\big[\theta(\Delta)\prod\alpha_e+\theta(-\Delta)\prod\beta_e\big]
         =\delta(\Delta)\big(\prod_e\alpha_e-\prod_e\beta_e\big)$, so all contact information of
-        the bundle is concentrated in one distribution and the endpoints are forced to coincide
+        the bundle is concentrated in one distribution and the two vertices are forced to coincide
         only once.
   \item \emph{Split and change basis.} Telescoping the antisymmetric difference and then collecting
         in $\mathsf d_e=\alpha_e-\beta_e$ and $\mathsf m_e=(\alpha_e+\beta_e)/2$ leaves only terms
@@ -988,16 +1044,16 @@ $\theta(\Delta)$) and $\beta_e$ (coefficient of $\theta(-\Delta)$).
           \label{eq:bundle-odd-subsets}
         \end{equation}
   \item \emph{Read off the events.} Every non-empty odd subset $S$ is one simultaneous contact
-        event: the edges of $S$ are contracted at once, their endpoints merge once, the component
+        event: the propagators of $S$ are contracted at once, their two vertices merge once, the component
         count drops by one, and the base power of the merged component follows
         \eqref{eq:base-power} with $|C|-1$ merge terms. The injection matrix
         $C^{(v,1)}_{st}$ of \eqref{eq:contact-injection} for such an event is the tensor product of
-        the local selectors of the edges in $S$, multiplied by $2^{1-|S|}$ and by the spectator
+        the local selectors of the propagators in $S$, multiplied by $2^{1-|S|}$ and by the spectator
         factors $\mathsf m_e$.
 \end{enumerate}
 The collected form \eqref{eq:bundle-odd-subsets} rather than the term-by-term telescoping is what
 the program uses, because a term-by-term enumeration would count the same sector transition
-several times; the argument, the parity proof and the treatment of unselected edges whose endpoints
+several times; the argument, the parity proof and the treatment of unselected propagators whose two vertices
 become coincident are given in App.~\ref{app:theta}.
 
 
@@ -1068,7 +1124,8 @@ directory, which is \texttt{Vendor/FlintNDE} relative to \texttt{madStreeDirecto
 
 \paragraph{Tree diagrams: \texttt{MSInitTree}.}
 
-A tree is given by an association of vertices and lines,
+A tree is given by an association of vertices and propagators. The propagator list sits under
+the input key \texttt{"lines"}, but we call these objects propagators throughout. A tree with two vertices and one massless propagator between them:
 \begin{verbatim}
 spec = <|
   "name" -> "masslessFullEdge",
@@ -1098,30 +1155,30 @@ field & meaning & note\\
 \bottomrule
 \end{tabular}
 \end{center}
-Line fields:
+Propagator fields:
 \begin{center}
 \begin{tabular}{@{}p{4.4cm}p{5.3cm}p{3.8cm}@{}}
 \toprule
 field & meaning & note\\
 \midrule
 \texttt{type} & \texttt{"massive"} or \texttt{"massless"} & required\\
-\texttt{endpoints} & list of one external or two internal vertex endpoints & required\\
+\texttt{endpoints} & list of one external or two internal vertices & required\\
 \texttt{momentum} & momentum variable $k_i$ (e.g.\ \texttt{q}) & required\\
-\texttt{nu} & supplied Bessel/Hankel order $\nu$ & required for massive lines; massless default $1/2$\\
+\texttt{nu} & supplied Bessel/Hankel order $\nu$ & required for massive propagators; massless default $1/2$\\
 \bottomrule
 \end{tabular}
 \end{center}
-A massless line joining two internal vertices is classified internally as \texttt{masslessFull} and
+A massless propagator joining two internal vertices is classified internally as \texttt{masslessFull} and
 always uses the shared two-state quotient basis of Sec.~\ref{sec:dlog}; there is no field that
 selects another massless representation.
 The initialization option \texttt{NuConvention -> "Positive"} (default) or \texttt{"Negative"}
 chooses the prefactor sign of $h(\nu,0;z)=z^{\pm\nu}H_\nu(z)$ introduced in
 Sec.~\ref{sec:conventions}; it is fixed for the whole context and cannot be changed per call.
 
-Line numbers are assigned from the input order. The Full, Cross or External class and the contour signs are derived from the \texttt{vertexType} of the endpoint vertices; they are not supplied as line types or as separate sign fields. A \texttt{"+"} vertex has phase $e^{-\ii E\tau}$ and a \texttt{"-"} vertex has phase $e^{+\ii E\tau}$, where $E$ is \texttt{externalLegEnergy}. An omitted or zero external energy is represented internally by an auxiliary variable whose target value is zero. Full lines that share the same pair of endpoints are grouped into one common-theta bundle automatically; the optional top-level field \texttt{"thetaBundles"} pins such a group explicitly as a list of line ids, and any group whose members do not share one endpoint pair is rejected.
+Propagator numbers are assigned from the input order. The Full, Cross or External class and the contour signs are derived from the \texttt{vertexType} of the two vertices the propagator joins; they are not supplied as a type value or as separate sign fields. A \texttt{"+"} vertex has phase $e^{-\ii E\tau}$ and a \texttt{"-"} vertex has phase $e^{+\ii E\tau}$, where $E$ is \texttt{externalLegEnergy}. An omitted or zero external energy is represented internally by an auxiliary variable whose target value is zero. Full propagators that join the same pair of vertices are grouped into one common-theta bundle automatically; the optional top-level field \texttt{"thetaBundles"} pins such a group explicitly as a list of propagator ids, and any group whose members do not join the same pair of vertices is rejected.
 \paragraph{Loop diagrams without loop integral: \texttt{MSInitTimeGraph}.}
 
-For a pure time-order graph the vertex and line fields are the same, but the graph may contain
+For a pure time-order graph the vertex and propagator fields are the same, but the graph may contain
 cycles. A triangle cycle reads
 \begin{verbatim}
 cycleContext = MSInitTimeGraph[<|
@@ -1143,7 +1200,7 @@ cycleContext = MSInitTimeGraph[<|
   }
 |>];
 \end{verbatim}
-Here every line joins two internal vertices, so all three are classified internally as
+Here every propagator joins two internal vertices, so all three are classified internally as
 \texttt{masslessFull}. Once one of them is contracted, the remaining two connect the same pair of
 components and therefore form the common-theta bundle of Sec.~\ref{sec:common-theta}.
 
@@ -1181,18 +1238,18 @@ the convention of \cite{Chen:2023iix}; the two bases are related by $\nu\to-\nu$
 \eqref{eq:vertex-integral-family}; for multi-vertex correlators they are the products and
 sub-sector integrals of Sec.~\ref{sec:dlog}. Each master integral is represented by
 \texttt{MSIntegral[sectorKey, timeShifts, stateBits]}: \texttt{sectorKey} is a binary string over
-the root lines in the input order, with \texttt{1} for a line that is still active and
-\texttt{0} for a line contracted by a contact; \texttt{timeShifts} assigns one integer shift of
+the root propagators in the input order, with \texttt{1} for a propagator that is still active and
+\texttt{0} for a propagator contracted by a contact; \texttt{timeShifts} assigns one integer shift of
 the base time power to every vertex component, where a component is a maximal set of vertices
 merged by the contractions; \texttt{stateBits} gives the state of every two-state slot of the
 sector in the slot order. {\color{red}The master integrals are the entries with vanishing shifts}, and their
 connection is the d log-form \eqref{eq:ndlogDE} of Sec.~\ref{sec:dlog}.
 
-Let us see some examples for $\texttt{MSIntegral[sectorKey, timeShifts, stateBits]}$. For the three-vertex chain $v_1$--$v_2$--$v_3$ with internal lines $l_{12}$, $l_{23}$, vertex
+Let us see some examples for $\texttt{MSIntegral[sectorKey, timeShifts, stateBits]}$. For the three-vertex chain $v_1$--$v_2$--$v_3$ with internal propagators $l_{12}$, $l_{23}$, vertex
 energies $k_1,k_2,k_3$ and time powers $a_1,a_2,a_3$, the contact-reachable sectors are the four
 strings \texttt{"11"}, \texttt{"01"}, \texttt{"10"}, \texttt{"00"},
 \begin{center}
-\emph{(i) both lines massive: $l_{12}$ with $\nu_{12}$, $l_{23}$ with $\nu_{23}$.}\\[2pt]
+\emph{(i) both propagators massive: $l_{12}$ with $\nu_{12}$, $l_{23}$ with $\nu_{23}$.}\\[2pt]
 \footnotesize\begin{tabular}{@{}lllp{5.8cm}@{}}
 \toprule
 \texttt{sectorKey} & contracted & components & master integrals\\
@@ -1226,7 +1283,7 @@ strings \texttt{"11"}, \texttt{"01"}, \texttt{"10"}, \texttt{"00"},
 \end{tabular}
 \end{center}
 \begin{center}
-\emph{(iii) both lines massless.}\\[2pt]
+\emph{(iii) both propagators massless.}\\[2pt]
 \footnotesize\begin{tabular}{@{}lllp{5.8cm}@{}}
 \toprule
 \texttt{sectorKey} & contracted & components & master integrals\\
@@ -1245,9 +1302,8 @@ strings \texttt{"11"}, \texttt{"01"}, \texttt{"10"}, \texttt{"00"},
 
 
 The vertex \texttt{vertexType} field (\texttt{"+"} or \texttt{"-"}) determines the sign of the pure
-vertex exponential $e^{\ii k_0\tau}$ of \eqref{eq:vertex-integral-family}, and the pair of endpoint
-types determines the SK class of each line, from which the default Hankel branches of
-\eqref{eq:h-definition} follow; a line may override them with its own \texttt{hankelBranches}
+vertex exponential $e^{\ii k_0\tau}$ of \eqref{eq:vertex-integral-family}, and the pair of vertex types determines the SK class of each propagator, from which the default Hankel branches of
+\eqref{eq:h-definition} follow; a propagator may override them with its own \texttt{hankelBranches}
 field. The
 package $h$-states are those of \eqref{eq:h-definition}, i.e.\
 $h(\nu,1;z)=\partial_zh(\nu,0;z)$, with the alternative prefactor $z^{+\nu}$ obtained by
@@ -1271,7 +1327,7 @@ Most functions take the initialized \texttt{context};
 function & purpose\\
 \midrule
 \texttt{MSSectors[context]} & contact-reachable sectors in deterministic order (keys, pinched
-lines, master counts)\\
+propagators, master counts)\\
 \texttt{MSMasterIntegrals[context]} & ordered master records; each \texttt{"integral"} field is an
 \texttt{MSIntegral[sectorKey, timeShifts, stateBits]}\\
 \texttt{MSFormulaMatrices[context, key]} & per-component $\text{M}_1$, $\text{M}_0$ and energy letters $\kappa_{\bm a}$;
@@ -1291,7 +1347,7 @@ status\\
 
 \begin{description}
   \item[\texttt{MSSectors[context]}] returns the sector list. Each sector key is the fixed-length
-        bit string over the root lines in input order (\texttt{"0"} pinched, \texttt{"1"} unpinched); the
+        bit string over the root propagators in input order (\texttt{"0"} pinched, \texttt{"1"} unpinched); the
         sub-sector structure is discussed in Sec.~\ref{sec:dlog}. Keys are
         strings, not integers; leading zeros are part of the identity.
   \item[\texttt{MSMasterIntegrals[context]}] returns the ordered master records.
@@ -1462,7 +1518,7 @@ point,
 pointSequence = {{k1, k2}, {8 I, 2 I}, {7 I, 4 I}, {6 I, 5 I}};
 \end{verbatim}
 and MadStree groups the
-points into maximal consecutive complex-affine lines and pulls each group back once, while FlintNDE
+points into maximal consecutive complex-affine segments and pulls each group back once, while FlintNDE
 evaluates every point in one process, including dense points inside a node's convergence disk,
 without changing the path. For a single-vertex integral family, run the same single-stage entry on
 the vertex context. The principal transport options and the point tags are summarized in
@@ -1790,21 +1846,21 @@ The first example is the chain with three vertices in figure~\ref{fig:tree-diagr
   \centering
   \includegraphics[width=0.92\textwidth]{figures/three_vertex_tree.png}
   \caption{Tree with three vertices and two massive scalar propagators.
-  The external energy sums are $E_1,E_2,E_3$. The internal lines carry
+  The external energy sums are $E_1,E_2,E_3$. The internal propagators carry
   momentum magnitudes $s_1,s_2$ and mass labels
   $\widetilde\nu_1,\widetilde\nu_2$.}
   \label{fig:tree-diagram}
 \end{figure}
 
 The vertices $L,M,R$ have conformal times $\tau_L,\tau_M,\tau_R$.
-The two internal lines connect $L$ to $M$ and $M$ to $R$, respectively.
+The two internal propagators connect $L$ to $M$ and $M$ to $R$, respectively.
 Each $E_i$ is the sum of the external momentum magnitudes at vertex $i$.
 The internal momentum magnitudes are $s_1,s_2$, and the Hankel orders are
 $\nu_1,\nu_2$. For the masses in the principal series used here,
 $\nu_i=\ii\widetilde\nu_i$, with real $\widetilde\nu_i$.
 Each vertex has a contour sign $\sigma_v=\pm1$.
 
-We first define the endpoint states used to label the master integrals. This
+We first define the states at the two vertices of a propagator that label the master integrals. This
 application is evaluated in the \texttt{NuConvention -> "Negative"} option, i.e.\ with
 $s_\nu=-1$ in the unified definition of Sec.~\ref{sec:notation}, because the physical mode
 functions and the printed formulae of \cite{Chen:2024glu} that we benchmark against are written in
@@ -1825,30 +1881,30 @@ simultaneous replacement $\nu\to-\nu$ of Sec.~\ref{sec:notation}, which must als
 effective time powers below.
 Here $r$ selects the Hankel function and the binary index selects the
 undifferentiated or differentiated state. We use the same Hankel order
-at both ends of each line; constant factors from the physical mode
+at both vertices of each propagator; constant factors from the physical mode
 normalisation are restored when forming the correlator.
 To display the time ordering explicitly, define
 \begin{equation}
  \begin{aligned}
- W^>_{\nu;ab}(s;\tau,\tau')
+ W_{>,\nu;ab}(s;\tau,\tau')
  &=h^{(1)}(\nu,a;-s\tau)h^{(2)}(\nu,b;-s\tau'),\\
- W^<_{\nu;ab}(s;\tau,\tau')
+ W_{<,\nu;ab}(s;\tau,\tau')
  &=h^{(2)}(\nu,a;-s\tau)h^{(1)}(\nu,b;-s\tau'),
  \qquad a,b\in\{0,1\}.
  \end{aligned}
  \label{eq:application-line-products}
 \end{equation}
-The corresponding line kernels, with mode prefactors removed, are
+The corresponding propagator kernels, with mode prefactors removed, are
 \begin{equation}
  \begin{aligned}
- \mathcal G^{++}_{\nu;ab}
- &=\theta(\tau-\tau')W^>_{\nu;ab}
-   +\theta(\tau'-\tau)W^<_{\nu;ab},\\
- \mathcal G^{--}_{\nu;ab}
- &=\theta(\tau-\tau')W^<_{\nu;ab}
-   +\theta(\tau'-\tau)W^>_{\nu;ab},\\
- \mathcal G^{+-}_{\nu;ab}&=W^<_{\nu;ab},\qquad
- \mathcal G^{-+}_{\nu;ab}=W^>_{\nu;ab}.
+ \mathcal G_{++,\nu;ab}
+ &=\theta(\tau-\tau')W_{>,\nu;ab}
+   +\theta(\tau'-\tau)W_{<,\nu;ab},\\
+ \mathcal G_{--,\nu;ab}
+ &=\theta(\tau-\tau')W_{<,\nu;ab}
+   +\theta(\tau'-\tau)W_{>,\nu;ab},\\
+ \mathcal G_{+-,\nu;ab}&=W_{<,\nu;ab},\qquad
+ \mathcal G_{-+,\nu;ab}=W_{>,\nu;ab}.
  \end{aligned}
  \label{eq:application-line-kernels}
 \end{equation}
@@ -1863,13 +1919,13 @@ integrals are
  ={}&\int_{-\infty}^{0}d\tau_L\,d\tau_M\,d\tau_R\,
  (-\tau_L)^{\nu_{0L}}(-\tau_M)^{\nu_{0M}}(-\tau_R)^{\nu_{0R}}\\
  &\times e^{\ii(\sigma_LE_1\tau_L+\sigma_ME_2\tau_M+\sigma_RE_3\tau_R)}\\
- &\times\mathcal G^{\sigma_L\sigma_M}_{\nu_1;ab}(s_1;\tau_L,\tau_M)
- \mathcal G^{\sigma_M\sigma_R}_{\nu_2;cd}(s_2;\tau_M,\tau_R).
+ &\times\mathcal G_{\sigma_L\sigma_M,\nu_1;ab}(s_1;\tau_L,\tau_M)
+ \mathcal G_{\sigma_M\sigma_R,\nu_2;cd}(s_2;\tau_M,\tau_R).
  \end{aligned}
  \label{eq:tree-indexed-masters}
 \end{equation}
 Here $a,b,c,d\in\{0,1\}$. Each time integral runs from $-\infty$ to $0$ with the Bunch--Davies
-prescription. The four indices refer to the endpoints
+prescription. The four indices refer to the states at the two vertices of each propagator
 $(L_1,M_1,M_2,R_2)$, in that order. Thus the Top vector is
 \begin{equation}
  \bm I^{\boldsymbol\sigma}_{\mathrm{Top}}
@@ -1879,7 +1935,7 @@ $(L_1,M_1,M_2,R_2)$, in that order. Thus the Top vector is
  \label{eq:tree-top-vector}
 \end{equation}
 It contains $2^4=16$ masters. In particular, Top $0000$ denotes
-$I^{\boldsymbol\sigma}_{0000}$, with no endpoint derivatives or additional
+$I^{\boldsymbol\sigma}_{0000}$, with no derivative acting on the states, or additional
 integer shifts in the time powers.
 
 The parameters $\nu_{0L},\nu_{0M},\nu_{0R}$ in the integrand are the
@@ -1902,10 +1958,10 @@ contact terms that merge adjacent vertices. These terms define the
 LeftPinch, RightPinch and DoublePinch sectors.
 Their masters can be labelled $I^{\boldsymbol\sigma,L}_{cd}$,
 $I^{\boldsymbol\sigma,R}_{ab}$ and $I^{\boldsymbol\sigma,D}$, respectively.
-The left pinch merges $L$ and $M$ and leaves the two indices of line 2;
-the right pinch merges $M$ and $R$ and leaves those of line 1.
-The double pinch merges all three vertices and leaves no massive line.
-When both internal lines join vertices with equal contour signs, the full
+The left pinch merges $L$ and $M$ and leaves the two indices of propagator 2;
+the right pinch merges $M$ and $R$ and leaves those of propagator 1.
+The double pinch merges all three vertices and leaves no massive propagator.
+When both internal propagators join vertices with equal contour signs, the full
 hierarchy is
 \begin{equation}
   \mathrm{Top}(16)\oplus\mathrm{LeftPinch}(4)\oplus
@@ -1959,8 +2015,8 @@ The DE calculation uses 80 decimal digits and local Taylor series truncated at o
 An independent transport at order 96 provides an internal stability check.
 We compare batches of $N=1$, $10$, $50$ and $100$ target points on the slice in \eqref{eq:tree-slice}.
 For $N=1$, $10$ and $50$, transport starts at $q=0.1$ and ends at $q=10^{-4}$.
-The single point is the endpoint, corresponding to $x=-\log_{10}q=4$.
-The ten points are selected at approximately equal index intervals from the original 50 points, including both endpoints.
+The single point is the end of the path, corresponding to $x=-\log_{10}q=4$.
+The ten points are selected at approximately equal index intervals from the original 50 points, including both ends.
 The 100 point batch contains 80 points on this path and 20 additional points from $q=0.105$ to $0.2$.
 The additional points share the boundary at $q=0.1$ but require transport in the opposite direction.
 
@@ -1972,7 +2028,7 @@ It includes data preparation and Python invocation.
 All four DE batches were measured three times, with the execution order varied between rounds.
 We report the median total time and show the full range of the three measurements.
 The observed ratios of hypergeometric time to DE time are $7.06$, $21.31$ and $73.71$ for ten, 50 and 100 points, respectively.
-The isolated endpoint is slower with DE transport than with the hypergeometric representation.
+The isolated end of the path is slower with DE transport than with the hypergeometric representation.
 
 The average DE time per output point decreases from $26.71\,\mathrm{s}$ to $4.88$, $0.98$ and $0.58\,\mathrm{s}$ across these batches.
 Boundary data and transport are shared, rather than recomputed independently for each target.
@@ -1998,7 +2054,7 @@ $q=10^{-x}$ and $x=1+3j/79$ ($j=0,\ldots,79$), uniformly spaced in $x$, and
 20 points with $q=0.1+0.005j$ ($j=1,\ldots,20$), uniformly spaced in $q$.
 Each hypergeometric time uses the accepted truncation order.
 In panel \textbf{b}, the DE bars show medians of three runs, with error bars spanning the minimum and maximum.
-The times include boundary construction, DE generation and the transport call. The first three batches share the same start and endpoint; the 100 point batch includes the additional path extension.
+The times include boundary construction, DE generation and the transport call. The first three batches share the same start and end; the 100 point batch includes the additional path extension.
 Hypergeometric data are newly computed for one and ten points and retained for 50 and 100 points.
 The ratio labels give the hypergeometric time divided by the DE time.
 The figure footer reports the largest relative differences between transport orders and from the hypergeometric results across all four batches.
@@ -2058,21 +2114,21 @@ momenta fixed. We do not integrate over the spatial loop momentum.
 
 Let $\tau_1,\tau_2$ be the vertex times, $P_1,P_2$ the external energy sums,
 and $x_1,x_2$ the internal momentum magnitudes.
-The Hankel orders of the two internal lines are $\nu_{B1},\nu_{B2}$.
-Using the line kernels in \eqref{eq:application-line-kernels}, the Top masters are
+The Hankel orders of the two internal propagators are $\nu_{B1},\nu_{B2}$.
+Using the propagator kernels in \eqref{eq:application-line-kernels}, the Top masters are
 \begin{equation}
  \begin{aligned}
  J^{\sigma_1\sigma_2}_{abcd}
  ={}&\int_{-\infty}^{0}d\tau_1\,d\tau_2\,
  (-\tau_1)^{p_1}(-\tau_2)^{p_2}
  e^{\ii(\sigma_1P_1\tau_1+\sigma_2P_2\tau_2)}\\
- &\times\mathcal G^{\sigma_1\sigma_2}_{\nu_{B1};ab}(x_1;\tau_1,\tau_2)
- \mathcal G^{\sigma_1\sigma_2}_{\nu_{B2};cd}(x_2;\tau_1,\tau_2).
+ &\times\mathcal G_{\sigma_1\sigma_2,\nu_{B1};ab}(x_1;\tau_1,\tau_2)
+ \mathcal G_{\sigma_1\sigma_2,\nu_{B2};cd}(x_2;\tau_1,\tau_2).
  \end{aligned}
  \label{eq:bubble-indexed-masters}
 \end{equation}
-Here $a,b,c,d\in\{0,1\}$. The indices $a,b$ label the two endpoints of line 1 at vertices 1 and 2;
-$c,d$ label those of line 2 in the same vertex order.
+Here $a,b,c,d\in\{0,1\}$. The indices $a,b$ label the two states that propagator 1 contributes at vertices 1 and 2;
+$c,d$ label those of propagator 2 in the same vertex order.
 Here $p_1,p_2$ are the effective time powers after absorbing the mode
 prefactors, unlike the bare powers used in \eqref{eq:tree-time-power-map}.
 The contour signs are $\sigma_1,\sigma_2=\pm1$.
@@ -2108,7 +2164,7 @@ The normalised Top $0000$ component is
   {[\bm K_{\mathrm{SK}}(10)]_{0000}}.
   \label{eq:bubble-normalised}
 \end{equation}
-The four zeros select the undifferentiated states at the four endpoints of the massive lines.
+The four zeros select the four undifferentiated states of the two massive propagators.
 
 The scan contains 201 points over $2.8\leq\rho\leq10$.
 Calculations use decimal arithmetic with 80 digits. The transport orders are
@@ -2165,8 +2221,8 @@ containing a loop at fixed internal momenta.
 \paragraph{Bundles and their theta argument.}
 Fix a sector $s$ and write $\operatorname{comp}_s(v)$ for the current component that contains the
 vertex $v$; a component is a maximal set of vertices already merged by contacts, and a lone vertex
-is one component. An uncontracted full line $e=(u_e,v_e)$ carries the theta
-$\theta(\tau_{u_e}-\tau_{v_e})$ of its two component times, so two lines $e,e'$ carry the
+is one component. An uncontracted full propagator $e=(u_e,v_e)$ carries the theta
+$\theta(\tau_{u_e}-\tau_{v_e})$ of its two component times, so two propagators $e,e'$ carry the
 \emph{same} theta if and only if their component pairs coincide as ordered pairs,
 \begin{equation}
   \begin{aligned}
@@ -2176,16 +2232,15 @@ $\theta(\tau_{u_e}-\tau_{v_e})$ of its two component times, so two lines $e,e'$ 
   \end{aligned}
   \label{eq:bundle-criterion}
 \end{equation}
-A maximal set of lines with this property is the common-theta bundle $\cB$ of the pair $(U,V)$, with
-$|\cB|=n\ge2$; the case $n=1$ is an ordinary single-edge contact and is contained in
-Sec.~\ref{sec:remaining}. Lines whose theta arguments differ belong to different bundles, and the
+A maximal set of propagators with this property is the common-theta bundle $\cB$ of the pair $(U,V)$, with
+$|\cB|=n\ge2$; the case $n=1$ is an ordinary single-propagator contact and is contained in
+Sec.~\ref{sec:remaining}. Propagators whose theta arguments differ belong to different bundles, and the
 bundles are independent because their $\Delta$'s are independent variables: the contact events are
 therefore performed bundle by bundle, never across bundles. The vertex exponentials of Block (i) are
-theta-free and take no part in this bookkeeping, so only the endpoint factors of
-\eqref{eq:sk-propagators} enter the steps below.
+theta-free and take no part in this bookkeeping, so only the two-state factors of \eqref{eq:sk-propagators} enter the steps below.
 
 \paragraph{Step 1: multiplying the thetas out.}
-For each edge of one bundle, write the SK pair of endpoint products as in \eqref{eq:sk-propagators},
+For each propagator of one bundle, write the SK pair of products as in \eqref{eq:sk-propagators},
 $\alpha_e$ for the coefficient of $\theta(\Delta)$ and $\beta_e$ for that of $\theta(-\Delta)$. At
 the level of the $h$ blocks the two are the two orderings of the Hankel branches,
 \begin{equation}
@@ -2194,7 +2249,7 @@ the level of the $h$ blocks the two are the two orderings of the Hankel branches
   \beta_e = h^{(2)}_{u_e}\,h^{(1)}_{v_e},
   \label{eq:bundle-alphabeta}
 \end{equation}
-where the orders, states and arguments are those of \eqref{eq:h-definition}; $G^{--}$ interchanges
+where the orders, states and arguments are those of \eqref{eq:h-definition}; $G_{--}$ interchanges
 the two names, and this is the only place the sign $\sigma_e$ of the bundle enters. The product of
 the bundle is a product of $n$ binomials in the two functions $\theta(\Delta)$ and
 $\theta(-\Delta)$. Expanding naively gives $2^n$ terms, but inside one bundle $\theta(\Delta)$ is
@@ -2202,7 +2257,7 @@ the \emph{same} function for every factor, so idempotency $\theta(\Delta)^2=\the
 all powers of one argument collapse to that argument, and orthogonality
 $\theta(\Delta)\theta(-\Delta)=0$ annihilates every term containing both arguments. Exactly the two
 terms of \eqref{eq:bundle-two-terms} survive. The factor $2^n$ thus never appears within a bundle:
-it counts the events of $n$ lines with pairwise different theta arguments, which is the case of $n$
+it counts the events of $n$ propagators with pairwise different theta arguments, which is the case of $n$
 different bundles, and those are enumerated bundle by bundle.
 
 \paragraph{Step 2: one theta gives one delta.}
@@ -2221,12 +2276,12 @@ $\prod_e\alpha_e-\prod_e\beta_e$, which is antisymmetric under
 $\alpha\leftrightarrow\beta$. Second, that one $\delta(\Delta)$ forces the two component times to
 coincide \emph{once}, so the components $U$ and $V$ merge once, independently of how many factors
 $\mathsf d_e$ a term of the coefficient contains; this is what fixes the merge count in
-\eqref{eq:base-power}. Third, for $G^{--}$ the interchange of $\alpha$ and $\beta$ turns
+\eqref{eq:base-power}. Third, for $G_{--}$ the interchange of $\alpha$ and $\beta$ turns
 \eqref{eq:bundle-delta} into its negative, which reproduces the single sign $\sigma_e$ of
 \eqref{eq:contact-weight} for a whole bundle.
 
 \paragraph{Step 3: telescoping the antisymmetric difference.}
-Order the edges of the bundle as $1,\dots,n$ and abbreviate $\alpha_e=A_e$, $\beta_e=B_e$. Inserting
+Order the propagators of the bundle as $1,\dots,n$ and abbreviate $\alpha_e=A_e$, $\beta_e=B_e$. Inserting
 and subtracting successive partial products gives the telescoping identity
 \begin{equation}
 \begin{split}
@@ -2243,12 +2298,12 @@ products of \eqref{eq:bundle-delta}. Each term of \eqref{eq:bundle-telescope} co
 difference factor $D_e=A_e-B_e$.
 
 \paragraph{Step 4: collecting by subsets and the parity.}
-Introduce, as in \eqref{eq:bundle-odd-subsets}, the difference and the mean of the two endpoint
+Introduce, as in \eqref{eq:bundle-odd-subsets}, the difference and the mean of the two
 products, $\mathsf d_e=D_e=A_e-B_e$ and $\mathsf m_e=(A_e+B_e)/2$, equivalently
 $A_e=\mathsf m_e+\mathsf d_e/2$ and $B_e=\mathsf m_e-\mathsf d_e/2$, and expand the spectators of
-\eqref{eq:bundle-telescope} in this basis. In the $k$-th term the edge $k$ supplies the explicit
-$\mathsf d_k$; an edge $e\in S$ with $e<k$ contributes $+\mathsf d_e/2$, an edge $e\in S$ with $e>k$
-contributes $-\mathsf d_e/2$, and every edge outside $S$ contributes $\mathsf m_e$. So the
+\eqref{eq:bundle-telescope} in this basis. In the $k$-th term the propagator $k$ supplies the explicit
+$\mathsf d_k$; a propagator $e\in S$ with $e<k$ contributes $+\mathsf d_e/2$, a propagator $e\in S$ with $e>k$
+contributes $-\mathsf d_e/2$, and every propagator outside $S$ contributes $\mathsf m_e$. So the
 coefficient of the monomial $\prod_{e\in S}\mathsf d_e\prod_{e\notin S}\mathsf m_e$ is
 \begin{equation}
   c_S = 2^{1-|S|}\sum_{k\in S}(-1)^{\#\{e\in S:\,e>k\}} .
@@ -2273,47 +2328,47 @@ with an even number of $\mathsf d$ factors must cancel; the explicit computation
 \paragraph{Events, weights and the bookkeeping.}
 Each non-empty odd subset $S$ of one bundle is one simultaneous contact event. Its injection matrix
 $C^{(v,1)}_{st}$ of \eqref{eq:contact-injection} is the tensor product of the local contact
-selectors of the edges in $S$ --- $|1\rangle_e$ on a massless shared slot, the complementary-bit
-selector of \eqref{eq:R-two-vertex} on a pair of massive endpoints --- multiplied by $2^{1-|S|}$ and
-by the spectator factors $\mathsf m_e$ of the unselected bundle edges, then embedded in the global
-bit order with all spectator bits of other edges preserved. The collected form
+selectors of the propagators in $S$ --- $|1\rangle_e$ on a massless shared slot, the complementary-bit
+selector of \eqref{eq:R-two-vertex} on a pair of massive-propagator states --- multiplied by $2^{1-|S|}$ and
+by the spectator factors $\mathsf m_e$ of the unselected bundle propagators, then embedded in the global
+bit order with all spectator bits of other propagators preserved. The collected form
 \eqref{eq:bundle-odd-subsets}, not the term-by-term form \eqref{eq:bundle-telescope}, is what the
-program enumerates: the $k$-th telescoping term stands for ``contract only the $k$-th line,'' but
+program enumerates: the $k$-th telescoping term stands for ``contract only the $k$-th propagator,'' but
 after the spectators are expanded the same subset $S$ is reached from several $k$, so an
 enumeration over $k$ would generate the same sector transition more than once. After collecting,
 each event appears exactly once with a numerical weight, and the deduplication key of the reduction
-is the triple (parent sector, child sector, set of selected line identifiers), which is finite
+is the triple (parent sector, child sector, set of selected propagator identifiers), which is finite
 because every event strictly reduces the number of current components.
 
-\paragraph{Child base power and coincident unselected edges.}
+\paragraph{Child base power and coincident unselected propagators.}
 For a component $C$ produced by such events the base power is \eqref{eq:base-power},
 $A_{C,s}=\sum_{v\in C}\nu_{0,v}+\sum_{e\in E_s(C)}r_e+|C|-1$. The three terms have three different
 origins and should not be conflated: the vertex powers add because the merged integrand is a
-product, each contracted edge adds its own raw contact power $r_e$ because the corresponding
+product, each contracted propagator adds its own raw contact power $r_e$ because the corresponding
 $\delta$ brings one factor $(-\tau)^{r_e}$, and the last term counts \emph{merges of components},
 which is $|C|-1$ for any component of $|C|$ vertices and does not grow with the number of bundle
-edges contracted at once. Since \eqref{eq:base-power} depends only on the final component and on
+propagators contracted at once. Since \eqref{eq:base-power} depends only on the final component and on
 the contracted set, and not on the order or the clustering of the events, different legal event
 sequences that reach the same sector give the same child base power; the reduction is confluent at
 the level of the powers.
 
-An unselected edge whose two ends fall into one component after a bundle event must also be reduced
-at equal times. For a massless full edge the shared slot then contributes only its symmetric state,
+An unselected propagator whose two vertices fall into one component after a bundle event must also be reduced
+at equal times. For a massless full propagator the shared slot then contributes only its symmetric state,
 because the two Wightman combinations coincide at coincident times, so the odd shared state of the
-edge gives zero; for a massive full edge the two single-derivative endpoint states become
+propagator gives zero; for a massive full propagator the two states carrying a single derivative become
 identified, $10\sim01$, which is the equal-time canonical quotient. Both cases are implemented the
-same way: the matrices are first built in the raw binary space of all endpoint and shared slots and
+same way: the matrices are first built in the raw binary space of all massive and shared slots and
 then retracted to the true sector masters by the constant maps of
 \eqref{eq:SP-massless}, $P_s\,M^{\rm raw}\,S_s$, so the equal-time quotients require no further
 computation and no dense inversion.
 
 \paragraph{Relation to the single-contact case.}
 For $|\cB|=1$ the two-term form \eqref{eq:bundle-two-terms} reduces to the ordinary SK pair of one
-line, \eqref{eq:bundle-telescope} to the single difference $\mathsf d_e$, and $c_{\{e\}}=1$, so the
-bundle machinery reproduces exactly the single-edge contacts of Sec.~\ref{sec:remaining} and of
-\cite{Chen:2023iix}, where every contact is attached to one full line. The new ingredients are the
+propagator, \eqref{eq:bundle-telescope} to the single difference $\mathsf d_e$, and $c_{\{e\}}=1$, so the
+bundle machinery reproduces exactly the single-propagator contacts of Sec.~\ref{sec:remaining} and of
+\cite{Chen:2023iix}, where every contact is attached to one full propagator. The new ingredients are the
 weight $2^{1-|S|}$, the parity selection, and the identification of the merge count with $|C|-1$
-rather than with the number of contracted edges.
+rather than with the number of contracted propagators.
 
 
 
