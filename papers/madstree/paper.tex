@@ -1,23 +1,21 @@
+% JHEP format. The style package jheppub supplies the page layout, natbib, hyperref and the
+% \abstract macro; the bibliography style JHEP.bst is selected at the end of this file.
+% amsmath, amssymb, graphicx are loaded by jheppub, so they are not loaded again here.
 \documentclass[11pt,a4paper]{article}
 \usepackage{amsmath,amssymb,latexsym}
+\usepackage[svgnames]{xcolor}
+\usepackage{jheppub}
 \usepackage{braket}
 \usepackage{float}
-\usepackage{graphicx}
 \graphicspath{{figures/}}
 \usepackage{bm}
 \usepackage{setspace}
 %\usepackage{arydshln}% | in matrix
 \usepackage{hepunits}
-\usepackage[svgnames]{xcolor}
 %\usepackage{ulem}
 \usepackage{mciteplus}
-\usepackage[margin=2.35cm]{geometry}
 \usepackage{booktabs,array}
 \usepackage{enumitem}
-\usepackage[numbers,sort&compress]{natbib}
-\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
-% Revision markup: only supplemented Introduction sentences and references.
-\usepackage[UTF8]{ctex} 
 
 
 
@@ -51,17 +49,15 @@
 \def\ma{\mathcal}
 \title{MadStree: a package for quickly evaluating arbitrary tree-level cosmological correlator}
 \author{Spongebob Squarepants, Patrick Star}
-\date{}
+
+% JHEP style: the abstract is a macro collected in the preamble and printed by \maketitle,
+% which also typesets the table of contents, so no \tableofcontents is written in the body.
+\abstract{
+\texttt{MadStree} is a Mathematica package to compute arbitrary tree-level cosmological correlators with scalar propagators numerically. It can deal with both massless and massive propagators. In this framework, a given dS tree diagram will be reduced to corresponding master integrals, and these master integrals will be solved by IBP and differential equations numerically. The usage of this package is described in detail via some examples.
+}
 
 \begin{document}
 \maketitle
-
-\begin{abstract}
-\texttt{MadStree} is a Mathematica package to compute arbitrary tree-level cosmological correlators with scalar propagators numerically. It can deal with both massless and massive propagators. In this framework, a given dS tree diagram will be reduced to corresponding master integrals, and these master integrals will be solved by IBP and differential equations numerically. The usage of this package is described in detail via some examples.
-\end{abstract}
-
-
-\tableofcontents
 
 \section{Introduction}
 \label{sec:introduction}
@@ -222,10 +218,11 @@ Following \cite{Chen:2024glu}, the Hankel prefactor and the time derivative are 
 states of one function system. We use the convention of the package, in which the prefactor is the
 \emph{positive} power of $z$,
 \begin{equation}
-  h^{(s)}(\nu,0;z)\equiv z^{+\nu}H^{(s)}_\nu(z),
-  \qquad
-  h^{(s)}(\nu,1;z)\equiv-\frac1k\,\partial_\tau h^{(s)}(\nu,0;z)=\partial_z h^{(s)}(\nu,0;z),
+  \begin{aligned}
+  h^{(s)}(\nu,0;z)&\equiv z^{+\nu}H^{(s)}_\nu(z),\\
+  h^{(s)}(\nu,1;z)&\equiv-\frac1k\,\partial_\tau h^{(s)}(\nu,0;z)=\partial_z h^{(s)}(\nu,0;z),
   \qquad z=-k\tau,
+  \end{aligned}
   \label{eq:h-definition}
 \end{equation}
 with $s\in\{1,2\}$ the Hankel branch. Superscripts on $h$ will always denote the branch, never a
@@ -605,7 +602,7 @@ directions arriving on a given slot mutually commute, which holds here because e
 receives only $\sigma_2$ and every shared slot only $\sigma_2$ (or, in the quotient, only
 $\sigma_1$). For a
 single vertex all of whose legs are massive the sums reduce to one term with $U=\text{T}_n$ and
-\eqref{eq:ndlogDE} is the uniform formula of \citet{Chen:2024glu}, in our convention.
+\eqref{eq:ndlogDE} is the uniform formula of \cite{Chen:2024glu}, in our convention.
 
 No dense $2^N\times2^N$ inversion ever appears: inverting $\text{M}_{0;v,s}$ means
 $U_s^{-1}\diag(1/(\ii\kappa_{v,s;\bm a}))U_s$, i.e.\ the letter-by-letter reciprocal of the scalar
@@ -721,9 +718,11 @@ $a_i=0,b_j=1$ the bracket is the Wronskian of the two branches of the $h$ system
 \eqref{eq:h-definition} and $H^{(1)}_\nu\partial_zH^{(2)}_\nu-\partial_zH^{(1)}_\nu H^{(2)}_\nu
 =-4\ii/(\pi z)$,
 \begin{equation}
+  \begin{aligned}
   h^{(1)}(\nu,0;z)\,h^{(2)}(\nu,1;z)-h^{(1)}(\nu,1;z)\,h^{(2)}(\nu,0;z)
-  =z^{2\nu}\left(H^{(1)}_\nu\partial_zH^{(2)}_\nu-\partial_zH^{(1)}_\nu H^{(2)}_\nu\right)
-  =-\frac{4\ii}{\pi}z^{2\nu-1}.
+  &=z^{2\nu}\left(H^{(1)}_\nu\partial_zH^{(2)}_\nu-\partial_zH^{(1)}_\nu H^{(2)}_\nu\right)\\
+  &=-\frac{4\ii}{\pi}z^{2\nu-1}.
+  \end{aligned}
   \label{eq:wronskian-h}
 \end{equation}
 For $a_i=1,b_j=0$ the bracket is the negative of \eqref{eq:wronskian-h}, so both cases are
@@ -1242,7 +1241,7 @@ Most functions take the initialized \texttt{context};
 \texttt{MSExportEvaluationData} takes a completed evaluation result instead.
 
 \begin{center}
-\begin{tabular}{@{}p{7.5cm}p{7.6cm}@{}}
+\begin{tabular}{@{}p{7.1cm}p{7.3cm}@{}}
 \toprule
 function & purpose\\
 \midrule
@@ -1587,7 +1586,7 @@ separate from the in-process \texttt{ctx.threads} of python-flint.
 
 The principal options of the numerical workflow are summarized below.
 \begin{center}
-\begin{tabular}{@{}p{5.2cm}p{9.6cm}@{}}
+\begin{tabular}{@{}p{5.0cm}p{9.3cm}@{}}
 \toprule
 option & meaning\\
 \midrule
@@ -2138,10 +2137,11 @@ is one component. An uncontracted full line $e=(u_e,v_e)$ carries the theta
 $\theta(\tau_{u_e}-\tau_{v_e})$ of its two component times, so two lines $e,e'$ carry the
 \emph{same} theta if and only if their component pairs coincide as ordered pairs,
 \begin{equation}
+  \begin{aligned}
   \bigl(\operatorname{comp}_s(u_e),\operatorname{comp}_s(v_e)\bigr)
-  =\bigl(\operatorname{comp}_s(u_{e'}),\operatorname{comp}_s(v_{e'})\bigr)
-  =(U,V),
-  \quad\text{so}\quad \Delta_e=\Delta_{e'}\equiv\Delta=\tau_U-\tau_V .
+  &=\bigl(\operatorname{comp}_s(u_{e'}),\operatorname{comp}_s(v_{e'})\bigr)=(U,V),\\
+  \text{so}\quad \Delta_e&=\Delta_{e'}\equiv\Delta=\tau_U-\tau_V .
+  \end{aligned}
   \label{eq:bundle-criterion}
 \end{equation}
 A maximal set of lines with this property is the common-theta bundle $\cB$ of the pair $(U,V)$, with
@@ -2285,7 +2285,7 @@ rather than with the number of contracted edges.
 
 
 
-\bibliographystyle{unsrtnat}
+\bibliographystyle{JHEP}
 \bibliography{references}
 
 \end{document}
