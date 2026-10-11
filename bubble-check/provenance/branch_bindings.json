@@ -1,0 +1,86 @@
+[
+  {
+    "branch": "pp",
+    "dimension": 22,
+    "masterDigest": "20a0e98060a1615a0e4fe237cf561e9e5791806057b162e599e93b6a686ae5bc",
+    "generated_run_directory": "C:\\Users\\14372\\Desktop\\paperofuniver\\cases\\task12_20261010_221725\\scripts\\results\\madstree_formula\\run-5bef499c-e5fb-474c-ab83-0abfc72aba92",
+    "input_filename_in_successful_process_command": "i-cd2c920de1d34279.json",
+    "input_present": false,
+    "backend_output": "results/backend_outputs/pp_22cb578b32dbb2239b49b09a6348f53b70ad9e2a9575d8986a347cdf5038b25b.json",
+    "parameterRules": "{x1 -> 1, x2 -> \n      1504971541748894116193408501376479674908449638047395789089923/\n       1064175582663416344218339243578691919603263775474584411709342, \n     a1 -> 1 + I/2, a2 -> 1 + I/2}",
+    "matrix_shapes": {
+      "singularConnection": [
+        22,
+        22
+      ],
+      "singularResidue": [
+        22,
+        22
+      ]
+    },
+    "dlog_letter_count": 17
+  },
+  {
+    "branch": "pm",
+    "dimension": 16,
+    "masterDigest": "acf81d4ae7f8a60d5e57630360b587ef00e2805b9b377e4ad51e683c6b26958e",
+    "generated_run_directory": "C:\\Users\\14372\\Desktop\\paperofuniver\\cases\\task12_20261010_221725\\scripts\\results\\madstree_formula\\run-4025b753-6041-4a7b-87b4-bda178f2be2b",
+    "input_filename_in_successful_process_command": "i-03dfc1b763a34b40.json",
+    "input_present": false,
+    "backend_output": "results/backend_outputs/pm_ab59c68f18d22e2db4a89cd0a79eddb40be790fa56f19fb3682fe94a8797466c.json",
+    "parameterRules": "{x1 -> 1, x2 -> \n      1504971541748894116193408501376479674908449638047395789089923/\n       1064175582663416344218339243578691919603263775474584411709342, \n     a1 -> 1 + I/2, a2 -> 1 + I/2}",
+    "matrix_shapes": {
+      "singularConnection": [
+        16,
+        16
+      ],
+      "singularResidue": [
+        16,
+        16
+      ]
+    },
+    "dlog_letter_count": 10
+  },
+  {
+    "branch": "mp",
+    "dimension": 16,
+    "masterDigest": "acf81d4ae7f8a60d5e57630360b587ef00e2805b9b377e4ad51e683c6b26958e",
+    "generated_run_directory": "C:\\Users\\14372\\Desktop\\paperofuniver\\cases\\task12_20261010_221725\\scripts\\results\\madstree_formula\\run-5ee44037-c0d5-47d4-b708-a5932d08f359",
+    "input_filename_in_successful_process_command": "i-c523b7597e274c42.json",
+    "input_present": false,
+    "backend_output": "results/backend_outputs/mp_2c6696bd38f6aa167f857e99950a446364f1e9d87d1d90cb75c71b0518717a6e.json",
+    "parameterRules": "{x1 -> 1, x2 -> \n      1504971541748894116193408501376479674908449638047395789089923/\n       1064175582663416344218339243578691919603263775474584411709342, \n     a1 -> 1 + I/2, a2 -> 1 + I/2}",
+    "matrix_shapes": {
+      "singularConnection": [
+        16,
+        16
+      ],
+      "singularResidue": [
+        16,
+        16
+      ]
+    },
+    "dlog_letter_count": 10
+  },
+  {
+    "branch": "mm",
+    "dimension": 22,
+    "masterDigest": "20a0e98060a1615a0e4fe237cf561e9e5791806057b162e599e93b6a686ae5bc",
+    "generated_run_directory": "C:\\Users\\14372\\Desktop\\paperofuniver\\cases\\task12_20261010_221725\\scripts\\results\\madstree_formula\\run-2ff5c595-6b45-4c46-b3dc-66435c85b1bb",
+    "input_filename_in_successful_process_command": "i-53faae6a72344765.json",
+    "input_present": false,
+    "backend_output": "results/backend_outputs/mm_0bca9e757a509ccbdb4258349ddf0ac45af055c649b947e80e5d550536a89a4d.json",
+    "parameterRules": "{x1 -> 1, x2 -> \n      1504971541748894116193408501376479674908449638047395789089923/\n       1064175582663416344218339243578691919603263775474584411709342, \n     a1 -> 1 + I/2, a2 -> 1 + I/2}",
+    "matrix_shapes": {
+      "singularConnection": [
+        22,
+        22
+      ],
+      "singularResidue": [
+        22,
+        22
+      ]
+    },
+    "dlog_letter_count": 17
+  }
+]

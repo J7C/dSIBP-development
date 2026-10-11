@@ -1,0 +1,16 @@
+[
+  {
+    "repository": "dSIBP-Packages",
+    "local_checkout": "C:\\Users\\14372\\Desktop\\paperofuniver\\cases\\task12_20261010_221725\\sources\\dSIBP-Packages",
+    "head": "7dfd3c4afad4dd29ccae744f606a784121a90619",
+    "status_porcelain": "",
+    "remote": "https://github.com/J7C/dSIBP-Packages.git"
+  },
+  {
+    "repository": "dSIBP-development",
+    "local_checkout": "C:\\Users\\14372\\Desktop\\paperofuniver\\cases\\task12_20261010_221725\\sources\\dSIBP-development",
+    "head": "264141f0b1349cc045ab5cbf3a290642b1102201",
+    "status_porcelain": "",
+    "remote": "https://github.com/J7C/dSIBP-development.git"
+  }
+]

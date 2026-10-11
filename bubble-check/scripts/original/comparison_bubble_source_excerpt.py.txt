@@ -1,0 +1,23 @@
+   9: def read(p):return json.loads(p.read_text(encoding='utf-8-sig'),parse_float=str)
+  10: def z(v):return m.mpc(v['real'],v['imag'])
+  11: def ball_mid(s):
+  12:     parts=re.findall(r'\[([^\]]+)\]',s)
+  13:     vals=[m.mpf(x.split(' +/-')[0]) for x in parts]
+  14:     return m.mpc(*vals) if len(vals)==2 else m.mpc(vals[0])
+  15: def num(v):return {'real':m.nstr(m.re(v),70),'imag':m.nstr(m.im(v),70)}
+  16: def err(a,b):return {'absolute':m.nstr(abs(a-b),35),'relative':m.nstr(abs((a-b)/b),35) if b else None}
+  17: def exported(directory,label):
+  18:     p=R/directory/f'{label}_export/evaluation_data.json'
+  19:     return read(p) if p.exists() else None
+  40:     refs=['bubble_reference_r10_n36.json','bubble_reference_r5_n52.json','bubble_reference_r2.8_n200_d300.json'];bb={k:exported('bubble_calibration_rational120_intlimit',k) for k in ['pp','pm','mp','mm']}
+  41:     if all(bb.values()) and all((R/p).exists() for p in refs):
+  42:         rows=[]
+  43:         for j,p in enumerate(refs):
+  44:             ref=read(R/p);rho=ref['rho'];rv={k:ball_mid(v) for k,v in ref['rounding_only_balls'].items()};nv={k:z(d['values'][j][0]) for k,d in bb.items()};nv['K']=-nv['pp']+nv['pm']+nv['mp']-nv['mm']
+  45:             ctx.dps=int(ref['dps']);bound=str(kernel_tail_bound(rho,int(ref['order'])))
+  46:             phase=m.mpf(2)**(-m.j/4)
+  47:             rows.append({'rho':rho,'reference_file':p,'reference_order':ref['order'],'reference_dps':ref['dps'],'absolute_K_truncation_bound':bound,'branches':{k:{'native':num(nv[k]),'reference':num(rv[k]),'error':err(nv[k],rv[k])} for k in nv},'native_conjugation_residual':num(nv['mm']/phase-m.conj(nv['pp']/phase)),'reference_conjugation_residual':num(rv['mm']/phase-m.conj(rv['pp']/phase))})
+  48:         for row in rows:
+  49:             n=z(row['branches']['K']['native']);r=z(row['branches']['K']['reference']);n10=z(rows[0]['branches']['K']['native']);r10=z(rows[0]['branches']['K']['reference'])
+  50:             row['normalised']={'native_complex_denominator':num(n/n10),'reference_complex_denominator':num(r/r10),'native_figure_axis_convention':num(n/m.re(n10)),'reference_figure_axis_convention':num(r/m.re(r10))}
+  51:         out['bubble']=rows

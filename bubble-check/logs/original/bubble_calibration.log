@@ -1,0 +1,20 @@
+To support MadStree, please acknowledge our work when you use MadStree in your research. You can do so by citing the following papers:
+1. Jiaqi Chen and Bo Feng, "Towards Systematic Evaluation of de Sitter Correlators via Generalized Integration-By-Parts Relations", arXiv:2401.00129, https://arxiv.org/abs/2401.00129.
+2. Jiaqi Chen, Bo Feng and Yi-Xiao Tao, "Multivariate hypergeometric solutions of cosmological (dS) correlators by d log-form differential equations", arXiv:2411.03088, https://arxiv.org/abs/2411.03088.
+3. MadStree package paper, arXiv identifier pending.
+pp DIMENSION 22
+
+MSEvaluatePath::backendRunFailed: FlintNDE backend returned a non-success status under Python command C:\Users\14372\Desktop\paperofuniver\cases\task12_20261010_221725\venv\Scripts\python.exe. Backend error: numerator received invalid exact input {'real': '2744*Sqrt[2]', 'imag': '0'}; automatic singularity discovery requires Gaussian-rational coefficients.
+pp STATUS InputForm[FlintNDE 后端未能成功完成。请阅读附带的后端说明，修正所列 Python 环境或数值输入问题后重试。 The FlintNDE backend did not complete successfully. Read the attached backend message, correct the reported Python or numerical input problem, and retry.] SECONDS 28.6511035
+pm DIMENSION 16
+
+MSEvaluatePath::backendRunFailed: FlintNDE backend returned a non-success status under Python command C:\Users\14372\Desktop\paperofuniver\cases\task12_20261010_221725\venv\Scripts\python.exe. Backend error: numerator received invalid exact input {'real': '2744*Sqrt[2]', 'imag': '0'}; automatic singularity discovery requires Gaussian-rational coefficients.
+pm STATUS InputForm[FlintNDE 后端未能成功完成。请阅读附带的后端说明，修正所列 Python 环境或数值输入问题后重试。 The FlintNDE backend did not complete successfully. Read the attached backend message, correct the reported Python or numerical input problem, and retry.] SECONDS 12.9937836
+mp DIMENSION 16
+
+MSEvaluatePath::backendRunFailed: FlintNDE backend returned a non-success status under Python command C:\Users\14372\Desktop\paperofuniver\cases\task12_20261010_221725\venv\Scripts\python.exe. Backend error: numerator received invalid exact input {'real': '2744*Sqrt[2]', 'imag': '0'}; automatic singularity discovery requires Gaussian-rational coefficients.
+
+General::stop: Further output of MSEvaluatePath::backendRunFailed will be suppressed during this calculation.
+mp STATUS InputForm[FlintNDE 后端未能成功完成。请阅读附带的后端说明，修正所列 Python 环境或数值输入问题后重试。 The FlintNDE backend did not complete successfully. Read the attached backend message, correct the reported Python or numerical input problem, and retry.] SECONDS 12.38486
+mm DIMENSION 22
+mm STATUS InputForm[FlintNDE 后端未能成功完成。请阅读附带的后端说明，修正所列 Python 环境或数值输入问题后重试。 The FlintNDE backend did not complete successfully. Read the attached backend message, correct the reported Python or numerical input problem, and retry.] SECONDS 29.2402882

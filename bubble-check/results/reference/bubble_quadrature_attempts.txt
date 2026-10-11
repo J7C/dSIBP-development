@@ -1,0 +1,1 @@
+Both adaptive Wolfram quadrature attempts were stopped without convergence output. The independent fixed Gauss-Legendre integral at n=64,96 agreed with the Bessel-series reference at about 14 digits; binary64 node limits explicitly retained. See bubble_fixed_quadrature.json.

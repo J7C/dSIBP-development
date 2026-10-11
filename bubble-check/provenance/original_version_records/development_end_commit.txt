@@ -1,0 +1,7 @@
+commit 4616cb03eec2434a7c0b14f92d92ab3d5bb1582c
+Author:     Jiaqi Chen <793970561@qq.com>
+AuthorDate: Sat Oct 10 22:29:44 2026 +0800
+Commit:     Jiaqi Chen <793970561@qq.com>
+CommitDate: Sat Oct 10 22:29:44 2026 +0800
+
+    Cite AMFlow for the regulator-series reconstruction and justify the all-numerical route

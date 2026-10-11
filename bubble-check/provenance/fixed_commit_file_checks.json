@@ -1,0 +1,50 @@
+[
+  {
+    "repository": "J7C/dSIBP-Packages",
+    "commit": "7dfd3c4afad4dd29ccae744f606a784121a90619",
+    "path": "MadStree/Kernel/Numerics/Boundary.wl",
+    "git_blob": "d395d9a9328a5158d0f8f5e4b93b2285ea2cfe38",
+    "sha256": "e6f507f07b563aaa5e76606564d07450e992dd59c2c19d0d9d3019526d668367",
+    "working_file_matches_commit": true
+  },
+  {
+    "repository": "J7C/dSIBP-Packages",
+    "commit": "7dfd3c4afad4dd29ccae744f606a784121a90619",
+    "path": "MadStree/Kernel/Numerics/PathEvaluation.wl",
+    "git_blob": "2b81d0025101cfb96e17df6544d383ed4ea27ac0",
+    "sha256": "d32cfd8c0e57c6e586b1f5a15aa820d51a10fd823bc8452bd6317afff7b8ec41",
+    "working_file_matches_commit": true
+  },
+  {
+    "repository": "J7C/dSIBP-Packages",
+    "commit": "7dfd3c4afad4dd29ccae744f606a784121a90619",
+    "path": "MadStree/Kernel/Numerics/FlintNDE.wl",
+    "git_blob": "32937085c9595d35bb25196380d134da8ec70080",
+    "sha256": "f3abd6ef3492ed2a8e8de4ea406908da9714dde91ad0bbf511605e42a30b4946",
+    "working_file_matches_commit": true
+  },
+  {
+    "repository": "J7C/dSIBP-Packages",
+    "commit": "7dfd3c4afad4dd29ccae744f606a784121a90619",
+    "path": "MadStree/Kernel/Core/Sectors.wl",
+    "git_blob": "1efa07f1174a533b82b8010ad5fcc5f005d15d59",
+    "sha256": "e654e2d911fde092de454dedb3b89394526034d610d162720f323adde2cf6b1f",
+    "working_file_matches_commit": true
+  },
+  {
+    "repository": "J7C/dSIBP-Packages",
+    "commit": "7dfd3c4afad4dd29ccae744f606a784121a90619",
+    "path": "MadStree/Backend/flintnde_transport.py",
+    "git_blob": "373fa41c1fca0abac4290336b2584c89f797cd81",
+    "sha256": "6433d6dadedc1614263e596bbed385b8271508e0f62466b62958a0aa52ccbd12",
+    "working_file_matches_commit": true
+  },
+  {
+    "repository": "J7C/dSIBP-development",
+    "commit": "264141f0b1349cc045ab5cbf3a290642b1102201",
+    "path": "papers/madstree/paper.tex",
+    "git_blob": "1b3422091df4c1ec64b60ded94a981caf92f1305",
+    "sha256": "fa1122c6cac571697c7b7dc4cbd09414ade936c5d915f533720adf903168f28c",
+    "working_file_matches_commit": true
+  }
+]

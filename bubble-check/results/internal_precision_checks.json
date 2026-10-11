@@ -1,0 +1,110 @@
+[
+  {
+    "branch": "pp",
+    "rho": "10",
+    "relativeDifferenceInf": "[2.3870607229562358870214570828131784588823540621291616279118085402901495302261512e-29 +/- 4.69e-109]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/pp_export/evaluation_data.json",
+    "source_index_zero_based": 0
+  },
+  {
+    "branch": "pp",
+    "rho": "5",
+    "relativeDifferenceInf": "[2.3870607229562358870214570828131784588823540621291616279118085402901495302261512e-29 +/- 4.69e-109]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/pp_export/evaluation_data.json",
+    "source_index_zero_based": 1
+  },
+  {
+    "branch": "pp",
+    "rho": "2.8",
+    "relativeDifferenceInf": "[2.3870607229562358870214570828131784588823540621291616279118085402901495302261512e-29 +/- 4.69e-109]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/pp_export/evaluation_data.json",
+    "source_index_zero_based": 2
+  },
+  {
+    "branch": "pm",
+    "rho": "10",
+    "relativeDifferenceInf": "[1.2950237750045948923268113113038193397254174902664042057987239647237797226632287e-28 +/- 2.30e-108]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/pm_export/evaluation_data.json",
+    "source_index_zero_based": 0
+  },
+  {
+    "branch": "pm",
+    "rho": "5",
+    "relativeDifferenceInf": "[1.2950237750045948923268113113038193397254174902664042057987239647237797226632287e-28 +/- 2.30e-108]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/pm_export/evaluation_data.json",
+    "source_index_zero_based": 1
+  },
+  {
+    "branch": "pm",
+    "rho": "2.8",
+    "relativeDifferenceInf": "[1.2950237750045948923268113113038193397254174902664042057987239647237797226632287e-28 +/- 2.30e-108]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/pm_export/evaluation_data.json",
+    "source_index_zero_based": 2
+  },
+  {
+    "branch": "mp",
+    "rho": "10",
+    "relativeDifferenceInf": "[1.0070024471363176290953196111824117120170643199432599545897211713080524500758089e-28 +/- 2.94e-108]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/mp_export/evaluation_data.json",
+    "source_index_zero_based": 0
+  },
+  {
+    "branch": "mp",
+    "rho": "5",
+    "relativeDifferenceInf": "[1.0070024471363176290953196111824117120170643199432599545897211713080524500758089e-28 +/- 2.94e-108]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/mp_export/evaluation_data.json",
+    "source_index_zero_based": 1
+  },
+  {
+    "branch": "mp",
+    "rho": "2.8",
+    "relativeDifferenceInf": "[1.0070024471363176290953196111824117120170643199432599545897211713080524500758089e-28 +/- 2.94e-108]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/mp_export/evaluation_data.json",
+    "source_index_zero_based": 2
+  },
+  {
+    "branch": "mm",
+    "rho": "10",
+    "relativeDifferenceInf": "[3.1747503121712682806221480931606040219261526651447740875705788506136507299537172e-29 +/- 3.32e-109]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/mm_export/evaluation_data.json",
+    "source_index_zero_based": 0
+  },
+  {
+    "branch": "mm",
+    "rho": "5",
+    "relativeDifferenceInf": "[3.1747503121712682806221480931606040219261526651447740875705788506136507299537172e-29 +/- 3.32e-109]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/mm_export/evaluation_data.json",
+    "source_index_zero_based": 1
+  },
+  {
+    "branch": "mm",
+    "rho": "2.8",
+    "relativeDifferenceInf": "[3.1747503121712682806221480931606040219261526651447740875705788506136507299537172e-29 +/- 3.32e-109]",
+    "targetRelativeErrorMet": false,
+    "target": "1e-32",
+    "source": "results/native/mm_export/evaluation_data.json",
+    "source_index_zero_based": 2
+  }
+]
