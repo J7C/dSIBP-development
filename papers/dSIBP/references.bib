@@ -41,7 +41,7 @@
 }
 
 %-------------------------Original IBP and differential-equation papers-------------------------
-%  Chetyrkin:1981qh,Kotikov:1990kg,Laporta:2000dsw,Henn:2013pwa
+%  Chetyrkin:1981qh,Kotikov:1990kg,Kotikov:1991pm,Bern:1993kr,Gehrmann:1999as,Laporta:2000dsw,Henn:2013pwa
 
 % source: https://inspirehep.net/api/literature/171845?format=bibtex
 @article{Chetyrkin:1981qh,
@@ -79,6 +79,43 @@
     year = "2000"
 }
 
+% source: https://inspirehep.net/api/doi/10.1016%2F0370-2693(91)90536-Y?format=bibtex
+@article{Kotikov:1991pm,
+    author = "Kotikov, A. V.",
+    title = "{Differential equation method: The Calculation of N point Feynman diagrams}",
+    doi = "10.1016/0370-2693(91)90536-Y",
+    journal = "Phys. Lett. B",
+    volume = "267",
+    pages = "123--127",
+    year = "1991"
+} %---Erratum: Phys. Lett. B 295 (1992) 409
+
+% source: https://inspirehep.net/api/arxiv/hep-ph%2F9306240?format=bibtex
+@article{Bern:1993kr,
+    author = "Bern, Zvi and Dixon, Lance J. and Kosower, David A.",
+    title = "{Dimensionally regulated pentagon integrals}",
+    eprint = "hep-ph/9306240",
+    archivePrefix = "arXiv",
+    doi = "10.1016/0550-3213(94)90398-0",
+    journal = "Nucl. Phys. B",
+    volume = "412",
+    pages = "751--816",
+    year = "1994"
+}
+
+% source: https://inspirehep.net/api/arxiv/hep-ph%2F9912329?format=bibtex
+@article{Gehrmann:1999as,
+    author = "Gehrmann, T. and Remiddi, E.",
+    title = "{Differential equations for two-loop four-point functions}",
+    eprint = "hep-ph/9912329",
+    archivePrefix = "arXiv",
+    doi = "10.1016/S0550-3213(00)00223-6",
+    journal = "Nucl. Phys. B",
+    volume = "580",
+    pages = "485--518",
+    year = "2000"
+}
+
 % source: https://inspirehep.net/api/arxiv/1304.1806?format=bibtex
 @article{Henn:2013pwa,
     author = "Henn, Johannes M.",
@@ -94,7 +131,7 @@
 }
 
 %-------------------------IBP reduction backends-------------------------
-%  Maierhofer:2017gsa,Klappert:2020nbg,Smirnov:2025prc,Magerya:2022hvj
+%  Maierhofer:2017gsa,Klappert:2020nbg,Smirnov:2019qkx,Smirnov:2025prc,Magerya:2022hvj
 
 % source: https://inspirehep.net/api/arxiv/1705.05610?format=bibtex
 @article{Maierhofer:2017gsa,
@@ -124,6 +161,21 @@
     pages = "108024",
     year = "2021"
 }
+
+% source: https://inspirehep.net/api/arxiv/1901.07808?format=bibtex
+@article{Smirnov:2019qkx,
+    author = "Smirnov, A. V. and Chukharev, F. S.",
+    title = "{FIRE6: Feynman Integral REduction with modular arithmetic}",
+    eprint = "1901.07808",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ph",
+    reportNumber = "TTP19-006",
+    doi = "10.1016/j.cpc.2019.106877",
+    journal = "Comput. Phys. Commun.",
+    volume = "247",
+    pages = "106877",
+    year = "2020"
+} %---FIRE6 package
 
 % source: https://inspirehep.net/api/arxiv/2510.07150?format=bibtex
 @article{Smirnov:2025prc,
@@ -213,8 +265,51 @@
     year = "2025"
 }
 
-%-------------------------Related packages-------------------------
-%  MadStree:inpreparation,Liu:2022chg
+%-------------------------Numerical DE solving and auxiliary mass flow-------------------------
+%  Hidding:2020ytt,Liu:2017jxz,Liu:2022mfb,Liu:2022chg
+
+% source: https://inspirehep.net/api/arxiv/2006.05510?format=bibtex
+@article{Hidding:2020ytt,
+    author = "Hidding, Martijn",
+    title = "{DiffExp, a Mathematica package for computing Feynman integrals in terms of one-dimensional series expansions}",
+    eprint = "2006.05510",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ph",
+    doi = "10.1016/j.cpc.2021.108125",
+    journal = "Comput. Phys. Commun.",
+    volume = "269",
+    pages = "108125",
+    year = "2021"
+} %---DiffExp package
+
+% source: https://inspirehep.net/api/arxiv/1711.09572?format=bibtex
+@article{Liu:2017jxz,
+    author = "Liu, Xiao and Ma, Yan-Qing and Wang, Chen-Yu",
+    title = "{A Systematic and Efficient Method to Compute Multi-loop Master Integrals}",
+    eprint = "1711.09572",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ph",
+    doi = "10.1016/j.physletb.2018.02.026",
+    journal = "Phys. Lett. B",
+    volume = "779",
+    pages = "353--357",
+    year = "2018"
+} %---auxiliary mass flow: original method
+
+% source: https://inspirehep.net/api/arxiv/2201.11637?format=bibtex
+@article{Liu:2022mfb,
+    author = "Liu, Zhi-Feng and Ma, Yan-Qing",
+    title = "{Determining Feynman Integrals with Only Input from Linear Algebra}",
+    eprint = "2201.11637",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ph",
+    doi = "10.1103/PhysRevLett.129.222001",
+    journal = "Phys. Rev. Lett.",
+    volume = "129",
+    number = "22",
+    pages = "222001",
+    year = "2022"
+} %---master integrals fixed by linear algebra alone
 
 % source: https://inspirehep.net/api/arxiv/2201.11669?format=bibtex
 @article{Liu:2022chg,
@@ -230,6 +325,8 @@
     year = "2023"
 }
 
+%-------------------------Related packages-------------------------
+%  MadStree:inpreparation
 % No INSPIRE record exists yet; bibliographic data supplied by the collaboration.
 % Author list intentionally empty, mirroring the MadStree package entry style.
 @misc{MadStree:inpreparation,

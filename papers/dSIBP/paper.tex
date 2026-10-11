@@ -11,20 +11,16 @@
 \affiliation{a}
 
 \abstract{
-\texttt{dSIBP} is a \textsc{Mathematica} package. It generates canonical
-integration-by-parts (IBP) seed relations for the Feynman integrals of quantum field theory in
-de Sitter spacetime. The input is a Feynman graph with massive and massless propagators of the four
-Schwinger--Keldysh types. The package builds the corresponding integral family with structured
-integer labels. It applies the equation-of-motion and vertex-state normalizations of the
-loop-integral formalism of de Sitter field theory. It then emits canonical seed equations in which
-every discrete label has been reduced to a finite basis. The seeds are exported through a
-backend-neutral linear-system format to the external reducers Kira and Rational Tracer. The reduced
-master integrals can be differentiated to obtain differential equations in a single command. The
-package covers arbitrary loop order and arbitrary topologies. It supports the parity-split IBP
-system specific to de Sitter time integrals, and it provides a parallel tree-level track that
-produces differential equations without any loop momentum. We describe the notation, the public
-interface, and worked examples ranging from the sunrise graph to a mixed loop-plus-tree family with
-eighty-one master integrals.
+\texttt{dSIBP} is a \textsc{Mathematica} package that generates the integration-by-parts (IBP)
+relations of Feynman integrals in de Sitter (dS) spacetime. The input is a Feynman graph whose
+internal lines are massive or massless and live on the two Schwinger--Keldysh branches. The package
+builds the integral family of this graph, writes its canonical IBP seeds, and assembles them into a
+sealed linear system for the external reducers Kira and Rational Tracer. One further command
+differentiates the reduced masters and returns their differential equations, together with Euler
+scaling identities that check the result. A parallel track treats tree-level families, which carry no
+loop momentum. The package presents no new derivation; all formulas come from the existing de Sitter
+IBP constructions. Its usage is described through worked examples, from the sunrise graph to a mixed
+loop-plus-tree family with eighty-one master integrals.
 }
 
 \begin{document}
@@ -32,34 +28,64 @@ eighty-one master integrals.
 \maketitle
 
 \section{Introduction}
+\label{sec:intro}
 
-Correlation functions of quantum fields in de Sitter spacetime are computed in the in-in
-(Schwinger--Keldysh) formalism. In this formalism the time integrals run over two branches,
-and internal propagators come in massive and massless variants that connect equal or opposite branches
-\cite{Chen:2017ryl}. In momentum space every graph reduces to scalar integrals over the conformal
-times $\tau_v<0$ of its vertices. The integrand is a product of plane waves $e^{\mp i E_v \tau_v}$
-and of Hankel functions. These time integrals differ from the loop integrals of flat-space field
-theory. Under IBP reduction \cite{Chetyrkin:1981qh,Kotikov:1990kg,Laporta:2000dsw,Henn:2013pwa} they
-produce linear relations among integrals whose discrete labels count both propagator powers and the
-powers of the Hankel functions at the two vertices of each propagator. The dimension of this label
-space grows rapidly with the loop order. The reduction therefore becomes the dominant computational
-cost of any high-loop calculation in de Sitter space.
+Correlation functions of quantum fields in de Sitter (dS) spacetime are the basic observables of
+inflationary perturbation theory. They are computed in the in-in formalism, whose diagrammatic form
+is the Schwinger--Keldysh path integral \cite{Chen:2017ryl}. After the Feynman rules are applied, a
+graph becomes scalar integrals over the conformal times $\tau_v<0$ of its vertices. The integrand is
+a product of vertex phases $e^{-i\sigma_v E_v\tau_v}$ and of propagator functions. Massive internal
+states make these integrals hard, because their propagators are written with Hankel functions, so
+the integrand is no longer of polynomial type. Results with massive states are still sparse.
+Ref.~\cite{Chen:2026dqp} states the situation directly: explicit computations of such correlators
+remain largely limited to tree level and to bubble topologies at one loop.
 
-The systematic IBP structure of de Sitter time integrals was developed in
-refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}. Single-vertex and two-vertex families admit
-closed-form IBP relations. Multivariate hypergeometric techniques solve the two-vertex massive
-families \cite{Chen:2024glu}. The loop-momentum formalism with a parity-split IBP system covers
-general graphs \cite{Chen:2026dqp}. In this formalism the IBP identities take a canonical form in
-which every discrete label is confined to a small finite set. The full linear system of a graph is
-therefore fixed once the topology, the propagator types and a few kinematic declarations are given.
-Writing these canonical seeds by hand is laborious and error-prone already at one loop. Each
-propagator carries three structured labels. Massive propagators obey second-order equations of
-motion. Massless same-branch propagators must be treated as a quotient over vertex states.
+The route taken in this paper comes from flat-spacetime QFT, where the same problem has a standard
+solution. Integration by parts (IBP) \cite{Chetyrkin:1981qh} expresses every integral of a family as
+a linear combination of a small set of master integrals, and Laporta's algorithm made this reduction
+automatic \cite{Laporta:2000dsw}. Differentiating the masters and reducing again gives a closed
+system of first-order linear differential equations (DE)
+\cite{Kotikov:1990kg,Kotikov:1991pm}. That method produced the dimensionally regulated pentagon
+integrals \cite{Bern:1993kr} and the two-loop four-point functions \cite{Gehrmann:1999as}, and it
+becomes much simpler when the DE are written in $d\log$ form \cite{Henn:2013pwa}.
+
+What made this route decisive is not only the algebra but also the software built around it. Seed
+generation and reduction are automated by FIRE \cite{Smirnov:2019qkx,Smirnov:2025prc} and by Kira
+\cite{Maierhofer:2017gsa,Klappert:2020nbg}, and rational-function reconstruction by Rational Tracer
+\cite{Magerya:2022hvj}. The DE are solved numerically by DiffExp \cite{Hidding:2020ytt} and by the
+auxiliary mass flow method with its implementation AMFlow \cite{Liu:2017jxz,Liu:2022chg}. This last
+series also shows how little input the whole scheme needs. Reference \cite{Liu:2022mfb} finds that
+Feynman integrals with any number of loops are completely determined once linear relations among
+them are given, and it verifies this on examples up to five loops. Computing an integral then becomes
+linear algebra plus numerical transport, with no integration input left to supply. In practice the
+user writes down a topology, and a program handles the rest.
+
+The same two steps were set up for dS space in
+refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}. Reference \cite{Chen:2023iix} extends IBP from
+polynomial integrands to the Hankel integrands of dS. It proves universal formulas for the iterative
+reduction and for the $d\log$-form DE of an arbitrary vertex integral family, and it states that
+these formulas dominate all tree-level dS correlators and play a kernel role at loop level.
+Reference \cite{Chen:2024glu} solves such equations by power series, gives multivariate
+hypergeometric expressions for the homogeneous part of an arbitrary tree, and shows how to determine
+the boundary data. Reference \cite{Chen:2026dqp} treats the loop-momentum integrals as well. It
+identifies a structural property of the dS IBP system: an $n$-propagator family splits into $2^n$
+closed subsystems, classified by the parity of the propagator indices. Its explicit construction is
+carried out for the one-loop bubble family.
+
+These works also point at the same missing layer. Reference \cite{Chen:2023iix} observes that
+existing flat-space programs can be reused, with Kira solving the IBP reduction of a user-defined
+system, and it leaves the boundary data of the DE outside its scope. Reference \cite{Chen:2024glu}
+notes that the automatic tools widely used in flat QFT could help. None of the three releases a
+program that turns a general dS graph into that user-defined system. Assembling the system by hand
+is laborious and error-prone already at one loop. A massive line carries three integer labels: a
+propagator power and two Hankel powers. Massive lines obey second-order equations of motion, so only
+two of their vertex states are independent. Massless same-branch lines must be treated as a quotient
+over vertex states. The parity structure above closes the system into sectors, and only one sector
+is needed per reduction.
 
 \texttt{dSIBP} is a \textsc{Mathematica} package that automates this step. The user declares a
 Feynman graph by its vertices, by the four Schwinger--Keldysh types of its internal propagators,
-and by
-its external momenta. The package then performs the following tasks.
+and by its external momenta. The package then performs the following tasks.
 
 \begin{itemize}
 \item It validates the kinematic declarations, namely the loop momenta, the no-loop external
@@ -79,22 +105,29 @@ variables. This yields differential equations, optionally in $d\log$ form. Euler
 provide an independent check of the result.
 \end{itemize}
 
-The package generates and serializes IBP relations, but it never runs a reduction itself. The
-reduction is delegated to external programs. This separation keeps the package independent of any
-particular reduction engine. A complementary tree-level track provides seed relations for
-single- and multi-vertex time-only families. These seeds can be reduced internally to differential
-equations and $d\log$ forms without any loop momentum. The track also interfaces with the package
-MadStree \cite{MadStree:inpreparation}, which evaluates tree-level cosmological correlators
-numerically. Related structures for cosmological loop integrands appear in the kinematic-flow
-program \cite{Fan:2024iek,Hang:2024xas,Baumann:2024mvm}.
+Two boundaries of the package are worth stating. It generates and serializes IBP relations, but it
+never runs a reduction itself. The reduction is delegated to external programs, which keeps the
+package independent of any particular reduction engine. The package also adds no new derivation:
+every formula it uses is derived in refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}. What it
+supplies instead is the notation those formulas need in order to be applied to an arbitrary graph,
+and a machine-readable form of the system they generate. Every symbol that appears in the output of
+the package is traced back to its definition.
 
-All formulas used by the package are derived in
-refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}; the package adds no new derivation. The purpose
-of this paper is therefore to state the notation in a complete and self-contained form
-(section~\ref{sec:notation}), and to describe the public interface
-(sections~\ref{sec:using} and~\ref{sec:examples}). Every symbol that appears in the output of the
-package is traced back to its definition. The interface described below is that of the current
-public release.
+A complementary tree-level track handles time-only families, which carry no loop momentum. Its seeds
+can be reduced internally to differential equations and to $d\log$ forms. This track interfaces with
+the package MadStree \cite{MadStree:inpreparation}, which evaluates tree-level cosmological
+correlators numerically. Related differential structures for cosmological loop integrands appear in
+the kinematic-flow construction \cite{Baumann:2024mvm,Fan:2024iek,Hang:2024xas}, which is not
+implemented here.
+
+The paper is organized as follows. Section~\ref{sec:notation} fixes the notation: the
+Schwinger--Keldysh Feynman rules, the integral family and its labels, the kinematic variables, the
+parity structure, the dynamical rules and the time-only representation. Section~\ref{sec:using}
+describes the public interface, from initialization to seeds, linear systems, external reduction and
+differential equations, and then the tree-level track. Section~\ref{sec:examples} walks through the
+examples shipped with the package, including a mixed loop-plus-tree family whose reduction system
+holds more than eight hundred thousand relations. Section~\ref{sec:summary} closes with an outlook.
+Appendix~\ref{app:api} lists the public functions with one-line descriptions.
 
 \noindent\textbf{Statement on AI use.}
 The notation, the functionality and the interfaces of \texttt{dSIBP} were designed by the author.
@@ -634,11 +667,12 @@ corresponding family. Together the two examples cover the initialization, the en
 the function-system interface of sections~\ref{sec:using} and~\ref{sec:dynamics}.
 
 \section{Summary and outlook}
+\label{sec:summary}
 
 \texttt{dSIBP} turns the canonical IBP structure of de Sitter time integrals into a practical
 \textsc{Mathematica} tool. From a graph declaration it produces sealed canonical seeds,
 backend-neutral linear systems, Kira and Rational-Tracer export manifests with artifact identities,
-differential equations and scaling checks. It covers arbitrary topologies that mix massive and
+differential equations and scaling checks. It accepts arbitrary topologies that mix massive and
 massless propagators of all four Schwinger--Keldysh types. The parity-split structure, the massive
 equation-of-motion reduction and the massless quotient are applied by construction, so the user
 never handles raw label spaces. Ongoing work concerns the certification of the tree-level formulas
