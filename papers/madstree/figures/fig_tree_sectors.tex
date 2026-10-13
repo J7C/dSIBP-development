@@ -6,6 +6,7 @@
 % Compile: pdflatex fig_tree_sectors.tex   (included by paper.tex)
 \documentclass[tikz,border=6pt]{standalone}
 \usetikzlibrary{calc,positioning}
+\definecolor{propblue}{RGB}{0,161,168}
 \begin{document}
 \begin{tikzpicture}[
   every node/.style={inner sep=1.5pt},
@@ -19,22 +20,22 @@
     \node[one] (TL) at (0,0) {};
     \node[one] (TM) at (2.0,0) {};
     \node[one] (TR) at (4.0,0) {};
-    \draw[->,thick] (TL) -- (TM);
-    \draw[->,thick] (TM) -- (TR);
+    \draw[->,thick,propblue] (TL) -- (TM);
+    \draw[->,thick,propblue] (TM) -- (TR);
     \node[lab] at (2.0,-1.15) {Top sector};
   \end{scope}
   % ============ LeftPinch sector ============
   \begin{scope}[shift={(6.2,0)}]
     \node[two] (PL) at (0,0) {};
     \node[one] (PR) at (2.6,0) {};
-    \draw[->,thick] (PL) -- (PR);
+    \draw[->,thick,propblue] (PL) -- (PR);
     \node[lab] at (1.3,-1.15) {LeftPinch sector};
   \end{scope}
   % ============ RightPinch sector ============
   \begin{scope}[shift={(0,-2.5)}]
     \node[one] (QL) at (0,0) {};
     \node[two] (QR) at (2.6,0) {};
-    \draw[->,thick] (QL) -- (QR);
+    \draw[->,thick,propblue] (QL) -- (QR);
     \node[lab] at (1.3,-1.15) {RightPinch sector};
   \end{scope}
   % ============ DoublePinch sector ============

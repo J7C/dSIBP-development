@@ -2060,21 +2060,30 @@ The first example is the chain with three vertices in figure~\ref{fig:tree-diagr
   \centering
   \includegraphics[width=0.72\textwidth]{figures/fig_tree_diagram.pdf}
   \caption{Tree with three vertices and two massive scalar propagators, drawn with the
-  in-in Feynman rules of Sec.~\ref{sec:conventions}: the \texttt{"+"} vertices (black fill)
-  carry the conformal times $\tau_L,\tau_M,\tau_R$, the external legs end on the boundary
-  (squares) and carry the energy sums $E_1,E_2,E_3$, and the internal propagators carry
-  momentum magnitudes $s_1,s_2$ and mass labels
-  $\widetilde\nu_1,\widetilde\nu_2$, their arrows marking the momentum flow.}
+  in-in Feynman rules of Sec.~\ref{sec:conventions} for the all-plus assignment
+  $(+++)$: every vertex is on the \texttt{"+"} branch of the in-in contour (black
+  fill; a \texttt{"-"} vertex would be drawn white), carries its conformal time
+  $\tau_L$, $\tau_M$ or $\tau_R$, and carries a fan of external legs whose momentum
+  magnitudes $k_{v,j}$ sum to the external energy $E_v=\sum_j k_{v,j}$. The internal
+  propagators carry the momentum magnitudes $s_1,s_2$ and the mass labels
+  $\widetilde\nu_1,\widetilde\nu_2$, their arrows marking the momentum flow. The
+  application computes the four assignments $(+++)$, $(++-)$, $(+-+)$ and $(-++)$;
+  the four remaining sign choices are their complex conjugates (text after
+  \eqref{eq:tree-sector-normalizations}).}
   \label{fig:tree-diagram}
 \end{figure}
 
 The vertices $L,M,R$ have conformal times $\tau_L,\tau_M,\tau_R$.
 The two internal propagators connect $L$ to $M$ and $M$ to $R$, respectively.
-Each $E_i$ is the sum of the external momentum magnitudes at vertex $i$.
+Each vertex carries a fan of external legs; the momentum magnitudes $k_{v,j}$
+of the legs at vertex $v$ sum to its external energy, $E_v=\sum_j k_{v,j}$.
 The internal momentum magnitudes are $s_1,s_2$, and the Hankel orders are
 $\nu_1,\nu_2$. For the masses in the principal series used here,
 $\nu_i=\ii\widetilde\nu_i$, with real $\widetilde\nu_i$.
-Each vertex has a contour sign $\sigma_v=\pm1$.
+Each vertex has a contour sign $\sigma_v=\pm1$;
+figure~\ref{fig:tree-diagram} is drawn for the all-plus assignment
+$\sigma_L=\sigma_M=\sigma_R=+1$, and the assignments computed in this
+application are fixed below.
 
 We first define the states at the two vertices of a propagator that label the master integrals. This
 application is evaluated in the \texttt{NuConvention -> "Negative"} option, i.e.\ with
@@ -2257,8 +2266,11 @@ and the four sectors are shown in figure~\ref{fig:tree-sectors}.
   $M$ and $R$ (RightPinch), and both contractions merge all three vertices (DoublePinch).
   Larger dots mark components of more merged vertices, and the contracted propagator is
   absent; the surviving propagator keeps its two-state (massive chain) or shared
-  (massless chain) slot. The massless chain of the regulator example
-  (figure~\ref{fig:ep-tree}) carries the same four sectors.}
+  (massless chain) slot. All panels are drawn for equal contour signs, where every
+  contraction is available; when an internal propagator joins vertices of opposite signs,
+  that propagator is theta-free and its pinched sectors are absent (text below). The
+  massless chain of the regulator example (figure~\ref{fig:ep-tree}) carries the same
+  four sectors.}
   \label{fig:tree-sectors}
 \end{figure}
 For other contour assignments, only the allowed pinched sectors are included: a propagator whose two
@@ -2439,11 +2451,14 @@ momenta are fixed by
   \includegraphics[width=0.72\textwidth]{figures/fig_ep_tree.pdf}
   \caption{Massless three-vertex chain in the regulator mode, drawn as
   figure~\ref{fig:tree-diagram} with the massless counterparts of its parameters: the same
-  external energy sums $E_v$ and propagator momentum magnitudes $s_1,s_2$, with no mass labels
-  since the massless propagators carry the fixed order $\nu=1/2$. The vertices carry the
-  regularized time powers $(-\tau_1)^{-1+\varepsilon}$, $(-\tau_2)^{1+\varepsilon}$ and
-  $(-\tau_3)^{1+\varepsilon}$. In the input of Example~06, $E_v=k_v$, $s_1=q_{12}$ and
-  $s_2=q_{23}$.}
+  external-leg fans with summed energies $E_v=\sum_j k_{v,j}$ and propagator momentum
+  magnitudes $s_1,s_2$, with no mass labels since the massless propagators carry the
+  fixed order $\nu=1/2$. The vertices carry the regularized time powers
+  $(-\tau_1)^{-1+\varepsilon}$, $(-\tau_2)^{1+\varepsilon}$ and
+  $(-\tau_3)^{1+\varepsilon}$. The fans are schematic --- in the input of Example~06 each
+  vertex carries a single external leg, $E_v=k_v$, $s_1=q_{12}$ and $s_2=q_{23}$ --- and
+  the input fixes all three vertices to the \texttt{"+"} branch, so this example
+  evaluates the all-plus assignment $(+++)$ only.}
   \label{fig:ep-tree}
 \end{figure}
 \begin{verbatim}
@@ -2611,10 +2626,14 @@ momenta fixed. We do not integrate over the spatial loop momentum.
   \centering
   \includegraphics[width=0.55\textwidth]{figures/fig_bubble_diagram.pdf}
   \caption{Bubble time kernel, drawn with the in-in Feynman rules of
-  Sec.~\ref{sec:conventions}: the two massive propagators join the same pair of
-  \texttt{"+"} vertices and are drawn as the two halves of one circular loop, carrying the
-  fixed momentum magnitudes $x_1,x_2$; the vertices carry the times $\tau_1,\tau_2$, and the
-  external legs end on the boundary (squares) with the energy sums $P_1,P_2$.}
+  Sec.~\ref{sec:conventions} for the assignment $pp$: both vertices are on the
+  \texttt{"+"} branch (black fill; a \texttt{"-"} vertex would be drawn white) and carry
+  the times $\tau_1,\tau_2$, and the single external legs carry the energy sums
+  $P_1,P_2$. The two massive propagators join the same pair of vertices and are drawn as
+  the two halves of one circular loop --- propagator~1 with momentum magnitude $x_1$ and
+  mass label $\widetilde\nu_{B1}$ on the upper half, propagator~2 with $x_2$ and
+  $\widetilde\nu_{B2}$ on the lower half. The application computes all four assignments
+  $pp$, $pm$, $mp$ and $mm$.}
   \label{fig:bubble-diagram}
 \end{figure}
 
@@ -2706,11 +2725,14 @@ $\mathrm{Top}(16)\oplus\mathrm{Pinch}_1(3)\oplus\mathrm{Pinch}_2(3)$ with $\dim=
 (figure~\ref{fig:bubble-sectors}).
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.72\textwidth]{figures/fig_bubble_sectors.pdf}
-  \caption{The two kinds of sectors of the bubble time kernel of
-  figure~\ref{fig:bubble-diagram}: the Top sector keeps the circular loop; pinching either
-  propagator merges the two vertices --- the larger dot --- and leaves the other propagator as
-  a circular tadpole on the single merged component.}
+  \includegraphics[width=0.85\textwidth]{figures/fig_bubble_sectors.pdf}
+  \caption{The three sectors of the bubble time kernel of
+  figure~\ref{fig:bubble-diagram}, drawn for the equal-sign assignments ($pp$ and $mm$)
+  and colored as there: the Top sector keeps both propagators of the circular loop;
+  Pinch$_1$ contracts propagator~1 (upper half, $x_1$) and leaves propagator~2 as a
+  circular tadpole on the single merged vertex (larger dot); Pinch$_2$ contracts
+  propagator~2 and leaves propagator~1. The opposite-sign assignments $pm$ and $mp$ have
+  only the Top sector.}
   \label{fig:bubble-sectors}
 \end{figure}
 The vertex factors $(\ii\sigma_1)(\ii\sigma_2)$ give
