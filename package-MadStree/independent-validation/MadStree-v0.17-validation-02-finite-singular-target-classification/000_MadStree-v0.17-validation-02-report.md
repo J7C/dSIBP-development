@@ -1,8 +1,8 @@
 # MadStree v0.17 Validation-02 独立报告
 
 - 状态：**passed**，16/16。
-- 后端 SHA-256：`4ded63a0baaccb8c544cc63ce252549f1c9e16ea7277830124a9f5ab28b915ac`。
-- 工作精度/主阶/参考阶：`90 / 64 / 88`；目标相对误差 `1e-30`；总 wall time `0.7128945 s`。
+- 后端 SHA-256：`a4320053d120bcf7ab7c9125ac09b7a9f4512727bc077d0a5d60439d4ebeda37`。
+- 工作精度/主阶/参考阶：`90 / 64 / 88`；目标相对误差 `1e-30`；总 wall time `1.1933215 s`。
 
 ## Exact 模型
 

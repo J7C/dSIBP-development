@@ -708,7 +708,7 @@ publicExitInventory = <|
 (*验收、机器摘要与报告*)
 
 checks = <|
-  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "0.17"],
+  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "1.0"],
   "finiteGammaArgumentsAccepted" -> And @@ (
     Lookup[finiteBoundaries[#], "status", None] === "generated" & /@ finiteGammaArguments
   ),

@@ -68,7 +68,7 @@ evidence = If[FileExistsQ[evidencePath], Import[evidencePath, "RawJSON"], <||>];
 checks = Join[
   Lookup[evidence, "checks", <||>],
   <|
-    "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "0.17"],
+    "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "1.0"],
     "configurationAvailable" -> TrueQ[Lookup[configuration, "availableQ", False]],
     "helperExitCode" -> process["ExitCode"] === 0,
     "adapterBoundaryOnly" -> True

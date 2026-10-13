@@ -142,7 +142,7 @@ duplicateBasis = MSReduce[
 
 contactNonzero = DeleteCases[Flatten[Values[First[contactMaps]["matricesByComponent"]]], 0];
 checks = <|
-  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "0.17"],
+  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "1.0"],
   "topAndContact" -> Length[MSSectors[context]] === 2 && topSector["masterCount"] === 2 && childSector["masterCount"] === 1,
   "formulaMatrices" -> AssociationQ[topFormula] && AssociationQ[childFormula],
   "contactMapDerivedWeights" -> Sort[contactNonzero] === {-2, 2},

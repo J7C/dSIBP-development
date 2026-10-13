@@ -1,7 +1,7 @@
 # MadStree v0.17 Validation-05 独立报告
 
 - 状态：**passed**，22/22。
-- 源码聚合 SHA-256：`7c9cc813b0c6d3eaffb85ce567f00bdb763cedc20ea904ebeb7337f258fbea11`。
+- 源码聚合 SHA-256：`f288604b27ccb9685c683d307e9eedc31eb66fc2417d80df7de62470746b6691`。
 - 图包含 top/contact 两层；master 顺序、contact 权重和正负 shift 均 exact 比较。
 
 ## Recurrence
@@ -18,4 +18,4 @@ MadStree/dSIBP 三槽表示逐 master 和线性表达式 round-trip，sector、s
 ## 数值路径、展开与耗时
 
 本 case 只作 exact symbolic 检验；数值点、路径、边界展开阶和输运阶均不适用。
-总 wall time：`1.20248 s`。
+总 wall time：`0.534172 s`。

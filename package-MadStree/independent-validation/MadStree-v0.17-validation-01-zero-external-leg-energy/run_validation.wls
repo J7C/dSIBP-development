@@ -144,7 +144,7 @@ relativeDifference = If[
   Infinity
 ];
 checks = <|
-  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "0.17"],
+  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "1.0"],
   "contexts" -> And @@ (MSContextQ /@ {omittedContext, zeroContext}),
   "masterOrder" -> Lookup[omittedMasters, "integral"] === Lookup[zeroMasters, "integral"],
   "masterDigest" -> omittedContext["masterDigest"] === zeroContext["masterDigest"],

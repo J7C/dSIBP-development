@@ -305,7 +305,7 @@ missingSavedPoint = MSExportEvaluationData[
 (*验收、机器摘要与 UTF-8 报告*)
 
 checks = <|
-  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "0.17"],
+  "version" -> TrueQ[MadStree`Private`$MadStreeVersion === "1.0"],
   "vertexContextKind" -> Lookup[vertexContext, "contextKind", None] === "vertexFamily",
   "vertexOneMaster" -> Length[vertexMasters] === 1,
   "vertexDLogExact" -> vertexDEResidual === {0},

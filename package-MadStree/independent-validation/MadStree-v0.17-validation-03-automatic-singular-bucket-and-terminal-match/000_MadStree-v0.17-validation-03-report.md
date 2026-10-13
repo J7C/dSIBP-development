@@ -6,7 +6,7 @@
 
 ## 路径与效率
 
-planned/naive wall time：`0.2073649000376463 / 3.325805999804288 s`；naive/planned：`16.038423085105055`。
+planned/naive wall time：`0.28370669996365905 / 4.182623999891803 s`；naive/planned：`14.742774846091296`。
 真实节点、逐点 source/assignment、收敛半径、userIndex 与闭式/naive 误差均保存在 `results/summary.wl`。
 
 ## 末端与反例

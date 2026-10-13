@@ -1,7 +1,7 @@
 # MadStree v0.17 Validation-06 独立报告
 
 - 状态：**passed**，23/23。
-- 源码聚合 SHA-256：`7c9cc813b0c6d3eaffb85ce567f00bdb763cedc20ea904ebeb7337f258fbea11`。
+- 源码聚合 SHA-256：`f288604b27ccb9685c683d307e9eedc31eb66fc2417d80df7de62470746b6691`。
 - 独立 oracle：单顶点 Gamma 积分；平行双 massless 线的两时间排序 chamber 闭式。
 
 ## 单顶点与 cyclic time graph
@@ -20,4 +20,4 @@ time graph 两变量 DE exact residual、边界 `t^4` leading vector 与普通�
 
 CSV/JSON 只保留两个 `saved` 记录，排除临时 waypoint；字符串 `Infinity`、相对差和精度门禁字段完成 round-trip。
 无 saved 点时返回 `SavedPointResultsRequired`。
-实际路径、边界/输运阶和各阶段 wall time 均见机器摘要；总 wall time：`15.9255 s`。
+实际路径、边界/输运阶和各阶段 wall time 均见机器摘要；总 wall time：`24.0431 s`。
