@@ -1,0 +1,40 @@
+% Standalone source of the massive three-vertex chain of the first application
+% example (Sec. 5). Drawing conventions follow the dS Feynman rules of the dSIBP
+% paper (fig_skrules/fig_linetypes): "+" vertices are black 3pt dots with their
+% conformal times, external legs end on the white boundary squares, and each
+% internal propagator is a single directed straight line carrying its momentum
+% magnitude and mass label.
+% Compile: pdflatex fig_tree_diagram.tex   (included by paper.tex)
+\documentclass[tikz,border=6pt]{standalone}
+\usetikzlibrary{calc}
+\begin{document}
+\begin{tikzpicture}[every node/.style={inner sep=1.5pt}]
+  \coordinate (vL) at (0,0);
+  \coordinate (vM) at (2.8,0);
+  \coordinate (vR) at (5.6,0);
+  % External legs, one per vertex, ending on the boundary squares.
+  \draw (vL) -- (-1.1,0.95);
+  \draw (vM) -- (2.8,1.45);
+  \draw (vR) -- (6.7,0.95);
+  \filldraw[fill=white,draw=black] ($(-1.1,0.95)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \filldraw[fill=white,draw=black] ($(2.8,1.45)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \filldraw[fill=white,draw=black] ($(6.7,0.95)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \node[left=2pt]  at (-1.1,0.95) {$E_1$};
+  \node[right=2pt] at (2.8,1.45)  {$E_2$};
+  \node[right=2pt] at (6.7,0.95)  {$E_3$};
+  % The two internal massive propagators: directed straight lines, arrows
+  % marking the momentum flow, momentum magnitudes and mass labels above.
+  \draw[->,thick] (vL) -- (vM);
+  \draw[->,thick] (vM) -- (vR);
+  \node[fill=white,inner sep=1pt] at (1.4,0.13)  {\small $s_1,\ \widetilde\nu_1$};
+  \node[fill=white,inner sep=1pt] at (4.2,0.13)  {\small $s_2,\ \widetilde\nu_2$};
+  % Vertex times below the vertices.
+  \node[anchor=north] at (0,-0.22)   {\small $\tau_L$};
+  \node[anchor=north] at (2.8,-0.22) {\small $\tau_M$};
+  \node[anchor=north] at (5.6,-0.22) {\small $\tau_R$};
+  % Vertices last.
+  \filldraw[fill=black,draw=black] (vL) circle (3pt);
+  \filldraw[fill=black,draw=black] (vM) circle (3pt);
+  \filldraw[fill=black,draw=black] (vR) circle (3pt);
+\end{tikzpicture}
+\end{document}

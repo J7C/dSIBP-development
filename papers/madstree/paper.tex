@@ -2058,11 +2058,13 @@ for numerical transport. All timings measure elapsed time on a personal computer
 The first example is the chain with three vertices in figure~\ref{fig:tree-diagram}.
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.92\textwidth]{figures/three_vertex_tree.png}
-  \caption{Tree with three vertices and two massive scalar propagators.
-  The external energy sums are $E_1,E_2,E_3$. The internal propagators carry
+  \includegraphics[width=0.72\textwidth]{figures/fig_tree_diagram.pdf}
+  \caption{Tree with three vertices and two massive scalar propagators, drawn with the
+  in-in Feynman rules of Sec.~\ref{sec:conventions}: the \texttt{"+"} vertices (black fill)
+  carry the conformal times $\tau_L,\tau_M,\tau_R$, the external legs end on the boundary
+  (squares) and carry the energy sums $E_1,E_2,E_3$, and the internal propagators carry
   momentum magnitudes $s_1,s_2$ and mass labels
-  $\widetilde\nu_1,\widetilde\nu_2$.}
+  $\widetilde\nu_1,\widetilde\nu_2$, their arrows marking the momentum flow.}
   \label{fig:tree-diagram}
 \end{figure}
 
@@ -2132,15 +2134,31 @@ integrals are
 \end{equation}
 Here $a,b,c,d\in\{0,1\}$. Each time integral runs from $-\infty$ to $0$ with the Bunch--Davies
 prescription. The four indices refer to the states at the two vertices of each propagator
-$(L_1,M_1,M_2,R_2)$, in that order. Thus the Top vector is
+$(L_1,M_1,M_2,R_2)$, in that order. Thus the Top sector consists of the sixteen masters
 \begin{equation}
+ \begin{aligned}
  \bm{\text I}^{\boldsymbol\sigma}_{\mathrm{Top}}
- =\bigl(\text{I}^{\boldsymbol\sigma}_{0000},
-        \text{I}^{\boldsymbol\sigma}_{0001},\ldots,
-        \text{I}^{\boldsymbol\sigma}_{1111}\bigr)^{\mathsf T}.
+ =\bigl(&\text{I}^{\boldsymbol\sigma}_{0000},
+        \text{I}^{\boldsymbol\sigma}_{0001},
+        \text{I}^{\boldsymbol\sigma}_{0010},
+        \text{I}^{\boldsymbol\sigma}_{0011},
+        \text{I}^{\boldsymbol\sigma}_{0100},
+        \text{I}^{\boldsymbol\sigma}_{0101},
+        \text{I}^{\boldsymbol\sigma}_{0110},
+        \text{I}^{\boldsymbol\sigma}_{0111},\\
+       &\text{I}^{\boldsymbol\sigma}_{1000},
+        \text{I}^{\boldsymbol\sigma}_{1001},
+        \text{I}^{\boldsymbol\sigma}_{1010},
+        \text{I}^{\boldsymbol\sigma}_{1011},
+        \text{I}^{\boldsymbol\sigma}_{1100},
+        \text{I}^{\boldsymbol\sigma}_{1101},
+        \text{I}^{\boldsymbol\sigma}_{1110},
+        \text{I}^{\boldsymbol\sigma}_{1111}\bigr)^{\mathsf T},
+ \end{aligned}
  \label{eq:tree-top-vector}
 \end{equation}
-It contains $2^4=16$ masters. The entry $\text{I}^{\boldsymbol\sigma}_{0000}$ is the one with no
+listed in the lexicographic order of the packed bit string $(a,b,c,d)$.
+The entry $\text{I}^{\boldsymbol\sigma}_{0000}$ is the one with no
 derivative acting on the states and no additional
 integer shifts in the time powers. Equation \eqref{eq:tree-indexed-masters} is the sector
 $\mathrm{Top}=(\xi_1\xi_2)=(11)$ of \eqref{eq:sector-key}, with $c_{\mathrm{Top}}=c_V=3$ components
@@ -2188,13 +2206,35 @@ $A_{C,{\rm L}}$ of \eqref{eq:base-power}: the raw contact power of the contracte
 $\varrho_1=-2\nu_1-1$ in the negative-prefactor convention of
 \eqref{eq:application-endpoint-states}, and the component count $|C|=2$ adds the remaining $+1$, so
 that \eqref{eq:tree-time-power-map} gives $\nu_{0L}+\nu_{0M}-2\nu_1=p_1+p_2+\tfrac92+\nu_2$.
-The right pinch, with masters $\text{I}^{\boldsymbol\sigma,{\rm R}}_{ab}$, merges $M$ and $R$ and
-keeps the two indices of propagator 1; it is obtained from \eqref{eq:application-child-master} by
-the exchange $(L,\nu_{0L},\sigma_LE_1,s_1,\nu_1)\leftrightarrow(R,\nu_{0R},\sigma_RE_3,s_2,\nu_2)$.
-The double pinch merges all three vertices and leaves no massive propagator, so its single master
-$\text{I}^{\boldsymbol\sigma,{\rm D}}$ is the one-time integral of
-$(-\tau)^{\nu_{0L}+\nu_{0M}+\nu_{0R}-2\nu_1-2\nu_2}
-e^{\ii(\sigma_LE_1+\sigma_ME_2+\sigma_RE_3)\tau}$, whose power is $p_1+p_2+p_3+6$.
+Its four masters are $\text{I}^{\boldsymbol\sigma,{\rm L}}_{cd}$ with $(c,d)$ running over
+$(0,0),(0,1),(1,0),(1,1)$.
+The right pinch merges $M$ and $R$ and keeps the two indices of propagator 1; its four masters
+are obtained from \eqref{eq:application-child-master} by the exchange
+$(L,\nu_{0L},\sigma_LE_1,s_1,\nu_1)\leftrightarrow(R,\nu_{0R},\sigma_RE_3,s_2,\nu_2)$,
+\begin{equation}
+ \begin{aligned}
+ \text{I}^{\boldsymbol\sigma,{\rm R}}_{ab}
+ ={}&\int_{-\infty}^{0}\!\!\dd\tau_L\!\int_{-\infty}^{0}\!\!\dd\tau_{MR}\,
+ (-\tau_L)^{\nu_{0L}}(-\tau_{MR})^{\nu_{0M}+\nu_{0R}-2\nu_2}\\
+ &\times e^{\ii\sigma_LE_1\tau_L+\ii(\sigma_ME_2+\sigma_RE_3)\tau_{MR}}\,
+ \mathcal G_{\sigma_L\sigma_M,\nu_1;ab}(s_1;\tau_L,\tau_{MR}),
+ \qquad a,b\in\{0,1\},
+ \end{aligned}
+ \label{eq:application-right-master}
+\end{equation}
+where $\tau_{MR}$ is the time of the merged $M,R$ component and
+$\nu_{0M}+\nu_{0R}-2\nu_2=p_2+p_3+\tfrac92+\nu_1$. Its four masters are
+$\text{I}^{\boldsymbol\sigma,{\rm R}}_{ab}$ with $(a,b)$ running over $(0,0),(0,1),(1,0),(1,1)$.
+The double pinch merges all three vertices and leaves no massive propagator, so its single
+master is the one-time integral
+\begin{equation}
+ \text{I}^{\boldsymbol\sigma,{\rm D}}
+ =\int_{-\infty}^{0}\dd\tau\,
+ (-\tau)^{\nu_{0L}+\nu_{0M}+\nu_{0R}-2\nu_1-2\nu_2}
+ e^{\ii(\sigma_LE_1+\sigma_ME_2+\sigma_RE_3)\tau},
+ \label{eq:application-double-master}
+\end{equation}
+whose power is $p_1+p_2+p_3+6$.
 In the index convention \eqref{eq:graph-index} the four sectors are
 $\mathrm{Top}=(\xi_1\xi_2)=11$ with three components and four slots,
 $(\mathrm{LeftPinch},\mathrm{RightPinch})=(01,10)$ with two components and two slots each, and
@@ -2205,9 +2245,22 @@ hierarchy is
 \begin{equation}
   \mathrm{Top}(16)\oplus\mathrm{LeftPinch}(4)\oplus
   \mathrm{RightPinch}(4)\oplus\mathrm{DoublePinch}(1),
-  \qquad \dim=25.
+  \qquad \dim=25,
   \label{eq:tree-hierarchy}
 \end{equation}
+and the four sectors are shown in figure~\ref{fig:tree-sectors}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{figures/fig_tree_sectors.pdf}
+  \caption{The four sectors of the three-vertex chain of figure~\ref{fig:tree-diagram}.
+  Contracting propagator~1 merges $L$ and $M$ (LeftPinch), contracting propagator~2 merges
+  $M$ and $R$ (RightPinch), and both contractions merge all three vertices (DoublePinch).
+  Larger dots mark components of more merged vertices, and the contracted propagator is
+  absent; the surviving propagator keeps its two-state (massive chain) or shared
+  (massless chain) slot. The massless chain of the regulator example
+  (figure~\ref{fig:ep-tree}) carries the same four sectors.}
+  \label{fig:tree-sectors}
+\end{figure}
 For other contour assignments, only the allowed pinched sectors are included: a propagator whose two
 vertices carry opposite signs is theta-free, so contracting it is not an available event.
 
@@ -2235,7 +2288,11 @@ The four sectors then carry the hidden constants
 \end{equation}
 which is the product rule \eqref{eq:sector-normalization} with $\cN_s^{(0)}=1$, read in the
 negative-prefactor convention, where $q_e^{2\nu_e-1}$ becomes $q_e^{-2\nu_e-1}$. The object the
-package propagates in sector $s$ is $J_s(\bm n;\bm a)=\cN_s\,\text{I}_s(\bm n;\bm a)$, and for the
+package propagates in sector $s$ is $J_s(\bm n;\bm a)=\cN_s\,\text{I}_s(\bm n;\bm a)$ ---
+concretely $J^{\boldsymbol\sigma}_{abcd}=\text{I}^{\boldsymbol\sigma}_{abcd}$,
+$J^{\boldsymbol\sigma,{\rm L}}_{cd}=\cN_{\rm L}\text{I}^{\boldsymbol\sigma,{\rm L}}_{cd}$,
+$J^{\boldsymbol\sigma,{\rm R}}_{ab}=\cN_{\rm R}\text{I}^{\boldsymbol\sigma,{\rm R}}_{ab}$ and
+$J^{\boldsymbol\sigma,{\rm D}}=\cN_{\rm D}\text{I}^{\boldsymbol\sigma,{\rm D}}$ --- and for the
 $(+++)$ assignment \eqref{eq:tree-sector-normalizations} is what the \texttt{"normalization"} field
 of the master records returns.
 
@@ -2379,14 +2436,14 @@ momenta are fixed by
 \texttt{ParameterRules} and the target point is $\{k_1,k_2,k_3\}=\{9\ii,3\ii,5\ii\}$:
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.78\textwidth]{figures/fig_ep_tree.pdf}
-  \caption{Massless three-vertex chain in the regulator mode, drawn with the in-in
-  Feynman rules of Sec.~\ref{sec:conventions}: the three \texttt{"+"} vertices (black
-  fill) carry times $\tau_v$ and the regularized time powers $(-\tau_1)^{-1+\varepsilon}$,
-  $(-\tau_2)^{1+\varepsilon}$ and $(-\tau_3)^{1+\varepsilon}$,
-  the external legs end on the boundary (squares) and carry the energies $k_v$, and the
-  two massless full propagators carry momentum magnitudes $q_{12},q_{23}$, their arrows
-  marking the momentum flow.}
+  \includegraphics[width=0.72\textwidth]{figures/fig_ep_tree.pdf}
+  \caption{Massless three-vertex chain in the regulator mode, drawn as
+  figure~\ref{fig:tree-diagram} with the massless counterparts of its parameters: the same
+  external energy sums $E_v$ and propagator momentum magnitudes $s_1,s_2$, with no mass labels
+  since the massless propagators carry the fixed order $\nu=1/2$. The vertices carry the
+  regularized time powers $(-\tau_1)^{-1+\varepsilon}$, $(-\tau_2)^{1+\varepsilon}$ and
+  $(-\tau_3)^{1+\varepsilon}$. In the input of Example~06, $E_v=k_v$, $s_1=q_{12}$ and
+  $s_2=q_{23}$.}
   \label{fig:ep-tree}
 \end{figure}
 \begin{verbatim}
@@ -2413,15 +2470,89 @@ epSeries = MSReconstructEpSeries[context, ep,
   RankOrder -> {1, 2, 3}]
 \end{verbatim}
 The shipped example additionally sets \texttt{BoundaryScale -> 4}, \texttt{BoundarySeriesOrder -> 24}
-and the default pool of \texttt{ParallelTaskCount -> 12} workers. Each massless full propagator
-contributes one shared two-state slot (Sec.~\ref{sec:massless}), so the sector hierarchy of this
-graph is $\mathrm{Top}(4)\oplus\mathrm{LeftPinch}(2)\oplus\mathrm{RightPinch}(2)\oplus
+and the default pool of \texttt{ParallelTaskCount -> 12} workers.
+
+We keep the parameter conventions of the first example: $E_v$ denotes the external energy sum of
+vertex $v$ --- here the single input energy $k_v$ --- and $s_1,s_2$ the internal momentum
+magnitudes, in the input $q_{12},q_{23}$; both internal propagators are massless full propagators
+of the fixed order $\nu=1/2$, so no mass labels appear. At $\nu=1/2$ both compressed states are
+pure exponentials, \eqref{eq:h-branch-eigenvalues}, so the input time powers $a_v$ are the
+effective integrand powers and no map like \eqref{eq:tree-time-power-map} is needed. With the
+contour sign $\sigma_e=\pm1$ of a full propagator, as in \eqref{eq:massless-relations}, the
+shared two-state slot $b_e\in\{0,1\}$ of Sec.~\ref{sec:massless} enters through the compressed
+kernel
+\begin{equation}
+ \begin{aligned}
+ \mathcal G^{\rm m}_{\sigma_e,b}(s_e;\tau_u,\tau_v)
+ ={}&(\ii\sigma_e)^{b}\,\theta_{uv}\,
+    h^{(1)}\!\left(\tfrac12,0;-s_e\tau_u\right)
+    h^{(2)}\!\left(\tfrac12,0;-s_e\tau_v\right)\\
+ &+(-\ii\sigma_e)^{b}\,\theta_{vu}\,
+    h^{(2)}\!\left(\tfrac12,0;-s_e\tau_u\right)
+    h^{(1)}\!\left(\tfrac12,0;-s_e\tau_v\right),
+ \end{aligned}
+ \label{eq:ep-massless-kernel}
+\end{equation}
+whose two components are the sum and difference of the two chambers, the slot vector
+$\bm g_e=(\text{I}_{00},\text{I}_{10})^{\mathsf T}$ of \eqref{eq:SP-massless}. Each massless full
+propagator contributes one such shared slot, so the Top sector has the four masters
+\begin{equation}
+ \begin{aligned}
+ \text{I}^{\boldsymbol\sigma}_{b_1b_2}
+ ={}&\int_{-\infty}^{0}\dd\tau_1\,\dd\tau_2\,\dd\tau_3\,
+ (-\tau_1)^{a_1}(-\tau_2)^{a_2}(-\tau_3)^{a_3}
+ e^{\ii(\sigma_1E_1\tau_1+\sigma_2E_2\tau_2+\sigma_3E_3\tau_3)}\\
+ &\times\mathcal G^{\rm m}_{\sigma_1\sigma_2,b_1}(s_1;\tau_1,\tau_2)\,
+ \mathcal G^{\rm m}_{\sigma_2\sigma_3,b_2}(s_2;\tau_2,\tau_3),
+ \qquad b_1,b_2\in\{0,1\},
+ \end{aligned}
+ \label{eq:ep-top-masters}
+\end{equation}
+with the bits taken in propagator order, and the Top vector is
+$(\text{I}^{\boldsymbol\sigma}_{00},\text{I}^{\boldsymbol\sigma}_{01},
+\text{I}^{\boldsymbol\sigma}_{10},\text{I}^{\boldsymbol\sigma}_{11})^{\mathsf T}$.
+A contracted massless propagator has the raw contact power $\varrho=0$ of \eqref{eq:base-power},
+and its pure exponentials multiply into the merged exponential. The four sectors, shown in
+figure~\ref{fig:tree-sectors}, are
+\begin{equation}
+ \begin{aligned}
+ \text{I}^{\boldsymbol\sigma,{\rm L}}_{b}
+ ={}&\int_{-\infty}^{0}\!\!\dd\tau_{12}\!\int_{-\infty}^{0}\!\!\dd\tau_3\,
+ (-\tau_{12})^{a_1+a_2+1}(-\tau_3)^{a_3}
+ e^{\ii(\sigma_1E_1+\sigma_2E_2)\tau_{12}+\ii\sigma_3E_3\tau_3}\\
+ &\times\mathcal G^{\rm m}_{\sigma_2\sigma_3,b}(s_2;\tau_{12},\tau_3),
+ \qquad b\in\{0,1\},
+ \end{aligned}
+ \label{eq:ep-left-masters}
+\end{equation}
+where propagator~1 is contracted and $\tau_{12}$ is the time of the merged component,
+\begin{equation}
+ \begin{aligned}
+ \text{I}^{\boldsymbol\sigma,{\rm R}}_{b}
+ ={}&\int_{-\infty}^{0}\!\!\dd\tau_1\!\int_{-\infty}^{0}\!\!\dd\tau_{23}\,
+ (-\tau_1)^{a_1}(-\tau_{23})^{a_2+a_3+1}
+ e^{\ii\sigma_1E_1\tau_1+\ii(\sigma_2E_2+\sigma_3E_3)\tau_{23}}\\
+ &\times\mathcal G^{\rm m}_{\sigma_1\sigma_2,b}(s_1;\tau_1,\tau_{23}),
+ \qquad b\in\{0,1\},
+ \end{aligned}
+ \label{eq:ep-right-masters}
+\end{equation}
+with propagator~2 contracted, and the single one-time master of the DoublePinch sector,
+\begin{equation}
+ \text{I}^{\boldsymbol\sigma,{\rm D}}
+ =\int_{-\infty}^{0}\dd\tau\,
+ (-\tau)^{a_1+a_2+a_3+2}
+ e^{\ii(\sigma_1E_1+\sigma_2E_2+\sigma_3E_3)\tau}.
+ \label{eq:ep-double-master}
+\end{equation}
+The hierarchy is therefore
+$\mathrm{Top}(4)\oplus\mathrm{LeftPinch}(2)\oplus\mathrm{RightPinch}(2)\oplus
 \mathrm{DoublePinch}(1)$ with $\dim=9$, the nine-dimensional DE recorded in
 Sec.~\ref{sec:examples}; the massive chain of \eqref{eq:tree-hierarchy} carries four state slots
 and $25$ masters. No contracted line contributes a pinch factor in
-\eqref{eq:sector-normalization}, so every sector normalisation is $1$ and the propagated vector
-is the master vector $\bm{\text I}$ itself, in the convention of \eqref{eq:tree-indexed-masters}
-without vertex contour factors.
+\eqref{eq:sector-normalization}, so every sector normalisation is $1$, $J_s=\text{I}_s$ here,
+and the propagated vector is the master vector $\bm{\text I}$ itself, in the convention of
+\eqref{eq:tree-indexed-masters} without vertex contour factors.
 
 The certificate of Sec.~\ref{sec:regulator} runs before any numerical solve and returns
 $n_{\min}=-1$: the d log-form DE is regular at $\varepsilon=0$, but the vertex-1 unit
@@ -2478,9 +2609,12 @@ We evaluate the integrals over the two vertex times while holding the internal
 momenta fixed. We do not integrate over the spatial loop momentum.
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.90\textwidth]{figures/bubble1.png}
-  \caption{Bubble time kernel with external energy sums $P_1,P_2$ and
-  fixed internal momentum magnitudes $x_1,x_2$.}
+  \includegraphics[width=0.55\textwidth]{figures/fig_bubble_diagram.pdf}
+  \caption{Bubble time kernel, drawn with the in-in Feynman rules of
+  Sec.~\ref{sec:conventions}: the two massive propagators join the same pair of
+  \texttt{"+"} vertices and are drawn as the two halves of one circular loop, carrying the
+  fixed momentum magnitudes $x_1,x_2$; the vertices carry the times $\tau_1,\tau_2$, and the
+  external legs end on the boundary (squares) with the energy sums $P_1,P_2$.}
   \label{fig:bubble-diagram}
 \end{figure}
 
@@ -2511,24 +2645,92 @@ The four contour assignments are $pp$, $pm$, $mp$ and $mm$.
 In MadStree v1.0, assignments with equal contour signs have 22 masters after the
 exact state projection. Assignments with opposite contour signs have only the Top sector, with 16 masters.
 For each assignment, the projection onto the Top sector is
-$\bm{\text I}^{\sigma_1\sigma_2}_{\rm Top}
-=(\text{I}^{\sigma_1\sigma_2}_{0000},\text{I}^{\sigma_1\sigma_2}_{0001},\ldots,
-\text{I}^{\sigma_1\sigma_2}_{1111})^{\mathsf T}$.
+\begin{equation}
+ \begin{aligned}
+ \bm{\text I}^{\sigma_1\sigma_2}_{\rm Top}
+ =\bigl(&\text{I}^{\sigma_1\sigma_2}_{0000},
+        \text{I}^{\sigma_1\sigma_2}_{0001},
+        \text{I}^{\sigma_1\sigma_2}_{0010},
+        \text{I}^{\sigma_1\sigma_2}_{0011},
+        \text{I}^{\sigma_1\sigma_2}_{0100},
+        \text{I}^{\sigma_1\sigma_2}_{0101},
+        \text{I}^{\sigma_1\sigma_2}_{0110},
+        \text{I}^{\sigma_1\sigma_2}_{0111},\\
+       &\text{I}^{\sigma_1\sigma_2}_{1000},
+        \text{I}^{\sigma_1\sigma_2}_{1001},
+        \text{I}^{\sigma_1\sigma_2}_{1010},
+        \text{I}^{\sigma_1\sigma_2}_{1011},
+        \text{I}^{\sigma_1\sigma_2}_{1100},
+        \text{I}^{\sigma_1\sigma_2}_{1101},
+        \text{I}^{\sigma_1\sigma_2}_{1110},
+        \text{I}^{\sigma_1\sigma_2}_{1111}\bigr)^{\mathsf T},
+ \end{aligned}
+ \label{eq:bubble-top-vector}
+\end{equation}
+in the lexicographic order of the packed bit string $(a,b,c,d)$.
+The two pinched sectors of an equal-sign assignment arise from contracting one of the two
+propagators. Both vertices then merge into a single component carrying one time $\tau$, and the
+surviving propagator joins this component to itself. At coincident endpoints the theta pair of
+the full propagator collapses and its factor becomes the sum of the two chamber products,
+\begin{equation}
+ T_{cd}(x;\tau)
+ =h^{(1)}(\nu,c;-x\tau)\,h^{(2)}(\nu,d;-x\tau)
+ +h^{(2)}(\nu,c;-x\tau)\,h^{(1)}(\nu,d;-x\tau),
+ \label{eq:bubble-tadpole-kernel}
+\end{equation}
+which is symmetric under $(c,d)\leftrightarrow(d,c)$, so the coincidence quotient identifies
+$(1,0)$ with $(0,1)$ and keeps the three states $(0,0),(0,1),(1,1)$ --- this is the exact state
+projection quoted above. The pinched masters are therefore, with propagator~1 contracted,
+\begin{equation}
+ \text{I}^{\sigma_1\sigma_2,{\rm P1}}_{cd}
+ =\int_{-\infty}^{0}\dd\tau\,
+ (-\tau)^{p_1+p_2+2\nu_{B1}}
+ e^{\ii(\sigma_1P_1+\sigma_2P_2)\tau}\,
+ T_{cd}(x_2;\tau),
+ \qquad (c,d)\in\{(0,0),(0,1),(1,1)\},
+ \label{eq:bubble-pinch1-masters}
+\end{equation}
+where the merged power follows from \eqref{eq:base-power} with the raw contact power
+$\varrho_1=2\nu_{B1}-1$ and one vertex merge, and, with propagator~2 contracted,
+\begin{equation}
+ \text{I}^{\sigma_1\sigma_2,{\rm P2}}_{ab}
+ =\int_{-\infty}^{0}\dd\tau\,
+ (-\tau)^{p_1+p_2+2\nu_{B2}}
+ e^{\ii(\sigma_1P_1+\sigma_2P_2)\tau}\,
+ T_{ab}(x_1;\tau),
+ \qquad (a,b)\in\{(0,0),(0,1),(1,1)\}.
+ \label{eq:bubble-pinch2-masters}
+\end{equation}
+The equal-sign hierarchy is
+$\mathrm{Top}(16)\oplus\mathrm{Pinch}_1(3)\oplus\mathrm{Pinch}_2(3)$ with $\dim=22$
+(figure~\ref{fig:bubble-sectors}).
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.72\textwidth]{figures/fig_bubble_sectors.pdf}
+  \caption{The two kinds of sectors of the bubble time kernel of
+  figure~\ref{fig:bubble-diagram}: the Top sector keeps the circular loop; pinching either
+  propagator merges the two vertices --- the larger dot --- and leaves the other propagator as
+  a circular tadpole on the single merged component.}
+  \label{fig:bubble-sectors}
+\end{figure}
 The vertex factors $(\ii\sigma_1)(\ii\sigma_2)$ give
 \begin{equation}
   \bm K_{\mathrm{SK}}=-\bm{\text I}^{pp}_{\rm Top}+\bm{\text I}^{pm}_{\rm Top}
   +\bm{\text I}^{mp}_{\rm Top}-\bm{\text I}^{mm}_{\rm Top}.
   \label{eq:bubble-sk}
 \end{equation}
-The two pinched sectors of an equal-sign assignment have three masters each, and the hidden
-constants \eqref{eq:sector-normalization} of the three sectors are
+The hidden constants \eqref{eq:sector-normalization} of the three sectors are
 \begin{equation}
   \cN_{\rm Top}=1,\qquad
-  \cN_{1}=-\sigma_1\sigma_2\,\frac{4\ii}{\pi}\,x_1^{\,2\nu_{B1}-1},\qquad
-  \cN_{2}=-\sigma_1\sigma_2\,\frac{4\ii}{\pi}\,x_2^{\,2\nu_{B2}-1},
+  \cN_{\rm P1}=-\sigma_1\sigma_2\,\frac{4\ii}{\pi}\,x_1^{\,2\nu_{B1}-1},\qquad
+  \cN_{\rm P2}=-\sigma_1\sigma_2\,\frac{4\ii}{\pi}\,x_2^{\,2\nu_{B2}-1},
   \label{eq:bubble-sector-normalizations}
 \end{equation}
-with $\cN_s^{(0)}=1$; this example runs in the package default convention, so the power is the
+with $\cN_s^{(0)}=1$; the propagated objects are
+$J^{\sigma_1\sigma_2}_{abcd}=\text{I}^{\sigma_1\sigma_2}_{abcd}$,
+$J^{\sigma_1\sigma_2,{\rm P1}}_{cd}=\cN_{\rm P1}\text{I}^{\sigma_1\sigma_2,{\rm P1}}_{cd}$ and
+$J^{\sigma_1\sigma_2,{\rm P2}}_{ab}=\cN_{\rm P2}\text{I}^{\sigma_1\sigma_2,{\rm P2}}_{ab}$.
+This example runs in the package default convention, so the power is the
 $2\nu_e-1$ of \eqref{eq:sector-normalization} rather than the $-2\nu_e-1$ of the tree example.
 We use $k_s=x_1$ as the momentum unit and vary the dimensionless energy
 $\rho=P_1/k_s=P_2/k_s$. The parameter values in

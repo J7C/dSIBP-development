@@ -1,0 +1,32 @@
+% Standalone source of the bubble time kernel of the second application example
+% (Sec. 5). The two internal propagators join the same pair of vertices and are
+% drawn as the two halves of one circle (arcs are only used when two propagators
+% share a vertex pair, as in fig_skrules); the loop stays circular.
+% Compile: pdflatex fig_bubble_diagram.tex   (included by paper.tex)
+\documentclass[tikz,border=6pt]{standalone}
+\usetikzlibrary{calc}
+\begin{document}
+\begin{tikzpicture}[every node/.style={inner sep=1.5pt}]
+  \coordinate (v1) at (0,0);
+  \coordinate (v2) at (2.8,0);
+  % External legs ending on the boundary squares.
+  \draw (v1) -- (-1.1,1.0);
+  \draw (v2) -- (3.9,1.0);
+  \filldraw[fill=white,draw=black] ($(-1.1,1.0)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \filldraw[fill=white,draw=black] ($(3.9,1.0)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \node[left=2pt]  at (-1.1,1.0) {$P_1$};
+  \node[right=2pt] at (3.9,1.0)  {$P_2$};
+  % The two internal propagators: upper and lower half of one circle, arrows
+  % marking the momentum flow, momentum magnitudes outside the circle.
+  \draw[->,thick] (v1) arc[start angle=180,end angle=0,radius=1.4];
+  \draw[->,thick] (v1) arc[start angle=180,end angle=360,radius=1.4];
+  \node[fill=white,inner sep=1pt] at (1.4,1.53)  {\small $x_1$};
+  \node[fill=white,inner sep=1pt] at (1.4,-1.53) {\small $x_2$};
+  % Vertex times inside the loop.
+  \node[anchor=south west] at (0.14,0.10)  {\small $\tau_1$};
+  \node[anchor=south east] at (2.66,0.10)  {\small $\tau_2$};
+  % Vertices last.
+  \filldraw[fill=black,draw=black] (v1) circle (3pt);
+  \filldraw[fill=black,draw=black] (v2) circle (3pt);
+\end{tikzpicture}
+\end{document}
