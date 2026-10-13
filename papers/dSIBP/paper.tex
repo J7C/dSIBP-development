@@ -13,7 +13,7 @@
 \abstract{
 \texttt{dSIBP} is a \textsc{Mathematica} package that generates the integration-by-parts (IBP)
 relations of Feynman integrals in de Sitter (dS) spacetime. The input is a Feynman graph whose
-internal lines are massive or massless and live on the two Schwinger--Keldysh branches. The package
+internal propagators are massive or massless and live on the two Schwinger--Keldysh branches. The package
 builds the integral family of this graph, writes its canonical IBP seeds, and assembles them into a
 sealed linear system for the external reducers Kira and Rational Tracer. One further command
 differentiates the reduced masters and returns their differential equations, together with Euler
@@ -79,9 +79,9 @@ existing flat-space programs can be reused, with Kira solving the IBP reduction 
 system, and it leaves the boundary data of the DE outside its scope. Reference \cite{Chen:2024glu}
 notes that the automatic tools widely used in flat QFT could help. None of the three releases a
 program that turns a general dS graph into that user-defined system. Assembling the system by hand
-is laborious and error-prone already at one loop. A massive line carries three integer labels: a
-propagator power and two Hankel powers. Massive lines obey second-order equations of motion, so only
-two of their vertex states are independent. Massless full lines must be treated as a quotient
+is laborious and error-prone already at one loop. A massive propagator carries three integer labels: a
+propagator power and two state powers, the powers of its two Hankel-function blocks. Massive propagators
+obey second-order equations of motion, so only two of their vertex states are independent. Massless full propagators must be treated as a quotient
 over vertex states. The parity classification just recalled splits the system into independent blocks,
 and one block is enough per reduction.
 
@@ -227,7 +227,7 @@ The package distinguishes the four propagator types as
 $\langle$\texttt{massive, massless}$\rangle\times\langle$\texttt{full, cross}$\rangle$.
 Figure~\ref{fig:linetypes} shows the resulting graphical conventions. Every propagator that lies
 on a cycle becomes a denominator of the integral family. A propagator that does not lie on a cycle
-is a \emph{fixed propagator}, and the package also calls such a line a \emph{bridge}. It carries
+is a \emph{fixed propagator}, which the package also calls a \emph{bridge}. It carries
 only a magnitude power and no loop-momentum denominator. Massive propagators whose two vertices
 become coincident under a contact operation
 may be \emph{shrunk}. Shrunk and fixed propagators survive only through the structured
@@ -273,7 +273,7 @@ propagator has no such block. The factor $N_s$ is the structured normalisation o
 collects the magnitude powers that no longer sit in a denominator, namely the power of every fixed
 propagator and the power kept by every shrunk propagator. It is a product of powers of the
 independent no-loop magnitudes of section~\ref{sec:kinematics}, multiplied by a constant part built
-from the Wronskian normalisations of the shrunk massive lines. Derivatives act on $N_s$ like on any
+from the Wronskian normalisations of the shrunk massive propagators. Derivatives act on $N_s$ like on any
 other factor of the integrand.
 In the package the family is written in the three-slot schema
 \begin{verbatim}
@@ -294,7 +294,7 @@ discussed below.
 $\{b_e,n_{e,1},n_{e,2}\}$: the power $b_e$ and the two state powers.
 \item A cyclic massless cross propagator contributes $\{b_e,0,0\}$. It is a single exponential
 product, so it has no discrete state.
-\item A fixed propagator contributes $\{\texttt{"F"},n_{e,1},n_{e,2}\}$: no denominator power, and
+\item A fixed propagator contributes $\{\texttt{"F"},n_{e,1},n_{e,2}\}$: no propagator power, and
 its magnitude power sits in $N_s$.
 \item A shrunk propagator contributes $\{b_{S,e}\}$, or $\{\texttt{"F"}\}$ when it was already
 fixed. The power $b_{S,e}$ is kept by $N_s$.
@@ -303,7 +303,7 @@ fixed. The power $b_{S,e}$ is kept by $N_s$.
 The zero points belong to the declaration. A case supplies them through the key
 \texttt{zeroPointRules}, as rules for $a0_v$ and $b0_e$. Two settings of this key are used by the
 released examples. The sunrise and the mixed case keep them as free regulator symbols, for example
-$a0_v=\alpha_v$ and $b0_e=\beta_e$. The pure massive bubble fixes them instead: for a line of mass
+$a0_v=\alpha_v$ and $b0_e=\beta_e$. The pure massive bubble fixes them instead: for a propagator of mass
 index $\nu$ under the \texttt{"h"} preset of section~\ref{sec:dynamics} it takes $b0_e=-2\nu$, and at
 the vertices it takes $a0_v=2\nu+\texttt{analyticRegulator}$. The last symbol is kept during seed
 generation and set to zero afterwards. It is what the initialization audit of
@@ -316,7 +316,7 @@ $\pm1$ and never touch the zero points.
 \paragraph{Massive vertex states and equations of motion.}
 Every massive propagator is assigned a second-order function system
 $f''+P(x)f'+Q(x)f=0$. Its variable is $x=-\xi\tau$, the negative of the product of the momentum
-magnitude $\xi$ of the line and the vertex time $\tau$, and primes are derivatives with respect to
+magnitude $\xi$ of the propagator and the vertex time $\tau$, and primes are derivatives with respect to
 $x$. Section~\ref{sec:dynamics} lists the presets. A massive propagator $e$ with mass index $\nu_e$
 and the \texttt{"h"} preset $P_{\mathrm h}(x)=(2\nu_e+1)/x$,
 $Q_{\mathrm h}(x)=1$ has Hankel blocks at each of its two vertices that span a two-dimensional space.
@@ -357,7 +357,7 @@ F_{00}=M_0,\qquad F_{10}=M_1,\qquad
 F_{01}=-F_{10},\qquad F_{11}=-F_{00},
 \label{eq:masslessQuotient}
 \end{equation}
-so only the two representatives $F_{00}$ and $F_{10}$ are independent. The pack of such a line still
+so only the two representatives $F_{00}$ and $F_{10}$ are independent. The pack of such a propagator still
 keeps both labels, and each of them takes the values $0$ and $1$. Seeds are generated for the two
 representatives only, and a state produced by a derivative is reduced back with $n_{e,2}\to0$. This is
 an exact algebraic identification, not a sampling prescription.
@@ -367,11 +367,11 @@ A massive propagator may be shrunk only in the \texttt{massiveFull} type and onl
 $n_{e,1}+n_{e,2}=1$. Then exactly one endpoint state is non-zero, and if $i$ is that endpoint the
 shrink multiplies the sector by the coefficient
 $-\chi_e(-1)^{n_{e,i}}C_e$, where $\chi_e=\pm1$ is fixed by the two vertex types and
-$C_e=\tfrac{4\mathrm{i}}{\pi}e^{\pi\,\mathrm{Im}\,\nu_e}$ is the Wronskian prefactor of the line. A
+$C_e=\tfrac{4\mathrm{i}}{\pi}e^{\pi\,\mathrm{Im}\,\nu_e}$ is the Wronskian prefactor of the propagator. A
 massless full propagator shrinks with a $\mp2$ delta term and a $+2$ term, without a Wronskian
-prefactor and without label shifts. Several lines may shrink at once when their theta supports
-coincide at one vertex. Let $B_v$ be this set of lines at the vertex $v$, and let $D_e$ denote the
-shrink coefficient of the line $e$ just given. The contact terms are then
+prefactor and without label shifts. Several propagators may shrink at once when their theta supports
+coincide at one vertex. Let $B_v$ be this set of propagators at the vertex $v$, and let $D_e$ denote the
+shrink coefficient of the propagator $e$ just given. The contact terms are then
 \begin{equation}
 \sum_{\substack{\emptyset\neq Q\subseteq B_v\\ |Q|\ \mathrm{odd}}} 2^{\,1-|Q|}
 \Big(\prod_{e\in Q} D_e\Big)\,
@@ -379,7 +379,7 @@ J\big[\cdots,\ e\in Q\ \text{shrunk},\cdots\big],
 \label{eq:contact}
 \end{equation}
 so the sum runs over the non-empty odd subsets of $B_v$, and each subset contributes one integral
-whose lines are shrunk. Shrunk propagators never reappear as denominators. Their magnitude powers are
+whose propagators are shrunk. Shrunk propagators never reappear as denominators. Their magnitude powers are
 collected in $N_s$.
 
 \subsection{Kinematics}
@@ -433,21 +433,21 @@ state. Only the exact state opens derivative generation.
 \label{sec:parity}
 
 The characteristic discrete invariant of de Sitter IBP is the parity of the sum of the labels on a
-propagator. For every propagator $e$ that carries a denominator power, that is for every line of the
+propagator. For every propagator $e$ that carries a propagator power $b_e$, that is for every propagator of the
 cycle skeleton, the quantity
 \begin{equation}
 p_e \;=\; b_e+n_{e,1}+n_{e,2} \pmod 2
 \label{eq:parity}
 \end{equation}
-is conserved by every time generator and every loop-momentum generator. A massless cross line has
-$n_{e,1}=n_{e,2}=0$, so its label is just $b_e$. A fixed propagator carries no denominator power, so it
+is conserved by every time generator and every loop-momentum generator. A massless cross propagator has
+$n_{e,1}=n_{e,2}=0$, so its label is just $b_e$. A fixed propagator carries no propagator power, so it
 enters no parity label, and the package rejects a constraint that names one. The default \texttt{"h"}
-and \texttt{"H"} shrinks of a massive line, defined in section~\ref{sec:dynamics}, leave the parity
+and \texttt{"H"} shrinks of a massive propagator, defined in section~\ref{sec:dynamics}, leave the parity
 unchanged: such a shrink raises the power to $b_e+1$ and removes the single state power it consumes. A
 massless contact keeps the power at $b_e$, so it offsets the parity of the child sector by one, and
 several contacts accumulate modulo two. The package therefore does not apply a constraint to a sector
 below the top sector in its original form: it rewrites the constraint in the labels of that sector,
-using the power and zero-point shifts of its shrunk lines, and it disables the filter when such a
+using the power and zero-point shifts of its shrunk propagators, and it disables the filter when such a
 rewrite is not integral. The parity vector $(p_e)_e$ of the top sector therefore labels independent
 blocks of the IBP system of a family, and for a graph whose
 propagators all lie on the cycle skeleton this is exactly the split stated by
@@ -538,7 +538,7 @@ Templates that the equation of motion and the canonicalization reduce to the ide
 retained and audited rather than dropped. The canonicalization applies the symmetry rules of the
 declaration, where the user names a vertex swap or an exchange of parallel propagators, together with
 built-in tadpole rules. A tadpole rule is available only for a self-loop whose reversal is a single
-loop-momentum inversion; it either exchanges the two endpoint states of that line or maps the
+loop-momentum inversion; it either exchanges the two endpoint states of that propagator or maps the
 integral to zero when an ISP carries an odd power.
 
 The continuous labels are swept by \texttt{DSGenerateIBP}. The unified form
@@ -744,8 +744,7 @@ The most demanding released case is figure~\ref{fig:examples}c. Propagators~1 an
 propagator~1 is a massive full propagator of mass $\nu_1$, and propagator~2 is a massless full
 propagator. Propagator~3 is a massless fixed propagator, a bridge, between $v_2$ and $v_3$. It lies
 outside the loop, so
-its pack carries no
-denominator power and its magnitude power sits in $N_s$. One external leg enters $v_1$ and carries
+its pack carries no propagator power and its magnitude power sits in $N_s$. One external leg enters $v_1$ and carries
 $k_1+k_2$, and two external legs enter $v_3$ and carry $k_1$ and $k_2$. The vertex $v_2$ has no
 external leg. The declaration gives the three vertices the three independent energies
 $E_1,E_2,E_3$ of \eqref{eq:vertexPhase}, and these are derivative variables in their own right. The loop

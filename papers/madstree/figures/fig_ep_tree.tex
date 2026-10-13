@@ -1,0 +1,29 @@
+% Standalone source of the massless three-vertex chain used in the regulator
+% application example of Sec. 5 of the paper. Same conventions as fig_bundle.tex.
+% Compile: pdflatex fig_ep_tree.tex   (produces fig_ep_tree.pdf, included by paper.tex)
+\documentclass[border=14pt]{standalone}
+\usepackage{tikz}
+\usepackage{amsmath,amssymb}
+\begin{document}
+\begin{tikzpicture}[line width=0.9pt]
+  % The three vertices of the chain; vertex v carries external energy k_v and
+  % the common regularized time power 1+\varepsilon (stated in the caption).
+  \coordinate (V1) at (-3.2,0);
+  \coordinate (V2) at ( 0,0);
+  \coordinate (V3) at ( 3.2,0);
+  % External legs: one line per vertex, pointing up, labelled by its energy.
+  \draw (V1) -- ++(0,1.1) node[midway, left] {$k_1$};
+  \draw (V2) -- ++(0,1.1) node[midway, left] {$k_2$};
+  \draw (V3) -- ++(0,1.1) node[midway, left] {$k_3$};
+  % The two massless internal propagators with their momentum magnitudes.
+  \draw (V1) -- (V2) node[midway, fill=white, inner sep=1.6pt] {$q_{12}$};
+  \draw (V2) -- (V3) node[midway, fill=white, inner sep=1.6pt] {$q_{23}$};
+  % Vertices, labelled by their ids in the input of the example.
+  \fill (V1) circle (2.6pt);
+  \fill (V2) circle (2.6pt);
+  \fill (V3) circle (2.6pt);
+  \node[below=7pt] at (V1) {$1$};
+  \node[below=7pt] at (V2) {$2$};
+  \node[below=7pt] at (V3) {$3$};
+\end{tikzpicture}
+\end{document}

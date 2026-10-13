@@ -1,7 +1,0 @@
-commit 264141f0b1349cc045ab5cbf3a290642b1102201
-Author:     Jiaqi Chen <793970561@qq.com>
-AuthorDate: Sat Oct 10 21:51:37 2026 +0800
-Commit:     Jiaqi Chen <793970561@qq.com>
-CommitDate: Sat Oct 10 21:51:37 2026 +0800
-
-    Lay the bundle sketch out horizontally and mark arbitrary further lines

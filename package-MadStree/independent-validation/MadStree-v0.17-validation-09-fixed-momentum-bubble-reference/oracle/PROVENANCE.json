@@ -1,0 +1,73 @@
+{
+  "sourceUpload": "collaborator QingLAB1225, development repo commit 64fd90c 'Add fixed-momentum bubble verification evidence' (2026-10-11)",
+  "runCommitOfEvidence": "J7C/dSIBP-Packages 7dfd3c4afad4dd29ccae744f606a784121a90619",
+  "note": "Minimal oracle retained for MadStree-v0.17-validation-09; every other bubble-check file was deleted after this validation passed. Original byte-identical copies of all 144 files remain recoverable from commit 64fd90c in the repository history.",
+  "originalBoundaryCurve": "k1 = 196 I sigma1 / t_b^2, k2 = 14 I sigma2 / t_b, anchor at t_b = 1, then transport to the real points",
+  "files": [
+    {
+      "originalPath": "results/reference/bubble_reference_r10_n36.json",
+      "oraclePath": "reference/bubble_reference_r10_n36.json",
+      "sha256": "06442e8659296a03a1154618b8168a2a38e390fa77bbb6072d5079b216d1f4ff"
+    },
+    {
+      "originalPath": "results/reference/bubble_reference_r5_n52.json",
+      "oraclePath": "reference/bubble_reference_r5_n52.json",
+      "sha256": "742d827ec446a105ad7b22fedfeab25cb4f3ab689209304e4ef0022f480436ee"
+    },
+    {
+      "originalPath": "results/reference/bubble_reference_r2.8_n200_d300.json",
+      "oraclePath": "reference/bubble_reference_r2.8_n200_d300.json",
+      "sha256": "1aabba95e6bb727b5e2c8153f020550ad4435ef34a92ebf2c96e980488f30096"
+    },
+    {
+      "originalPath": "results/comparison/by_point_and_branch.csv",
+      "oraclePath": "comparison_by_point_and_branch.csv",
+      "sha256": "7c846f42ebdea3afa0386a304431d693802ededb14e46d7f53651ae45262352e"
+    },
+    {
+      "originalPath": "boundaries/leading_records.json",
+      "oraclePath": "leading_records.json",
+      "sha256": "40f9ea55cb74d096f5583d93fbcbe3d2d4cf066dc59e3ebcfe35ebb6b71fe247"
+    },
+    {
+      "originalPath": "equations/generated/pp/masters.wl",
+      "oraclePath": "generated/pp/masters.wl",
+      "sha256": "3edd0358bd2b57c95fe7325c4b90dd1b19391aad2cb9c46e4c12c7d8d17ab06b"
+    },
+    {
+      "originalPath": "equations/generated/pp/dlog_de.wl",
+      "oraclePath": "generated/pp/dlog_de.wl",
+      "sha256": "8d632a32cd2753e967d9b87a8918dfa41cdf26775af4d19582c9c20afb1d307e"
+    },
+    {
+      "originalPath": "equations/generated/pm/masters.wl",
+      "oraclePath": "generated/pm/masters.wl",
+      "sha256": "6c8c97e19cc6fd0f40105a4dc3846ca28f7e2e4fbe094d4e7fc58f4e9382668f"
+    },
+    {
+      "originalPath": "equations/generated/pm/dlog_de.wl",
+      "oraclePath": "generated/pm/dlog_de.wl",
+      "sha256": "c9a0672a1731c81c7546dc3172d04746337c901acc28543ab08e557cdc17509b"
+    },
+    {
+      "originalPath": "equations/generated/mp/masters.wl",
+      "oraclePath": "generated/mp/masters.wl",
+      "sha256": "6c8c97e19cc6fd0f40105a4dc3846ca28f7e2e4fbe094d4e7fc58f4e9382668f"
+    },
+    {
+      "originalPath": "equations/generated/mp/dlog_de.wl",
+      "oraclePath": "generated/mp/dlog_de.wl",
+      "sha256": "6c57d10e1a12d158c48175871933b26519c5b1d5ed9a5bef8ccdef515eb644f3"
+    },
+    {
+      "originalPath": "equations/generated/mm/masters.wl",
+      "oraclePath": "generated/mm/masters.wl",
+      "sha256": "ba673cb280881c55e379025975891a678c3008695de865c992320be5542d205e"
+    },
+    {
+      "originalPath": "equations/generated/mm/dlog_de.wl",
+      "oraclePath": "generated/mm/dlog_de.wl",
+      "sha256": "cd0adafb6f2311c006251b2f0a755c40cf4e958bce83742f4228fc34fa00f708"
+    }
+  ]
+}
