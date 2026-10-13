@@ -336,14 +336,15 @@ MSExportEvaluationData[
   （+++ 顶点结构、非半整数 nu）。同一 context 下先计算并导出原非零点列，再以第二次独立
   `MSEvaluatePath` 调用计算中间顶点外腿能量 `k2=0` 的四点列；两组不混合规划或结果。
 - [06_massless_three_vertex_ep_regularization.wl](Examples/06_massless_three_vertex_ep_regularization.wl)：
-  三顶点 massless 树的共同时间幂正规化 `a1=a2=a3=1+ep`；用户只要求返回到 `ep^0`，
-  程序在数值 NDE 前由符号边界与 DE 认证最低幂为 `0`，再选择生产/验证点并提取有限项。
+  三顶点 massless 树的时间幂正规化 `a1=-1+ep`、`a2=a3=1+ep`，`ep=0` 处时间积分真正发散；
+  用户只要求返回到 `ep^0`，程序在数值 NDE 前由符号边界与 DE 认证最低幂为 `-1`，
+  再选择生产/验证点并一并提取 `ep^-1` 极点系数与有限项。
 - [07_zero_external_leg_energy.wl](Examples/07_zero_external_leg_energy.wl)：无物理外腿的顶点省略
   `externalLegEnergy` 或显式输入 0；私有辅助能量保留在解析 dlog 中并自动输运到物理零点。
 
 七个 examples 已在删除既有 `results/` 与 `results_temp/` 后从当前版本路径全部 fresh 运行并退出 `0`；
-Example 06 自适应检查为 `16/16`，使用 3 个生产点、2 个独立验证点，缺省请求 12 并按实际
-点数自动使用 5 个并行任务。
+Example 06 自适应检查为 `17/17`，使用 4 个生产点、2 个独立验证点，缺省请求 12 并按实际
+点数自动使用 6 个并行任务。
 
 ## 开发与验证说明
 

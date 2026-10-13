@@ -326,10 +326,10 @@ The full formulas, the massless `4 -> 2` quotient, contact shifts and the top-to
   tree with the `+++` vertex structure and non-half-integer nu. The same context first evaluates and
   exports the original nonzero point sequence, then uses a second independent `MSEvaluatePath` call
   for four points with middle external-leg energy `k2=0`; planning and results are not mixed.
-- [06_massless_three_vertex_ep_regularization.wl](Examples/06_massless_three_vertex_ep_regularization.wl): a massless three-vertex chain with `a1=a2=a3=1+ep`; the symbolic boundary and DE certify leading power zero before numerical NDE work, after which the program selects production/validation points and extracts the finite part.
+- [06_massless_three_vertex_ep_regularization.wl](Examples/06_massless_three_vertex_ep_regularization.wl): a massless three-vertex chain with `a1=-1+ep, a2=a3=1+ep`, whose `ep=0` time integrals genuinely diverge; the symbolic boundary and DE certify the leading power `-1` before numerical NDE work, after which the program selects production/validation points and extracts the `ep^-1` pole coefficient together with the finite part.
 - [07_zero_external_leg_energy.wl](Examples/07_zero_external_leg_energy.wl): a vertex without a physical external leg may omit `externalLegEnergy` or set it to zero; a private auxiliary energy remains in the analytic dlog and is transported automatically to the physical zero.
 
-After deleting the existing `results/` and `results_temp/` trees, all seven examples passed fresh runs with `Example PASSED` and exit code `0`. Example 06 passed `16/16` checks with three production points and two independent validation points; the default request of 12 workers was automatically capped at the five actual ep tasks.
+After deleting the existing `results/` and `results_temp/` trees, all seven examples passed fresh runs with `Example PASSED` and exit code `0`. Example 06 passed `17/17` checks with four production points and two independent validation points; the default request of 12 workers was automatically capped at the six actual ep tasks.
 
 ## Statement on AI use
 

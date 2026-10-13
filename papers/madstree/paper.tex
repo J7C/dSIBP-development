@@ -119,8 +119,9 @@ algorithmic and the masters are obtained by numerical transport, one run deliver
 points at a cost that does not grow with the analytic complexity of the answer, and analytic continuation
 becomes a transport of the DE instead of the search for a new representation of the result.
 
-\texttt{MadStree} is a Mathematica package that implements the construction above and numerically
-evaluates arbitrary tree-level cosmological correlators of scalar fields in de~Sitter space. The
+The package name \texttt{MadStree} stands for \emph{Mad dS tree}. It is a Mathematica package
+that implements the construction above and numerically evaluates arbitrary tree-level
+cosmological correlators in de~Sitter space. The
 reduction, the d log-form differential equation, the boundary data and the numerical transport are all
 derived by the package from the diagram the user supplies, so a tree is evaluated without writing down
 any intermediate formula by hand. The user input is an arbitrary tree diagram or loop diagram\footnote{For a loop
@@ -136,37 +137,7 @@ taken from the reconstructed Laurent series; an end-to-end application of this m
 Sec.~\ref{sec:applications}.
 
 The paper is organized as follows. In Sec.~\ref{sec:method} we derive the formulas
-underlying the package. We review the definition of the vertex integral family and the derivation of their IBP relations, differential equations, and boundary conditions. We also discuss the simplification of the massless case in this section, and the reduction of several propagators that share one theta function, whose derivation is collected in App.~\ref{app:theta}. In Sec.~\ref{sec:usage} we describe how to use the package: the loading procedure, the input formats and core functions, the numerical workflow and the reconstruction of the regulator series. We also summarize the principal options and common pitfalls. In Sec.~\ref{sec:examples-section} we collect the examples shipped with the release and present three application examples, the last of which evaluates a resonant configuration in the regulator mode. We close with a summary and outlook in Sec.~\ref{sec:summary}.
-
-\section{Statement on AI Use}
-\label{sec:ai-use}
-
-The notation, the functionality and the public interfaces of this package were designed by the
-authors, who also indicated the overall direction and the strategy of the derivation recorded in
-Sec.~\ref{sec:method}; the concrete derivation was then worked out by agent programs driven by
-large language models. The package was implemented by those same programs on the basis of the
-authors' guidance and of the derivation results above; to verify the reliability of the package,
-the authors designed the following verification tasks, listed together with the source of the
-reference data in each case.
-
-\begin{itemize}
-  \item \textbf{Single-vertex families and the massive two-vertex correlator.} The exact
-        differential equations, the boundary coefficients and the numerically transported results
-        are compared with the known results of \cite{Chen:2024glu}, which are computed by an
-        independent multivariate hypergeometric construction.
-  \item \textbf{The massive three-vertex tree graph.} The package results are checked against two
-        independent sources at once: the output of an agent program that received only the
-        previously hand-written two-vertex code and generalized it to three vertices along its own
-        route, and the published eight-branch result of \cite{Xianyu:2023ytd}. The agent output was
-        itself first checked against that published result before being used as a reference, so the
-        package is validated both by independently generated code and by the published numbers.
-  \item \textbf{IBP relations and differential equations.} These are compared with the
-        \texttt{dSIBP} package \cite{dSIBP:inPreparation}, which is released in the same repository
-        as this one, \url{https://github.com/J7C/dSIBP-Packages}. \texttt{dSIBP} samples naive IBP
-        seeds and solves the resulting linear reduction system, whereas the present package applies
-        the general formulas derived in Sec.~\ref{sec:method} directly and never re-solves an IBP
-        system; the agreement therefore tests the closed formulas themselves.
-\end{itemize}
+underlying the package. We review the definition of the vertex integral family and the derivation of their IBP relations, differential equations, and boundary conditions. We also discuss the simplification of the massless case in this section, and the reduction of several propagators that share one theta function, whose derivation is collected in App.~\ref{app:theta}. In Sec.~\ref{sec:usage} we describe how to use the package: the loading procedure, the input formats and core functions, the numerical workflow and the reconstruction of the regulator series. We also summarize the principal options and common pitfalls. In Sec.~\ref{sec:examples-section} we collect the examples shipped with the release and present three application examples, the last of which evaluates a divergent configuration in the regulator mode. In Sec.~\ref{sec:verification} we record the verification tasks with which the package was checked against independent references. We close with a summary and outlook in Sec.~\ref{sec:summary}.
 
 \section{IBP reduction and differential equations for tree-level dS integrals}
 \label{sec:method}
@@ -2028,8 +1999,8 @@ Sec.~\ref{sec:applications} presents three numerical applications: the tree with
 two massive exchanges, whose transported results are compared with the multivariable hypergeometric
 representation of \cite{Xianyu:2023ytd}; the bubble time kernel evaluated at fixed internal
 momenta; and the massless three-vertex chain evaluated in the regulator mode, which demonstrates
-the certified Laurent reconstruction of Sec.~\ref{sec:regulator} on a resonant configuration. The comparisons standing behind the independent validation tasks recorded in
-Sec.~\ref{sec:ai-use}, namely the single-vertex families and the massive two-vertex correlator
+the certified Laurent reconstruction of Sec.~\ref{sec:regulator} on a divergent configuration. The comparisons standing behind the independent validation tasks recorded in
+Sec.~\ref{sec:verification}, namely the single-vertex families and the massive two-vertex correlator
 against \cite{Chen:2024glu} and the IBP relations and differential equations against the
 \texttt{dSIBP} package~\cite{dSIBP:inPreparation}, are not reproduced here.
 
@@ -2053,20 +2024,22 @@ The distribution ships seven examples that exercise the complete workflow:
         ($+++$ vertex structure) with non-half-integer \texttt{nu12=3/4}, \texttt{nu23=1/3},
         followed by a single-stage multipoint evaluation and CSV/JSON export;
   \item \texttt{06\_massless\_three\_vertex\_ep\_regularization.wl}: a three-vertex massless tree
-        with the common analytic regulator $a_1=a_2=a_3=1+\varepsilon$; the user requests
+        with the analytic regulator $a_1=-1+\varepsilon$, $a_2=a_3=1+\varepsilon$, whose
+        $\varepsilon=0$ time integrals genuinely diverge; the user requests
         only the highest regulator power (\texttt{MaximumEpPower -> 0}), and the program certifies
-        the lowest power from the symbolic boundary and DE before choosing production/validation
-        points and extracting the pole and finite part; its numerical reconstruction is
-        presented as the third application in Sec.~\ref{sec:applications};
+        the lowest power $n_{\min}=-1$ from the symbolic boundary and DE before choosing
+        production/validation points and extracting the pole and finite part; its numerical
+        reconstruction is presented as the third application in Sec.~\ref{sec:applications};
   \item \texttt{07\_zero\_external\_leg\_energy.wl}: zero external-leg energy, represented through an auxiliary energy with zero target value.
 \end{itemize}
 
-In the massless three-vertex example (Example~06) with $a_1=a_2=a_3=1+\varepsilon$, the
-physical boundary weights contain $\Gamma(2+\varepsilon)^3$,
-$\Gamma(2+\varepsilon)\Gamma(4+2\varepsilon)$ and $\Gamma(6+3\varepsilon)$, all regular at
-$\varepsilon=0$, and the nine-dimensional DE has no negative $\varepsilon$ power; the
-certificate therefore gives $n_{\min}=0$ before any numerical solve, and no artificial
-$1/\varepsilon$ term is introduced.
+In the massless three-vertex example (Example~06) with $a_1=-1+\varepsilon$ and
+$a_2=a_3=1+\varepsilon$, the vertex-1 unit $u_1=a_1+1$ equals $\varepsilon$, and every
+factorized boundary weight that isolates this unit as a standalone factor carries a
+$\Gamma(\varepsilon)$ simple pole, while the nine-dimensional DE has no negative $\varepsilon$
+power; the
+certificate therefore gives $n_{\min}=-1$ before any numerical solve, decided by the combined
+physical boundary and not by any individual resonance.
 
 Each example ends with a failure gate: it prints \texttt{Example PASSED} and exits $0$ only when
 every checked result is a non-\texttt{Failure} object, and exits $1$ with the reason otherwise.
@@ -2396,18 +2369,21 @@ domain of the direct series representation.
 \paragraph{Massless three-vertex tree in the regulator mode}
 
 The third example returns to the chain topology of the first example with both exchanges
-massless, and shifts all vertex time powers by the common analytic regulator
-(figure~\ref{fig:ep-tree}). At the unshifted powers $a_v=1$ the boundary branch exponents of
-this graph resonate, which is the situation the regulator mode of Sec.~\ref{sec:regulator} is
-made for: the computation is defined at $a_v=1+\varepsilon$ and the physical answer is the
-Laurent limit $\varepsilon\to0$. The momenta are fixed by
+massless, and lowers the time power of vertex~1 by two units before shifting all vertex time
+powers by the common analytic regulator (figure~\ref{fig:ep-tree}): $a_1=-1+\varepsilon$,
+$a_2=a_3=1+\varepsilon$. At $\varepsilon=0$ the time integrals of this graph genuinely
+diverge, which is the situation the regulator mode of Sec.~\ref{sec:regulator} is made for:
+the computation is defined at the regularized powers, and requesting the return level
+$\varepsilon^0$ delivers both the $\varepsilon^{-1}$ pole coefficient and the finite part. The
+momenta are fixed by
 \texttt{ParameterRules} and the target point is $\{k_1,k_2,k_3\}=\{9\ii,3\ii,5\ii\}$:
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.78\textwidth]{figures/fig_ep_tree.pdf}
   \caption{Massless three-vertex chain in the regulator mode, drawn with the in-in
   Feynman rules of Sec.~\ref{sec:conventions}: the three \texttt{"+"} vertices (black
-  fill) carry times $\tau_v$ and the regularized time powers $(-\tau_v)^{1+\varepsilon}$,
+  fill) carry times $\tau_v$ and the regularized time powers $(-\tau_1)^{-1+\varepsilon}$,
+  $(-\tau_2)^{1+\varepsilon}$ and $(-\tau_3)^{1+\varepsilon}$,
   the external legs end on the boundary (squares) and carry the energies $k_v$, and the
   two massless full propagators carry momentum magnitudes $q_{12},q_{23}$, their arrows
   marking the momentum flow.}
@@ -2431,7 +2407,7 @@ context = MSInitTree[treeSpec];
 epSeries = MSReconstructEpSeries[context, ep,
   {{k1, k2, k3}, {9 I, 3 I, 5 I}},
   ParameterRules -> {q12 -> 1, q23 -> 2,
-    a1 -> 1 + ep, a2 -> 1 + ep, a3 -> 1 + ep},
+    a1 -> -1 + ep, a2 -> 1 + ep, a3 -> 1 + ep},
   MaximumEpPower -> 0, EpGoalDigits -> 12,
   EpSampleAngleRange -> {-Pi/3, Pi/3},
   RankOrder -> {1, 2, 3}]
@@ -2448,28 +2424,37 @@ is the master vector $\bm{\text I}$ itself, in the convention of \eqref{eq:tree-
 without vertex contour factors.
 
 The certificate of Sec.~\ref{sec:regulator} runs before any numerical solve and returns
-$n_{\min}=0$: the three $\Gamma$ combinations of Sec.~\ref{sec:examples} are regular at
-$\varepsilon=0$ and the d log-form DE has no negative $\varepsilon$ power. Three Frobenius
-recurrence operators do drop rank at $\varepsilon=0$, with rank changes $9\to5$, $9\to8$ and
-$9\to8$ at the exponents $6(2+\varepsilon)$ and $7(2+\varepsilon)$; per
-Sec.~\ref{sec:regulator} these are retained as resonance diagnostics and produce no pole, since
-the combined physical boundary decides the support. With $m=0$ and $g=12$,
-\eqref{eq:regulator-fit-count} and \eqref{eq:regulator-scale-precision} give
-$N_{\rm fit}=3$, $\alpha_\varepsilon=12$, $\varepsilon_0=10^{-12}$, $p_0=36$, a working
-precision of $200$ digits and a primary transport order of $144$ with $50$ reference orders.
-The three production points are exact Gaussian rationals of moduli
-$\varepsilon_0(1+j/100)$, $j=1,2,3$, one on each of the rays $-\pi/6$, $0$ and $+\pi/6$ of the
-open window $(-\pi/3,\pi/3)$; the two validation points sit at half that modulus on the first
-two rays and never enter the fit. All five solves are dispatched to one bounded pool
-($12$ requested, $5$ effective); the whole reconstruction, including the certificate, both
-validation solves and the fit, takes $257$~s of wall time.
+$n_{\min}=-1$: the d log-form DE is regular at $\varepsilon=0$, but the vertex-1 unit
+$u_1=a_1+1=\varepsilon$ is isolated as a standalone factor in part of the factorized boundary
+weights, and every such branch carries a single $\Gamma(\varepsilon)$ simple pole, so the
+combined physical boundary starts at $\varepsilon^{-1}$ with component valuations $-1$ or
+$0$ only. Three Frobenius recurrence operators do drop rank at $\varepsilon=0$, with rank
+changes $9\to5$, $9\to8$ and $9\to8$ at the exponents $6(1+\varepsilon)$ (twice) and
+$8+7\varepsilon$; per
+Sec.~\ref{sec:regulator} these are retained as resonance diagnostics and produce no additional
+pole, since the combined physical boundary decides the support. With $m=0$, $n_{\min}=-1$ and
+$g=12$, \eqref{eq:regulator-fit-count} and \eqref{eq:regulator-scale-precision} give
+$P=1$, $\Delta=1$, $N_{\rm fit}=4$, $\alpha_\varepsilon=25/4$, $\varepsilon_0=10^{-25/4}$,
+$p_0=32$, a working
+precision of $200$ digits and a primary transport order of $128$ with $50$ reference orders.
+The four production points are exact Gaussian rationals of moduli
+$\varepsilon_0(1+j/100)$, $j=1,\ldots,4$, cycling through the rays $-\pi/6$, $0$ and $+\pi/6$ of the
+open window $(-\pi/3,\pi/3)$; the two validation points sit at half the first two moduli, on the
+rays $-\pi/6$ and $0$, and never enter the fit. All six solves are dispatched to one bounded pool
+($12$ requested, $6$ effective); the whole reconstruction, including the certificate, both
+validation solves and the fit, takes $170$~s of wall time.
 
-The returned pole coefficients are empty, as certified, and the $\varepsilon^0$ coefficient is
-the $9$-entry master vector. Two representative entries are
+The returned Laurent data consists of the $\varepsilon^{-1}$ pole coefficient and the
+$\varepsilon^0$ coefficient, both $9$-entry master vectors. Components below $10^{-20}$ in
+absolute value are numerical noise at the achieved accuracy --- the validation residual is of
+order $10^{-25}$ relative while the physical components are of order $10^{-3}$ or larger ---
+and are reported as zero; with this convention three entries of the pole coefficient vanish,
+among them the double-pinch entry, because the fully merged boundary branch carries no
+isolated $\Gamma(\varepsilon)$ factor. Two representative entries are
 \begin{equation}
   \begin{aligned}
-  [c_0]_{\mathrm{Top},00}&=\bigl(1.70880370598-3.02691315048\,\ii\bigr)\times10^{-5},\\
-  [c_0]_{\mathrm{D}}&=4.97150313687\times10^{-6}+5.79\times10^{-55}\,\ii,
+  [c_{-1}]_{\mathrm{Top},00}&=\bigl(9.49200055589-25.86650516658\,\ii\bigr)\times10^{-4},\\
+  [c_0]_{\mathrm{D}}&=7.18382203278\times10^{-5},
   \end{aligned}
   \label{eq:ep-finite-entries}
 \end{equation}
@@ -2477,11 +2462,13 @@ the first entry of \eqref{eq:ep-finite-entries} being the top-sector entry with 
 slots undifferentiated and the second the
 double-pinch master, a single one-time integral. At the two independent validation points the
 truncated series reproduces the directly transported values with a maximum relative residual of
-$3.86\times10^{-36}$, four orders above the requested tolerance $10^{-12}$; the coefficients
+$7.43\times10^{-25}$, thirteen orders below the requested tolerance $10^{-12}$; the coefficients
 themselves are returned with about $199$ significant digits. This example shows the regulator
-route end to end on a resonant configuration: the lowest power is certified symbolically before
+route end to end on a genuinely divergent configuration: the lowest power is certified
+symbolically before
 any numerical solve, the sampling grid and precisions follow from the certified powers, and the
-$\varepsilon\to0$ limit is delivered together with an explicit validation residual.
+$\varepsilon\to0$ Laurent data, pole coefficient and finite part together, is delivered with an
+explicit validation residual.
 
 \paragraph{Bubble time kernel at fixed loop momentum}
 
@@ -2601,12 +2588,38 @@ The tree example illustrates two uses of DE transport: efficient multipoint
 evaluation and continuation beyond the convergence domain of a direct series.
 The bubble example applies the same framework for time integrals to a graph
 containing a loop at fixed internal momenta.
-The regulator example certifies the Laurent support symbolically on a resonant
-massless chain and delivers the $\varepsilon\to0$ limit from five numerical
+The regulator example certifies the Laurent support symbolically on a divergent
+massless chain and delivers the $\varepsilon\to0$ pole coefficient and finite part from six
+numerical
 solves.
 
 
 
+
+\section{Verification against independent references}
+\label{sec:verification}
+
+To verify the reliability of the package, the authors designed the following verification
+tasks, listed together with the source of the reference data in each case.
+
+\begin{itemize}
+  \item \textbf{Single-vertex families and the massive two-vertex correlator.} The exact
+        differential equations, the boundary coefficients and the numerically transported results
+        are compared with the known results of \cite{Chen:2024glu}, which are computed by an
+        independent multivariate hypergeometric construction.
+  \item \textbf{The massive three-vertex tree graph.} The package results are checked against two
+        independent sources at once: the output of an agent program that received only the
+        previously hand-written two-vertex code and generalized it to three vertices along its own
+        route, and the published eight-branch result of \cite{Xianyu:2023ytd}. The agent output was
+        itself first checked against that published result before being used as a reference, so the
+        package is validated both by independently generated code and by the published numbers.
+  \item \textbf{IBP relations and differential equations.} These are compared with the
+        \texttt{dSIBP} package \cite{dSIBP:inPreparation}, which is released in the same repository
+        as this one, \url{https://github.com/J7C/dSIBP-Packages}. \texttt{dSIBP} samples naive IBP
+        seeds and solves the resulting linear reduction system, whereas the present package applies
+        the general formulas derived in Sec.~\ref{sec:method} directly and never re-solves an IBP
+        system; the agreement therefore tests the closed formulas themselves.
+\end{itemize}
 
 \section{Summary and outlook}
 \label{sec:summary}
@@ -2645,6 +2658,20 @@ and the uniform d log-form DE derived here are the kernel of the parity-split IB
 log-form DE of loop integrals in de~Sitter space constructed in \cite{Chen:2026dqp}, so the algebraic
 layers have a loop-level counterpart already written down, while the momentum integrations and the
 sectors they bring are the part that still has to be built.
+
+\section*{Acknowledgments}
+
+Jiaqi Chen is supported by the National Natural Science Foundation of China (NSFC) through
+Grants No.~12505094 and Science Foundation of China University of Petroleum, Beijing
+(No.~2462025YJRC019).
+
+\medskip
+\noindent\textbf{Statement on AI Use.}
+The notation, the functionality and the public interfaces of this package were designed by the
+authors, who also indicated the overall direction and the strategy of the derivation recorded in
+Sec.~\ref{sec:method}; the concrete derivation was then worked out by agent programs driven by
+large language models, and the package was implemented by those same programs on the basis of the
+authors' guidance and of the derivation results above.
 
 \appendix
 
