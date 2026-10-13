@@ -1,29 +1,42 @@
 % Standalone source of the massless three-vertex chain used in the regulator
-% application example of Sec. 5 of the paper. Same conventions as fig_bundle.tex.
+% application example of Sec. 5 of the paper. Drawing conventions follow the dS
+% Feynman rules of the dSIBP paper (figures fig_skrules/fig_linetypes): black
+% vertices sit on the + branch, external legs end on the white squares of the
+% boundary insertions, and internal propagators are directed arcs whose arrows
+% mark the momentum flow.
 % Compile: pdflatex fig_ep_tree.tex   (produces fig_ep_tree.pdf, included by paper.tex)
-\documentclass[border=14pt]{standalone}
-\usepackage{tikz}
-\usepackage{amsmath,amssymb}
+\documentclass[tikz,border=6pt]{standalone}
+\usetikzlibrary{calc}
 \begin{document}
-\begin{tikzpicture}[line width=0.9pt]
-  % The three vertices of the chain; vertex v carries external energy k_v and
-  % the common regularized time power 1+\varepsilon (stated in the caption).
-  \coordinate (V1) at (-3.2,0);
-  \coordinate (V2) at ( 0,0);
-  \coordinate (V3) at ( 3.2,0);
-  % External legs: one line per vertex, pointing up, labelled by its energy.
-  \draw (V1) -- ++(0,1.1) node[midway, left] {$k_1$};
-  \draw (V2) -- ++(0,1.1) node[midway, left] {$k_2$};
-  \draw (V3) -- ++(0,1.1) node[midway, left] {$k_3$};
-  % The two massless internal propagators with their momentum magnitudes.
-  \draw (V1) -- (V2) node[midway, fill=white, inner sep=1.6pt] {$q_{12}$};
-  \draw (V2) -- (V3) node[midway, fill=white, inner sep=1.6pt] {$q_{23}$};
-  % Vertices, labelled by their ids in the input of the example.
-  \fill (V1) circle (2.6pt);
-  \fill (V2) circle (2.6pt);
-  \fill (V3) circle (2.6pt);
-  \node[below=7pt] at (V1) {$1$};
-  \node[below=7pt] at (V2) {$2$};
-  \node[below=7pt] at (V3) {$3$};
+\begin{tikzpicture}[every node/.style={inner sep=1.5pt}]
+  % Three time vertices on the + branch, left to right v = 1, 2, 3.
+  \coordinate (v1) at (0,0);
+  \coordinate (v2) at (3.4,0);
+  \coordinate (v3) at (6.8,0);
+  % External legs, one per vertex, ending on the boundary squares.
+  \draw (v1) -- (-1.25,1.05);
+  \draw (v2) -- (3.4,1.55);
+  \draw (v3) -- (8.05,1.05);
+  \filldraw[fill=white,draw=black] ($(-1.25,1.05)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \filldraw[fill=white,draw=black] ($(3.4,1.55)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \filldraw[fill=white,draw=black] ($(8.05,1.05)+(-0.075,0.075)$) rectangle ++(0.15,-0.15);
+  \node[left=2pt]  at (-1.25,1.05) {$k_1$};
+  \node[right=2pt] at (3.4,1.55)  {$k_2$};
+  \node[right=2pt] at (8.05,1.05) {$k_3$};
+  % The two internal massless full propagators: directed arcs below the chain,
+  % arrows marking the momentum flow of magnitudes q_{12} and q_{23}.
+  \draw[->,thick] (v1) arc[start angle=180,end angle=360,x radius=1.7,y radius=1.30];
+  \draw[->,thick] (v2) arc[start angle=180,end angle=360,x radius=1.7,y radius=1.30];
+  \node[fill=white,inner sep=1pt] at (1.7,-1.74) {\small $q_{12}$};
+  \node[fill=white,inner sep=1pt] at (5.1,-1.74) {\small $q_{23}$};
+  % Vertex times, tucked into the free wedge between each leg and the arcs so
+  % that no white box cuts a propagator at the vertex.
+  \node[anchor=south west] at (0.12,0.10)  {\small $\tau_1$};
+  \node[anchor=south west] at (3.54,0.10)  {\small $\tau_2$};
+  \node[anchor=south east] at (6.68,0.10)  {\small $\tau_3$};
+  % Vertices last.
+  \filldraw[fill=black,draw=black] (v1) circle (3pt);
+  \filldraw[fill=black,draw=black] (v2) circle (3pt);
+  \filldraw[fill=black,draw=black] (v3) circle (3pt);
 \end{tikzpicture}
 \end{document}
