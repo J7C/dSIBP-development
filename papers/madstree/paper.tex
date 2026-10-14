@@ -65,9 +65,7 @@
 Tree-level cosmological correlators in de~Sitter (dS) space are the basic objects of
 inflationary perturbation theory: after the in-in Feynman rules are applied, a correlator is a sum
 of time integrals whose integrands contain Hankel functions for massive propagators, exponentials
-for the external energies, and theta functions for the time-ordered propagators\cite{Weinberg:2005vy,Chen:2017ryl}. Many analytic methods have been developed, including the cosmological bootstrap \cite{Arkani-Hamed:2018kmz,Baumann:2019oyu,Baumann:2020dch,Pajer:2020wnj,Pajer:2020wxk,Cabass:2021fnw,Baumann:2022jpr,Pimentel:2022fsc,Jazayeri:2022kjy,Qin:2022fbv,Wang:2022eop,Qin:2023ejc,Aoki:2024uyi,Liu:2024str,
-Qin:2025xct,Xianyu:2025lbk}, Mellin techniques \cite{Sleight:2019mgd,Sleight:2019hfp,Sleight:2020obc,Sleight:2021plv,Premkumar:2021mlz,Qin:2022lva,Qin:2022fbv,Xianyu:2023ytd,Qin:2024gtr}, spectral decompositions \cite{Marolf:2010zp,Xianyu:2022jwk,Loparco:2023rug,Werth:2024mjg,
-Qin:2025xct,Zhang:2025nzd,Altshuler:2025qmk} and dispersive methods \cite{Liu:2024xyi,Das:2026vfv}. See also \cite{Wang:2021qez,Werth:2023pfl,Pinol:2023oux,Werth:2024aui,Chen:2024glu} for some recent numerical studies. 
+for the external energies, and theta functions for the time-ordered propagators\cite{Weinberg:2005vy,Chen:2017ryl}. Many analytic methods have been developed \cite{Arkani-Hamed:2018kmz,Baumann:2019oyu,Baumann:2020dch,Pajer:2020wnj,Pajer:2020wxk,Cabass:2021fnw,Baumann:2022jpr,Pimentel:2022fsc,Jazayeri:2022kjy,Wang:2022eop,Qin:2023ejc,Aoki:2024uyi,Liu:2024str,Xianyu:2025lbk,Chen:2023xlt,Tao:2022nqc,Chen:2023bji,Sleight:2019mgd,Sleight:2019hfp,Sleight:2020obc,Sleight:2021plv,Premkumar:2021mlz,Qin:2022lva,Qin:2022fbv,Xianyu:2023ytd,Qin:2024gtr,Marolf:2010zp,Xianyu:2022jwk,Loparco:2023rug,Werth:2024mjg,Qin:2025xct,Zhang:2025nzd,Altshuler:2025qmk,Liu:2024xyi,Das:2026vfv}, including the cosmological bootstrap, Mellin techniques, spectral decompositions, and so on. See also \cite{Wang:2021qez,Werth:2023pfl,Pinol:2023oux,Werth:2024aui,Chen:2023iix,Chen:2024glu} for some recent progress in numerical methods.
 
 A rather different route, and the one taken in this paper, is the route that precision calculations in
 flat-spacetime QFT rely on: Integration-By-Parts (IBP) relations \cite{Chetyrkin:1981qh} and the
@@ -1275,7 +1273,7 @@ propagator are replaced by their mean there, one mean per merged propagator.
 \subsection{Installation and loading}
 \label{sec:overview}
 
-Before using package we collect the system requirements and the loading commands.
+Before using the package we collect the system requirements and the loading commands.
 
 \paragraph{System requirements.}
 \begin{itemize}
@@ -1291,15 +1289,16 @@ Install the dependencies in the Python interpreter used for numerical evaluation
 python -m pip install "python-flint>=0.6" "sympy>=1.12"
 \end{verbatim}
 Here \texttt{python} should be replaced by the selected interpreter if necessary.
-MadStree includes a copy of FlintNDE under \texttt{MadStree/Vendor/FlintNDE},
-so a separate installation of the FlintNDE package is not required.
+No further backend installation is needed: MadStree bundles FlintNDE, a solver for first-order
+matrix differential equations built on the exact ball arithmetic of \texttt{python-flint}, under
+\texttt{MadStree/Vendor/FlintNDE}, and delegates every numerical task of this package to this
+bundled copy. Its role in the numerical workflow is described in Sec.~\ref{sec:backend}.
 
 \paragraph{Loading the package.}
 
 Download or clone the official release repository
-\url{https://github.com/J7C/dSIBP-Packages}, which contains \texttt{dSIBP}, \texttt{MadStree} and
-\texttt{FlintNDE}.
-Set \texttt{madStreeDirectory} to the \texttt{MadStree} directory in the local repository,
+\url{https://github.com/J7C/dSIBP-Packages} and
+set \texttt{madStreeDirectory} to the \texttt{MadStree} directory in the local repository,
 add it to \texttt{\$Path}, and load with \texttt{Needs}:
 \begin{verbatim}
 madStreeDirectory = ".../dSIBP-Packages/MadStree";
@@ -1764,7 +1763,7 @@ firstPoint["value"]
 \paragraph{The numerical backend.}
 \label{sec:backend}
 
-FlintNDE is a general solver for first-order matrix differential equations with exact
+FlintNDE solves first-order matrix differential equations with exact
 $Q(\ii)(s)$-coefficient systems; MadStree embeds a synchronized copy and only
 ever feeds it single-variable pullbacks of the d log-form connection. Three mechanisms are responsible
 for the current performance:
@@ -2859,7 +2858,7 @@ solves.
 \section{Verification against independent references}
 \label{sec:verification}
 
-To verify the reliability of the package, the authors designed the following verification
+The package was checked against independent references in the following verification
 tasks, listed together with the source of the reference data in each case.
 
 \begin{itemize}
@@ -2927,7 +2926,8 @@ Grants No.~12505094 and Science Foundation of China University of Petroleum, Bei
 
 \medskip
 \noindent\textbf{Statement on AI Use.}
-The notation, the functionality and the public interfaces of this package were designed by the
+The notation and the public interface of this package --- the user-facing functions and their
+input formats --- were designed by the
 authors, who also indicated the overall direction and the strategy of the derivation recorded in
 Sec.~\ref{sec:method}; the concrete derivation was then worked out by agent programs driven by
 large language models, and the package was implemented by those same programs on the basis of the
