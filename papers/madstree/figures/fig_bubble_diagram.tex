@@ -1,33 +1,49 @@
-% Standalone source of the bubble time kernel of the second application example
-% (Sec. 5), redrawn faithfully from the original bubble1 figure: a circular loop
-% whose two propagators are distinguished by colour (teal upper, purple lower),
-% single external legs running up and outward to P_1,P_2, vertex times beside the
-% vertices, and parenthesised (momentum, mass) labels on each arc.
+% Standalone source of the bubble time kernel of the second application
+% example (Sec. 5), redrawn element by element after the original bubble1
+% figure: two hatched-circle time vertices joined by two massive propagators
+% drawn as the two halves of one loop, the upper half teal with the label
+% (x_1,\nu_B1) above and the lower half purple with (x_2,\nu_B2) below, and two
+% schematic external legs per vertex ending in open squares with the summed
+% energies P_1,P_2 beside the fans. The original loop was a wide ellipse; here
+% its width is contracted so that the loop is a true circle.
 % Compile: pdflatex fig_bubble_diagram.tex   (included by paper.tex)
 \documentclass[tikz,border=6pt]{standalone}
-\usetikzlibrary{calc}
-\definecolor{propgreen}{RGB}{0,161,150}
-\definecolor{proppurple}{RGB}{121,90,188}
+\usetikzlibrary{patterns.meta}
+\definecolor{propone}{RGB}{0,157,152}
+\definecolor{proptwo}{RGB}{115,86,185}
+\tikzset{
+  vtx/.style={circle, draw=black, line width=1.0pt, fill=white,
+    postaction={pattern={Lines[angle=45, distance=1.3pt, line width=0.45pt]},
+      pattern color=black},
+    minimum size=#1, inner sep=0pt, outer sep=0pt},
+  vtx/.default=4.2pt,
+  leg/.style={draw=black, line width=0.9pt},
+  sq/.style={draw=black, line width=0.9pt, fill=white, minimum size=3.0pt,
+    inner sep=0pt, outer sep=0pt},
+  prop/.style={line width=1.2pt},
+}
 \begin{document}
 \begin{tikzpicture}[every node/.style={inner sep=1.5pt}]
-  \coordinate (v1) at (-1.7,0);
-  \coordinate (v2) at (1.7,0);
-  % External legs running up and outward, with the energy sums at the tips.
-  \draw (v1) -- (-3.1,1.25);
-  \draw (v2) -- (3.1,1.25);
-  \node[anchor=south east] at (-3.1,1.25) {\small $P_1$};
-  \node[anchor=south west] at (3.1,1.25)  {\small $P_2$};
-  % The two internal propagators: upper and lower halves of one circle, arrows
-  % marking the momentum flow, coloured (momentum, mass) labels outside.
-  \draw[->,thick,propgreen] (v1) arc[start angle=180,end angle=0,radius=1.7];
-  \draw[->,thick,proppurple] (v1) arc[start angle=180,end angle=360,radius=1.7];
-  \node[propgreen]  at (0,2.06) {\small $(x_1,\widetilde\nu_{B1})$};
-  \node[proppurple] at (0,-2.06) {\small $(x_2,\widetilde\nu_{B2})$};
-  % Vertex times beside the vertices, outside the loop.
-  \node[anchor=east] at (-2.02,-0.42) {\small $\tau_1$};
-  \node[anchor=west] at (2.02,-0.42)  {\small $\tau_2$};
-  % Vertices last.
-  \filldraw[fill=black,draw=black] (v1) circle (3pt);
-  \filldraw[fill=black,draw=black] (v2) circle (3pt);
+  \coordinate (v1) at (-1.15,0);
+  \coordinate (v2) at (1.15,0);
+  % The two massive propagators as the halves of one circular loop.
+  \draw[prop,propone] (v1) arc[start angle=180, end angle=0,   radius=1.15];
+  \draw[prop,proptwo] (v1) arc[start angle=180, end angle=360, radius=1.15];
+  \node[propone] at (0,1.44)  {\small $(x_1,\widetilde\nu_{B1})$};
+  \node[proptwo] at (0,-0.62) {\small $(x_2,\widetilde\nu_{B2})$};
+  % External legs: two per vertex, open squares at the tips.
+  \draw[leg] (v1) -- ++(154:1.55) node[sq] {};
+  \draw[leg] (v1) -- ++(206:1.55) node[sq] {};
+  \draw[leg] (v2) -- ++(26:1.55)  node[sq] {};
+  \draw[leg] (v2) -- ++(-26:1.55) node[sq] {};
+  % Summed external energies beside the fans.
+  \node at (-2.20,0.98) {\small $P_1$};
+  \node at (2.20,0.98)  {\small $P_2$};
+  % Vertex labels below the circular loop, under their vertices.
+  \node[anchor=north] at (-1.15,-1.42) {\small $V_1(\tau_1,p_1)$};
+  \node[anchor=north] at (1.15,-1.42)  {\small $V_2(\tau_2,p_2)$};
+  % Vertices last, on top of the arc ends.
+  \node[vtx] at (v1) {};
+  \node[vtx] at (v2) {};
 \end{tikzpicture}
 \end{document}

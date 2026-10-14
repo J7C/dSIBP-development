@@ -1,41 +1,78 @@
-% Standalone source of the contracted-sector diagrams of the bubble time kernel
-% (Sec. 5): the Top sector keeps the circular loop; pinching one propagator
-% merges the two vertices --- the larger dot --- and leaves the other propagator
-% as a circular tadpole on the single merged component. Colors follow the main
-% figure: propagator 1 teal-green (upper half), propagator 2 purple (lower
-% half); Pinch1 contracts propagator 1 and keeps propagator 2, Pinch2 the
-% mirror image.
+% Standalone source of the three sectors of the bubble time kernel
+% (Sec. 5, second example), drawn in the same visual language as the original
+% bubble1 figure and as figure fig_bubble_diagram: hatched-circle components,
+% open-square leg tips, summed energies P_1,P_2 beside the fans, the upper
+% propagator teal and the lower purple. As in fig_bubble_diagram the loop width
+% of the original is contracted so that every loop is a true circle: the Top
+% sector keeps both halves of the circular loop, and a pinched sector contracts
+% one propagator into a single larger hatched circle carrying both fans and the
+% surviving propagator as a circular tadpole above it.
 % Compile: pdflatex fig_bubble_sectors.tex   (included by paper.tex)
 \documentclass[tikz,border=6pt]{standalone}
-\usetikzlibrary{calc,positioning}
-\definecolor{propgreen}{RGB}{0,161,150}
-\definecolor{proppurple}{RGB}{121,90,188}
+\usetikzlibrary{patterns.meta,calc}
+\definecolor{propone}{RGB}{0,157,152}
+\definecolor{proptwo}{RGB}{115,86,185}
+\tikzset{
+  vtx/.style={circle, draw=black, line width=1.0pt, fill=white,
+    postaction={pattern={Lines[angle=45, distance=1.3pt, line width=0.45pt]},
+      pattern color=black},
+    minimum size=#1, inner sep=0pt, outer sep=0pt},
+  vtx/.default=4.2pt,
+  leg/.style={draw=black, line width=0.9pt},
+  sq/.style={draw=black, line width=0.9pt, fill=white, minimum size=3.0pt,
+    inner sep=0pt, outer sep=0pt},
+  prop/.style={line width=1.2pt},
+}
+\newcommand{\fanOne}[2][1.05]{%
+  \draw[leg] (#2) -- ++(154:1.55) node[sq] {};
+  \draw[leg] (#2) -- ++(206:1.55) node[sq] {};
+  \node at ($(#2)+(-#1,0.98)$) {\footnotesize $P_1$};
+}
+\newcommand{\fanTwo}[2][1.05]{%
+  \draw[leg] (#2) -- ++(26:1.55)  node[sq] {};
+  \draw[leg] (#2) -- ++(-26:1.55) node[sq] {};
+  \node at ($(#2)+(#1,0.98)$) {\footnotesize $P_2$};
+}
+% Merged component of a pinched sector: the four external legs of the two
+% merged vertices drawn downward, clear of the tadpole above; the two outer
+% legs enclose 90 degrees and the two inner legs trisect that angle.
+\newcommand{\fanDownFour}[1]{%
+  \foreach \a in {225,255} { \draw[leg] (#1) -- ++(\a:1.5) node[sq] {}; }
+  \foreach \a in {285,315} { \draw[leg] (#1) -- ++(\a:1.5) node[sq] {}; }
+  \node at ($(#1)+(-1.55,-1.02)$) {\footnotesize $P_1$};
+  \node at ($(#1)+(1.55,-1.02)$) {\footnotesize $P_2$};
+}
 \begin{document}
-\begin{tikzpicture}[
-  every node/.style={inner sep=1.5pt},
-  dot/.style={circle,fill=black,draw=black,minimum size=6pt,inner sep=0pt},
-  bigdot/.style={circle,fill=black,draw=black,minimum size=9pt,inner sep=0pt},
-  lab/.style={font=\small,anchor=north},
-]
-  % ============ Top sector ============
-  \begin{scope}[shift={(0,0)}]
-    \node[dot] (v1) at (0,0) {};
-    \node[dot] (v2) at (2.6,0) {};
-    \draw[->,thick,propgreen]  (v1) arc[start angle=180,end angle=0,radius=1.3];
-    \draw[->,thick,proppurple] (v1) arc[start angle=180,end angle=360,radius=1.3];
-    \node[lab] at (1.3,-1.65) {Top sector};
+\begin{tikzpicture}[every node/.style={inner sep=1.5pt}]
+  % Top sector: both propagators, the circular loop.
+  \begin{scope}[shift={(0,0)}, scale=0.8, transform shape]
+    \coordinate (b1) at (-1.15,0);
+    \coordinate (b2) at (1.15,0);
+    \draw[prop,propone] (b1) arc[start angle=180, end angle=0,   radius=1.15];
+    \draw[prop,proptwo] (b1) arc[start angle=180, end angle=360, radius=1.15];
+    \node[propone] at (0,1.44)  {\footnotesize $(x_1,\widetilde\nu_{B1})$};
+    \node[proptwo] at (0,-0.62) {\footnotesize $(x_2,\widetilde\nu_{B2})$};
+    \fanOne{b1}\fanTwo{b2}
+    \node[vtx] at (b1) {}; \node[vtx] at (b2) {};
   \end{scope}
-  % ============ Pinch1 sector (tadpole on propagator 2) ============
-  \begin{scope}[shift={(5.9,0)}]
-    \node[bigdot] (t1) at (0,0) {};
-    \draw[->,thick,proppurple] (t1) arc[start angle=35,end angle=395,radius=1.05];
-    \node[lab] at (0,-1.75) {Pinch$_1$ sector};
+  \node at (0,-2.30) {\footnotesize Top sector};
+  % Pinch1: propagator 1 contracted, purple tadpole survives.
+  \begin{scope}[shift={(5.0,0)}, scale=0.8, transform shape]
+    \coordinate (m1) at (0,0);
+    \draw[prop,proptwo] (0,0.95) circle[radius=0.95];
+    \node[proptwo] at (0,2.16) {\footnotesize $(x_2,\widetilde\nu_{B2})$};
+    \fanDownFour{m1}
+    \node[vtx=5.6pt] at (m1) {};
   \end{scope}
-  % ============ Pinch2 sector (tadpole on propagator 1) ============
-  \begin{scope}[shift={(9.9,0)}]
-    \node[bigdot] (t2) at (0,0) {};
-    \draw[->,thick,propgreen] (t2) arc[start angle=35,end angle=395,radius=1.05];
-    \node[lab] at (0,-1.75) {Pinch$_2$ sector};
+  \node at (5.0,-2.30) {\footnotesize Pinch$_1$ sector};
+  % Pinch2: propagator 2 contracted, teal tadpole survives.
+  \begin{scope}[shift={(10.0,0)}, scale=0.8, transform shape]
+    \coordinate (m2) at (0,0);
+    \draw[prop,propone] (0,0.95) circle[radius=0.95];
+    \node[propone] at (0,2.16) {\footnotesize $(x_1,\widetilde\nu_{B1})$};
+    \fanDownFour{m2}
+    \node[vtx=5.6pt] at (m2) {};
   \end{scope}
+  \node at (10.0,-2.30) {\footnotesize Pinch$_2$ sector};
 \end{tikzpicture}
 \end{document}
