@@ -26,8 +26,11 @@
 | `reference/2411.03088-勘误.md` | Eq. (4.11) 对 Eq. (4.2) | 记录 Eq. (4.11) 相对定义积分多一个整体因子 `I` |
 
 本任务书、runner 和报告只用 arXiv 号称呼论文，不写作者名。第 15.7 节使用的
-`reference-results/pure_massive_bubble/reference_probe.wl` 只有可核验的代码来源与 hash，当前没有
-可核验的原论文身份或公式号，因此明确列为既有解析 reference，不冒充论文 oracle。
+`reference-results/pure_massive_bubble/reference_probe.wl` 的对照数据是 arXiv:2604.14549 **v3**
+supplementary 构造：2026-10-15 下载 v3 ancillary 文件比对，四个源文件与 v3 supplementary_files
+逐字节一致（SHA-256 4/4），作者确认该构造出自该论文，故列为该论文 v3 supplementary 矩阵的
+oracle。bundle 未重新生成 reference IBP、未运行 reference Kira，既有解析代码来源与哈希登记见
+`reference-results/pure_massive_bubble/README.md` 与 `reference/README.md`。
 
 **当前 package 解析规则**：Phase 1 冻结前不得读取 `package/`。进入 Phase 2 后，先枚举 `package/package_<三位版本>.wl` 与同版本 PDF；交付目录必须只有一对当前版本化程序和手册。把唯一文件名中的三位 token 记为 `currentVersion`，用 `Get[唯一程序路径]` 加载所提供的最新 package，再要求 `$dSIBPVersion===currentVersion`；报告文件名也使用该动态 token。任何验证脚本、命令或文字指令都不得写死某个历史或当前版本号，不得通过仓库内 `versions/<版本目录>/`、旧单文件或旧报告旁路加载；若版本化文件不唯一、程序/PDF token 不一致或运行时版本不匹配，立即停止。
 

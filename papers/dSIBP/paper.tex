@@ -4,6 +4,7 @@
 \usepackage{jheppub}
 \usepackage[T1]{fontenc}
 \usepackage{bm}
+\usepackage{booktabs}
 
 \title{\bf dSIBP: a package for generating IBP seeds for QFT in de Sitter spacetime}
 
@@ -15,9 +16,9 @@
 relations of Feynman integrals in de Sitter (dS) spacetime. The input is a Feynman graph whose
 internal propagators are massive or massless and live on the two Schwinger--Keldysh branches. The package
 builds the integral family of this graph, writes its canonical IBP seeds, and assembles them into a
-sealed linear system for the external reducers Kira and Rational Tracer. One further command
-differentiates the reduced masters and returns their differential equations, together with Euler
-scaling identities that check the result. A parallel track treats tree-level families, which carry no
+sealed linear system for the external reducers Kira and Rational Tracer. Two further commands
+differentiate the reduced masters into differential equations and check the result through Euler
+scaling identities. A parallel track treats tree-level families, which carry no
 loop momentum. The package presents no new derivation; all formulas come from the existing de Sitter
 IBP constructions. Its usage is described through worked examples, from the sunrise graph to a mixed
 loop-plus-tree family with eighty-one master integrals.
@@ -51,16 +52,16 @@ system of first-order linear differential equations (DE)
 integrals \cite{Bern:1993kr} and the two-loop four-point functions \cite{Gehrmann:1999as}, and it
 becomes much simpler when the DE are written in $d\log$ form \cite{Henn:2013pwa}.
 
-What made this route decisive is not only the algebra but also the software built around it. Seed
-generation and reduction are automated by FIRE \cite{Smirnov:2019qkx,Smirnov:2025prc} and by Kira
+Part of the strength of this route comes from the software built around it. The reduction is
+automated by FIRE \cite{Smirnov:2019qkx,Smirnov:2025prc} and by Kira
 \cite{Maierhofer:2017gsa,Klappert:2020nbg}, and rational-function reconstruction by Rational Tracer
 \cite{Magerya:2022hvj}. The DE are solved numerically by DiffExp \cite{Hidding:2020ytt} and by the
 auxiliary mass flow method with its implementation AMFlow \cite{Liu:2017jxz,Liu:2022chg}. This last
 series also shows how little input the whole scheme needs. Reference \cite{Liu:2022mfb} finds that
 Feynman integrals with any number of loops are completely determined once linear relations among
 them are given, and it verifies this on examples up to five loops. Computing an integral then becomes
-linear algebra plus numerical transport, with no integration input left to supply. In practice the
-user writes down a topology, and a program handles the rest.
+linear algebra plus numerical transport, and no further integration input is needed: the user
+declares a topology, and a program computes the integral.
 
 The same two steps were set up for dS space in
 refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}. Reference \cite{Chen:2023iix} extends IBP from
@@ -82,8 +83,8 @@ program that turns a general dS graph into that user-defined system. Assembling 
 is laborious and error-prone already at one loop. A massive propagator carries three integer labels: a
 propagator power and two state powers, the powers of its two Hankel-function blocks. Massive propagators
 obey second-order equations of motion, so only two of their vertex states are independent. Massless full propagators must be treated as a quotient
-over vertex states. The parity classification just recalled splits the system into independent blocks,
-and one block is enough per reduction.
+over vertex states. The parity classification recalled above splits the system into closed
+subsystems, and a single closed subsystem suffices for one reduction.
 
 \texttt{dSIBP} is a \textsc{Mathematica} package that automates this step. The user declares a
 Feynman graph by its vertices, by the four Schwinger--Keldysh types of its internal propagators,
@@ -99,7 +100,7 @@ states and user-defined irreducible scalar products (ISPs).
 the $L(L+K)$ loop-momentum generators, where $L$ is the loop number of the graph and $K$ the number
 of loop-related external momenta. The massive vertex states are restricted to the
 proven representative set $\{0,1\}$.
-\item It sweeps the continuous labels over a user-specified envelope and assembles a sealed,
+\item It sweeps the continuous labels over user-specified index ranges and assembles a sealed,
 backend-neutral linear system.
 \item It exports the system to Kira \cite{Maierhofer:2017gsa,Klappert:2020nbg} or Rational Tracer
 \cite{Magerya:2022hvj} for the actual reduction, and it imports the results back.
@@ -108,7 +109,7 @@ variables. This yields differential equations, optionally in $d\log$ form. Euler
 provide an independent check of the result.
 \end{itemize}
 
-Two boundaries of the package are worth stating. It generates and serializes IBP relations, but it
+Two boundaries of the package should be stated. It generates and serializes IBP relations, but it
 never runs a reduction itself. The reduction is delegated to external programs, which keeps the
 package independent of any particular reduction engine. The package also adds no new derivation:
 every formula it uses is derived in refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}. What it
@@ -128,10 +129,10 @@ The paper is organized as follows. Section~\ref{sec:notation} fixes the notation
 Schwinger--Keldysh Feynman rules, the integral family and its labels, the kinematic coordinates, the
 parity structure, the massive function systems and the time-only representation. Section~\ref{sec:using}
 describes the public interface, from initialization to seeds, linear systems, external reduction and
-differential equations, and then the tree-level track. Section~\ref{sec:examples} walks through the
+differential equations, and then the tree-level track. Section~\ref{sec:examples} describes the
 examples shipped with the package, including a mixed loop-plus-tree family whose reduction system
-holds more than eight hundred thousand relations. Section~\ref{sec:summary} closes with an outlook.
-Appendix~\ref{app:api} lists the public functions with one-line descriptions.
+holds more than eight hundred thousand relations. Section~\ref{sec:summary} ends with an outlook.
+Table~\ref{tab:api} in appendix~\ref{app:api} lists the public functions with one-line descriptions.
 
 \noindent\textbf{Statement on AI use.}
 The notation, the functionality and the interfaces of \texttt{dSIBP} were designed by the author.
@@ -153,10 +154,10 @@ agent, which generalized an earlier hand-written two-vertex implementation. They
 against ref.~\cite{Chen:2026dqp} and only then compared with the output of the package. This task
 validates the tree-level IBP relations and the tree-level differential equations.
 \item \emph{One-loop bubble, full pipeline.} The IBP system is reduced by an external Kira run,
-which closes with no unreduced target and returns nineteen masters. The two $19\times19$
+which terminates with no unreduced target and returns nineteen masters. The two $19\times19$
 differential-equation matrices keep both derivative variables symbolic. At the recorded exact point
 they reproduce the matrices of ref.~\cite{Chen:2026dqp} entry by entry, $361/361$ for each of the
-three variable conventions. The scaling identities hold on the reduced basis: $53/53$ source-level
+three variable conventions of section~\ref{sec:examples}. The scaling identities hold on the reduced basis: $53/53$ source-level
 identities and $19/19$ active-basis checks pass symbolically. This task validates the IBP relations,
 the differential equations and the scaling identities.
 \item \emph{Mixed bubble-plus-tree family, full pipeline.} The family has eighty-one master
@@ -166,8 +167,9 @@ and IBP identities vanish exactly. These identities are independent of the numer
 reduction itself carries a scaling certificate at a recorded exact point. This task
 validates the IBP relations, the differential equations and the scaling identities.
 \item \emph{General formulas against naive sampling.} The package substitutes the derived general
-formulas instead of solving IBP systems again. Its output was compared with reductions of naively
-sampled raw IBP seeds of the same families. The IBP relations and the differential equations agree.
+formulas instead of solving IBP systems again. For the massive two-vertex family its output was
+compared with reductions of naively sampled raw IBP seeds of the same family. The IBP relations and
+the differential equations agree.
 This task validates the IBP relations and the differential equations.
 \item \emph{Tree-level differential equations against MadStree.} The iterative route and the naive
 IBP route of the package give the same result. In addition, for a mixed three-vertex tree
@@ -197,10 +199,14 @@ e^{-\mathrm{i} \sigma_v E_v \tau_v}\,,
 and the time integrations run over the full interval $\tau_v\in(-\infty,0)$. An internal propagator
 $e$ joining the ordered vertices $u$ and $v$ is one of four types. It is massive or massless, and it
 is \emph{full} when the two branch signs agree, $\sigma_u=\sigma_v$, and \emph{cross} when they
-differ, $\sigma_u=-\sigma_v$. Only a full propagator contains a Heaviside ordering of the two vertex
-times, so only a full propagator produces theta-shrink terms. The signs of the two endpoints do not
-give further types: $++$ and $--$ are the same full propagator, and $+-$ and $-+$ are the same cross
-propagator. A massless full propagator does not distinguish its two endpoints, and section
+differ, $\sigma_u=-\sigma_v$. These are the propagators $G_{\sigma\sigma}$ and
+$G_{\sigma,-\sigma}$ of refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}. Only a full propagator
+contains a Heaviside ordering of the two vertex
+times, so only a full propagator produces $\theta$-shrink terms. The signs of the two endpoints do
+not give further types: $++$ and $--$ give the same full propagator, and $+-$ and $-+$ the same
+cross propagator. The common branch sign survives only in the common sign $\sigma$ of the massless
+quotient \eqref{eq:masslessQuotient} and in the shrink sign $\chi_e$ of
+section~\ref{sec:family}. A massless full propagator does not distinguish its two endpoints, and section
 \ref{sec:family} writes out the quotient it satisfies. In our figures a circle denotes a vertex, and
 its fill colour encodes the branch sign: black is $\sigma_v=+$, white is $\sigma_v=-$, and gray
 leaves the sign general. The conformal time $\tau_v$ is written below the
@@ -226,7 +232,8 @@ $k_{2,1},\dots,k_{2,n_2}$. The two internal propagators carry the loop momenta $
 The package distinguishes the four propagator types as
 $\langle$\texttt{massive, massless}$\rangle\times\langle$\texttt{full, cross}$\rangle$.
 Figure~\ref{fig:linetypes} shows the resulting graphical conventions. Every propagator that lies
-on a cycle becomes a denominator of the integral family. A propagator that does not lie on a cycle
+on a cycle becomes a denominator of the integral family; the propagators on cycles form the
+\emph{cycle skeleton} of the graph. A propagator that does not lie on a cycle
 is a \emph{fixed propagator}, which the package also calls a \emph{bridge}. It carries
 only a magnitude power and no loop-momentum denominator. Massive propagators whose two vertices
 become coincident under a contact operation
@@ -284,18 +291,20 @@ this sector, the \emph{active} vertices of the sector, in the frozen vertex orde
 holds one pack per propagator, in the order
 in which the declaration key \texttt{"lines"} lists them, and the shapes of the packs identify the
 sector. The third slot lists the ISPs with their integer powers $i_r$. A case is one named
-declaration. Its keys give the vertices with their branch types, the propagators with their
+declaration. Its keys give the vertices with their branch signs, the propagators with their
 endpoints, momenta and mass types, the external legs, the loop momenta, and the two lists of
 external momenta. They also carry the zero points, the symmetry rules and the parity constraints
 discussed below.
 
 \begin{itemize}
 \item A cyclic massive full, massive cross or massless full propagator carries
-$\{b_e,n_{e,1},n_{e,2}\}$: the power $b_e$ and the two state powers.
+$\{b_e,n_{e,1},n_{e,2}\}$: the power $b_e$ and the two state powers. The three integers are the
+propagator indices of refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp}; in this paper they are
+called the propagator power and the state powers.
 \item A cyclic massless cross propagator contributes $\{b_e,0,0\}$. It is a single exponential
 product, so it has no discrete state.
 \item A fixed propagator contributes $\{\texttt{"F"},n_{e,1},n_{e,2}\}$: no propagator power, and
-its magnitude power sits in $N_s$.
+its magnitude power is collected in $N_s$.
 \item A shrunk propagator contributes $\{b_{S,e}\}$, or $\{\texttt{"F"}\}$ when it was already
 fixed. The power $b_{S,e}$ is kept by $N_s$.
 \end{itemize}
@@ -303,8 +312,9 @@ fixed. The power $b_{S,e}$ is kept by $N_s$.
 The zero points belong to the declaration. A case supplies them through the key
 \texttt{zeroPointRules}, as rules for $a0_v$ and $b0_e$. Two settings of this key are used by the
 released examples. The sunrise and the mixed case keep them as free regulator symbols, for example
-$a0_v=\alpha_v$ and $b0_e=\beta_e$. The pure massive bubble fixes them instead: for a propagator of mass
-index $\nu$ under the \texttt{"h"} preset of section~\ref{sec:dynamics} it takes $b0_e=-2\nu$, and at
+$a0_v=\alpha_v$ and $b0_e=\beta_e$. The pure massive bubble fixes them instead: for a propagator of
+mass parameter $\nu$ under the \texttt{"h"} preset of section~\ref{sec:dynamics} it takes
+$b0_e=-2\nu$, and at
 the vertices it takes $a0_v=2\nu+\texttt{analyticRegulator}$. The last symbol is kept during seed
 generation and set to zero afterwards. It is what the initialization audit of
 section~\ref{sec:init} asks for when the small-time leading powers of a family reach a divergent
@@ -317,7 +327,8 @@ $\pm1$ and never touch the zero points.
 Every massive propagator is assigned a second-order function system
 $f''+P(x)f'+Q(x)f=0$. Its variable is $x=-\xi\tau$, the negative of the product of the momentum
 magnitude $\xi$ of the propagator and the vertex time $\tau$, and primes are derivatives with respect to
-$x$. Section~\ref{sec:dynamics} lists the presets. A massive propagator $e$ with mass index $\nu_e$
+$x$. Section~\ref{sec:dynamics} lists the presets. A massive propagator $e$ with mass parameter
+$\nu_e$
 and the \texttt{"h"} preset $P_{\mathrm h}(x)=(2\nu_e+1)/x$,
 $Q_{\mathrm h}(x)=1$ has Hankel blocks at each of its two vertices that span a two-dimensional space.
 The space is
@@ -338,7 +349,7 @@ this reduction by construction: the generated seeds contain only $n_{e,i}\in\{0,
 \paragraph{Massless quotient.}
 A massless full propagator $e$ between the ordered vertices $u$ and $v$ does not distinguish its two
 endpoints. Let $\Delta=\tau_u-\tau_v$ and let $q$ be the magnitude of its momentum. Its kernel is
-built from the two blocks
+built from the two functions
 \begin{equation}
 \begin{split}
 M_0={}&\theta(\Delta)\,e^{-\mathrm{i}\sigma q\Delta}
@@ -357,19 +368,24 @@ F_{00}=M_0,\qquad F_{10}=M_1,\qquad
 F_{01}=-F_{10},\qquad F_{11}=-F_{00},
 \label{eq:masslessQuotient}
 \end{equation}
-so only the two representatives $F_{00}$ and $F_{10}$ are independent. The pack of such a propagator still
-keeps both labels, and each of them takes the values $0$ and $1$. Seeds are generated for the two
+so only the two representatives $F_{00}$ and $F_{10}$ are independent. The pack of such a
+propagator still
+keeps both state powers, and each of them takes the values $0$ and $1$. Seeds are generated for the two
 representatives only, and a state produced by a derivative is reduced back with $n_{e,2}\to0$. This is
-an exact algebraic identification, not a sampling prescription.
+an exact algebraic identification, not a numerical sampling rule.
 
 \paragraph{Shrink rules.}
+In this paragraph, \emph{shrink} denotes the operation that
+refs.~\cite{Chen:2023iix,Chen:2024glu,Chen:2026dqp} call pinching, collapsing or a contact term.
 A massive propagator may be shrunk only in the \texttt{massiveFull} type and only when
 $n_{e,1}+n_{e,2}=1$. Then exactly one endpoint state is non-zero, and if $i$ is that endpoint the
 shrink multiplies the sector by the coefficient
-$-\chi_e(-1)^{n_{e,i}}C_e$, where $\chi_e=\pm1$ is fixed by the two vertex types and
-$C_e=\tfrac{4\mathrm{i}}{\pi}e^{\pi\,\mathrm{Im}\,\nu_e}$ is the Wronskian prefactor of the propagator. A
-massless full propagator shrinks with a $\mp2$ delta term and a $+2$ term, without a Wronskian
-prefactor and without label shifts. Several propagators may shrink at once when their theta supports
+$-\chi_e(-1)^{n_{e,i}}C_e$, where $\chi_e=+1$ for the $++$ type and $\chi_e=-1$ for the $--$ type,
+and $C_e=\tfrac{4\mathrm{i}}{\pi}e^{\pi\,\mathrm{Im}\,\nu_e}$ is the Wronskian prefactor of the propagator. A
+massless full propagator shrinks under the same condition $n_{e,1}+n_{e,2}=1$, and each of its
+endpoints contributes a single term: the coefficient is $-2(-1)^{n_{e,2}}$ at endpoint slot $1$ and
+$+2(-1)^{n_{e,2}}$ at endpoint slot $2$, without a Wronskian prefactor and without label shifts.
+Several propagators may shrink at once when their $\theta$ supports
 coincide at one vertex. Let $B_v$ be this set of propagators at the vertex $v$, and let $D_e$ denote the
 shrink coefficient of the propagator $e$ just given. The contact terms are then
 \begin{equation}
@@ -432,30 +448,31 @@ state. Only the exact state opens derivative generation.
 \subsection{Parity structure}
 \label{sec:parity}
 
-The characteristic discrete invariant of de Sitter IBP is the parity of the sum of the labels on a
-propagator. For every propagator $e$ that carries a propagator power $b_e$, that is for every propagator of the
+The discrete invariant of the dS IBP system is the parity of
+$b_e+n_{e,1}+n_{e,2}$ on a propagator. For every propagator $e$ that carries a propagator power
+$b_e$, that is for every propagator of the
 cycle skeleton, the quantity
 \begin{equation}
 p_e \;=\; b_e+n_{e,1}+n_{e,2} \pmod 2
 \label{eq:parity}
 \end{equation}
 is conserved by every time generator and every loop-momentum generator. A massless cross propagator has
-$n_{e,1}=n_{e,2}=0$, so its label is just $b_e$. A fixed propagator carries no propagator power, so it
+$n_{e,1}=n_{e,2}=0$, so its parity is just $b_e$. A fixed propagator carries no propagator power, so it
 enters no parity label, and the package rejects a constraint that names one. The default \texttt{"h"}
 and \texttt{"H"} shrinks of a massive propagator, defined in section~\ref{sec:dynamics}, leave the parity
 unchanged: such a shrink raises the power to $b_e+1$ and removes the single state power it consumes. A
 massless contact keeps the power at $b_e$, so it offsets the parity of the child sector by one, and
 several contacts accumulate modulo two. The package therefore does not apply a constraint to a sector
-below the top sector in its original form: it rewrites the constraint in the labels of that sector,
-using the power and zero-point shifts of its shrunk propagators, and it disables the filter when such a
-rewrite is not integral. The parity vector $(p_e)_e$ of the top sector therefore labels independent
-blocks of the IBP system of a family, and for a graph whose
+below the top sector in its original form. It rewrites the constraint in the powers of that sector,
+using the power and zero-point shifts of its shrunk propagators. When the rewrite is not integral, the
+parity filter is disabled. The parity vector $(p_e)_e$ of the top sector therefore labels the closed
+subsystems of the IBP system of a family, and for a graph whose
 propagators all lie on the cycle skeleton this is exactly the split stated by
 ref.~\cite{Chen:2026dqp}. For families with
 user-provided \texttt{parityConstraints} the package keeps only the seeds whose transported constraint
-vanishes. A constraint is written in the labels of \eqref{eq:parity}, for example
+vanishes. A constraint is written in the powers of \eqref{eq:parity}, for example
 $b_1+n_{1,1}+n_{1,2}\equiv0$ for the propagator with declaration index $1$; the declaration spells
-the same labels as \texttt{b[1]}, \texttt{n[1,1]} and \texttt{n[1,2]}. ISP indices receive no
+the same powers as \texttt{b[1]}, \texttt{n[1,1]} and \texttt{n[1,2]}. ISP indices receive no
 parity filter.
 
 \subsection{Massive function systems}
@@ -467,9 +484,9 @@ $f''+P(x)\,f'+Q(x)\,f=0$ in the variable $x=-\xi\tau$ of section~\ref{sec:family
 $Q_{\mathrm h}=1$. The package also accepts bare Hankel functions, the preset \texttt{"H"}, and
 general user systems $(P,Q,T,W)$.
 Let $T_e$ be the transport matrix of the fundamental system and $W_e$ its Wronskian. The package
-tracks the combination $W_T=\det(T)\,W$ through all shrinks. The theta-coincidence and Wronskian
+tracks the combination $W_T=\det(T)\,W$ through all shrinks. The $\theta$-coincidence and Wronskian
 shrink terms used by the time-IBP generators are derived from it. Ordinary derivatives of the
-kinematic coordinates never generate theta shrinks and never invoke $W_T$. The user chooses the
+kinematic coordinates never generate $\theta$ shrinks and never invoke $W_T$. The user chooses the
 convention
 once at initialization. The IBP generators, the derivative operators and the tree-level track all
 read the same compiled function system.
@@ -483,16 +500,16 @@ representation
 J[sectorKey_String, timeShifts_List, stateBits_List]
 \end{verbatim}
 Here the \emph{root topology} is the declared graph before any contact, and its propagator order is
-frozen for the whole family. The \texttt{sectorKey} records, for each propagator of the root
+fixed for the whole family. The \texttt{sectorKey} records, for each propagator of the root
 topology, whether it is full (1)
 or shrunk (0). The list \texttt{timeShifts} gives the time powers $a_v$ of the active vertices. The
 list \texttt{stateBits} gives one bit for each massive vertex state or massless quotient state, in
-the frozen order of the root propagators. There are no momentum generators, no propagator powers
+the fixed order of the root propagators. There are no momentum generators, no propagator powers
 and no ISPs. The magnitude powers of fixed propagators remain in $N_s$
 and still enter derivative generation. This track is for acyclic graphs only. A non-cyclic
 propagator inside a graph that does have a cycle stays on the loop track, where it is a fixed
-propagator. The massive-only time-only families are fully certified. A
-certification gate controls the remaining cases, and the public interface exposes no way around it.
+propagator. The formulas of the massive-only time-only families are fully checked. A
+check gate controls the remaining cases, and the public interface exposes no way around it.
 Families that contain massless full propagators are returned as \texttt{PendingRederivation}, and
 their recorded reason is \texttt{masslessQuotientFormulaNotCertified}.
 
@@ -503,7 +520,7 @@ their recorded reason is \texttt{masslessQuotientFormulaNotCertified}.
 \label{sec:init}
 
 A case is the named declaration described in section~\ref{sec:family}. Initialization runs a
-structural audit of the loop number,
+topology audit of the loop number,
 the registry of vertices and propagators and the external-momentum routing. It then runs the
 kinematic audit of
 section~\ref{sec:kinematics}. It also certifies the time-integration domain: if an integer shift of
@@ -520,7 +537,7 @@ Under-complete declarations abort the initialization. Over-complete ones allow s
 generation but disable derivatives and the inner-form rewriting. In the over-complete case common
 loop shifts are quotiented out through an affine basis \texttt{effectiveLoopExternalMomenta}.
 
-\subsection{Seeds and the IBP envelope}
+\subsection{Seeds and the IBP index ranges}
 \label{sec:seeds}
 
 The sectors of a family are ordered by how much of the declared graph they keep. The \emph{top
@@ -531,11 +548,11 @@ labels used below.
 receives all the time generators of its active vertices and all $L(L+K)$ loop-momentum generators.
 The massive vertex
 states are pre-reduced by the equation of motion \eqref{eq:eom}. Massless full propagators run over
-the two quotient representatives of \eqref{eq:masslessQuotient}. The discrete $n$ labels are
+the two quotient representatives of \eqref{eq:masslessQuotient}. The discrete state powers are
 eliminated, and the analytic seeds keep
 general continuous labels $a_v,b_e,b_{S,e}$ and general ISP indices. Each template is hash-sealed.
 Templates that the equation of motion and the canonicalization reduce to the identity $0=0$ are
-retained and audited rather than dropped. The canonicalization applies the symmetry rules of the
+retained and checked rather than dropped. The canonicalization applies the symmetry rules of the
 declaration, where the user names a vertex swap or an exchange of parallel propagators, together with
 built-in tadpole rules. A tadpole rule is available only for a self-loop whose reversal is a single
 loop-momentum inversion; it either exchanges the two endpoint states of that propagator or maps the
@@ -584,7 +601,7 @@ The pre-reduction stage freezes the candidate targets and lets the external redu
 masters. The command \texttt{DSUserMI} then attaches the user basis. It checks the global and the
 active rank, and it stores reversible pivot rules. The formal stage constructs the analytic
 derivative closure of the active basis \emph{before} any export. It refuses to write if internal
-helper symbols survive. Export manifests carry the SHA-256 identity of every artifact, and
+helper symbols survive. Export manifests carry the SHA-256 identity of every exported file, and
 \texttt{DSKiraImport} re-verifies the contents instead of trusting version strings. Kira accepts only
 real rational coefficients, so the serializer rewrites the momenta that must lie on the imaginary
 axis by the backend rule \texttt{k -> -I ik}, where \texttt{I} is the imaginary unit and \texttt{ik}
@@ -642,22 +659,25 @@ together with the form rewriters \texttt{rep2innerform}, \texttt{rep2outform} an
 and the first two arguments of \texttt{dqq} and \texttt{dqk} are loop-momentum and external-momentum
 indices. The last command expands a $J$ into its explicit integrand without
 integrating. The short signatures rely on the single registered topology. Explicit contexts should
-be used when several topologies are alive.
+be used when several topologies are registered.
 
 \subsection{Tree-level track}
 \label{sec:tree}
 
 The tree-level functions mirror the loop workflow:
 \begin{verbatim}
-treeSeeds = DSTreeSeeds[context];
-iterative = repIterative[treeSeeds, context];
-naiveIBP  = DSTreeNaiveIBP[treeSeeds, context];
-naiveDE   = DSTreeNaiveDE[naiveIBP, context];
-dlogDE    = DSTreeDLogDE[iterative, context];
+treeSeeds = DSTreeSeeds[integral, context];
+dlogDE    = DSTreeDLogDE[context];
+iterative = repIterative[target, end, context];
+naiveIBP  = DSTreeNaiveIBP[context, masters];
+naiveDE   = DSTreeNaiveDE[naiveIBP, variables];
 \end{verbatim}
+Here \texttt{integral} is a member of the \texttt{timeOnly} family, \texttt{masters} is the master
+list of \texttt{dlogDE}, and \texttt{end} fixes the target time powers of the iterative reduction.
 The iterative route substitutes the general derived formulas directly. The naive route reduces raw
-sampled IBP relations. The two routes must agree, and the package reports the flag
-\texttt{deRoutesAgree}. The tree-level differential equations have also been compared with the
+sampled IBP relations. When both routes are run, their residuals must vanish; the shipped tree
+example records this agreement as \texttt{deRoutesAgree -> True} in its summary. The tree-level
+differential equations have also been compared with the
 package MadStree \cite{MadStree:inpreparation}. MadStree evaluates tree-level cosmological
 correlators and builds its own $d\log$ differential equations. For a mixed three-vertex tree family
 with fifteen masters, the parameter derivatives
@@ -666,14 +686,15 @@ $\texttt{sE}1,\texttt{sE}2$ and the three vertex energies of the family. All sev
 derivatives closed, and the five
 $15\times15$ matrices agree entry by entry with the direct $d\log$ formula route of MadStree.
 Figure~\ref{fig:workflow} summarizes the two tracks and their connection to
-the external reducers. Appendix~\ref{app:api} lists the public functions with short descriptions.
+the external reducers. Table~\ref{tab:api} lists the public functions with short descriptions.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{figures/fig_workflow.pdf}
 \caption{The public workflow of \texttt{dSIBP}. Full (loop) families run from \texttt{DSInit}
-through the seed, envelope and linear-system stages to the two-stage Kira export and import and to
-the differential-equation layer. The command \texttt{DSUserMI} attaches the user basis between the
+through the seed, index-range and linear-system stages to the two-stage Kira export and import and
+to the differential-equation layer. The command \texttt{DSUserMI} attaches the user basis between
+the
 two reduction stages. Tree-level (\texttt{timeOnly}) families run through \texttt{DSTreeSeeds} and
 \texttt{repIterative} to \texttt{DSTreeDLogDE}, with the naive IBP route as an independent
 cross-check. The atomic generators \texttt{dtau}, \texttt{dqq}, \texttt{dqk} and \texttt{ds} are
@@ -692,27 +713,27 @@ workstation. The Kira inputs were written by \texttt{DSKiraExport}.
 \centering
 \includegraphics[width=0.97\textwidth]{figures/fig_examples.pdf}
 \caption{Example graphs. The fill colour of a vertex encodes its branch sign: black is $+$ and
-white is $-$. (a)~The two-loop sunrise of example~03: one massive full propagator of mass $\nu_1$
-and two massless full propagators between two $+$ vertices; both vertices declare the same
-vertex energy, written \texttt{kE}. (b)~The pure massive bubble of example~04: two massive full
-propagators
-of the same mass $\nu$ between two $-$ vertices with vertex energy $P_0$; the loop external momentum
-is $k$. (c)~The mixed bubble-plus-tree case of example~06: a massive full propagator of mass
-$\nu_1$ and a massless full propagator form the loop between $v_1$ and $v_2$, and a massless fixed
-propagator, a bridge, connects $v_2$ and $v_3$; the external legs carry $k_1+k_2$, $k_1$ and $k_2$.
-(d)~The
-two-vertex tree of example~05: a massive propagator of mass $\nu_{12}$ whose momentum $p_{12}$ is
-a no-loop magnitude.}
+white is $-$. (a)~The two-loop sunrise of example~03: one massive full propagator with mass
+parameter $\nu_1$ and two massless full propagators between two $+$ vertices; both vertices declare
+the same vertex energy, written \texttt{kE}. (b)~The pure massive bubble of example~04: two massive
+full propagators with the same mass parameter $\nu$ between two $-$ vertices with vertex energy
+$P_0$; the loop external momentum is $k$. (c)~The mixed bubble-plus-tree case of example~06: a
+massive full propagator with mass parameter $\nu_1$ and a massless full propagator form the loop
+between $v_1$ and $v_2$. A massless fixed propagator, a bridge, connects $v_2$ and $v_3$, and the
+external legs carry $k_1+k_2$, $k_1$ and $k_2$. (d)~The
+two-vertex tree of example~05: a massive propagator with mass parameter $\nu_{12}$ whose momentum
+$p_{12}$ is a no-loop magnitude.}
 \label{fig:examples}
 \end{figure}
 
 \paragraph{Sunrise (example 03).}
 The graph of figure~\ref{fig:examples}a has two vertices joined by three parallel propagators,
-hence $L=2$. Propagator~1 is a massive full propagator of mass $\nu_1$, and propagators~2 and~3
+hence $L=2$. Propagator~1 is a massive full propagator with mass parameter $\nu_1$, and
+propagators~2 and~3
 are massless full propagators. The loop
 momenta are $l_3$ and $k_{321}$, and the single loop external momentum is $k_L$. Thus $K=1$, and
 the loop Gram matrix gives the coordinate $\texttt{ss}11=|k_L|$. No no-loop magnitude is declared.
-Both vertices declare the same vertex energy, written $\mathtt{kE}$ in the case, and this is the
+Both vertices declare the same vertex energy, written \texttt{kE} in the case, and this is the
 second derivative variable.
 The top sector receives two time generators and $L(L+K)=6$ loop-momentum generators. Two ISPs are
 declared, $\mathrm{sp}[k_{321},l_3]$ and $\mathrm{sp}[l_3-k_{321}-k_L,l_3]$, each with range
@@ -728,23 +749,29 @@ The bubble of figure~\ref{fig:examples}b has two vertices on the $-$ branch. Its
 propagators carry the same mass $\nu$ and the loop momenta $q$ and $q-k$. The loop external
 momentum $k$
 gives the loop coordinate $\texttt{ss}11=|k|$. Both vertex energies are set to the parameter
-$P_0$, which is the second derivative variable. This example runs the full closed loop: seeds,
-envelope sweep, linear system, two-stage Kira export, external reduction, import, differential
+$P_0$, which is the second derivative variable. This example covers the full workflow: seeds,
+index-range sweep, linear system, two-stage Kira export, external reduction, import, differential
 equations and scaling check. The Kira workspace must lie outside the repository, and the package
 itself never starts Kira. The linear system is written at a fixed rational probe point for the
 dimension and the masses, while the differential equations keep $\texttt{ss}11$ and $P_0$ symbolic.
-The reduction closes with no unreduced target and returns nineteen master integrals. The two
+The reduction terminates with no unreduced target and returns nineteen master integrals. The two
 $19\times19$ differential-equation matrices in $d\log$ form reproduce those of
 ref.~\cite{Chen:2026dqp}: at the recorded exact point each of the three variable conventions agrees
-entry by entry, $361/361$. The scaling identities \eqref{eq:eulerMatrix} hold symbolically on the
+entry by entry, $361/361$. The comparison data are the supplementary matrices of that reference,
+and the benchmark directory of the package registers their SHA-256 identity. The reference
+construction orients the energy oppositely, $P_{\mathrm{ref}}=-P_0$, and the three conventions are
+the derivative with respect to the physical $P_0$, with respect to the backend variable
+$\texttt{ip0}$, related by $P_0=-\mathrm{i}\,\texttt{ip0}$, and with respect to
+$k_s=\texttt{ss}11$. The scaling identities \eqref{eq:eulerMatrix} hold symbolically on the
 same basis, with $53/53$ source-level identities and $19/19$ active-basis checks.
 
 \paragraph{Mixed bubble plus tree (example 06).}
-The most demanding released case is figure~\ref{fig:examples}c. Propagators~1 and~2 form the loop:
-propagator~1 is a massive full propagator of mass $\nu_1$, and propagator~2 is a massless full
-propagator. Propagator~3 is a massless fixed propagator, a bridge, between $v_2$ and $v_3$. It lies
+The largest released case is figure~\ref{fig:examples}c. Propagators~1 and~2 form the loop:
+propagator~1 is a massive full propagator with mass parameter $\nu_1$, and propagator~2 is a
+massless full propagator. Propagator~3 is a massless fixed propagator, a bridge, between $v_2$ and
+$v_3$. It lies
 outside the loop, so
-its pack carries no propagator power and its magnitude power sits in $N_s$. One external leg enters $v_1$ and carries
+its pack carries no propagator power and its magnitude power is collected in $N_s$. One external leg enters $v_1$ and carries
 $k_1+k_2$, and two external legs enter $v_3$ and carry $k_1$ and $k_2$. The vertex $v_2$ has no
 external leg. The declaration gives the three vertices the three independent energies
 $E_1,E_2,E_3$ of \eqref{eq:vertexPhase}, and these are derivative variables in their own right. The loop
@@ -754,9 +781,10 @@ even parity,
 $b_e+n_{e,1}+n_{e,2}\equiv0$ for $e=1,2$ in the labels of \eqref{eq:parity}, while the
 fixed propagator is excluded from the
 parity constraints. The parity-restricted family has eighty-one master integrals, and the generated
-system contains 818{,}217 relations. The external Kira reduction takes about 160\,s and closes with
-no unreduced target. The package then produces six $81\times81$ differential-equation matrices, one
-for each of the variables $\texttt{ss}11,\texttt{sE}1,\texttt{sE}2,E_1,E_2,E_3$, with no residual
+system contains 818{,}217 relations. The external Kira reduction takes about 160\,s and terminates
+with no unreduced target. The package then produces six $81\times81$ differential-equation matrices,
+one for each of the variables $\texttt{loopScale},\texttt{legScale1},\texttt{legScale2},E_1,E_2,E_3$
+of the redefined kinematic system described below, with no residual
 symbols. All $81/81$ source-level Euler and IBP identities vanish exactly. The reduction-based
 scaling certificate is evaluated at the recorded exact point, because all six scaling variables are
 fixed in the formal plan. The example also exercises the parameter redefinition
@@ -768,7 +796,8 @@ into $v_3$ with $\texttt{sp[p0,p0] -> E0\textasciicircum2}$. The example also ru
 over-complete and under-complete kinematic audits.
 
 \paragraph{Two-vertex tree (example 05).}
-A massive propagator of mass $\nu_{12}$ connects two $+$ vertices, figure~\ref{fig:examples}d.
+A massive propagator with mass parameter $\nu_{12}$ connects two $+$ vertices,
+figure~\ref{fig:examples}d.
 There is no loop momentum. The momentum $p_{12}$ of this propagator is declared as an independent
 no-loop momentum, so the package builds the coordinate $\texttt{sE}1=|p_{12}|$. The
 \texttt{timeOnly} family has the two sector keys \texttt{"1"} and \texttt{"0"}, for the full and
@@ -788,7 +817,7 @@ It runs the unified public entry through the discrete templates, the continuous 
 linear system. It builds the pre-reduction plan in memory without exporting or running Kira.
 Example~02 supplies a bare Hankel function system $(P,Q,T,W)$ instead of the \texttt{"h"} preset.
 The package compiles it through the same public workflow and generates the seeds of the
-corresponding family. Together the two examples cover the initialization, the envelope sweep and
+corresponding family. Together the two examples cover the initialization, the index-range sweep and
 the function-system interface of sections~\ref{sec:using} and~\ref{sec:dynamics}.
 
 \section{Summary and outlook}
@@ -796,7 +825,8 @@ the function-system interface of sections~\ref{sec:using} and~\ref{sec:dynamics}
 
 \texttt{dSIBP} turns the canonical IBP structure of de Sitter time integrals into a practical
 \textsc{Mathematica} tool. From a graph declaration it produces sealed canonical seeds,
-backend-neutral linear systems, Kira and Rational-Tracer export manifests with artifact identities,
+backend-neutral linear systems, Kira and Rational-Tracer export manifests with SHA-256 file
+identities,
 differential equations and scaling checks. It accepts arbitrary topologies that mix massive and
 massless propagators of all four Schwinger--Keldysh types. The parity-split structure, the massive
 equation-of-motion reduction and the massless quotient are applied by construction, so the user
@@ -819,22 +849,28 @@ We thank the developers of Kira \cite{Maierhofer:2017gsa,Klappert:2020nbg}, Rati
 \section{Public functions}
 \label{app:api}
 
+\begin{table}[t]
+\centering
+\caption{Public functions of the package.}
+\label{tab:api}
 \renewcommand{\arraystretch}{1.15}
-\begin{center}
 \begin{tabular}{p{4.3cm}p{9.8cm}}
-\hline
+\toprule
 \textbf{Function} & \textbf{Description} \\
-\hline
-\texttt{DSInit} & initialize a case; structural, kinematic and time-domain audits; returns the
+\midrule
+\texttt{DSInit} & initialize a case; topology, kinematic and time-domain audits; returns the
 context. \\
+\texttt{DSInfo} & brief or full information about the initialized context. \\
 \texttt{DSKinematics} & two-stage kinematic proposal and validation. \\
 \texttt{DSParameterNotation} & inspect the current parameter notation. \\
 \texttt{DSRedefineParameters} & re-initialize the context with a new complete set of kinematic
 rules. \\
+\texttt{DSMessagesOn},\newline\texttt{DSMessagesOff},\newline\texttt{DSMessagesQ} & switch and query
+the optional messages; fatal errors always stay on. \\
 \texttt{DSSeeds} & canonical seed templates of a family. \\
 \texttt{DSAllSeeds} & flattened seed template list. \\
 \texttt{DSSeedGroups},\newline\texttt{DSSeedGroupMetadata} & grouping of the templates by sector, class and generator. \\
-\texttt{DSMetaSeedRange} & per-group shift metadata for envelope planning. \\
+\texttt{DSMetaSeedRange} & per-group shift metadata for range planning. \\
 \texttt{DSGenerateIBP} & sweep continuous indices; sealed IBP relations. \\
 \texttt{DSLinear} & backend-neutral linear system (\texttt{linearData}). \\
 \texttt{DSReorderIntegrals} & re-index the master-integral ordering. \\
@@ -852,9 +888,11 @@ rules. \\
 \texttt{rep2innerform},\newline\texttt{rep2outform} & notation rewriters between user and internal forms. \\
 \texttt{rep2Integrand} & expand $J$ into the explicit integrand. \\
 \texttt{symmetry} & apply the user and built-in tadpole symmetry rules of section~\ref{sec:seeds}. \\
-\hline
+\texttt{repSymmetry0} & the raw user symmetry rules of the topology input. \\
+\texttt{DSPublicAPI} & the registry of public functions used by this table. \\
+\bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
 \bibliographystyle{JHEP}
 \bibliography{references}
