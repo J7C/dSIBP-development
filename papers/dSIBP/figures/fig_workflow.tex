@@ -1,60 +1,45 @@
-% The two workflows of dSIBP: the full loop-momentum workflow (upper chain) and the
-% time-only tree workflow (lower chain). The reduction backend runs outside the package.
+% Public workflows; external Kira stages are shown explicitly.
 \documentclass[tikz,border=8pt]{standalone}
-\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usetikzlibrary{arrows.meta,positioning,calc}
 \begin{document}
 \begin{tikzpicture}[
-  node distance=6mm and 5.5mm,
-  box/.style={draw,rounded corners=1pt,align=center,inner sep=3pt,font=\small\ttfamily},
-  ext/.style={draw,dashed,rounded corners=1pt,align=center,inner sep=3pt,font=\small},
-  grp/.style={draw,gray,rounded corners=2pt,inner sep=4pt},
+  box/.style={draw,rounded corners=1pt,align=center,inner sep=5pt,font=\small\ttfamily,minimum width=30mm,minimum height=11mm},
+  ext/.style={box,dashed,font=\small},
   arr/.style={-{Latex[length=2mm]},thick},
-  note/.style={font=\footnotesize,align=center},
-  yscale=1.0
+  note/.style={font=\small,align=center}
 ]
-% ---------- upper chain: full mode ----------
-\node[box] (init) {DSInit};
-\node[box,right=of init] (seeds) {DSSeeds\\DSAllSeeds};
-\node[box,right=of seeds] (gen) {DSGenerateIBP};
-\node[box,right=of gen] (lin) {DSLinear};
-\node[box,right=of lin] (plan) {DSKiraPlan};
-\node[box,right=of plan] (exp) {DSKiraExport};
-\node[ext,right=of exp] (kira) {external reduction\\(Kira)};
-\node[box,right=of kira] (imp) {DSKiraImport};
-\node[box,right=of imp] (de) {DSDE};
-\node[box,right=of de] (scale) {DSScaleCheck};
+\node[box] (init) at (0,0) {DSInit};
+\node[box] (seeds) at (4,0) {DSSeeds\\DSAllSeeds};
+\node[box] (gen) at (8,0) {DSGenerateIBP};
+\node[box] (lin) at (12,0) {DSLinear};
 \draw[arr] (init) -- (seeds);
 \draw[arr] (seeds) -- (gen);
 \draw[arr] (gen) -- (lin);
-\draw[arr] (lin) -- (plan);
-\draw[arr] (plan) -- (exp);
-\draw[arr] (exp) -- (kira);
-\draw[arr] (kira) -- (imp);
+\node[box] (pre) at (12,-2) {DSKiraPlan\\DSKiraExport};
+\node[ext] (discover) at (8,-2) {external Kira\\master discovery};
+\node[box] (usermi) at (4,-2) {DSUserMI};
+\node[box] (formal) at (0,-2) {DSKiraPlan\\DSKiraExport};
+\draw[arr] (lin) -- node[note,right] {pre-reduction} (pre);
+\draw[arr] (pre) -- (discover);
+\draw[arr] (discover) -- (usermi);
+\draw[arr] (usermi) -- (formal);
+\node[ext] (reduce) at (0,-4) {external Kira\\target reduction};
+\node[box] (imp) at (4,-4) {DSKiraImport};
+\node[box] (de) at (8,-4) {DSDE};
+\node[box] (scale) at (12,-4) {DSScaleCheck};
+\draw[arr] (formal) -- node[note,left] {formal} (reduce);
+\draw[arr] (reduce) -- (imp);
 \draw[arr] (imp) -- (de);
 \draw[arr] (de) -- (scale);
-\node[note,above=1.2mm of seeds] {general seed templates};
-\node[note,above=1.2mm of lin] {backend-neutral \texttt{linearData}};
-% user MI attachment
-\node[box,below=7mm of plan] (usermi) {DSUserMI};
-\draw[arr] (lin.south) |- ($(usermi.west)+(-3mm,0)$) -- (usermi.west);
-\draw[arr] (usermi.east) -| ($(imp.south)+(0,-3mm)$) -- (imp.south);
-\node[note,below=0.5mm of usermi] {attach ordered user basis};
-% ---------- lower chain: time-only tree workflow ----------
-\node[box,below=17mm of init] (tseeds) {DSTreeSeeds};
-\node[box,right=of tseeds] (iter) {repIterative};
-\node[box,right=of iter] (tdlog) {DSTreeDLogDE};
-\node[box,right=of tdlog,xshift=8mm] (tnaive) {DSTreeNaiveIBP};
-\node[box,right=of tnaive] (tnaivede) {DSTreeNaiveDE};
-\draw[arr] (tseeds) -- (iter);
-\draw[arr] (iter) -- (tdlog);
-\draw[arr] (tseeds.east) to[out=-15,in=195,looseness=1.4] (tnaive.west);
-\draw[arr] (tnaive) -- (tnaivede);
-\node[note,right=1mm of tnaivede,align=left] {direct dlog route\\naive IBP route};
-\node[note,above=1.2mm of tseeds] {\texttt{ibpMode->"timeOnly"}};
-% ---------- atomic operators annotation ----------
-\node[note,align=left,anchor=west] at ($(tseeds.west)+(-44mm,-6mm)$)
-  {atomic generators (seed level)\\
-   \texttt{dtau}, \texttt{dqq}, \texttt{dqk}, \texttt{ds}};
-\draw[gray,thin,-{Latex[length=1.6mm]}] ($(tseeds.west)+(-19mm,-4.5mm)$) to[out=30,in=200] ($(tseeds.west)+(-1mm,-1mm)$);
+\node[note,anchor=west] at (-1.5,-5.2) {Massive-only tree formulas (\texttt{timeOnly} context)};
+\node[box] (tseeds) at (0,-6.2) {DSTreeSeeds};
+\node[box] (iter) at (4,-6.2) {repIterative};
+\node[box] (tdlog) at (8,-6.2) {DSTreeDLogDE};
+\node[note] at (12,-6.2) {direct formulas};
+\node[box] (naive) at (4,-7.8) {DSTreeNaiveIBP};
+\node[box] (naivede) at (8,-7.8) {DSTreeNaiveDE};
+\draw[arr] (naive) -- (naivede);
+\node[note] at (12,-7.8) {sampled IBP route};
+\node[note] at (6,-9) {Atomic operators: \texttt{dtau}, \texttt{dqq}, \texttt{dqk}, \texttt{ds}};
 \end{tikzpicture}
 \end{document}
