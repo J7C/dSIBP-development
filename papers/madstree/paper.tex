@@ -20,7 +20,6 @@
 \numberwithin{table}{section}
 
 
-\newcommand{\introrevision}[1]{{\color{red}\hypersetup{citecolor=red}#1}}
 \setlength{\emergencystretch}{2em}
 \sloppy
 \newcommand{\shift}{\qquad~~}
@@ -48,12 +47,18 @@
 \def\ie{\begin{equation}\begin{aligned}}
 \def\fe{\end{aligned}\end{equation}}
 \def\ma{\mathcal}
-\title{MadStree: automated numerical evaluation of tree-level de Sitter correlators}
+\title{MadStree: automated evaluation of tree-level de Sitter correlators}
 \author[a,b]{Jiaqi Chen}
-\author[d]{Dong Zhang}
+\author[c,d]{Yi-Xiao Tao}
+\author[e]{Xinyi Wang}
+\author[f]{Dong Zhang}
+
 \affiliation[a]{Beijing Key Laboratory of Optical Detection Technology for Oil and Gas, China University of Petroleum-Beijing, Beijing 102249, China}
 \affiliation[b]{Basic Research Center for Energy Interdisciplinary, College of Science, China University of Petroleum-Beijing, Beijing 102249, China}
-\affiliation[d]{Tianjin University}
+\affiliation[c]{Institute for Theoretical and Mathematical Physics, Lomonosov Moscow State University, Moscow 119991, Russia}
+\affiliation[d]{Department of Mathematical Sciences, Tsinghua University, Beijing 100084, China}
+\affiliation[e]{Nanophotonics and Biophotonics Key Laboratory of Jilin Province, School of Physics, Changchun University of Science and Technology, Changchun 130022, China}
+\affiliation[f]{Tianjin University}
 \emailAdd{jiaqichen@cup.edu.cn}
 \emailAdd{yanyandreamer@tju.edu.cn}
 
@@ -62,7 +67,9 @@
 \abstract{
 \texttt{MadStree} is a Mathematica package for the automated numerical evaluation of
 scalar cosmological correlators of arbitrary tree topology in de~Sitter space. Starting from
-a diagram, it constructs integration-by-parts relations, a d log-form differential equation
+a diagram, it constructs the closed reduction system of the resulting family ---
+integration-by-parts relations that reduce any integral of the family to master integrals ---
+together with a d log-form differential equation
 and boundary data, then evaluates the master integrals along a user-specified kinematic path.
 Building on the general IBP and differential-equation formulas, we use additional relations
 of massless internal propagators to eliminate redundant master integrals while retaining
@@ -93,7 +100,7 @@ In de~Sitter (dS) space, the in-in Feynman rules express scalar tree correlators
 time integrals containing Hankel functions, external-energy exponentials and time-ordering
 theta functions~\cite{Weinberg:2005vy,Chen:2017ryl}. Many analytic methods have been developed \cite{Arkani-Hamed:2018kmz,Baumann:2019oyu,Baumann:2020dch,Pajer:2020wnj,Pajer:2020wxk,Cabass:2021fnw,Baumann:2022jpr,Pimentel:2022fsc,Jazayeri:2022kjy,Wang:2022eop,Qin:2023ejc,Aoki:2024uyi,Liu:2024str,Xianyu:2025lbk,Chen:2023xlt,Tao:2022nqc,Chen:2023bji,Sleight:2019mgd,Sleight:2019hfp,Sleight:2020obc,Sleight:2021plv,Premkumar:2021mlz,Qin:2022lva,Qin:2022fbv,Xianyu:2023ytd,Qin:2024gtr,Marolf:2010zp,Xianyu:2022jwk,Loparco:2023rug,Werth:2024mjg,Qin:2025xct,Zhang:2025nzd,Altshuler:2025qmk,Liu:2024xyi,Das:2026vfv}, including the cosmological bootstrap, Mellin techniques and spectral decompositions. See also \cite{Wang:2021qez,Werth:2023pfl,Pinol:2023oux,Werth:2024aui,Chen:2023iix,Chen:2024glu} for some recent progress in numerical methods.
 
-We use a different approach, widely used in precision calculations in
+We use a different approach, which is widely used in precision calculations in
 flat-spacetime QFT: Integration-By-Parts (IBP) relations \cite{Chetyrkin:1981qh} and the
 differential equations (DE) that they induce \cite{Kotikov:1990kg,Kotikov:1991pm,Bern:1993kr,Gehrmann:1999as}.
 An IBP relation is a linear relation within an integral family. A sufficient set of these
@@ -126,8 +133,14 @@ We derive closed recurrences and a d log-form connection directly on this reduce
 (Secs.~\ref{sec:ibp} and \ref{sec:dlog}). This reduces the size of the system to be transported
 without requiring a separate IBP solve for each diagram.
 
-Second, we automate the calculation from a tree specification to numerical master-integral
-values. Following the hierarchical energy limit of \cite{Chen:2024glu}, we construct the
+Second, we automate the reduction and the numerical evaluation for arbitrary tree families.
+From the tree specification, the package derives the closed reduction system of the family:
+every convergent integral --- any contact sector and any integer shifts of the time powers ---
+reduces to the master basis through closed recurrence formulas; the divergent configurations
+are handled by the analytic regulator described below. The time integrals of loop
+graphs at fixed internal momenta form families of the same kind and reduce the same way,
+extended by the common-theta contacts that cycles require (Sec.~\ref{sec:common-theta}).
+Following the hierarchical energy limit of \cite{Chen:2024glu}, we construct the
 boundary data for general tree topology: at leading order, the energy hierarchy fixes the
 theta functions and the resulting factorized integrals supply Gamma-function coefficients.
 Auxiliary energies include vertices without external legs in the same construction
@@ -139,14 +152,15 @@ The package name \texttt{MadStree} stands for \emph{Mad dS tree}. It implements 
 reduced formulas and the numerical workflow in Mathematica, with \texttt{FlintNDE} as its
 bundled numerical backend. For each specified Schwinger--Keldysh contour assignment, the
 input gives the tree topology, propagators, vertex energies and time powers. The package
-constructs the master system and boundary data and returns values along the requested path;
+constructs the master system, the differential equation and boundary data, and returns values
+along the requested path;
 forming a physical correlator requires the contour sum and normalization factors appropriate
 to the model. The construction applies to the scalar Hankel and exponential integral families
 defined in Sec.~\ref{sec:notation}.
 
-The same framework also evaluates the time integrals of loop graphs without performing the
-spatial loop-momentum integrations. The bubble example in Sec.~\ref{sec:applications}
-illustrates this extension. For time integrals that require regularization, the package can
+Numerically, the same workflow covers these loop time integrals without performing the
+spatial loop-momentum integrations; the bubble example in Sec.~\ref{sec:applications}
+illustrates the extension. For time integrals that require regularization, the package can
 introduce a common analytic regulator on the vertex powers and determine the lowest Laurent power
 from the boundary and DE. It then reconstructs the coefficients numerically following the procedure
 used by AMFlow~\cite{Liu:2022chg,Huang:2026rjb}. The massless-chain
@@ -207,7 +221,7 @@ $G_\pm\propto(1\mp\ii k\tau)e^{\pm\ii k\tau}$, enter only as pure-exponential bl
 In $d=3$, a minimally coupled massless field has $\nu=3/2$ and a conformally coupled one has
 $\nu=1/2$; the two form one function family under the reduction, because the mode functions of
 every half-integer order are finite sums of exponentials multiplied by powers of $\tau$, and the
-recurrences of Sec.~\ref{sec:global} absorb the polynomial factors into shifted vertex time
+recurrences of Sec.~\ref{sec:iterative} absorb the polynomial factors into shifted vertex time
 powers. The master integrals therefore fix the massless blocks at $\nu=1/2$: every massless
 building block below carries this order. The Hankel
 functions obey
@@ -418,6 +432,14 @@ normalized connection, as described in Sec.~\ref{sec:remaining}.
 \label{sec:ibp}
 \label{sec:global}
 
+The building blocks assembled in this subsection drive the reduction: from them, the one-step
+relations of Sec.~\ref{sec:iterative} express an integral whose
+time power at one vertex is shifted by one unit in terms of integrals one step closer to the
+master value, and their iteration reduces shifted integrals of the family to the zero-shift
+masters. Three building blocks contribute --- the theta-free vertex
+exponential, the massive vertex $h$ block and the massless shared block; their relative
+normalization is fixed first.
+
 \paragraph{The relative normalization of the recurrences.}
 The recurrences below use the $+\nu$ convention and the $(-\tau)^{\nu_0}$ time power
 of \eqref{eq:vertex-integral-family}.
@@ -432,8 +454,8 @@ Each vertex $v$ carries exactly \emph{one} theta-free exponential factor,
 \begin{equation}
   E_v(\tau_v)=\exp\!\left(\ii\varsigma_v k_{0,v}\tau_v\right),
   \qquad
-  \varsigma_v=\begin{cases}-1,&v\ \text{is a ``+'' vertex},\\[2pt]
-  +1,&v\ \text{is a ``-'' vertex},\end{cases}
+  \varsigma_v=\begin{cases}-1,&v\ \text{is a $+$ vertex},\\[2pt]
+  +1,&v\ \text{is a $-$ vertex},\end{cases}
   \qquad p_{0,v}=\varsigma_vk_{0,v},
   \label{eq:phase-block}
 \end{equation}
@@ -460,13 +482,15 @@ their magnitudes to the same scalar, each with the contour sign of the vertex wh
 first sum alone is $p_{0,v}$, so for a one-vertex component \eqref{eq:component-energy} reduces to
 $p_{0,v}$ exactly when that vertex carries no theta-free propagator branch.
 
-Because $\dim\cE_v=1$, this block creates no mode-function state bit and no slot: it contributes nothing to
+Writing $\cE_v\simeq\mathbb C$ for the one-dimensional space of this exponential, the
+block creates no mode-function state bit and no slot: it contributes nothing to
 $\text{M}_1$ and contributes the scalar $\ii p_{0,v}\Id$ to $\text{M}_0$.
 
 \paragraph{Block (ii): the $h$ system of a massive propagator.}
 A massive propagator of order $\nu$ contributes, at each of the two vertices it joins, one mode-function two-state
 system
-\eqref{eq:h-definition} in the $\cH\simeq\mathbb C^2$ of generators
+\eqref{eq:h-definition}, with the two-dimensional space $\cH_i\simeq\mathbb C^2$ --- one factor per
+propagator end, indexed by $i$ in the graph below --- and the generators
 \eqref{eq:h-first-order-system}. This is the block of \cite{Chen:2023iix} unchanged, with $1-2\nu$
 replacing the printed $2\nu+1$. Only the branch $s\in\{1,2\}$, fixed by the SK type of the
 propagator, differs between the two vertices it joins, and it does not change the generator
@@ -482,7 +506,8 @@ $\cH_{e,u}\otimes\cH_{e,v}\simeq\mathbb C^4$ with, in the natural order,
   \bm{\text I}_e^{(4)}=(\text{I}_{00},\text{I}_{01},\text{I}_{10},\text{I}_{11})^T ,
   \label{eq:four-state}
 \end{equation}
-where the $\text{I}_{ab}$ are the integrals \eqref{eq:massless-four-states} below, in the convention
+where the $\text{I}_{ab}$ are the integrals defined by \eqref{eq:massless-relations} below, in the
+convention
 \eqref{eq:graph-index}.
 The graph-level matrices follow from the Leibniz rule. The integrand is a product of
 independent factors, one exponential per vertex and one first-order mode-function system per
@@ -504,7 +529,8 @@ vertex matrix is the sum of the embedded generators of the factors that depend o
   \fe
 Here $V_s$ is the set of active vertices of $s$, $H_v^{\,\rm unreduced}$ the mode-function
 two-state factors of the propagators ending on $v$ --- massive and massless alike, before the
-reduction below --- and $N_s$ their total number in $s$. These are the matrices of
+reduction below --- and $N_s$ their total number in $s$; the product carries one $\cE_v$ per active
+vertex and one $\cH_i$ per two-state factor. These are the matrices of
 \cite{Chen:2023iix} in our convention, with the $+\nu$ prefactor \eqref{eq:h-definition} and
 the $(-\tau)^{\nu_0}$ time power.
 
@@ -536,21 +562,14 @@ Its defining property is that the two branches carry \emph{opposite} signs in
 two vertices in both possible orders, one per theta term. Write $\sigma_e=+1$ for $G_{++}$ and
 $\sigma_e=-1$ for $G_{--}$. For a massless full propagator $e=(u_e,v_e)$ of momentum magnitude $q_e$,
 with $\tau_u\equiv\tau_{u_e}$ and $\tau_v\equiv\tau_{v_e}$, the four entries of
-\eqref{eq:four-state} are, for $G_{++}$,
+\eqref{eq:four-state} are, for both $G_{++}$ and $G_{--}$,
 \begin{equation}
-  \begin{aligned}
-  \text{I}_{ab}={}&\int_{-\infty}^{0}\!\!\dd\tau_u\!\int_{-\infty}^{0}\!\!\dd\tau_v\;\Phi_e\,
-  \theta_{uv}\,h^{(1)}\!\left(\tfrac12,a;-q_e\tau_u\right)h^{(2)}\!\left(\tfrac12,b;-q_e\tau_v\right)\\
-  &+\int_{-\infty}^{0}\!\!\dd\tau_u\!\int_{-\infty}^{0}\!\!\dd\tau_v\;\Phi_e\,
-  \theta_{vu}\,h^{(2)}\!\left(\tfrac12,a;-q_e\tau_u\right)h^{(1)}\!\left(\tfrac12,b;-q_e\tau_v\right),
-  \qquad a,b\in\{0,1\},
-  \end{aligned}
-  \label{eq:massless-four-states}
+  \text{I}_{00}=\text{I}_{11}=A_e+B_e,
+  \qquad
+  \text{I}_{10}=-\text{I}_{01}=\ii\sigma_e\left(A_e-B_e\right),
+  \label{eq:massless-relations}
 \end{equation}
-which is \eqref{eq:sk-propagators} written out in the $h$ mode-function state basis; for $G_{--}$ the two Hankel
-branches are exchanged inside each of the two terms. Here $\Phi_e$ collects every other factor of
-the integrand: the vertex exponentials of $u$ and $v$, their time powers, and the factors of all the
-remaining propagators. Name the two theta chambers of the propagator, taken undifferentiated,
+in terms of the two theta chambers of the propagator, taken undifferentiated,
 \begin{equation}
   \begin{aligned}
   A_e={}&\int_{-\infty}^{0}\!\!\dd\tau_u\!\int_{-\infty}^{0}\!\!\dd\tau_v\;\Phi_e\,\theta_{uv}\,
@@ -560,20 +579,20 @@ remaining propagators. Name the two theta chambers of the propagator, taken undi
   \end{aligned}
   \label{eq:chamber-integrals}
 \end{equation}
-where the branch pair of each chamber is the one carried by $G_{\sigma_e}$, so that
-\eqref{eq:massless-four-states} displays $A_e$ and $B_e$ at $\sigma_e=+1$. Raising the
-mode-function state at $u_e$ from $0$ to $1$ then multiplies $A_e$ by $+\ii\sigma_e$ and $B_e$ by
+which is \eqref{eq:sk-propagators} written out in the $h$ mode-function state basis: the branch pair
+of each chamber is the one carried by $G_{\sigma_e}$, so \eqref{eq:chamber-integrals} displays
+$G_{++}$, and $G_{--}$ exchanges the two Hankel branches inside each term. Here $\Phi_e$ collects
+every other factor of the integrand: the vertex exponentials of $u$ and $v$, their time powers, and
+the factors of all the remaining propagators. The relations \eqref{eq:massless-relations} follow
+because raising the
+mode-function state at $u_e$ from $0$ to $1$ multiplies $A_e$ by $+\ii\sigma_e$ and $B_e$ by
 $-\ii\sigma_e$, and raising it at $v_e$ multiplies them by $-\ii\sigma_e$ and $+\ii\sigma_e$: the sign
 of the eigenvalue \eqref{eq:h-branch-eigenvalues} is fixed by the branch, and the two chambers hold
-the two branches in opposite order. A derivative with respect to $\tau_u$ or $\tau_v$ is that
-replacement times $-q_e$, by \eqref{eq:h-definition}. Hence
-\begin{equation}
-  \text{I}_{00}=\text{I}_{11}=A_e+B_e,
-  \qquad
-  \text{I}_{10}=-\text{I}_{01}=\ii\sigma_e\left(A_e-B_e\right),
-  \label{eq:massless-relations}
-\end{equation}
-for both $G_{++}$ and $G_{--}$. Only two of the four mode-function states are therefore independent, but exactly
+the two branches in opposite order. The undifferentiated chambers themselves give the
+$\text{I}_{00}$ entry, a derivative with respect to $\tau_u$ or $\tau_v$ is the corresponding
+replacement times $-q_e$ by \eqref{eq:h-definition}, and differentiating both ends returns the
+$\text{I}_{11}$ entry because the two eigenvalues at one propagator multiply to $+1$.
+Only two of the four mode-function states are therefore independent, but exactly
 two: all four are built from the \emph{sum} and the \emph{difference} of the two chambers, and the two
 chambers are different objects, with complementary regions of time ordering and the two Hankel
 branches interchanged between $u$ and $v$. No constant $\lambda$ can relate
@@ -584,7 +603,9 @@ Differentiating therefore does not return the same integral up to a phase, as it
 made of a \emph{single} theta term: the theta-free massless branches of
 \eqref{eq:component-energy} are of that kind, which is why they collapse to one dimension and create
 no slot, while a full propagator keeps a genuine mode-function two-state factor. Choosing the shared mode-function two-state
-$\bm g_e=(\text{I}_{00},\text{I}_{10})^T\in\cM_e\simeq\mathbb C^2$, the constant embedding and
+$\bm g_e=(\text{I}_{00},\text{I}_{10})^T$ and writing $\cM_e\simeq\mathbb C^2$ for the
+two-dimensional space it spans --- the single slot that the massless full propagator $e$
+contributes to the graph ---, the constant embedding and
 projection are
 \begin{equation}
   \bm{\text I}^{(4)}_e=S_e\bm g_e,\qquad
@@ -614,8 +635,9 @@ and $v_e$ at once. The reduced space of a sector is
   \qquad \dim\cV_s=2^{|H(s)|+|E_m(s)|},
   \label{eq:reduced-space}
 \end{equation}
-where $H(s)$ is the set of mode-function two-state factors that the massive propagators of $s$ still contribute
-and $E_m(s)$ the set of its uncontracted massless full propagators.
+where $H(s)$ is the set of mode-function two-state factors that the massive propagators of $s$ still
+contribute, one space $\cH_i$ each, and $E_m(s)$ the set of its uncontracted massless full
+propagators, one shared space $\cM_e$ each.
 
 The theta-derivative contact vector $\bm\rho_e^{(4)}=(0,-1,+1,0)^T=S_e|1\rangle_e$
 fixes the shared-slot selector to $|1\rangle_e=(0,1)^T$ by \eqref{eq:SP-massless}.
@@ -811,6 +833,7 @@ number of the propagator, not to be confused with the shared mode-function state
 propagators counts as one vertex merge and not as $k$ (App.~\ref{app:theta}).
 
 \paragraph{Iterative reduction.}
+\label{sec:iterative}
 One step of the recurrence changes the shift $n_C$ of exactly one time component. A merged
 component is integrated over a single time, so the step reads the component's power and
 energy: below, $\nu_{0,v}$ and $p_{0,v}$ stand for $A_{C,s}$ of \eqref{eq:base-power} and
@@ -1279,6 +1302,17 @@ replaced by their mean, one mean per propagator.
 \section{Using the package}
 \label{sec:usage}
 
+The package turns the formulas of Sec.~\ref{sec:method} into a sequential workflow: initialize
+a family from an input specification, obtain its masters, reduction system and d log-form DE,
+then
+transport along a kinematic path with the bundled backend and, where the time integrals
+diverge, reconstruct the Laurent series in the analytic regulator. This section describes
+installation (Sec.~\ref{sec:overview}), the input formats and the functions of each stage
+(Sec.~\ref{sec:inputs}), the numerical interface with its bundled backend (Sec.~\ref{sec:numerics}),
+the Laurent reconstruction (Sec.~\ref{sec:regulator}) and the options with validation
+and common pitfalls (Sec.~\ref{sec:options}). Sec.~\ref{sec:examples-section} then exercises
+the workflow on the distributed examples.
+
 \subsection{Installation and loading}
 \label{sec:overview}
 
@@ -1337,6 +1371,12 @@ MSFlintNDEConfiguration[]["availableQ"]
 
 \subsection{Input formats and core functions}
 \label{sec:inputs}
+
+An initialized context is the root of the whole interface: the input specification fixes the
+family, and the masters, the reduction system and the d log-form DE are derived from it rather
+than re-specified. We first describe the three initialization formats --- trees, loop time
+integrals and single-vertex families --- together with the package conventions, then the core
+functions and the organization of their outputs.
 
 \paragraph{Tree diagrams: \texttt{MSInitTree}.}
 
@@ -1637,7 +1677,7 @@ time shift toward zero\\
   \item[\texttt{MSReduce[expr, context, MasterBasis -> Automatic]}] reduces finite linear
         combinations of legal \texttt{MSIntegral}s, or lists and nested tables of such
         expressions, by
-        the lowering/raising recurrences $A_\pm$ of Sec.~\ref{sec:global} along the
+        the lowering/raising recurrences $A_\pm$ of Sec.~\ref{sec:iterative} along the
         sub-sector structure of Sec.~\ref{sec:dlog}. The single step is exposed separately as
         \texttt{MSRecurrenceStep[integral, component, context]}, which moves one nonzero time
         shift of one component toward zero; with the component omitted it picks the first nonzero
@@ -2865,7 +2905,7 @@ and $25$ masters. No contracted propagator contributes a pinch factor in
 in this example are already defined in the package basis, $J_s=\text{I}_s$ here, and the
 propagated vector is $\bm{\text I}$ itself, without vertex contour factors.
 
-Before the regulator enters, the initialized context is already a complete reduction
+Before the regulator enters, the initialized context is already a closed reduction
 system, and \texttt{MSReduce} accepts shifted combinations of the integrals just defined.
 Taking the two integrals whose time powers lie one unit below the master powers, at
 vertex~1 and at vertex~2, and reducing their sum in one call,
@@ -2982,16 +3022,20 @@ The package was checked against independent references in the following verifica
 \section{Summary and outlook}
 \label{sec:summary}
 
-\texttt{MadStree} combines a reduced master representation with an automated numerical workflow
-for dS trees. The extra relations of a massless full propagator replace four combinations of its two mode-function states
+\texttt{MadStree} provides closed IBP reduction and automated numerical evaluation for arbitrary
+dS tree families: every convergent integral of a specified family reduces to its master basis through
+explicit recurrence formulas, and the same reduction covers the time integrals of loop graphs
+at fixed internal momenta. The master representation is kept small by the extra relations of a
+massless full propagator, which replace four combinations of its two mode-function states
 by one shared two-state factor. Applying these relations to the general construction of
 \cite{Chen:2023iix} gives closed IBP recurrences and a d log-form DE on the smaller space.
 The generic Hankel reduction and DE formulas remain applicable without this compression, but retain redundant
-states. For the equal-sign three-vertex chain, the reduced massless hierarchy has nine masters,
+states. For the equal-sign three-vertex chain, the compressed massless hierarchy has nine masters,
 compared with the 25 states of the generic hierarchy.
 
 For a specified tree and contour assignment, the package constructs the sectors, recurrence
-matrices, connection and boundary data without requiring intermediate formulas from the user.
+matrices, connection and boundary data, and reduces any integral of the family on request,
+without requiring intermediate formulas from the user.
 The boundary construction extends ordered large-energy limits to general tree topology,
 including vertices without external legs through auxiliary energies. Numerical transport with
 \texttt{FlintNDE} then supplies values along a kinematic path. The massive-tree benchmark
