@@ -4,13 +4,20 @@
 源码，也不读取项目外其它代码包。发布用户应先安装 `FlintNDE`，随后在任意调用目录直接
 `import flintnde`；路径变量只服务于尚未安装的仓库内开发示例。
 
-当前保留七个典型示例：
+当前保留八个典型示例：
 
 - `qnm_2x2.py`：统一 `u` 的 exact 2x2 一阶系统。分别从字面量 horizon `1` 和
   infinity `"inf"` 的 `{a,b,C}` 边界出发，输运到公共匹配点并检查另一端的禁戒分量；
-  同时运行一个轻微偏移频率作为反事实对照。
+  同时运行一个轻微偏移频率作为反事实对照。第三块从 horizon 单端输出 QNM 解全曲线：
+  tortoise 坐标 `r* = x+ln(x-1)` 均匀网格 `[-6,160]` 共 721 点（含精确 `x=4`）一次规划
+  执行，1e-10 相对精度；271 个规划节点覆盖全部请求点，585 点共享段 Taylor 系数（最大桶
+  32 点），双链端点差 1.5e-17，与独立规划 horizon 链在 `x=4` 一致到 5.2e-32；样本曲线
+  写入 `transport/qnm_2x2_curve_samples.json`。
 - `regular_singular_save.py`：标量正则奇点，从 `{a,b,C}` 起点输运到普通点，并保存可复用奇点边界和普通终点。
 - `exponential_boundary_save.py`：严格解耦的指数型奇点，从 `{phi,a,b,C}` 起点输运，保存并重新读入同一边界。
+- `exponential_polynomial_boundary.py`：三阶极点（本性奇点）的双 sector 对角系统，两条
+  `{phi,a,b,C}` 记录各含两项负幂的指数多项式相位；闭式解在终点为 `(e^{1/4}, e^{-11/6})`，
+  与输运结果做相对差检查。
 - `ep_parallel.py`：Python 入口对不同固定 `ep` 做有界多进程 NDE；`parallel_task_count`
   缺省 12，实际并行数自动取任务数与该值的较小者。
 - `ep_series_reconstruction.py`：从上游符号证书给出的 `leading_power=-1` 出发，自适应重构
@@ -31,6 +38,7 @@ python qnm_2x2.py
 python qnm_2x2.py --config ../config/qnm_u_unified_it0_3_it1_minus1.json
 python regular_singular_save.py
 python exponential_boundary_save.py
+python exponential_polynomial_boundary.py
 python ep_parallel.py
 python ep_series_reconstruction.py
 wolframscript -file ep_parallel_mathematica.wl
