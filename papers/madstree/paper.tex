@@ -2472,8 +2472,7 @@ pointwise evaluation times.
 
 The DE calculation uses 80 decimal digits and local Taylor series truncated at order 80.
 An independent transport at order 96 provides an internal stability check.
-For these benchmark runs, the physical boundary vectors are supplied by the independent
-V5.5 implementation of the true-infinity Frobenius expansion; \texttt{MadStree} constructs
+For these benchmark runs, \texttt{MadStree} constructs
 the DE and \texttt{FlintNDE} performs transport from the resulting finite boundary anchor.
 We compare batches of $N=1$, $10$, $50$ and $100$ target points on the slice in \eqref{eq:tree-slice}.
 For $N=1$, $10$ and $50$, transport starts at $q=0.1$ and ends at $q=10^{-4}$.
