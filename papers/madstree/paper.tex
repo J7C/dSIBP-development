@@ -93,15 +93,16 @@ In de~Sitter (dS) space, the in-in Feynman rules express scalar tree correlators
 time integrals containing Hankel functions, external-energy exponentials and time-ordering
 theta functions~\cite{Weinberg:2005vy,Chen:2017ryl}. Many analytic methods have been developed \cite{Arkani-Hamed:2018kmz,Baumann:2019oyu,Baumann:2020dch,Pajer:2020wnj,Pajer:2020wxk,Cabass:2021fnw,Baumann:2022jpr,Pimentel:2022fsc,Jazayeri:2022kjy,Wang:2022eop,Qin:2023ejc,Aoki:2024uyi,Liu:2024str,Xianyu:2025lbk,Chen:2023xlt,Tao:2022nqc,Chen:2023bji,Sleight:2019mgd,Sleight:2019hfp,Sleight:2020obc,Sleight:2021plv,Premkumar:2021mlz,Qin:2022lva,Qin:2022fbv,Xianyu:2023ytd,Qin:2024gtr,Marolf:2010zp,Xianyu:2022jwk,Loparco:2023rug,Werth:2024mjg,Qin:2025xct,Zhang:2025nzd,Altshuler:2025qmk,Liu:2024xyi,Das:2026vfv}, including the cosmological bootstrap, Mellin techniques and spectral decompositions. See also \cite{Wang:2021qez,Werth:2023pfl,Pinol:2023oux,Werth:2024aui,Chen:2023iix,Chen:2024glu} for some recent progress in numerical methods.
 
-A rather different approach, and the one taken in this paper, is the one that precision calculations in
-flat-spacetime QFT rely on: Integration-By-Parts (IBP) relations \cite{Chetyrkin:1981qh} and the
+We use a different approach, widely used in precision calculations in
+flat-spacetime QFT: Integration-By-Parts (IBP) relations \cite{Chetyrkin:1981qh} and the
 differential equations (DE) that they induce \cite{Kotikov:1990kg,Kotikov:1991pm,Bern:1993kr,Gehrmann:1999as}.
 An IBP relation is a linear relation within an integral family. A sufficient set of these
 relations reduces the family to master integrals; differentiation and reduction then give a
 closed system of first-order DE. A d log-form connection~\cite{Henn:2013pwa} exposes its
 singularities and supports numerical transport from boundary data. In flat space, FIRE
 \cite{Smirnov:2019qkx,Smirnov:2025prc} and Kira
-\cite{Maierhofer:2017gsa,Klappert:2020nbg,Lange:2025fba} automate IBP reduction, while DiffExp
+\cite{Maierhofer:2017gsa,Klappert:2020nbg,Lange:2025fba} automate IBP reduction, while generalized
+power series expansions~\cite{Moriello:2019yhu}, DiffExp
 \cite{Hidding:2020ytt} and the auxiliary mass flow method implemented in AMFlow
 \cite{Liu:2017jxz,Liu:2020kpc,Liu:2022chg,Huang:2026rjb} provide numerical evaluation.
 The determination of integrals from linear relations has also been developed
@@ -118,7 +119,7 @@ a systematic numerical implementation.
 
 We develop this framework in two directions. First, we incorporate the extra algebraic
 relations of massless internal propagators into the general reduction and DE formulas.
-The generic Hankel formulas already apply to these integrals, but retain redundant endpoint
+The generic Hankel formulas already apply to these integrals, but retain redundant mode-function
 states. For a time-ordered massless full propagator, the extra relations reduce four states
 to one shared two-state factor; a theta-free massless propagator contributes no state slot.
 We derive closed recurrences and a d log-form connection directly on this reduced space
@@ -143,12 +144,12 @@ forming a physical correlator requires the contour sum and normalization factors
 to the model. The construction applies to the scalar Hankel and exponential integral families
 defined in Sec.~\ref{sec:notation}.
 
-The same framework also evaluates the \emph{time integrals of loop graphs at fixed internal
-momenta}. It treats the shared time ordering of parallel propagators, but does not perform the
+The same framework also evaluates the time integrals of loop graphs without performing the
 spatial loop-momentum integrations. The bubble example in Sec.~\ref{sec:applications}
 illustrates this extension. For time integrals that require regularization, the package can
-introduce a common analytic regulator on the vertex powers, determine the lowest Laurent power
-from the boundary and DE, and reconstruct the coefficients numerically. The massless-chain
+introduce a common analytic regulator on the vertex powers and determine the lowest Laurent power
+from the boundary and DE. It then reconstructs the coefficients numerically following the procedure
+used by AMFlow~\cite{Liu:2022chg,Huang:2026rjb}. The massless-chain
 example demonstrates the extraction of a pole coefficient and a finite part.
 
 Sec.~\ref{sec:method} presents the method, including the boundary construction, with the
@@ -164,7 +165,7 @@ This section constructs the reduced master space, its IBP recurrences and d log-
 and the boundary data needed for numerical evaluation. We first define the integral family
 and conventions, then derive the local blocks and assemble them over the graph. The massless
 relations are imposed before assembly, so the formulas act directly on the reduced space.
-Quantities inherited from the generic endpoint basis of \cite{Chen:2023iix} carry the
+Quantities inherited from the generic mode-function basis of \cite{Chen:2023iix} carry the
 superscript ${\rm unreduced}$ of \eqref{eq:unreduced-space}. The boundary construction follows
 in Sec.~\ref{sec:boundary}. Finally, Sec.~\ref{sec:common-theta} extends the contact rules to
 several propagators sharing one theta function, as needed for time graphs with cycles.
@@ -202,7 +203,13 @@ and the time-ordered combinations used by the in-in rules are
 \end{align}
 Throughout, $\theta_{ij}\equiv\theta(\tau_i-\tau_j)$ denotes the theta function of the time
 difference of vertices $i$ and $j$. Bulk-to-boundary propagators of massless fields,
-$G_\pm\propto(1\mp\ii k\tau)e^{\pm\ii k\tau}$, enter only as pure-exponential blocks. The Hankel
+$G_\pm\propto(1\mp\ii k\tau)e^{\pm\ii k\tau}$, enter only as pure-exponential blocks.
+In $d=3$, a minimally coupled massless field has $\nu=3/2$ and a conformally coupled one has
+$\nu=1/2$; the two form one function family under the reduction, because the mode functions of
+every half-integer order are finite sums of exponentials multiplied by powers of $\tau$, and the
+recurrences of Sec.~\ref{sec:global} absorb the polynomial factors into shifted vertex time
+powers. The master integrals therefore fix the massless blocks at $\nu=1/2$: every massless
+building block below carries this order. The Hankel
 functions obey
 \begin{equation}
   \partial_\tau^2H^{(1,2)}_\nu(-k\tau)
@@ -252,7 +259,7 @@ mode-function states of one function system. We use the convention of the packag
 where $s\in\{1,2\}$ selects the Hankel branch and $n\in\{0,1\}$ selects the
 undifferentiated function or its first derivative. A superscript on $h$ always denotes the
 branch; when it is omitted, the statement applies to each branch separately. A massive
-propagator carries two independent endpoint bits, one at each vertex. The relations of
+propagator carries two independent mode-function state bits, one at each vertex. The relations of
 Sec.~\ref{sec:massless} reduce a massless full propagator ($G_{++}$ or $G_{--}$) to one
 shared two-state slot. A theta-free massless propagator ($G_{+-}$ or $G_{-+}$) contributes
 no state slot. The package works directly in these reduced spaces.
@@ -262,10 +269,9 @@ reflection identities $H^{(1)}_{-\nu}=e^{\ii\pi\nu}H^{(1)}_\nu$ and
 $H^{(2)}_{-\nu}=e^{-\ii\pi\nu}H^{(2)}_\nu$ carry each branch into itself, multiplied only by a
 $z$-independent phase; the two phases are inverse to one another, so a normalization built from the
 pair of branches, such as eq.~\eqref{eq:wronskian-h} below, is unaffected by the trade.
-Equivalently, with $\nu_{\rm ref}$ the symbol
-printed in those two papers, $\nu_{\rm ref}=-\nu$ \emph{everywhere at once} --- in the equation of
-motion below, in the Wronskian, in $\text{M}_1$, in the contact powers, in the recurrences and in the
-d log potentials. For a heavy field $\nu=\ii\mu$ with real $\mu$ this reduces to
+Writing $\nu_{\rm ref}$ for the order in those two papers, we set $\nu_{\rm ref}=-\nu$
+throughout: in the equation of motion below, the Wronskian, $\text{M}_1$, the contact powers,
+the recurrences and the d log potentials. For a heavy field $\nu=\ii\mu$ with real $\mu$ this reduces to
 $e^{-\pi\mu}H^{(2)}_{-\ii\mu}(z)=H^{(2)}_{\ii\mu}(z)$, and we shall use exactly this identity in
 Sec.~\ref{sec:remaining} to trade the conjugate-order basis at the two vertices of a contracted propagator
 in \cite{Chen:2024glu} for the common-order basis of the package.
@@ -300,7 +306,7 @@ one-vertex family (an $n$-fold Hankel vertex integral family) reads
   \end{aligned}
   \label{eq:vertex-integral-family}
 \end{equation}
-where the indices have the following meanings; the same conventions are reused for the whole graph:
+with the following index conventions, used throughout the graph:
 \begin{itemize}
   \item $\nu_0$ is the power of the vertex time, $s_i\in\{1,2\}$ is the Hankel branch chosen at
         leg $i$ by the SK type of the propagator that ends there, $a_i\in\{0,1\}$ is the \emph{mode-function state bit}
@@ -436,8 +442,7 @@ $e^{+\ii k_{0,v}\tau_v}$. Here $k_{0,v}$ is the
 \emph{single summed} external-energy parameter of the vertex, the sum of the magnitudes of the theta-free
 external legs attached to $v$; in the package it is the input field \texttt{externalLegEnergy}.
 Eq.~(3.1) of \cite{Chen:2023iix}
-likewise writes one $k_0$ per vertex, and we never introduce per-leg or per-block
-exponential parameters, nor any sum over them. A theta-free propagator branch is not folded into
+likewise writes one $k_0$ per vertex, with no separate exponential parameters for individual legs or blocks. A theta-free propagator branch is not folded into
 this symbol: it keeps its own magnitude, and that magnitude is added to the energy of whichever
 component holds the vertex it ends on. After a contact has merged a set $C$ of vertices
 into one component, the same scalar becomes the component energy
@@ -479,8 +484,12 @@ $\cH_{e,u}\otimes\cH_{e,v}\simeq\mathbb C^4$ with, in the natural order,
 \end{equation}
 where the $\text{I}_{ab}$ are the integrals \eqref{eq:massless-four-states} below, in the convention
 \eqref{eq:graph-index}.
-The unreduced full-graph space is the tensor product of all such mode-function two-state factors
-and of the one-dimensional vertex exponentials, and the corresponding vertex matrices are
+The graph-level matrices follow from the Leibniz rule. The integrand is a product of
+independent factors, one exponential per vertex and one first-order mode-function system per
+propagator end, so $\partial_{\tau_v}$ differentiates one factor at a time and every other
+factor is a spectator. Bookkeeping the states as a tensor product, with
+$\Emb_i(A)=\Id\otimes\cdots\otimes A\otimes\cdots\otimes\Id$ acting on the slot $i$ alone, each
+vertex matrix is the sum of the embedded generators of the factors that depend on $\tau_v$:
 \ie
   \cV_s^{\,\rm unreduced}
   &=\bigotimes_{v\in V_s}\cE_v\otimes\!\!
@@ -493,19 +502,13 @@ and of the one-dimensional vertex exponentials, and the corresponding vertex mat
   \text{M}_{0;v}^{\,\rm unreduced}
   &=\ii p_{0,v}\Id-\ii\sum_{i\in H_v^{\,\rm unreduced}}k_i\Emb_i(\sigma_2),
   \fe
-These reproduce \cite{Chen:2023iix} verbatim in our convention: the superscript ${\rm unreduced}$ means
-``the two mode-function states at each vertex of every propagator, massive or massless, form an independent
-mode-function two-state factor, with
-the $+\nu$ prefactor \eqref{eq:h-definition} and the $(-\tau)^{\nu_0}$ time power'',
-$H_v^{\,\rm unreduced}$ is the set of mode-function two-state factors contributed by the propagators that end on
-$v$ --- the unreduced analogue of the set $H_v(s)$ used on the reduced space below --- and $V_s$ is
-the set of active vertices of the sector $s$; $N_s$ counts the active mode-function two-state
-factors of $s$, i.e.\ the number of $\cH_i$ factors in the product of
-\eqref{eq:unreduced-space}.
-Here $\Emb_i(A)$ is the embedding of a local operator,
-$\Emb_i(A)=\Id\otimes\cdots\otimes A\otimes\cdots\otimes\Id$ with $A$ in the $i$-th factor.
+Here $V_s$ is the set of active vertices of $s$, $H_v^{\,\rm unreduced}$ the mode-function
+two-state factors of the propagators ending on $v$ --- massive and massless alike, before the
+reduction below --- and $N_s$ their total number in $s$. These are the matrices of
+\cite{Chen:2023iix} in our convention, with the $+\nu$ prefactor \eqref{eq:h-definition} and
+the $(-\tau)^{\nu_0}$ time power.
 
-Imposing the extra massless relations is what reduces these four mode-function states at the two vertices to one
+Imposing the extra massless relations reduces these four mode-function states at the two vertices to one
 shared mode-function two-state system.
 At the conformal value $\nu=1/2$ the positive-prefactor block degenerates: the two branches are pure
 exponentials, $h^{(1)}(\tfrac12,0;z)=-\ii\sqrt{2/\pi}\,e^{\ii z}$ and
@@ -525,11 +528,9 @@ derivative out explicitly,
   \end{aligned}
   \label{eq:h-branch-eigenvalues}
 \end{equation}
-For half-integer Hankel orders, the mode functions can be expanded into finite sums of
-exponentials multiplied by powers of time. Such terms can be expressed through the
-$\nu=1/2$ blocks with shifted vertex powers; this expansion must precede the use of the
-massless input representation. The quotient derived here acts on these pure exponential
-blocks, rather than on unexpanded mode functions of arbitrary half-integer order.
+Consistently with the fixed massless order of Sec.~\ref{sec:conventions}, the quotient derived
+here acts on the pure exponential blocks: an input propagator of another half-integer order must
+first be expanded into $\nu=1/2$ blocks with shifted vertex powers.
 Its defining property is that the two branches carry \emph{opposite} signs in
 \eqref{eq:h-branch-eigenvalues}, while a single \emph{full} propagator puts the two branches on its
 two vertices in both possible orders, one per theta term. Write $\sigma_e=+1$ for $G_{++}$ and
@@ -600,11 +601,9 @@ reduces to $P_eOS_e$. In particular
   P_e(\Id_2\otimes\sigma_2)S_e=-\sigma_2,
   \label{eq:endpoint-projections}
 \end{equation}
-so the two vertices joined by a massless full propagator act with \emph{the same} $\sigma_2$ on
-\emph{the same} two-dimensional slot, with opposite signs. This is the point of the reduction: the
-shared slot carries one bit $r_e$ that enters the mode-function state string of both vertices joined by $e$ and
-cannot be duplicated
-into two independent mode-function two-state factors. Consequently the full-graph tensor structure survives, but
+so the two vertices joined by a massless full propagator act with opposite signs of $\sigma_2$
+on one shared two-dimensional slot. Its bit $r_e$ enters the mode-function state string of both
+vertices joined by $e$; the slot cannot be duplicated into two independent mode-function two-state factors. Consequently the full-graph tensor structure survives, but
 the vertex-by-vertex factorization
 $\cV_s\stackrel{?}{=}\bigotimes_{v\in V_s}\cV_v$ fails, because $\cM_e$ cannot belong to both $u_e$
 and $v_e$ at once. The reduced space of a sector is
@@ -618,13 +617,10 @@ and $v_e$ at once. The reduced space of a sector is
 where $H(s)$ is the set of mode-function two-state factors that the massive propagators of $s$ still contribute
 and $E_m(s)$ the set of its uncontracted massless full propagators.
 
-The contact vector of a theta derivative is $\bm\rho_e^{(4)}=(0,-1,+1,0)^T$, and
-\eqref{eq:SP-massless} identifies it exactly as
-$\bm\rho_e^{(4)}=S_e|1\rangle_e$ with the fixed column $|1\rangle_e=(0,1)^T$; the contact selector of
-the shared slot therefore needs no further computation. What remains to fix is the numerical factor
-which this derivative carries at each of the two vertices. With the propagator sign $\sigma_e$ of
-\eqref{eq:massless-relations}, the two vertices $u_e$ and $v_e$, taken in that order, carry the
-\emph{contact weights}
+The theta-derivative contact vector $\bm\rho_e^{(4)}=(0,-1,+1,0)^T=S_e|1\rangle_e$
+fixes the shared-slot selector to $|1\rangle_e=(0,1)^T$ by \eqref{eq:SP-massless}.
+With the propagator sign $\sigma_e$ of \eqref{eq:massless-relations}, the vertices
+$u_e$ and $v_e$, in that order, carry the \emph{contact weights}
 \begin{equation}
   w_{e}^{(u_e)}=+2\ii\sigma_e,\qquad w_{e}^{(v_e)}=-2\ii\sigma_e,
   \label{eq:contact-weight}
@@ -675,16 +671,11 @@ $v$. Each building block then contributes to the vertex $v$ the pair of atoms
   &&\text{a massless propagator }(\nu=\tfrac12)\text{ at }v.
   \label{eq:massless-shared-block-M10}
 \end{align}
-The second row acts on a massive endpoint's two-state space at vertex $v$;
-the third acts on the shared two-state space of a massless full propagator in the
-$\nu=1/2$ representation.
-The massless row is written once for each of the two vertices: in
-\eqref{eq:massless-shared-block-M10}
-the factor $\epsilon_{ve}$ carries the sign with which the same operator $\Emb_e(\sigma_2)$ appears
-in the rows of $u_e$ and of $v_e$. A massless internal propagator does not enter $\text{M}_1$ at
-all: its $\nu=1/2$ makes $1-2\nu$ vanish identically in \eqref{eq:massive-h-block-M10}. The two
-complete matrices of a vertex $v$ in a sector $s$ are then the sum of these atoms, each embedded in
-the slot it acts on, together with the $\nu_{0,v}\Id_s$ of the vertex time power,
+The massive atom acts on the two-state space of a massive propagator, the massless atom on the
+shared slot, once per vertex with the sign $\epsilon_{ve}$; a massless propagator does not
+enter $\text{M}_1$ at all, its $\nu=1/2$ making $1-2\nu$ vanish identically. The complete
+matrices of a vertex $v$ in a sector $s$ are the sums of these atoms, each embedded in the slot
+it acts on, together with the $\nu_{0,v}\Id_s$ of the vertex time power,
 \begin{align}
   \text{M}_{1;v,s}(\nu_{0,v})
   &=\nu_{0,v}\Id_s+\Emb_{\cE_v}\!\left(\Delta\text{M}_{1}^{(E_v)}\right)
@@ -700,14 +691,11 @@ the slot it acts on, together with the $\nu_{0,v}\Id_s$ of the vertex time power
   +\sum_{e\in E_m(s)}\Emb_e(-\ii\epsilon_{ve}q_e\sigma_2).
   \label{eq:global-M0}
 \end{align}
-The first lines of \eqref{eq:global-M1} and \eqref{eq:global-M0} collect the atoms
-\eqref{eq:phase-block-M10}--\eqref{eq:massless-shared-block-M10} at $v$; the second lines insert them.
-The per-vertex form is what \eqref{eq:unreduced-space} already gives, and the reduction only
-replaces the two mode-function two-state factors at the two vertices of a massless propagator by one shared factor:
-$\partial_{\tau_v}$ acts
-on the blocks belonging to $v$ and on nothing else, so the vertex generators remain Kronecker
-\emph{sums} on the common space \eqref{eq:reduced-space} and different vertices meet only on a
-shared massless slot, where they carry the same $\sigma_2$ and opposite $\epsilon_{ve}$.
+The reduction only replaces the two mode-function two-state factors of a massless propagator by
+one shared factor: $\partial_{\tau_v}$ still acts only on the blocks belonging to $v$, so the
+vertex generators remain sums of embeddings on the common space \eqref{eq:reduced-space}, and
+different vertices meet only on a shared massless slot, where they carry the same $\sigma_2$
+and opposite $\epsilon_{ve}$.
 
 \subsection{d log-form differential equations}
 \label{sec:dlog}
@@ -760,10 +748,9 @@ with the energy letters
   +\sum_{e\in E_m(s)}\epsilon_{ve}(2r_e-1)q_e,
   \label{eq:global-energy-letter}
 \end{equation}
-in which $\bm a$ abbreviates the full bit string, massive bits $a_i$ and shared bits $r_e$
-together. The same $r_e$ enters the letters of $u_e$ and $v_e$ with opposite signs: this is the
-whole regular content of the correlation carried by one shared propagator, and it is why the letter set of a graph with
-shared slots is still a set of linear forms in the momenta. Only the mode-function states of massive propagators contribute to
+where $\bm a$ contains both massive bits $a_i$ and shared bits $r_e$.
+The same $r_e$ enters the letters of $u_e$ and $v_e$ with opposite signs, so the letters
+remain linear forms in the momenta even for graphs with shared slots. Only the mode-function states of massive propagators contribute to
 $\Omega_{\rm ex}$, because a massless slot has $1-2\nu=0$.
 
 $\text{M}_{1;v,s}$ is diagonal in the original basis and all $\text{M}_{0;v,s}$ are made of
@@ -824,13 +811,12 @@ number of the propagator, not to be confused with the shared mode-function state
 propagators counts as one vertex merge and not as $k$ (App.~\ref{app:theta}).
 
 \paragraph{Iterative reduction.}
-The recurrences are per vertex and per time component: every component $C$ of a sector has its own
-integer shift $n_C$, and one step changes exactly one of them. Since a merged component is
-integrated over a single time, the power and the energy that a step reads are those of the component,
-not of the individual vertex: the relations below are written with $\nu_{0,v}$ and $p_{0,v}$ standing
-for $A_{C,s}$ of \eqref{eq:base-power} and $p_{0,C}$ of \eqref{eq:component-energy} whenever $v$ has
-been merged into a larger $C$, and they become the vertex quantities exactly when $C=\{v\}$. The
-same reading applies to \eqref{eq:ndlogDE}--\eqref{eq:global-M0-diagonal}. Writing $\bm e_C$ for the
+One step of the recurrence changes the shift $n_C$ of exactly one time component. A merged
+component is integrated over a single time, so the step reads the component's power and
+energy: below, $\nu_{0,v}$ and $p_{0,v}$ stand for $A_{C,s}$ of \eqref{eq:base-power} and
+$p_{0,C}$ of \eqref{eq:component-energy} whenever $v$ lies in a larger $C$, and they become
+the vertex quantities exactly when $C=\{v\}$; the same reading applies to
+\eqref{eq:ndlogDE}--\eqref{eq:global-M0-diagonal}. Writing $\bm e_C$ for the
 unit vector of the component that contains $v$, the complete one-step IBP at $v$ is
 \begin{equation}
   -\text{M}_{1;v,s}(A_{C,s}+n_C)\,\bm{\text I}_s(\bm n-\bm e_C)
@@ -852,10 +838,7 @@ higher for the one at $\bm n+\bm e_C$, gives the two directions
 so $\bm{\text I}_s(\bm n\pm\bm e_C)$ is expressed in terms of $\bm{\text I}_s(\bm n)$ with only two
 diagonal inverses, up to $\cR$: the lowering step carries $+\text{M}_{1;v,s}^{-1}\cR_{v,s}(\bm n)$
 and the raising step
-$-\text{M}_{0;v,s}^{-1}\cR_{v,s}(\bm n+\bm e_C)$. Both signs are the opposite of the ones printed in
-\cite{Chen:2023iix}: there the explicit power is $\tau^A$ and the one-step relation
-carries $+\text{M}_1$, whereas \eqref{eq:one-step-ibp} carries $-\text{M}_1$ for the $(-\tau)^A$
-power of \eqref{eq:vertex-integral-family}. The lowering step is singular when an eigenvalue of $\text{M}_1$ vanishes,
+$-\text{M}_{0;v,s}^{-1}\cR_{v,s}(\bm n+\bm e_C)$. The lowering step is singular when an eigenvalue of $\text{M}_1$ vanishes,
 $A_{C,s}+n_C-\sum_ia_i(1-2\nu_i)=0$; this is a property of the mode-function states and the time
 powers, not of the kinematics, and the regulator of Sec.~\ref{sec:regulator} moves the solution away
 from this singular layer. The raising
@@ -867,8 +850,8 @@ count is exactly the number of such hypersurfaces.
 \label{sec:remaining}
 
 \paragraph{Two different remaining terms.}
-The contact term $\cR_{v,s}$ in \eqref{eq:one-step-ibp} depends on the shift at which it is
-evaluated, and the two directions must not be confused. If the lower time powers of the child sector
+The lowering and raising directions evaluate the contact term $\cR_{v,s}$ in
+\eqref{eq:one-step-ibp} at different shifts. If the lower time powers of the child sector
 $t\prec s$ are reduced first, one obtains the \emph{lowering} version
 \begin{equation}
   \cR_{v,s}^{(0)}\equiv\cR_{v,s}(\bm n),
@@ -984,12 +967,10 @@ vertex energies but can depend on the propagator momenta through factors such as
 $q_e^{2\nu_e-1}$. By the choice of base power, the child appears at vanishing shift;
 if an event leaves a nonzero shift, the recurrence is first applied inside the child.
 
-Now differentiate the masters with respect to the component energy. Differentiating
-$e^{\ii p_{0,C}\tau_C}$ brings down $\ii\tau_C$, and $\tau_C$ is minus the $(-\tau_C)$ that the
-explicit power counts, so one factor of $\tau_C$ becomes one unit of extra time power together with
-a factor $-\ii$:
-$\partial_{p_{0,C}}\text{I}_s(\bm n;\bm a)=-\ii\,\text{I}_s(\bm n+\bm e_C;\bm a)$, which is where the
-$(-\tau)^A$ power shows its sign. The raising row of \eqref{eq:one-step-ibp} at $\bm n=\bm 0$,
+Differentiating $e^{\ii p_{0,C}\tau_C}$ with respect to the component energy brings down
+$\ii\tau_C=-\ii(-\tau_C)$, raising the time power by one:
+$\partial_{p_{0,C}}\text{I}_s(\bm n;\bm a)=-\ii\,\text{I}_s(\bm n+\bm e_C;\bm a)$.
+The raising row of \eqref{eq:one-step-ibp} at $\bm n=\bm 0$,
 \begin{equation}
   \text{M}_{0;v,s}\,\bm{\text I}_s(\bm e_C)
   =\text{M}_{1;v,s}(\nu_{0,v}+1)\,\bm{\text I}_s(\bm 0)-\cR^{(1)}_{v,s}(\bm e_C),
@@ -1097,15 +1078,18 @@ through the signed energies and their chain rule, with no additional contour fac
 
 \subsection{Boundary conditions by nested blow-up}
 \label{sec:boundary}
-The last ingredient is the boundary condition in the large-energy limit. We define the
-\emph{damping energies} by $K_v\equiv\ii p_{0,v}=\ii\varsigma_vk_{0,v}$ and take
+The last ingredient is the boundary condition in the large-energy limit. Two mechanisms make
+it computable: the damping exponential localizes each time integral near $\tau_v=0$, where
+every factor except the thetas reduces to a power of $-\tau$, so each single-time integral
+becomes a Gamma function; and the strict energy rank fixes every theta to $0$ or $1$, so no
+theta couples two times and every master factorizes into a product of single-time integrals.
+We define the \emph{damping energies} by $K_v\equiv\ii p_{0,v}=\ii\varsigma_vk_{0,v}$ and take
 $k_{0,v}=-\ii\varsigma_vK_v$ with $K_v>0$. On these damping rays, the exponential of
 \eqref{eq:phase-block} becomes $e^{K_v\tau_v}$, and a merged component has
 $K_C=\ii p_{0,C}$. The package records the substitution as \texttt{dampingDefinition}
 in the vertex coordinates. The energy hierarchy below is understood on these rays,
 ordered by the positive damping energies.
-As $K_v\to\infty$, exponential suppression localizes the integral near $\tau_v=0$.
-Taken at face value this is one multivariate limit in
+The limit $K_v\to\infty$ is one multivariate limit in
 which all energies diverge together, and the point it approaches is in general a degenerate
 multivariate singularity of the differential equation: several singular divisors meet there, so a
 direct series expansion about that point is not allowed. Blowing the point up first makes the
@@ -1158,95 +1142,64 @@ inequality, for example
 then it is automatically zero in every strict-total-order chart, instead of producing a new
 boundary region.
 
-Applying the analysis above fixes every theta to $0$ or $1$ according to the strict energy order,
-so all master integrals --- in the top sector as well as in every subsector --- factorize into a
-product of one-dimensional time integrals, one per \emph{time component} of the sector: once the
-thetas are frozen, a component is integrated over its single time, and the legs it carries enter that
-one integral through their small-$\tau$ endpoint coefficients instead of producing further
-integrals. At the boundary $\tau\to0$ the massive legs behave like
+After the thetas are frozen, every master integral --- in the top sector as well as in every
+subsector --- factorizes into one one-dimensional time integral per \emph{time component} of the
+sector: a component is integrated over its single time, and the legs it carries enter that
+integral through their mode-function small-$\tau$ coefficients. A massive leg behaves like
 \eqref{eq:hankel-tau0} and a massless leg contributes its leading power or a pure exponential, so
-each one-dimensional integral has the form
+each single-time integral has the form
 $\int_{-\infty}^0\nd\tau\,(-\tau)^{A}e^{\ii K\tau}=(-\ii)^{A+1}\Gamma(A+1)K^{-A-1}$, which gives a
 Gamma function; worked examples of the resulting boundary data and of the blow-up charts are given
 in \cite{Chen:2024glu,Chen:2023iix}. The boundary conditions of all master integrals are therefore
 products of Gamma functions with some overall coefficients, as used in the numerical evaluation of
 Sec.~\ref{sec:numerics}.
 
-Only one power of \eqref{eq:hankel-tau0} enters each of these products, and which one enters also
-fixes what the boundary data do not contain. In the convention
+Each $h$ factor is expanded at small $\tau$ and integrated term by term. In the convention
 \eqref{eq:h-definition} the mode-function two-state block behaves as
 \begin{align}
   h^{(1)}(\nu,0;z)&=c_2\bigl(1+O(z^2)\bigr)+c_1z^{2\nu}\bigl(1+O(z^2)\bigr),\nn\\
   h^{(1)}(\nu,1;z)&=O(z)+2\nu\,c_1\,z^{2\nu-1}\bigl(1+O(z^2)\bigr),
   \label{eq:h-two-powers}
 \end{align}
-with $c_{1,2}$ as in \eqref{eq:hankel-tau0}, and the second Hankel branch has the same two powers with
-its own constants. For generic nonresonant orders, the constant branch anchors the
-undifferentiated mode-function state, while the $z^{2\nu-1}$ branch anchors the differentiated
-state. In the two-master single-vertex system, integration against the vertex power and
-exponential therefore gives the leading exponents $\nu_0+1$ and $\nu_0+2\nu_1$ in the
-inverse-energy variable. Under $\nu_{1,\rm ref}=-\nu_1$, these become the exponents
-$\nu_0+1$ and $\nu_0-2\nu_{1,\rm ref}$ in the negative-prefactor convention of
-\cite{Chen:2024glu}.
-The analytic correction to the constant branch contributes $O(z)$ to the differentiated
-state; the other branch contributes $z^{2\nu}$ to the undifferentiated state. Each is one
-integer power above the anchor of the other state, and hence enters the corresponding
-Frobenius solution at the next order. Ref.~\cite{Chen:2024glu} describes this separation
-after its eq.~(3.16). The package stores one leading record per
-master, as recalled in Sec.~\ref{sec:numerics}. The backend generates higher powers,
-logarithms and Jordan blocks from the exact residue matrix through its power-log recurrence.
-These are not boundary input. Beyond the leading coefficients, the boundary supplies linear
-constraints: the entry of the anchor master is fixed to one, and entries of masters not
-reached by that solution are fixed to zero. The remaining entries follow from a linear
-system. These constraints propagate leading subsector data into the masters of higher
-sectors. A master with a vanishing leading coefficient anchors no solution and produces no
-record. An unsolvable linear system is reported as a failure.
+with $c_{1,2}$ as in \eqref{eq:hankel-tau0} and $z=-k\tau$; the second Hankel branch has the
+same two powers with its own constants. For a vertex with a single massive leg of order
+$\nu_1$, the master integral of the undifferentiated state is
+\begin{multline}
+  \int_{-\infty}^0\nd\tau\,(-\tau)^{\nu_0}e^{\ii K\tau}\,h^{(1)}(\nu_1,0;-k\tau)
+  =c_2\,(-\ii)^{\nu_0+1}\Gamma(\nu_0+1)K^{-\nu_0-1}\\
+  +c_1\,k^{2\nu_1}(-\ii)^{\nu_0+2\nu_1+1}\Gamma(\nu_0+2\nu_1+1)K^{-\nu_0-2\nu_1-1}
+  +\cdots,
+  \label{eq:boundary-example}
+\end{multline}
+where each term of the small-$\tau$ expansion was integrated with the one-dimensional formula
+above, $\int_{-\infty}^0\nd\tau\,(-\tau)^{A}e^{\ii K\tau}=(-\ii)^{A+1}\Gamma(A+1)K^{-A-1}$. For
+generic nonresonant orders the constant term anchors the undifferentiated state and the
+$z^{2\nu-1}$ term the differentiated state; the differentiated master integral is treated
+identically and anchors at the exponent $\nu_0+2\nu_1$. The corrections sit one integer power
+above the anchor of the other state, the Frobenius separation described after eq.~(3.16) of
+\cite{Chen:2024glu}. The two masters of such a vertex therefore anchor at the leading
+inverse-energy exponents $\nu_0+1$ and $\nu_0+2\nu_1$. Products
+of several $h$ factors are handled the same way: the product is expanded in small $\tau$, and
+each term integrates to one Gamma-function coefficient. Beyond these leading coefficients the
+local series is generated by the DE, not by the boundary data.
 
-One more choice enters those endpoint coefficients, and it is a different object from the two powers
-just discussed: which of the two Hankel branches of \eqref{eq:h-definition} each endpoint of a
-propagator carries. For a propagator whose
-two vertices still lie in two different components that choice has already been made, because the
-frozen theta of \eqref{eq:theta-rank-rule} selects the ordered pair of branches of one chamber. For a
-propagator whose two endpoints have been merged into the component being integrated, no theta is left
-on that propagator at all: its integrand is just the product of the two $h$ blocks, and the ordered pair
-supplied by the strict energy order is one of the two arrangements of a single equal-time
-configuration, the other being the arrangement with the two branches exchanged. Both arrangements carry
-the same exponent $A$ of the one-dimensional integral above and the same momentum factors, so they
-belong to one and the same integral, and a boundary coefficient that kept only one of them would not be
-constant along that configuration. The package therefore replaces the product of the two endpoint
-coefficients of such a propagator by the mean of its two arrangements. The mean is taken over the branch
-index alone: the mode-function state bits are not averaged, so the exponent, the energies and the normalizations do
-not move, and a propagator whose two bits are equal is unchanged, because the two arrangements then
-coincide. Each such propagator contributes one mean of its own, so arbitrarily many propagators joining
-the same two vertices are covered by the same rule, and this matches the split of
-Sec.~\ref{sec:common-theta} at the boundary, where the antisymmetric difference survives only on the
-theta that is differentiated while every unselected propagator keeps its symmetric part. Two cases are
-deliberately not averaged: a theta-free propagator $G_{+-}$ or $G_{-+}$ of \eqref{eq:sk-propagators},
-whose two branches are fixed at initialization, and a coincident massless
-shared slot, which offers no branch choice and whose odd shared mode-function state is zero.
-
-The construction above presumes that every vertex supplies a damping energy with which to be
-ranked in \eqref{eq:tau-rank} and localized in $\tau_v$. A vertex that carries no external
-leg at all has no such energy: its exponential factor is absent, and the strict-order chart that freezes the thetas is
-not defined for it. Rather than treating this situation separately, the package adds an
-\emph{auxiliary} external-leg energy $k_{0,v}^{\rm aux}$ to the vertex inside the same d log-form
-system. The auxiliary energy is an ordinary coordinate: it enters the energy letters and the
-component signed energies exactly as a physical $k_{0,v}$ does. The boundary data are therefore first
-constructed from the damped limit $K_v^{\rm aux}\to\infty$ of the augmented system, and the transport
-then runs to the physical point, where every auxiliary coordinate takes its target value
-$k_{0,v}^{\rm aux}=0$. All auxiliary coordinates are added to the system and to every requested
-point at once, so this is a single transport in the enlarged coordinate space rather than a
-succession of limits. Nothing is rederived, and the user never supplies or sees this
-coordinate. Transporting to zero is a limit inside the solution, and it can land on a singular
-point: if the only nonzero signed energy of some component is auxiliary, its letters vanish at
-$k_{0,v}^{\rm aux}=0$. Such a finite singular point either returns a finite value or reports an
-explicit divergence, instead of silently returning an unchecked number.
+The construction requires a damping energy at every vertex to rank it in \eqref{eq:tau-rank}
+and localize its time integral. A vertex without external legs has no exponential factor,
+so the strict-order chart is undefined there. The package introduces an \emph{auxiliary}
+external-leg energy $k_{0,v}^{\rm aux}$ in the same d log-form system. It enters the energy letters
+and component signed energies as a physical $k_{0,v}$ does. Boundary data are constructed at
+$K_v^{\rm aux}\to\infty$, then transported to the physical target $k_{0,v}^{\rm aux}=0$.
+All auxiliary coordinates enter the system and every requested point together, giving a single
+transport in the enlarged coordinate space. The package handles these coordinates internally.
+The zero target can be singular: if a component's only nonzero signed energy is auxiliary,
+its letters vanish at $k_{0,v}^{\rm aux}=0$. At such a finite singular point, the package
+returns a finite value or reports an explicit divergence.
 
 \subsection{Several propagators sharing one theta}
 \label{sec:common-theta}
 
 Up to now every contact has been attached to one full propagator. Two or more full propagators can,
-however, have their endpoints on the same pair of current components, so that all of them carry the same
+however, join the same pair of current components, so that all of them carry the same
 theta argument $\Delta=\tau_u-\tau_v$; the package groups exactly such propagators into a
 \emph{common-theta bundle} $\cB$, with $|\cB|\ge2$. This happens in a time graph that carries a cycle of
 time integrations at fixed internal momenta, the class read by \texttt{MSInitTimeGraph} of
@@ -1317,9 +1270,9 @@ $\theta(\Delta)$ and $\beta_e$ for the coefficient of $\theta(-\Delta)$.
 The package uses the collected form \eqref{eq:bundle-odd-subsets} rather than the telescoping sum term
 by term, because enumerating the terms one by one would count the same sector transition
 several times; the argument, the parity proof and the treatment of unselected propagators whose two vertices
-become coincident are given in App.~\ref{app:theta}. The same symmetric part governs the boundary data of
-a coincident propagator: Sec.~\ref{sec:boundary} explains why the two branch arrangements of one merged
-propagator are replaced by their mean there, one mean per merged propagator.
+become coincident are given in App.~\ref{app:theta}. The same symmetric part governs a propagator whose
+two vertices have become coincident, its boundary data included: the two branch arrangements are
+replaced by their mean, one mean per propagator.
 
 
 
@@ -1328,8 +1281,6 @@ propagator are replaced by their mean there, one mean per merged propagator.
 
 \subsection{Installation and loading}
 \label{sec:overview}
-
-This subsection collects the system requirements and the loading commands.
 
 \paragraph{System requirements.}
 \begin{itemize}
@@ -1389,8 +1340,8 @@ MSFlintNDEConfiguration[]["availableQ"]
 
 \paragraph{Tree diagrams: \texttt{MSInitTree}.}
 
-A tree is given by an association of vertices and propagators. The propagator list sits under
-the input key \texttt{"lines"}, but we call these objects propagators throughout. A tree with two vertices and one massless propagator between them:
+A tree is given by an association of vertices and propagators, with propagators listed under
+the input key \texttt{"lines"}. A tree with two vertices and one massless propagator between them:
 \begin{verbatim}
 spec = <|
   "name" -> "masslessFullEdge",
@@ -1443,9 +1394,9 @@ field & meaning & note\\
 A massless propagator joining two vertices with equal contour signs is classified internally as
 \texttt{masslessFull} and uses the shared two-state quotient basis of Sec.~\ref{sec:massless}.
 For opposite contour signs it is theta-free and contributes no state slot.
-The \texttt{"massless"} input represents the pure exponential block with \texttt{nu -> 1/2};
-polynomial time factors of other half-integer mode functions must first be expanded into
-terms with shifted vertex powers. There is no input field selecting an uncompressed massless basis.
+The \texttt{"massless"} input is the pure exponential block at the fixed massless order
+\texttt{nu -> 1/2} of Sec.~\ref{sec:conventions}; propagators of other half-integer orders must
+first be expanded as described there. There is no input field selecting an uncompressed massless basis.
 The initialization option \texttt{NuConvention} takes \texttt{"Positive"} (default) or
 \texttt{"Negative"} and chooses the prefactor sign of $h(\nu,0;z)=z^{\pm\nu}H_\nu(z)$ introduced in
 Sec.~\ref{sec:conventions}; it is fixed for the whole context and cannot be changed per call.
@@ -1520,7 +1471,15 @@ the root propagators in the input order, with \texttt{"1"} for an uncontracted p
 \texttt{"0"} for a propagator contracted by a contact; \texttt{aShifts} assigns one integer shift of
 the base time power to every vertex component, where a component is a maximal set of vertices
 merged by the contractions; \texttt{stateBits} gives the mode-function state of every two-state slot of the
-sector, in slot order. Their connection is the normalized d log-form system
+sector, in slot order; the slot order itself is that of \texttt{MSSlotRegistry[context, sector]}.
+The bare counterpart $\text{I}_s(\bm n;\bm a)$ with the same three indices is available as the inert
+\texttt{MSBareIntegral[sectorKey, aShifts, stateBits]} for display and audit, and
+\texttt{MSIntegralDefinition[integral, context]} returns for any single valid \texttt{MSIntegral}
+its bare label, the exact sector normalization $\cN_s$ of \eqref{eq:sector-normalization} --- one
+pinch factor $-\sigma_e\frac{4\ii}{\pi}q_e^{\,2\nu_e-1}$ per contracted massive full propagator ---
+and the inert identity
+$J_s(\bm n;\bm a)=\cN_s\,\text{I}_s(\bm n;\bm a)$.
+Their connection is the normalized d log-form system
 \eqref{eq:normalized-de}.
 
 We give a few examples of \texttt{MSIntegral[sectorKey, aShifts, stateBits]}. For the three-vertex chain $v_1$--$v_2$--$v_3$ with internal propagators $l_{12}$, $l_{23}$, vertex
@@ -1589,11 +1548,15 @@ vertex exponential $e^{\ii k_0\tau}$ of \eqref{eq:vertex-integral-family}, and t
 \eqref{eq:h-definition} follow; a propagator may override them with its own \texttt{hankelBranches}
 field. The
 package $h$ mode-function states are those of \eqref{eq:h-definition}, i.e.\
-$h(\nu,1;z)=\partial_zh(\nu,0;z)$. \texttt{MSHTohMatrix} and \texttt{MShToHMatrix} give the local
-$2\times2$ change of basis between the raw Hankel states and these states and its inverse, and
-\texttt{MSConvertBasis} forms the corresponding Kronecker product over the slots of a sector, with the
-massless shared mode-function two-state slot of Sec.~\ref{sec:massless} acting trivially on the reduced
-mode-function states.
+$h(\nu,1;z)=\partial_zh(\nu,0;z)$. \texttt{MSHTohMatrix[nu, z, context]} and
+\texttt{MShToHMatrix[nu, z, context]} give the local $2\times2$ change of basis between the raw
+Hankel states $(H_\nu(z),\partial_zH_\nu(z))$ and these states and its inverse;
+\texttt{MSConvertBasis} applies it to a local two-component state vector or, given a sector key
+and component times, to the complete sector state vector as the Kronecker product over the slot
+registry, with the massless shared mode-function two-state slot of Sec.~\ref{sec:massless} acting
+trivially. These commands convert integrand states, not integral objects: the powers of
+$z=-k\tau$ in the matrix also shift the component base time powers, so converting an
+\texttt{MSIntegral} itself fails closed.
 
 
 
@@ -1616,10 +1579,16 @@ function & purpose\\
 propagators, master counts)\\
 \texttt{MSMasterIntegrals[context]} & ordered master records; each \texttt{"integral"} field is an
 \texttt{MSIntegral[sectorKey, aShifts, stateBits]}\\
+\texttt{MSIntegralDefinition[integral, context]} & bare label, exact normalization $\cN_s$ and
+inert identity of one valid \texttt{MSIntegral}\\
+\texttt{MSHTohMatrix[...]} / \texttt{MShToHMatrix[...]} / \texttt{MSConvertBasis[...]} & local and
+sector-level conversion between raw Hankel states and $h$ states\\
 \texttt{MSFormulaMatrices[context, key]} & per-component $\text{M}_1$, $\text{M}_0$ and energy letters $\kappa_{\bm a}$;
 sector diagonalizer \texttt{"U"} and \texttt{"UInverse"}\\
 \texttt{MSDLogDE[context]} & block-triangular d log-form potential $\Omega$, letters, certification
 status\\
+\texttt{MSRecurrenceStep[integral, component, context]} & one recurrence step moving one nonzero
+time shift toward zero\\
 \texttt{MSReduce[expr, context]} & iterative IBP reduction to the master basis; scalar, list or nested table input\\
 \texttt{MSContactMaps[context, key]} & parent-to-sub-sector contact maps\\
 \texttt{MSWriteFormulaArtifacts[context]} & write formula products beside the caller\\
@@ -1659,20 +1628,33 @@ status\\
         Sec.~\ref{sec:dlog} whose derivative along a path is the DE matrix, together with the
         letters (the arguments of the logarithms of \eqref{eq:omega-form}),
         \texttt{"letterMatrices"}, \texttt{"dlogResidual"}, \texttt{"constantResidueQ"} and the
-        certification \texttt{"dlogStatus"}. Only the status \texttt{"certifiedByFormulaChecks"}
+        certification \texttt{"dlogStatus"}. The closure test itself reduces the shifted integrals
+        generated by the connection with \texttt{MSReduce}, requiring status \texttt{"reduced"}, a
+        zero \texttt{"nonMasterResidual"} and no \texttt{"remainingShiftedIntegrals"} on every
+        entry; the connection matrix is then read off the reduction coefficient vectors. Only the
+        status \texttt{"certifiedByFormulaChecks"}
         certifies a closed d log-form, and only a certified potential may be used numerically.
   \item[\texttt{MSReduce[expr, context, MasterBasis -> Automatic]}] reduces finite linear
         combinations of legal \texttt{MSIntegral}s, or lists and nested tables of such
         expressions, by
         the lowering/raising recurrences $A_\pm$ of Sec.~\ref{sec:global} along the
-        sub-sector structure of Sec.~\ref{sec:dlog}. Results include
+        sub-sector structure of Sec.~\ref{sec:dlog}. The single step is exposed separately as
+        \texttt{MSRecurrenceStep[integral, component, context]}, which moves one nonzero time
+        shift of one component toward zero; with the component omitted it picks the first nonzero
+        shift, and it refuses any step that would move a component into one of the divergent
+        small-time layers fixed at initialization. Results of \texttt{MSReduce} include
         \texttt{"result"}, \texttt{"masterBasis"}, \texttt{"coefficientVector"},
         \texttt{"masterRules"},
         \texttt{"nonMasterResidual"}, \texttt{"remainingShiftedIntegrals"} and
         \texttt{"singularLayers"}; a full reduction requires a zero residual and an empty shifted
         list for every scalar expression. For list input, these fields preserve the input
         shape; \texttt{"elementResults"}, \texttt{"failurePositions"} and
-        \texttt{"incompletePositions"} provide the element-level reports.
+        \texttt{"incompletePositions"} provide the element-level reports. The reduction runs
+        on the time powers fixed at initialization: a context initialized with specialized or
+        numerical \texttt{timePower} values, such as the regulated powers of Example~06,
+        reduces with the substitution in place, and purely symbolic results may equivalently
+        be substituted afterwards. A worked reduction of a two-term shifted combination is
+        displayed in Sec.~\ref{sec:applications}.
   \item[\texttt{MSFormulaData[context]}] returns all-sector masters, the per-sector
         $\text{M}_1/\text{M}_0/\text{T}_n$ recurrence metadata of Sec.~\ref{sec:global} and the complete
         block-triangular d log-form DE in the master order of \texttt{MSDLogDE};
@@ -1724,12 +1706,19 @@ status\\
         \texttt{"status" -> "transient"} and excluded from export.
         Singular-point classifications are returned under \texttt{"singularityClassifications"}
         by the same backend evaluation run.
-  \item Formula artifacts: \texttt{MSWriteFormulaArtifacts[context]} writes \texttt{masters.wl},
-        \texttt{recurrence\_metadata.wl}, \texttt{dlog\_de.wl} and \texttt{manifest.wl} to
+  \item Formula artifacts: initialization itself writes no files.
+        \texttt{MSWriteFormulaArtifacts[context, opts]} --- with its own options
+        \texttt{TimePowerRules}, which specializes the recurrence metadata only, and
+        \texttt{MSOutputDirectory}, which redirects the artifact directory --- writes
+        \texttt{masters.wl},
+        \texttt{recurrence\_metadata.wl} (the per-sector $\text{M}_1$, $\text{M}_0$, diagonalizer
+        and energy letters that feed the recurrence),
+        \texttt{dlog\_de.wl} and \texttt{manifest.wl} (version, master digest, sector order,
+        certification status and actual paths) to
         \texttt{results/\allowbreak madstree\_formula/\allowbreak run-UUID/} by default.
         \texttt{MSEvaluatePath} and \texttt{MSReconstructEpSeries} automatically write or reuse
         these analytic files before numerical transport and return their paths under
-        \texttt{"formulaArtifacts"}.
+        \texttt{"formulaArtifacts"}; the write is refused unless the d log-form DE is certified.
   \item Evaluation export: \texttt{MSExportEvaluationData[result, MSOutputDirectory -> ...]} writes
         \texttt{evaluation\_data.csv} and \texttt{evaluation\_data.json} under
         the caller-chosen output directory (default
@@ -1776,7 +1765,11 @@ boundary = MSBoundaryData[context, targetRules,
 certificate and returns the leading Frobenius data at the $K_v\to\infty$ boundary. For every master
 whose leading weight does not vanish, it returns one branch record with the Frobenius exponent, the
 overall coefficient and the normalized leading vector, together with the anchor rules, the rank order
-and the certificate itself.
+and the certificate itself. The anchor rules normalize each leading vector: the entry of the
+anchoring master is fixed to one, entries of masters not reached by that solution are zero, and the
+remaining entries follow from a linear system that propagates leading subsector data into the
+masters of higher sectors. A master with a vanishing leading coefficient produces no record, and an
+unsolvable system is reported as a failure.
 If the chart is not certified, it returns \texttt{BoundaryChartNotCertified} and does not proceed
 to numerics. The energies in the example are positive imaginary so that the vertex factors
 $e^{-\ii E\tau}$ damp at $\tau\to-\infty$; the rank order of the boundary is derived from the
@@ -1829,7 +1822,7 @@ crosses a pole or leaves a local convergence disk fails closed; the two options 
 Sec.~\ref{sec:options}. The exported per-point
 \texttt{"relativeDifferenceInf"} and \texttt{"targetRelativeErrorMet"} are obtained from the
 truncation certification of Sec.~\ref{sec:backend}.
-A way to read a saved value that does not depend on the path is
+To read the first saved value, use
 \begin{verbatim}
 savedPoints = Select[result["pointResults"], #["status"] === "saved" &];
 firstPoint = First[savedPoints];
@@ -1949,10 +1942,10 @@ transport order is $4p_0$ and the reference chain adds
 $\lceil\max(50,p_0/5)\rceil$ orders. All $N_{\rm fit}$ production points enter one square
 Acb Vandermonde system with powers up to $\varepsilon^{n_{\min}+N_{\rm fit}-1}$; only
 $c_{n_{\min}},\ldots,c_m$ are returned, and no least squares or pseudoinverse is used.
-Independent validation points are placed at a fixed fraction of the production scale, never
-enter the fit, and at each of them the fitted series, summed over all $N_{\rm fit}$ internal powers up
-to $n_{\min}+N_{\rm fit}-1$ and hence including the buffer powers above the requested maximum $m$, must
-reproduce the directly transported value to the relative tolerance $10^{-g}$. If the target
+Independent validation points lie at a fixed fraction of the production scale and never enter
+the fit. At each point, the fitted series includes all $N_{\rm fit}$ internal powers through
+$n_{\min}+N_{\rm fit}-1$, including the buffer powers above the requested maximum $m$.
+This sum must reproduce the directly transported value to the relative tolerance $10^{-g}$. If the target
 is not met after the allowed refit rounds, the result carries a warning status and
 \texttt{"precisionTargetMet" -> False}. The residual tests the fitted series at the validation
 points; it does not establish the number of correct digits of each returned coefficient
@@ -1976,7 +1969,7 @@ configuration.
 The principal options of the numerical workflow are summarized in Table~\ref{tab:numerical-options}.
 \begin{table}[!htbp]
 \centering
-\begin{tabular}{@{}p{5.0cm}p{9.3cm}@{}}
+\begin{tabular}{@{}p{6.2cm}p{8.1cm}@{}}
 \toprule
 option & meaning\\
 \midrule
@@ -1994,8 +1987,9 @@ multipoint evaluation; \texttt{False}: user points as nodes in input order\\
 (default 0)\\
 \texttt{EpGoalDigits} & decimal tolerance exponent for validation of the reconstructed regulator series
 (default 20)\\
-\texttt{EpFitExtraOrder} / \texttt{EpFitOrderIncrement} / \texttt{EpFitMaximumRounds} & internal
-buffer powers, per-round increment and maximum refit rounds of the regulator fit (defaults 2, 2, 3)\\
+\texttt{EpFitExtraOrder} / \texttt{EpFitOrderIncrement} / \texttt{EpFitMaximumRounds} / \texttt{EpInitialInternalMaximumPower} & internal
+buffer powers, per-round increment, maximum refit rounds and first-round internal highest power of
+the regulator fit (defaults 2, 2, 3, \texttt{Automatic})\\
 \texttt{ParallelTaskCount} & maximum concurrent \texttt{ep} backend processes in \texttt{MSReconstructEpSeries} (default 12)\\
 \texttt{PythonExecutable} & Python command for the \texttt{FlintNDE} adapter (default \texttt{Automatic})\\
 \texttt{MSRuntimeDirectory} & temporary-file root (default: \texttt{results\_temp} in the calling script or notebook directory)\\
@@ -2118,7 +2112,9 @@ Each example is a Wolfram Language script; together they exercise the complete w
         followed by a single-stage multipoint evaluation and CSV/JSON export;
   \item \texttt{06\_massless\_three\_vertex\_ep\_regularization.wl}: a three-vertex massless tree
         with the analytic regulator $a_1=-1+\varepsilon$, $a_2=a_3=1+\varepsilon$, whose
-        $\varepsilon=0$ time integrals genuinely diverge; the user requests
+        $\varepsilon=0$ time integrals genuinely diverge; before the numerical stage it reduces
+        the sum of two integrals whose time powers lie one unit below the master powers
+        (displayed in Sec.~\ref{sec:applications}); the user requests
         only the highest regulator power (\texttt{MaximumEpPower -> 0}), and the package
         certifies the lowest power $n_{\min}$ from the symbolic boundary and DE before any
         numerical solve (text below); its numerical
@@ -2180,7 +2176,7 @@ throughout, including the effective vertex time powers below.
 From figure~\ref{fig:tree-diagram}, the function family of this example is built from one time
 integration per vertex, carrying the time power $(-\tau_v)^{\nu_{0v}}$ and the external exponential
 $e^{\ii\sigma_vE_v\tau_v}$, and from one propagator kernel per internal propagator, each kernel
-carrying the mode-function states of its two endpoints. We first make these endpoint mode-function
+carrying one mode-function state at each of its two vertices. We first make these mode-function
 states explicit:
 \begin{equation}
  \begin{aligned}
@@ -2230,10 +2226,10 @@ integrals are
  \label{eq:tree-indexed-masters}
 \end{equation}
 Here $a,b,c,d\in\{0,1\}$. Each time integral runs from $-\infty$ to $0$ with the Bunch--Davies
-prescription. Each massive propagator carries one mode-function state at each of its two vertices,
-two per propagator; the two propagators of this graph therefore carry four, and the indices
-$a,b,c,d$ are the values of these four mode-function states, taken in the endpoint order
-$(L_1,M_1,M_2,R_2)$. Thus the Top sector consists of the sixteen masters
+prescription. Each massive propagator carries one mode-function state at each of its two vertices.
+The four mode-function state indices $a,b,c,d$ are ordered $(L_1,M_1,M_2,R_2)$: $a,b$ are the
+states of propagator $s_1$ at $\tau_L,\tau_M$ and $c,d$ those of $s_2$ at $\tau_M,\tau_R$. Thus the
+Top sector consists of the sixteen masters
 \begin{equation}
  \begin{aligned}
  \bm{\text I}^{\boldsymbol\sigma}_{\mathrm{Top}}
@@ -2302,8 +2298,7 @@ are the child integrals of the contact term \eqref{eq:R-two-vertex}, written out
 \end{equation}
 where $\tau_{LM}$ is the single time of the merged component and the merged power is
 $A_{C,{\rm L}}$ of \eqref{eq:base-power}: the raw contact power of the contracted propagator is
-$\varrho_1=-2\nu_1-1$ in the negative-prefactor convention of
-\eqref{eq:application-endpoint-states}, and the component count $|C|=2$ adds the remaining $+1$, so
+$\varrho_1=-2\nu_1-1$, and the component count $|C|=2$ adds the remaining $+1$, so
 that \eqref{eq:tree-time-power-map} gives $\nu_{0L}+\nu_{0M}-2\nu_1=p_1+p_2+\tfrac92+\nu_2$.
 The right pinch merges $M$ and $R$ and keeps the two indices of propagator 1; its four masters
 are obtained from \eqref{eq:application-child-master} by the exchange
@@ -2387,8 +2382,7 @@ The four sectors then carry the hidden constants
   \end{aligned}
   \label{eq:tree-sector-normalizations}
 \end{equation}
-which is the product rule \eqref{eq:sector-normalization} with $\cN_s^{(0)}=1$, read in the
-negative-prefactor convention, where $q_e^{2\nu_e-1}$ becomes $q_e^{-2\nu_e-1}$. The object the
+which is the product rule \eqref{eq:sector-normalization} with $\cN_s^{(0)}=1$. The object the
 package propagates in sector $s$ is $J_s(\bm n;\bm a)=\cN_s\,\text{I}_s(\bm n;\bm a)$ ---
 concretely $J^{\boldsymbol\sigma}_{abcd}=\text{I}^{\boldsymbol\sigma}_{abcd}$,
 $J^{\boldsymbol\sigma,{\rm L}}_{cd}=\cN_{\rm L}\text{I}^{\boldsymbol\sigma,{\rm L}}_{cd}$,
@@ -2550,7 +2544,7 @@ momenta fixed. We do not integrate over the spatial loop momentum.
 
 From figure~\ref{fig:bubble-diagram}, the function family of this example has two time
 integrals, one per vertex, and two propagator kernels, both joining the same pair of vertices; as
-in the first example each kernel carries the mode-function states of its two endpoints.
+in the first example each kernel carries one mode-function state at each of its two vertices.
 Let $\tau_1,\tau_2$ be the vertex times, $P_1,P_2$ the external energy sums,
 and $x_1,x_2$ the internal momentum magnitudes.
 The Hankel orders of the two internal propagators are $\nu_{B1},\nu_{B2}$.
@@ -2614,7 +2608,7 @@ For each assignment, the projection onto the Top sector is
 one for each of the sixteen values of $(a,b,c,d)\in\{0,1\}^4$.
 The two pinched sectors of an equal-sign assignment arise from contracting one of the two
 propagators. Both vertices then merge into a single component carrying one time $\tau$, and the
-surviving propagator joins this component to itself. At coincident endpoints the theta pair of
+surviving propagator joins this component to itself. When its two vertices coincide, the theta pair of
 the full propagator collapses and its factor becomes the mean of the two chamber products, the
 spectator factor $\mathsf m_e$ of \eqref{eq:bundle-odd-subsets},
 \begin{equation}
@@ -2624,7 +2618,7 @@ spectator factor $\mathsf m_e$ of \eqref{eq:bundle-odd-subsets},
  \label{eq:bubble-tadpole-kernel}
 \end{equation}
 which is symmetric under $(c,d)\leftrightarrow(d,c)$, so the coincidence quotient identifies
-$(1,0)$ with $(0,1)$ and keeps the three combinations $(0,0),(0,1),(1,1)$ of the two endpoint
+$(1,0)$ with $(0,1)$ and keeps the three combinations $(0,0),(0,1),(1,1)$ of the two mode-function
 states --- this is the exact mode-function state
 projection quoted above. The pinched masters are therefore, with propagator~1 contracted,
 \begin{equation}
@@ -2743,9 +2737,9 @@ distribution in panel \textbf{b} indicates an approximately constant phase.
 The third example returns to the chain topology of the first example with both exchanges
 massless, and lowers the time power of vertex~1 by two units before shifting all vertex time
 powers by the common analytic regulator (figure~\ref{fig:ep-tree}): $a_1=-1+\varepsilon$,
-$a_2=a_3=1+\varepsilon$. At $\varepsilon=0$ the time integrals of this graph genuinely
-diverge, which is the situation the regulator mode of Sec.~\ref{sec:regulator} is designed for:
-the computation is defined at the regularized powers, and requesting the return level
+$a_2=a_3=1+\varepsilon$. At $\varepsilon=0$ the time integrals diverge.
+The regulator mode of Sec.~\ref{sec:regulator} evaluates them at the regularized powers;
+requesting the return level
 $\varepsilon^0$ delivers both the $\varepsilon^{-1}$ pole coefficient and the finite part. The
 momenta are fixed by
 \texttt{ParameterRules} and the target point is $\{k_1,k_2,k_3\}=\{9\ii,3\ii,5\ii\}$.
@@ -2795,7 +2789,7 @@ and the default pool of \texttt{ParallelTaskCount -> 12} workers.
 From figure~\ref{fig:ep-tree}, the family has three time integrals and two propagator kernels;
 because both propagators are massless full propagators of the fixed order $\nu=1/2$, each
 contributes one shared mode-function two-state slot (Sec.~\ref{sec:massless}) rather than two
-independent endpoint mode-function states.
+independent mode-function state slots.
 We write $E_v=k_v$ for the input external energy and $s_1=q_{12}$, $s_2=q_{23}$ for
 the internal momentum magnitudes. The all-plus input has the vertex phase
 $e^{-\ii E_v\tau_v}$, which damps at the positive-imaginary target energies.
@@ -2871,6 +2865,42 @@ and $25$ masters. No contracted propagator contributes a pinch factor in
 in this example are already defined in the package basis, $J_s=\text{I}_s$ here, and the
 propagated vector is $\bm{\text I}$ itself, without vertex contour factors.
 
+Before the regulator enters, the initialized context is already a complete reduction
+system, and \texttt{MSReduce} accepts shifted combinations of the integrals just defined.
+Taking the two integrals whose time powers lie one unit below the master powers, at
+vertex~1 and at vertex~2, and reducing their sum in one call,
+\begin{verbatim}
+combination = MSIntegral["11", {-1, 0, 0}, {0, 0}] +
+               MSIntegral["11", {0, -1, 0}, {1, 0}];
+reduction = MSReduce[combination, context];
+\end{verbatim}
+returns \texttt{"status" -> "reduced"} with a zero \texttt{"nonMasterResidual"} and an
+empty \texttt{"remainingShiftedIntegrals"}. Writing
+$\text{I}^{\boldsymbol\sigma}_{b_1b_2}\big|_{a_v\to a_v-1}$ for the integral with the
+time power $a_v$ of \eqref{eq:ep-top-masters} lowered by one unit,
+\begin{equation}
+ \begin{aligned}
+ \text{I}^{\boldsymbol\sigma}_{00}\big|_{a_1\to a_1-1}
+ +\text{I}^{\boldsymbol\sigma}_{10}\big|_{a_2\to a_2-1}
+ ={}&-\ii\,\frac{a_2E_1+a_1s_1}{a_1a_2}\,\text{I}^{\boldsymbol\sigma}_{00}
+ +\ii\!\left(\frac{s_1}{a_1}-\frac{E_2}{a_2}\right)\text{I}^{\boldsymbol\sigma}_{10}
+ +\ii\,\frac{s_2}{a_2}\,\text{I}^{\boldsymbol\sigma}_{11}\\
+ &-\frac{2\ii\,(E_1+E_2)}{a_2(1+a_1+a_2)}\,\text{I}^{\boldsymbol\sigma,\rm L}_{0}
+ +\frac{2\ii\,s_2}{a_2(1+a_1+a_2)}\,\text{I}^{\boldsymbol\sigma,\rm L}_{1}.
+ \end{aligned}
+ \label{eq:ep-reduction-demo}
+\end{equation}
+The lowering directions invert $\text{M}_1$ eigenvalues, the contact of the first lowering
+injects into the LeftPinch sector, whose merged component is lowered once more, and the
+returned \texttt{"singularLayers"} names exactly the inverted denominators $\{a_1\}$,
+$\{a_2\}$ and $\{1+a_1+a_2\}$. The reduction uses the time powers fixed at
+initialization, so substituted values are entered by initializing with them: with the
+regularized powers $a_1=-1+\varepsilon$, $a_2=a_3=1+\varepsilon$ in the
+\texttt{timePower} fields of the same topology, the same call returns the LeftPinch
+coefficient $-2\ii(E_1+E_2)/[(1+\varepsilon)(1+2\varepsilon)]$ and the singular surfaces
+$\{-1+\varepsilon\}$, $\{1+\varepsilon\}$, $\{1+2\varepsilon\}$, exposing the
+$\varepsilon$-pole that the Laurent reconstruction below resolves.
+
 The certificate of Sec.~\ref{sec:regulator} runs before any numerical solve and returns
 $n_{\min}=-1$: the d log-form DE is regular at $\varepsilon=0$, but the vertex-1 unit
 $u_1=a_1+1=\varepsilon$ is isolated as a standalone factor in part of the factorized boundary
@@ -2913,11 +2943,7 @@ $\varepsilon^{-1},\ldots,\varepsilon^{2}$, which include the two buffer powers a
 maximum $m=0$. Compared with the directly transported values it reaches a maximum relative residual
 of $7.43\times10^{-25}$, thirteen orders below the requested tolerance $10^{-12}$. That residual
 certifies the fit against this tolerance, not a number of correct digits: the coefficients are computed
-at a working precision of $200$ digits and returned with about $199$ significant digits. This example
-runs the whole regulator procedure of Sec.~\ref{sec:regulator} on a genuinely divergent
-configuration: the sampling grid and the precisions follow from the certified lowest power, and the
-pole coefficient and the finite part of the $\varepsilon\to0$ Laurent expansion are delivered
-together with an explicit validation residual.
+at a working precision of $200$ digits and returned with about $199$ significant digits.
 
 The tree example illustrates two uses of DE transport: efficient multipoint
 evaluation and continuation beyond the convergence domain of a direct series.
@@ -2957,10 +2983,10 @@ The package was checked against independent references in the following verifica
 \label{sec:summary}
 
 \texttt{MadStree} combines a reduced master representation with an automated numerical workflow
-for dS trees. The extra relations of a massless full propagator replace its four endpoint states
+for dS trees. The extra relations of a massless full propagator replace four combinations of its two mode-function states
 by one shared two-state factor. Applying these relations to the general construction of
 \cite{Chen:2023iix} gives closed IBP recurrences and a d log-form DE on the smaller space.
-The generic endpoint formulas remain applicable without this compression, but retain redundant
+The generic Hankel reduction and DE formulas remain applicable without this compression, but retain redundant
 states. For the equal-sign three-vertex chain, the reduced massless hierarchy has nine masters,
 compared with the 25 states of the generic hierarchy.
 
@@ -2995,12 +3021,10 @@ Grant No.~12505094 and by the Science Foundation of China University of Petroleu
 
 \medskip
 \noindent\textbf{Statement on AI Use.}
-The notation and the user-facing functions of this package, together with their input formats, were
-designed by the
-authors, who also indicated the overall direction and the strategy of the derivation recorded in
-Sec.~\ref{sec:method}; the concrete derivation was then worked out by several agent programs, each
-driven by a different large language model, and the package was implemented by those same programs
-on the basis of the authors' guidance and of the derivation results above.
+The authors designed the package notation, user-facing functions and input formats, and set the
+overall direction and strategy of the derivation in Sec.~\ref{sec:method}.
+Several agent programs, each driven by a different large language model, worked out the derivation
+and implemented the package based on its results and the authors' guidance.
 
 \appendix
 
@@ -3050,9 +3074,8 @@ it would count the events of $|\cB|$ propagators with pairwise different theta a
 $|\cB|$ bundles of one propagator each, and those are enumerated bundle by bundle.
 
 \paragraph{Step 2: one theta gives one delta.}
-The contact part of the derivative of the two-term form with respect to the single variable $\Delta$ is
-what one gets by differentiating the two step functions and leaving the coefficients of
-\eqref{eq:bundle-alphabeta} as spectators,
+The contact part of the $\Delta$ derivative of the two-term form comes from differentiating only
+ the step functions, leaving the coefficients of \eqref{eq:bundle-alphabeta} unchanged:
 \begin{equation}
   \big(\partial_\Delta\theta(\Delta)\big)\prod_{e\in\cB}\alpha_e
   +\big(\partial_\Delta\theta(-\Delta)\big)\prod_{e\in\cB}\beta_e
@@ -3141,12 +3164,12 @@ finitely many such events, because every event strictly reduces the number of cu
 
 \paragraph{Child base power and coincident unselected propagators.}
 For a component $C$ produced by such events the base power is \eqref{eq:base-power},
-$A_{C,s}=\sum_{v\in C}\nu_{0,v}+\sum_{e\in E_s(C)}\varrho_e+|C|-1$. The three terms have three different
-origins and should not be conflated: the vertex powers add because the merged integrand is a
-product, each contracted propagator adds its own raw contact power $\varrho_e$ because the corresponding
-$\delta$ brings one factor $(-\tau)^{\varrho_e}$, and the last term counts \emph{merges of components},
-which is $|C|-1$ for any component of $|C|$ vertices and does not grow with the number of bundle
-propagators contracted at once. Since \eqref{eq:base-power} depends only on the final component and on
+$A_{C,s}=\sum_{v\in C}\nu_{0,v}+\sum_{e\in E_s(C)}\varrho_e+|C|-1$.
+The vertex powers add because the merged integrand is a product.
+Each contracted propagator contributes its raw contact power $\varrho_e$ through the factor
+$(-\tau)^{\varrho_e}$ accompanying the corresponding $\delta$.
+The last term counts component merges: $|C|-1$ for $|C|$ vertices, regardless of how many
+bundle propagators are contracted at once. Since \eqref{eq:base-power} depends only on the final component and on
 the contracted set, and not on the order or the clustering of the events, different legal event
 sequences that reach the same sector give the same child base power; the reduction is confluent at
 the level of the powers.
@@ -3162,9 +3185,10 @@ same way: the matrices are first built in the raw binary space of all massive an
 then retracted to the true sector masters by the constant maps of
 \eqref{eq:SP-massless}, $P_s\,M^{\rm raw}\,S_s$, so the equal-time quotients require no further
 computation and no dense inversion. On the boundary side the same equal-time configuration makes the two
-branch arrangements of a coincident massive full propagator enter with the same power, and their endpoint
-coefficient is replaced by the mean of the two arrangements, one mean per coincident propagator, as stated in
-Sec.~\ref{sec:boundary}.
+branch arrangements of a coincident massive full propagator enter with the same power, and the product
+of its two mode-function asymptotic coefficients is averaged over these two Hankel-branch arrangements,
+one mean per coincident propagator, as stated in
+Sec.~\ref{sec:common-theta}.
 
 \paragraph{Relation to the single-contact case.}
 For $|\cB|=1$ the two-term form \eqref{eq:bundle-two-terms} reduces to the ordinary SK pair of one

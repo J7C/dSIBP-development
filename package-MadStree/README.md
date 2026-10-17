@@ -23,6 +23,9 @@ Needs["MadStree`"];
 主积分对象 `MSIntegral[sectorKey,timeShifts,stateBits]` 是 normalized master。
 `MSMasterIntegrals[context]` 直接返回其裸积分标签、精确 sector normalization 和
 `normalized == normalization bare` 定义；单个对象使用 `MSIntegralDefinition[integral,context]`。
+任意合法 `MSIntegral` 的线性组合（含列表与嵌套表）可用 `MSReduce[expr,context]` 迭代约化到
+同一 master 基，单步入口为 `MSRecurrenceStep[integral,component,context]`；H/h 状态向量换基
+用 `MSConvertBasis`。全部公开符号的一句话总表见版本手册「公开接口总表」一节。
 
 ## 数值接口
 
