@@ -361,7 +361,7 @@ $$
 
 所有传播子求和后严格回到上式。相同正则化还给出 $\rho_\epsilon H_\epsilon^m\to\delta/(m+1)$，而不是把 $H(0)^m=2^{-m}$ 直接乘到 delta 上。
 
-当前 018 逐传播子保留 `{b_e,n_{e,1},n_{e,2}}` 三槽并在 relation 层应用 quotient，boundary 使用上述共同-theta contact；`masslessBundleCandidates` 只是 massless 子集的 metadata 摘要，不是另一个积分 Head。
+当前版本逐传播子保留 `{b_e,n_{e,1},n_{e,2}}` 三槽并在 relation 层应用 quotient，boundary 使用上述共同-theta contact；`masslessBundleCandidates` 只是 massless 子集的 metadata 摘要，不是另一个积分 Head。
 
 对 massive 传播子，$D_e$ 不能作为未展开的 Wronskian 停留在 canonical 输出中。逐传播子的 `compileFunctionSystem` 构造 `WT=Det[T]W`，`compileShrinkTerms` 将每个 `-WT` Laurent monomial 写成 coefficient、整数 `bShift=s` 和共同 `zeroPointShift=z`。一个 odd subset 的所有选中传播子由 `shrinkLinesIntegral` 同时处理：顶点只合并一次，但 `aMerged` 减去所有 `s` 之和；每条 selected pack 独立变为 `{b+s}`。`sectorZeroPointRules` 使用同一 compiled data，使 `a0Merged` 减去所有 `z` 之和，并逐传播子设置 `bS0=b0+z`。h preset 为 `(s,z)=(1,2 nu)`，H preset 为 `(1,0)`，massless contact 为 `(0,0)`。
 

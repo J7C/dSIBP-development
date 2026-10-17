@@ -61,7 +61,7 @@ DE，再数值拟合例如 `epsilon` 的 Laurent/幂级数系数，并用额外�
 | 程序包 | 当前版本 | 入口 |
 | --- | --- | --- |
 | dSIBP | `023.0` | `package-dSibp/versions/023_dSIBP/`；正式单文件 `package-dSibp/independent-benchmark/package/package_023.0.wl` |
-| MadStree | `v0.15` | `package-MadStree/load_current.wl`；显式目录 `package-MadStree/versions/MadStree-v0.15/` |
+| MadStree | `v0.17` | `package-MadStree/load_current.wl`；显式目录 `package-MadStree/versions/MadStree-v0.17/` |
 | FlintNDE | `0.5.0` | `package-FlintNDE/versions/FlintNDE-0.5.0/`；导入名 `flintnde` |
 
 ## 依赖与工作流
@@ -97,7 +97,7 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 
 ### MadStree
 
-目录：`package-MadStree/versions/MadStree-v0.15/Examples/`。
+目录：`package-MadStree/versions/MadStree-v0.17/Examples/`。
 
 | 示例 | 覆盖内容 |
 | --- | --- |
@@ -109,8 +109,8 @@ tree 或 time-only graph -> MadStree -> 主积分/dlog DE/物理边界 -> FlintN
 | `06_massless_three_vertex_ep_regularization.wl` | 共同正规化参数、自动 Laurent 拟合、误差估计与并行取值 |
 | `07_zero_external_leg_energy.wl` | 省略/零外腿能量、私有辅助坐标与输运回物理零点 |
 
-七个 example 的 v0.15 fresh 验收状态以根进度表当前任务完成记录为准。v0.15 独立验证任务书
-另检查辅助外腿能量、奇点值分类以及双侧局部 bucket 与后续输运；旧版本报告不作为 v0.15 证据。
+七个 example 的 v0.17 fresh 验收状态以根进度表当前任务完成记录为准。v0.17 独立验证任务书
+另检查辅助外腿能量、奇点值分类以及双侧局部 bucket 与后续输运；旧版本报告不作为 v0.17 证据。
 
 ### FlintNDE
 
@@ -140,7 +140,7 @@ Windows 下在任何目录创建或 Python 启动前检查完整运行文件路�
 ## 文档与验证
 
 - dSIBP：`package-dSibp/Documentation/`、`package-dSibp/independent-benchmark/`、`package-dSibp/000-report/`。
-- MadStree：`package-MadStree/versions/MadStree-v0.15/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
+- MadStree：`package-MadStree/versions/MadStree-v0.17/Documentation/`、`package-MadStree/independent-validation-task/`、`package-MadStree/independent-validation/`。
 - FlintNDE：`package-FlintNDE/Documentation/`、版本 README、`check_*` 与
   `package-FlintNDE/versions/FlintNDE-0.5.0/tests/`。
 

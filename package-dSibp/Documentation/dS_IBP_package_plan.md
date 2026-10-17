@@ -798,7 +798,7 @@ package 默认不安装、配置或运行 Kira/Rational Tracer，也不保存本
 
 ## 9. 验证范围与性能红线
 
-014 的历史独立重检覆盖十个 benchmark family 的 24 组固定 sign/energy 运行和 3018 条方程；ISP 366/366 相等且非零差值 0，H-to-h/direct-h 178/178、bare-H 178/178、compiled `AT/WT/shrinkTerms` 16/16、tree 22/22、general-`ds` 独立 expected 16/16、工程门禁 19/19。文档修正前 contract 为 46/47，唯一失败是当时手册把 `DSSeeds` 缺省写成 `"all"`。当时使用的 `DiscreteMode`、`quickCheck -> "sample"` 与 `fullDiscrete`/`bounded` 是 014 历史合同，016 起已废弃；018 的公开 `DSSeeds` 完整枚举用户范围与全部适用离散态，不提供抽样模式或数量上限。上述数字只作为旧版本冻结证据，不是当前 018 独立 benchmark 结论。
+014 的历史独立重检覆盖十个 benchmark family 的 24 组固定 sign/energy 运行和 3018 条方程；ISP 366/366 相等且非零差值 0，H-to-h/direct-h 178/178、bare-H 178/178、compiled `AT/WT/shrinkTerms` 16/16、tree 22/22、general-`ds` 独立 expected 16/16、工程门禁 19/19。文档修正前 contract 为 46/47，唯一失败是当时手册把 `DSSeeds` 缺省写成 `"all"`。当时使用的 `DiscreteMode`、`quickCheck -> "sample"` 与 `fullDiscrete`/`bounded` 是 014 历史合同，016 起已废弃；018 的公开 `DSSeeds` 完整枚举用户范围与全部适用离散态，不提供抽样模式或数量上限。上述数字只作为旧版本冻结证据，不是当前版本独立 benchmark 结论。
 
 这些数字是检查断言数，不等于独立手推公式数。当前结论是“生成器未硬编码 bubble，并通过代表性 topology 与微分方程变量求导回归”，不是“已对所有拓扑给出数学穷尽证明”。
 
