@@ -1,4 +1,4 @@
-# FlintNDE 0.5.0 开发计划
+# FlintNDE 开发计划
 
 ## 目标
 

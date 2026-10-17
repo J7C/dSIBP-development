@@ -1,4 +1,4 @@
-# FlintNDE 0.5.0 TODO
+# FlintNDE TODO
 
 - [x] 建立唯一 `versions/FlintNDE-0.5.0/`，补齐版本说明和版本索引。
 - [x] 实现以奇点局部收敛半径为依据的双侧用户点 bucket 与点归属报告。

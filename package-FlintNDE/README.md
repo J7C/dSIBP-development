@@ -12,14 +12,14 @@
 基线版本、新增功能、修复、公开接口或数值 convention 变化、迁移要求、验证状态和已知限制。
 工作树只保留唯一当前源码版本，更早源码可从 Git 历史恢复；旧任务书、报告和结果不在现行
 目录归档，但历史更新说明长期保留。当前说明见
-[`FlintNDE-0.5.0.md`](历史版本更新日志/FlintNDE-0.5.0.md)。
+[`历史版本更新日志/`](历史版本更新日志/) 中与 `pyproject.toml` 版本一致的一份。
 
 建议新版本从稳定主线新建独立 Git branch 开发和验证；branch 是否创建、保留或合并由用户
 决定，不会因版本完成而自动合并到 `main`。
 
 ## 当前版本
 
-当前源码位于 `versions/FlintNDE-0.5.0/`。FlintNDE 仍是通用单变量矩阵微分方程包：
+当前源码位于 `versions/` 下唯一的当前版本目录。FlintNDE 仍是通用单变量矩阵微分方程包：
 `RationalMatrixSystem` 从矩阵元内部发现奇点，并在 exact 验证通过时自动采用
 `A(x)=P(x)+Sum R_j/(x-p_j)` 快速路线，其中 `P(x)` 可为任意有限次数；高阶极点和
 一般有理系统保留通用路线。用户无需预提取奇点或提供 dlog letters。
@@ -68,7 +68,7 @@ Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼
 
 目录分工：
 
-- `versions/FlintNDE-0.5.0/`：发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
+- `versions/`：唯一的当前版本目录，含发布名为 `FlintNDE`、导入名为 `flintnde` 的可安装程序包与独立测试；
 - `历史版本更新日志/`：当前及历史版本的更新说明；
 - `examples/`：通过顶部路径变量加载程序包的示例；
 - `independent-validation-task/`：版本化独立检验任务书；
@@ -86,8 +86,9 @@ Python bridge 通过参数列表 `RunProcess` 启动，不经过 shell 命令拼
 当前版本不依赖 BlackHoleQNM 的 IBP、积分族或运行配置。QNM 只作为一个独立的
 二阶常微分方程示例放在 `examples/`，不进入程序包本体接口。
 
-公开目录实际保留七个 examples：QNM 双端匹配、正则奇点 `{a,b,C}` 保存、指数型奇点
-`{phi,a,b,C}` 保存/复用、Python 固定 `ep` 并行、自适应 Laurent 重构、Wolfram 固定 `ep`
+公开目录实际保留八个 examples：QNM 双端匹配与全曲线、正则奇点 `{a,b,C}` 保存、指数型奇点
+`{phi,a,b,C}` 保存/复用、多项式指数相位的双 sector 三阶极点、Python 固定 `ep` 并行、
+自适应 Laurent 重构、Wolfram 固定 `ep`
 并行和 Wolfram exact 矩阵接口。`ep_parallel.py` 与 `ep_parallel_mathematica.wl` 分别展示
 `run_ep_tasks(..., parallel_task_count=12)` 与
 `FlintNDEEvaluateEpBatch[..., ParallelTaskCount -> 12]`：缺省最多并行 12 个独立固定 `ep`
@@ -99,8 +100,8 @@ wheel、从源码普通安装以及开发者可编辑安装分别为
 
 ```powershell
 python -m pip install .\flintnde-1.0-py3-none-any.whl
-python -m pip install "path\to\package-FlintNDE\versions\FlintNDE-0.5.0"
-python -m pip install -e path/to/package-FlintNDE/versions/FlintNDE-0.5.0
+python -m pip install "path\to\package-FlintNDE\versions\<当前版本目录>"
+python -m pip install -e path/to/package-FlintNDE/versions/<当前版本目录>
 ```
 
 前两种方式均不要求用户自行构建；`pip` 会自动安装 `python-flint` 与 `sympy`。

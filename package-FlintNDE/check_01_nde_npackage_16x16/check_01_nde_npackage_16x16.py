@@ -20,7 +20,15 @@ from flint import acb, acb_mat, arb, fmpq
 CHECK_DIR = Path(__file__).resolve().parent
 FLINTNDE_ROOT = CHECK_DIR.parent
 PROJECT_ROOT = FLINTNDE_ROOT.parent
-PACKAGE_ROOT = FLINTNDE_ROOT / "versions" / "FlintNDE-0.5.0"
+# 发布布局直接取程序包根；发展仓布局取 versions/ 下唯一的当前版本目录。
+PACKAGE_ROOT = FLINTNDE_ROOT
+if not (PACKAGE_ROOT / "flintnde").is_dir():
+    _version_dirs = sorted((PACKAGE_ROOT / "versions").glob("FlintNDE-*"))
+    if len(_version_dirs) != 1:
+        raise RuntimeError(
+            "expected exactly one versions/FlintNDE-* directory under the package root"
+        )
+    PACKAGE_ROOT = _version_dirs[0]
 if str(FLINTNDE_ROOT) not in sys.path:
     sys.path.insert(0, str(FLINTNDE_ROOT))
 
@@ -203,7 +211,9 @@ def main() -> None:
             "fixed_epsilon_template_sha256": sha256_file(TEMPLATE_PATH),
             "npackage_nde_runtime": str(NPACKAGE_SCRIPT.relative_to(PROJECT_ROOT)).replace("\\", "/"),
             "npackage_nde_runtime_sha256": sha256_file(NPACKAGE_SCRIPT),
-            "flintnde_transport": "package-FlintNDE/versions/FlintNDE-0.5.0/flintnde/transport.py",
+            "flintnde_transport": str(
+                (PACKAGE_ROOT / "flintnde" / "transport.py").relative_to(PROJECT_ROOT)
+            ).replace("\\", "/"),
             "flintnde_transport_sha256": sha256_file(PACKAGE_ROOT / "flintnde" / "transport.py"),
         },
     }
