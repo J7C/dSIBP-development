@@ -15,17 +15,39 @@ __pycache__/
 
 # Logs and generated algebra outputs
 *.log
-*.aux
-*.out
-*.toc
-*.fls
-*.fdb_latexmk
-*.bbl
-*.blg
 *_stdout.txt
 *_stderr.txt
 *_output.txt
 ibp_equations*.m
+
+# LaTeX compilation intermediates (engine output besides the deliverable PDF)
+*.aux
+*.bbl
+*.blg
+*.bcf
+*.dvi
+*.fdb_latexmk
+*.fls
+*.glg
+*.glo
+*.gls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lol
+*.lot
+*.nav
+*.out
+*.pdfpc
+*.run.xml
+*.snm
+*.spl
+*.synctex.gz
+*.synctex(busy)
+*.toc
+*.vrb
+*.xdv
 
 # Project generated outputs
 package-dSibp/**/results_test/
@@ -84,6 +106,7 @@ cache/
 # development repository must never track it.
 /packages-final/
 
-# Paper drafts for the two package papers. They are tracked by the development
-# repository (decided 2026-10-10); the LaTeX intermediates they generate are
-# already covered by the "*.aux / *.log / *.out / *.toc / *.bbl / *.blg" rules above.
+# Paper drafts for the three package papers. They are tracked by the development
+# repository (decided 2026-10-10); the LaTeX intermediates they generate are covered
+# by the "LaTeX compilation intermediates" block above, so only the editable sources,
+# the compiled PDF and the figure assets are committed.
