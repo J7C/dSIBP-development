@@ -395,7 +395,7 @@ graph whose propagators all lie on the cycle skeleton this is exactly the split 
 ref.~\cite{Chen:2026dqp}.
 
 The default \texttt{"h"}
-and \texttt{"H"} shrinks of a massive propagator, defined in section~\ref{sec:dynamics}, leave the parity
+and \texttt{"H"} shrinks of a massive propagator, with the contact mapping of section~\ref{sec:family}, leave the parity
 unchanged: such a shrink raises the power to $b_e+1$ and removes the single state power it consumes. A
 massless contact keeps the power at $b_e$, so it offsets the parity of the child sector by one, and
 several contacts accumulate modulo two. The package therefore does not apply a constraint to a sector
@@ -459,8 +459,17 @@ reduction, and use it to build differential equations. The commands below illust
 stages; complete runnable declarations and scripts are supplied with the examples in
 section~\ref{sec:examples}. Load the distributed \texttt{dSIBP.m} with
 \texttt{Get[packageFile]}, where \texttt{packageFile} is its full path. The
-\texttt{main.wl} script of example~04 supplies the massive-bubble declaration used below;
-\texttt{case} denotes the input association and \texttt{custom} its kinematic rules.
+\texttt{main.wl} script of example~04 supplies the massive-bubble declaration used below, under the
+name \texttt{caseInput}; \texttt{case} below stands for such an input association, and
+\texttt{custom} for its custom kinematic rules, declared as \texttt{kinematicRules} in example~06.
+Options follow the Wolfram convention, and \texttt{Options[function]} lists them at run time.
+Two options are shared by several commands and are not repeated below: \texttt{ProgressReporting}
+(\texttt{Automatic} by default) switches the console progress of the long-running commands on or
+off, and \texttt{AuditLevel} (\texttt{"standard"} by default; \texttt{"full"} re-computes the
+development certificates) sets the audit depth of \texttt{DSGenerateIBP}, \texttt{DSLinear} and the
+tree commands \texttt{DSTreeNaiveIBP}, \texttt{DSTreeNaiveDE} and \texttt{DSTreeDLogDE}. The
+remaining options and specification keys are introduced together with the commands that accept
+them.
 
 \subsection{Initialisation}
 \label{sec:init}
@@ -478,10 +487,28 @@ context = DSInit[case, KinematicRules -> custom];
 \end{verbatim}
 The optional two-stage interface \texttt{DSKinematics[case]} first returns a proposal with the
 default rules and a selection template. The user can then inspect the kinematic coordinates
-$\texttt{ss}ij,\texttt{sE}i$, the momentum-routing audit and the capability flags before committing.
+$\texttt{ss}ij,\texttt{sE}i$, the momentum-routing audit and the capability flags before committing,
+and \texttt{DSKinematics[case, rules]} audits a chosen set of rules in the same form.
 Under-complete declarations abort the initialisation. Over-complete ones allow symbolic seed
 generation but disable derivatives and the inner-form rewriting. In the over-complete case common
 loop shifts are quotiented out through an affine basis \texttt{effectiveLoopExternalMomenta}.
+
+Initialisation accepts the dedicated options
+\begin{itemize}
+\item \texttt{KinematicRules}: the custom rules above;
+\item \texttt{GenerateDerivativeMetadata} (\texttt{False} by default): pre-compute the metadata of
+the family's derivative operators, which the written initialisation files then include;
+\item \texttt{WriteInitializationFiles} and \texttt{InitializationDirectory} (\texttt{False} and
+\texttt{Automatic} by default): write the parsed topology, sectors and conventions as reloadable
+files;
+\item \texttt{OverwriteInitialization} (\texttt{False} by default): a directory holding a different
+input is refused unless this option is set;
+\item \texttt{RegisterAsCurrent} (\texttt{True} by default): \texttt{False} initialises without
+replacing the current context, as \texttt{DSRedefineParameters} does internally.
+\end{itemize}
+The command \texttt{DSRedefineParameters} itself
+re-initialises the same input with a complete new rule set and carries no options beyond the shared
+ones.
 
 \subsection{Seeds and the IBP index ranges}
 \label{sec:seeds}
@@ -505,8 +532,9 @@ general continuous labels $a_v,b_e,b_{S,e}$ and general ISP indices.
 The canonicalisation applies the symmetry rules of the
 declaration, where the user names a vertex swap or an exchange of parallel propagators, together with
 built-in tadpole rules. A tadpole rule is available only for a self-loop whose reversal is a single
-loop-momentum inversion; it either exchanges the two endpoint states of that propagator or maps the
-integral to zero when an ISP carries an odd power.
+loop-momentum inversion. It maps the integral to zero when an ISP carries an odd power and when a
+massless full propagator sits in the $F_{10}$ representative; a massive full propagator with
+$(n_{e,1},n_{e,2})=(1,0)$ exchanges its two endpoint states.
 
 The continuous labels are swept by \texttt{DSGenerateIBP}. The unified form
 \begin{verbatim}
@@ -522,7 +550,8 @@ ibpData = DSGenerateIBP[allSeeds,
 \end{verbatim}
 must cover all root continuous indices exactly. ISP lower bounds are combined with the user target
 by taking the larger lower bound, so the package never extends a range on its own in order to cover
-numerator terms. Only complete systems may proceed to a formal reduction.
+numerator terms. Only complete systems may proceed to a formal reduction. Neither \texttt{DSSeeds}
+nor \texttt{DSGenerateIBP} carries options beyond the shared ones.
 
 \subsection{Linear systems and external reduction}
 \label{sec:linear}
@@ -534,27 +563,66 @@ linearData = DSLinear[ibpData, context];
 converts the generated IBP relations into a backend-neutral association.
 Its fields include the equations \texttt{linearEquations}, the full integral
 list \texttt{integralList}, the integral-to-ID mapping \texttt{integralRules}, and sector metadata.
+\texttt{DSLinear} accepts the dedicated options \texttt{LinearSystemMode} (\texttt{"symbolic"} by
+default; \texttt{"numeric"} builds the sampled system with the numeric rules substituted),
+\texttt{CoefficientRules} (\texttt{Automatic} by default; the numeric substitutions of the sampled
+mode) and \texttt{KiraOrdering} (\texttt{Automatic} by default; an association that adjusts the
+integral-ordering conventions of the serializer).
 The command \texttt{DSReorderIntegrals} changes this ordering before export. Master integrals
 are identified at the subsequent reduction stage. The two-stage Kira plan is built in memory:
 \begin{samepage}
 \begin{verbatim}
-prePlan   = DSKiraPlan[linearData, <|"stage" -> "preReduction", ...|>];
+prePlan   = DSKiraPlan[linearData, <|
+   "stage" -> "preReduction", "candidateIntegrals" -> candidates,
+   "outputDirectory" -> preDir, "jobOptions" -> Automatic|>];
 preExport = DSKiraExport[prePlan];
 (* ... external Kira run identifies the master integrals ... *)
 linearWithUserMI = DSUserMI[linearData, userExpressions, <|
    "names" -> activeNames, "activeIndices" -> activeIndices,
    "derivativeVariables" -> {ss11, P0}, "scalingDegrees" -> degrees|>];
-formalPlan   = DSKiraPlan[linearWithUserMI, <|"stage" -> "formal", ...|>];
+formalPlan   = DSKiraPlan[linearWithUserMI, <|
+   "stage" -> "formal", "activeBasis" -> Automatic,
+   "numericStage" -> "symbolic"|>];
 formalExport = DSKiraExport[formalPlan];
 (* ... external Kira run reduces to the user basis ... *)
 importedData = DSKiraImport[formalWorkspace];
 \end{verbatim}
 \end{samepage}
-The pre-reduction stage freezes the candidate targets and lets the external reducer discover the
-masters. The command \texttt{DSUserMI} then attaches the user basis. It checks the global and the
-active rank, and it stores reversible pivot rules. The formal stage constructs the analytic
+The specification of \texttt{DSKiraPlan} must contain \texttt{"stage"} and accepts the further keys
+\begin{itemize}
+\item \texttt{"preferredIntegrals"}: integrals recorded as preferred candidates;
+\item \texttt{"candidateIntegrals"}: the pre-reduction targets, the full integral list by default;
+\item \texttt{"activeBasis"}: the basis attached by \texttt{DSUserMI} when left \texttt{Automatic};
+\item \texttt{"numericStage"}: \texttt{"symbolic"} by default, \texttt{"postDerivative"}
+substitutes the numeric rules only after the analytic derivative closure is frozen;
+\item \texttt{"coefficientRules"} and \texttt{"outputDirectory"}: forwarded to the export;
+\item \texttt{"jobOptions"}: the Kira job configuration, for example the parallel job count.
+\end{itemize}
+The pre-reduction stage freezes the candidate
+targets and lets the external reducer discover the
+masters. The command \texttt{DSUserMI} then attaches the user basis. Its specification keys
+\texttt{"names"} (defaulting to \texttt{"active1"}, \texttt{"active2"} and so on),
+\texttt{"activeIndices"} (defaulting to all positions), \texttt{"derivativeVariables"} and
+\texttt{"scalingDegrees"} (both defaulting to \texttt{Automatic}) are optional. It checks the global
+and the active rank, and it stores reversible pivot rules. The formal stage constructs the analytic
 derivative closure of the active basis \emph{before} any export.
-\texttt{DSKiraImport} checks the export identity when importing the reduction. Kira accepts only
+\texttt{DSKiraExport} writes the input directories of a plan, or of plain \texttt{linearData}; its
+options are
+\begin{itemize}
+\item \texttt{OutputDirectory} (\texttt{None} by default);
+\item \texttt{KiraTargetIntegrals} (\texttt{Automatic}): the mandatory targets of the run;
+\item \texttt{KiraCoefficientRules} (\texttt{\{\}}): the numeric coefficient rules;
+\item \texttt{KiraJobOptions} (\texttt{Automatic}): the job configuration;
+\item \texttt{KiraActiveBasis} (\texttt{None}): the active basis of a formal export;
+\item \texttt{KiraRequireCompleteSystem} (\texttt{True}): refuse an incomplete system;
+\item \texttt{KiraNumericStage} (\texttt{"symbolic"}).
+\end{itemize}
+A plan supplies the corresponding values from its fields.
+\texttt{DSKiraImport} checks the export identity when importing the reduction. Its dedicated
+options \texttt{KiraReductionFile} and \texttt{KiraMasterFile} (\texttt{Automatic} by default)
+resolve to the Kira family outputs of the workspace, and \texttt{KiraCompletionFile} and
+\texttt{KiraCompletionPatterns} (\texttt{Automatic} by default) control the completion diagnostics
+of the run log. Kira accepts only
 real rational coefficients, so the serialiser rewrites the momenta that must lie on the imaginary
 axis by the backend rule \texttt{k -> -I ik}, where \texttt{I} is the imaginary unit and \texttt{ik}
 is the backend symbol for the same magnitude. The importer reverses this map to restore the
@@ -570,8 +638,11 @@ independent variables:
 \begin{verbatim}
 deData = DSDE[importedData, {ss11, P0}];
 \end{verbatim}
+The variable list defaults to all initialised variables. The option
+\texttt{OutputDirectory} (\texttt{None} by default) writes the DE data to disk.
 Loop-Gram coordinates are handled through external-vector derivative
-decompositions. No-loop magnitudes are handled through propagator-local radial derivatives, including
+decompositions. No-loop magnitudes are differentiated through radial derivatives that are local to
+each propagator, including
 their dependent bindings. Vertex energies enter as scalar parameters. Explicit coefficients are
 differentiated directly, while bare integrals are shifted and canonicalised. The result is reduced
 back to the chosen active basis. The pure massive bubble example supplies a known $d\log$ basis
@@ -597,7 +668,14 @@ becomes
 \end{equation}
 where $R$ is the number of masters in the active basis.
 The command \texttt{DSScaleCheck} checks this matrix identity and any inhomogeneous source
-terms in the DE output. It reports a symbolic check when the scaling variables remain symbolic,
+terms in the DE output. It takes the DE data and an optional specification whose keys
+\texttt{"relation"}, \texttt{"variables"}, \texttt{"weights"} and \texttt{"degrees"} are equivalent
+to its dedicated options \texttt{ScalingRelation} (\texttt{"Custom"} by default; the built-in
+relations \texttt{"PureMassiveBubble"} and \texttt{"LoopTopology"} supply the degrees of those
+families when none are declared), \texttt{ScalingVariables} (\texttt{Automatic}, the DE variables),
+\texttt{ScalingWeights} (\texttt{Automatic}, all weights one) and \texttt{ScalingDegrees}
+(\texttt{Automatic}, the degrees declared with the active basis).
+It reports a symbolic check when the scaling variables remain symbolic,
 a fixed-section check when some are fixed, and an exact-point check when all are fixed.
 The source-level time and momentum IBP checks quoted in section~\ref{sec:examples} are separate
 calculations in the validation scripts. The tree workflow exposes \texttt{DSTreeDLogDE} for
@@ -628,8 +706,14 @@ iterative = repIterative[target, end, context];
 naiveIBP  = DSTreeNaiveIBP[context, masters];
 naiveDE   = DSTreeNaiveDE[naiveIBP, variables];
 \end{verbatim}
-Here \texttt{integral} is a member of the \texttt{timeOnly} family, \texttt{masters} is the master
-list of \texttt{dlogDE}, and \texttt{end} fixes the target time powers of the iterative reduction.
+Here \texttt{integral} is a member of the \texttt{timeOnly} family, and \texttt{end} fixes the
+target time powers of the iterative reduction, defaulting to the zero power at every vertex. The
+\texttt{masters} argument of \texttt{DSTreeNaiveIBP} defaults to the master list of
+\texttt{dlogDE} in the same order, and the \texttt{variables} argument of \texttt{DSTreeNaiveDE}
+defaults to the vertex energies and massive-leg magnitudes of the family.
+\texttt{DSTreeNaiveDE} also accepts the result of \texttt{DSTreeNaiveIBP} directly.
+\texttt{DSTreeSeeds} can be called for a single vertex or, as above, for every time-generator
+vertex at once; the tree commands carry no options beyond the shared ones.
 The iterative route substitutes the general reduction formulas, whereas the naive route solves
 sampled IBP relations. The two-vertex example compares the naive DE with \texttt{DSTreeDLogDE}.
 Section~\ref{sec:validation} describes this check and the separate comparison with MadStree.
@@ -833,6 +917,10 @@ We thank the developers of Kira \cite{Maierhofer:2017gsa,Klappert:2020nbg}, Rati
 
 \section{Public functions}
 \label{app:api}
+
+Table~\ref{tab:api} lists the public functions. The dedicated options and specification keys of
+each command are introduced together with that command in section~\ref{sec:using}, and
+\texttt{Options[function]} lists them at run time.
 
 \begin{table}[!ht]
 \centering
