@@ -2472,6 +2472,9 @@ pointwise evaluation times.
 
 The DE calculation uses 80 decimal digits and local Taylor series truncated at order 80.
 An independent transport at order 96 provides an internal stability check.
+For these benchmark runs, the physical boundary vectors are supplied by the independent
+V5.5 implementation of the true-infinity Frobenius expansion; \texttt{MadStree} constructs
+the DE and \texttt{FlintNDE} performs transport from the resulting finite boundary anchor.
 We compare batches of $N=1$, $10$, $50$ and $100$ target points on the slice in \eqref{eq:tree-slice}.
 For $N=1$, $10$ and $50$, transport starts at $q=0.1$ and ends at $q=10^{-4}$.
 The single point is the end of the path, corresponding to $x=-\log_{10}q=4$.
@@ -2540,7 +2543,7 @@ The point $q=0.8905$ lies outside this domain, whereas the nearest positive
 pole of the DE connection is at $q=0.9$.
 To reach $q=1$, we continue the chosen analytic branch along
 \begin{equation}
-  0.1\to0.86\to0.86+0.04\ii\to0.93+0.04\ii\to0.93\to1.
+  0.1\to0.8905\to0.86+0.04\ii\to0.93+0.04\ii\to0.91\to1.
   \label{eq:tree-contour}
 \end{equation}
 This contour avoids the pole through the upper half of the complex plane.
@@ -2588,12 +2591,13 @@ in the first example each kernel carries one mode-function state at each of its 
 Let $\tau_1,\tau_2$ be the vertex times, $P_1,P_2$ the external energy sums,
 and $x_1,x_2$ the internal momentum magnitudes.
 The Hankel orders of the two internal propagators are $\nu_{B1},\nu_{B2}$.
-This example uses the positive-prefactor states of \eqref{eq:h-definition},
+This example uses \texttt{NuConvention -> "Negative"}, as in the tree example,
+with the Hankel orders unchanged:
 \begin{equation}
  \begin{aligned}
- h^{(r)}(\nu,0;z)&=z^\nu H^{(r)}_\nu(z),\\
+ h^{(r)}(\nu,0;z)&=z^{-\nu}H^{(r)}_\nu(z),\\
  h^{(r)}(\nu,1;z)&=\partial_z h^{(r)}(\nu,0;z)
-                   =z^\nu H^{(r)}_{\nu-1}(z),\qquad r=1,2.
+                   =-z^{-\nu}H^{(r)}_{\nu+1}(z),\qquad r=1,2.
  \end{aligned}
  \label{eq:bubble-endpoint-states}
 \end{equation}
@@ -2664,18 +2668,18 @@ projection quoted above. The pinched masters are therefore, with propagator~1 co
 \begin{equation}
  \text{I}^{\sigma_1\sigma_2,{\rm P1}}_{cd}
  =\int_{-\infty}^{0}\dd\tau\,
- (-\tau)^{p_1+p_2+2\nu_{B1}}
+ (-\tau)^{p_1+p_2-2\nu_{B1}}
  e^{\ii(\sigma_1P_1+\sigma_2P_2)\tau}\,
  T_{cd}(x_2;\tau),
  \qquad (c,d)\in\{(0,0),(0,1),(1,1)\},
  \label{eq:bubble-pinch1-masters}
 \end{equation}
 where the merged power follows from \eqref{eq:base-power} with the raw contact power
-$\varrho_1=2\nu_{B1}-1$ and one vertex merge, and, with propagator~2 contracted,
+$\varrho_1=-2\nu_{B1}-1$ and one vertex merge, and, with propagator~2 contracted,
 \begin{equation}
  \text{I}^{\sigma_1\sigma_2,{\rm P2}}_{ab}
  =\int_{-\infty}^{0}\dd\tau\,
- (-\tau)^{p_1+p_2+2\nu_{B2}}
+ (-\tau)^{p_1+p_2-2\nu_{B2}}
  e^{\ii(\sigma_1P_1+\sigma_2P_2)\tau}\,
  T_{ab}(x_1;\tau),
  \qquad (a,b)\in\{(0,0),(0,1),(1,1)\}.
@@ -2709,16 +2713,18 @@ branch, so they share the contour sign $\sigma_e=\sigma_1=\sigma_2$ of
 \eqref{eq:sector-normalization}. The hidden constants of the three sectors are
 \begin{equation}
   \cN_{\rm Top}=1,\qquad
-  \cN_{\rm P1}=-\sigma_e\,\frac{4\ii}{\pi}\,x_1^{\,2\nu_{B1}-1},\qquad
-  \cN_{\rm P2}=-\sigma_e\,\frac{4\ii}{\pi}\,x_2^{\,2\nu_{B2}-1},
+  \cN_{\rm P1}=-\sigma_e\,\frac{4\ii}{\pi}\,x_1^{-2\nu_{B1}-1},\qquad
+  \cN_{\rm P2}=-\sigma_e\,\frac{4\ii}{\pi}\,x_2^{-2\nu_{B2}-1},
   \label{eq:bubble-sector-normalizations}
 \end{equation}
 with $\cN_s^{(0)}=1$; the propagated objects are
 $J^{\sigma_1\sigma_2}_{abcd}=\text{I}^{\sigma_1\sigma_2}_{abcd}$,
 $J^{\sigma_1\sigma_2,{\rm P1}}_{cd}=\cN_{\rm P1}\text{I}^{\sigma_1\sigma_2,{\rm P1}}_{cd}$ and
 $J^{\sigma_1\sigma_2,{\rm P2}}_{ab}=\cN_{\rm P2}\text{I}^{\sigma_1\sigma_2,{\rm P2}}_{ab}$.
-This example runs in the package default convention, so the power is the
-$2\nu_e-1$ of \eqref{eq:sector-normalization} rather than the $-2\nu_e-1$ of the tree example.
+As in the tree example, \eqref{eq:sector-normalization} is used with the prefactor
+exponent $-\nu_e$, so the momentum power is $-2\nu_e-1$.
+The code passes $-P_i$ as \texttt{externalLegEnergy} to reproduce the vertex phases
+in \eqref{eq:bubble-indexed-masters}.
 We use $k_s=x_1$ as the momentum unit and vary the dimensionless energy
 $\rho=P_1/k_s=P_2/k_s$. The parameter values in
 \eqref{eq:bubble-indexed-masters} are
@@ -2738,10 +2744,15 @@ The normalized $0000$ entry of $\bm K_{\mathrm{SK}}$, written $\widehat K_{\math
   \label{eq:bubble-normalized}
 \end{equation}
 The four zeros select the four undifferentiated mode-function states of the two massive propagators.
+Panel \textbf{b} instead uses $[\bm K_{\mathrm{SK}}(\rho)]_{0000}/
+\operatorname{Re}[\bm K_{\mathrm{SK}}(10)]_{0000}$; division by this real scale
+preserves the complex phase.
 
 The scan contains 201 points over $2.8\leq\rho\leq10$.
-Calculations use decimal arithmetic with 80 digits. The transport orders are
+DE transport uses decimal arithmetic with 80 digits. The transport orders are
 80 and 96, and the boundary series orders are 17 and 15.
+The boundary vectors are constructed at 60 working digits by an independent
+large-energy expansion and mapped to the \texttt{MadStree} master basis before transport.
 The calculation time excluding reference transport at order 96 is $678.20$~s.
 It includes all four contour assignments, DE construction and both
 boundary calculations.
@@ -2761,13 +2772,13 @@ comparison of transport orders alone is not a bound on the total error.
   \centering
   \includegraphics[width=0.99\textwidth]{figures/bubble2.pdf}
   \caption{Bubble time kernel evaluated with \texttt{MadStree}.
-  \textbf{a}, The normalized kernel and the independent reference.
+  \textbf{a}, The real part of the normalized kernel and the independent reference.
   \textbf{b}, The kernel in the complex plane, with color indicating $\rho$.}
   \label{fig:bubble-scan}
 \end{figure}
 
 Both panels of figure~\ref{fig:bubble-scan} use the same 201 points. Panel \textbf{a} compares the
-normalized kernel \eqref{eq:bubble-normalized} with the same quantity computed by a separate program
+real part of the normalized kernel \eqref{eq:bubble-normalized} with the same quantity computed by a separate program
 written for this bubble graph alone, which does not use \texttt{MadStree}; the maximum relative
 difference over the scan is $3.70\times10^{-14}$. The nearly radial
 distribution in panel \textbf{b} indicates an approximately constant phase.
@@ -2938,8 +2949,9 @@ initialization, so substituted values are entered by initializing with them: wit
 regularized powers $a_1=-1+\varepsilon$, $a_2=a_3=1+\varepsilon$ in the
 \texttt{timePower} fields of the same topology, the same call returns the LeftPinch
 coefficient $-2\ii(E_1+E_2)/[(1+\varepsilon)(1+2\varepsilon)]$ and the singular surfaces
-$\{-1+\varepsilon\}$, $\{1+\varepsilon\}$, $\{1+2\varepsilon\}$, exposing the
-$\varepsilon$-pole that the Laurent reconstruction below resolves.
+$\{-1+\varepsilon\}$, $\{1+\varepsilon\}$, $\{1+2\varepsilon\}$.
+These denominators are nonzero at $\varepsilon=0$; the pole reconstructed below
+comes from the boundary factor $\Gamma(\varepsilon)$.
 
 The certificate of Sec.~\ref{sec:regulator} runs before any numerical solve and returns
 $n_{\min}=-1$: the d log-form DE is regular at $\varepsilon=0$, but the vertex-1 unit
@@ -2955,18 +2967,19 @@ $g=12$, \eqref{eq:regulator-fit-count} and \eqref{eq:regulator-scale-precision} 
 $P=1$, $\Delta=1$, $N_{\rm fit}=4$, $\alpha_\varepsilon=25/4$, $\varepsilon_0=10^{-25/4}$,
 $p_0=32$, a working
 precision of $200$ digits and a primary transport order of $128$ with $50$ reference orders.
-The four production points are exact Gaussian rationals of moduli
+The four production points are exact Gaussian rational approximations to points with moduli
 $\varepsilon_0(1+j/100)$, $j=1,\ldots,4$, cycling through the rays $-\pi/6$, $0$ and $+\pi/6$ of the
-open window $(-\pi/3,\pi/3)$; the two validation points sit at half the first two moduli, on the
-rays $-\pi/6$ and $0$, and never enter the fit. All six solves are dispatched to one bounded pool
+open window $(-\pi/3,\pi/3)$; the two validation points similarly approximate points at half the first two moduli, on the
+rays $-\pi/6$ and $0$, and never enter the fit.
+All six solves are dispatched to one bounded pool
 ($12$ requested, $6$ effective); the whole reconstruction, including the certificate, both
 validation solves and the fit, takes $170$~s of wall time.
 
 The returned Laurent data are the $\varepsilon^{-1}$ pole coefficient and the
 $\varepsilon^0$ coefficient, both $9$-entry master vectors. Entries below $10^{-20}$ in
 absolute value are numerical noise at the achieved accuracy and are reported as zero. For scale,
-the relative validation residual is of order $10^{-25}$, while the physical entries are of order
-$10^{-3}$ or larger. With this convention three entries of the pole coefficient vanish,
+the relative validation residual is of order $10^{-25}$, while the finite DoublePinch entry
+listed below is of order $10^{-5}$. With this convention three entries of the pole coefficient vanish,
 among them the DoublePinch entry, because the fully merged boundary branch carries no
 isolated $\Gamma(\varepsilon)$ factor. Two representative entries are
 \begin{equation}
@@ -2992,6 +3005,7 @@ containing a loop at fixed internal momenta.
 The regulator example certifies the Laurent support symbolically on a divergent
 massless chain and delivers the $\varepsilon\to0$ pole coefficient and finite part from six
 numerical solves.
+
 
 
 
