@@ -123,7 +123,7 @@ dSIBP 020 的 time-only `J[sectorKey,timeShifts,stateBits]` 只通过显式 adap
 - `massiveFull` 在两个顶点各有一个独立的二维 h slot 且可 contact；`masslessFull` 唯一使用整条传播子共享的二维 quotient slot；
 - Cross 类型不 contact，External 类型只有一个顶点。
 
-`massiveFull` 收缩后的物理 child master normalization 含一次上述内部整体符号：省略共同动量幂时，
+`massiveFull` 收缩后的物理 subsector master normalization 含一次上述内部整体符号：省略共同动量幂时，
 `++` 为 `-4 I/Pi`，`--` 为 `+4 I/Pi`。该符号只属于 `J_s=calN_s I_s` 的 sector/master
 normalization；normalized-master dlog contact block 和 recurrence event 不再重复乘它。
 
@@ -154,30 +154,30 @@ sector 由已收缩 Full 传播子的 canonical 集合确定。收缩后的 comp
 - `vertexComponents`、`vertexOrder`、`rootToComponent`；
 - active 传播子、active slots、slot order 和维数；
 - 每个 component 的 external energy 和 master base time power；
-- parent/child contact events；
+- supersector/subsector contact events；
 - normalization、normalization ratio 和 dlog 认证状态。
 
-### 4.2 为什么 child base power 必须吸收 `+1`
+### 4.2 为什么 subsector base power 必须吸收 `+1`
 
-设 parent 中两个 component 的时间幂为 `A_u+a_u`、`A_v+a_v`，contact event 的 raw 额外时间幂为 `lambda_e`。delta 合并后 raw child 幂次为
+设 supersector 中两个 component 的时间幂为 `A_u+a_u`、`A_v+a_v`，contact event 的 raw 额外时间幂为 `lambda_e`。delta 合并后 raw subsector 幂次为
 
 ```text
 A_u + a_u + A_v + a_v + lambda_e.
 ```
 
-为了让 DE 所需的 `R^(1)` 直接落在 child master，而不是先产生一个 shifted child 再做 kinematic-dependent 约化，child master base 固定为
+为了让 DE 所需的 `R^(1)` 直接落在 subsector master，而不是先产生一个 shifted subsector 再做 kinematic-dependent 约化，subsector master base 固定为
 
 ```text
-A_child = A_u + A_v + lambda_e + 1.
+A_subsector = A_u + A_v + lambda_e + 1.
 ```
 
-所以一般 contact 映射产生的 child shift 是
+所以一般 contact 映射产生的 subsector shift 是
 
 ```text
-a_child = a_u + a_v - 1.
+a_subsector = a_u + a_v - 1.
 ```
 
-于是 parent 的 `R^(0)` 落到 child shift `-1`，而任一顶点 IBP 的 `R^(1)` 恰好落到 child shift `0`。参考 bubble 中 raw contact 的 `a1+a2-2 nu-1` 与 subsector 基准 `a0R=2 a0-2 nu` 正是这一规则。
+于是 supersector 的 `R^(0)` 落到 subsector shift `-1`，而任一顶点 IBP 的 `R^(1)` 恰好落到 subsector shift `0`。参考 bubble 中 raw contact 的 `a1+a2-2 nu-1` 与 subsector 基准 `a0R=2 a0-2 nu` 正是这一规则。
 
 对于普通树图逐条传播子的 contact，任一 contracted component `C` 的 master base 因而是
 
@@ -289,20 +289,20 @@ MSReduce[integralOrExpression, context, MasterBasis -> Automatic]
 
 - `masters`、`bareMasters`、`masterCount` 和顺序 digest；
 - 每个 sector 的 diagonal block、letters 和 residue matrices；
-- parent-to-child contact blocks 及其 source event；
+- supersector-to-subsector contact blocks 及其 source event；
 - 完整 block-triangular `omegaPotential`、`letterMatrices`；
 - normalization gauge 项；
 - `dlogStatus`、`dlogResidual` 与未认证原因。
 
-固定 sector diagonal block直接由同一个 building-block registry、全局 `U_s`、`M1(A+1)` 和 `log(kappa)` 组装。也就是说 dlog DE 已经是 registry 的直接公式输出，不需要先生成或求解大规模 IBP 系统。非对角块必须使用 parent 的 `R^(1)`：
+固定 sector diagonal block直接由同一个 building-block registry、全局 `U_s`、`M1(A+1)` 和 `log(kappa)` 组装。也就是说 dlog DE 已经是 registry 的直接公式输出，不需要先生成或求解大规模 IBP 系统。非对角块必须使用 supersector 的 `R^(1)`：
 
-1. 生成 raw contact target 和精确 child shift；
-2. 验证 child shift 为零，或用 child recurrence 约到其主积分；
-3. 乘 parent 的 transformed log kernel；
-4. 乘 `N_parent/N_child`；
+1. 生成 raw contact target 和精确 subsector shift；
+2. 验证 subsector shift 为零，或用 subsector recurrence 约到其主积分；
+3. 乘 supersector 的 transformed log kernel；
+4. 乘 `N_supersector/N_subsector`；
 5. 检查每个 `Log[letter]` 的系数是否为运动学无关常数。
 
-本包使用 `(-tau)^A`。把 parent raising row 写成
+本包使用 `(-tau)^A`。把 supersector raising row 写成
 
 ```text
 M0 J(A+1) = M1 J(A) - R,
@@ -314,24 +314,7 @@ M0 J(A+1) = M1 J(A) - R,
 
 这一块的论文 authority 是 2401.00129 第 3.7.2 节的 Eq. (3.65)、(3.68)：subsector master 特意包含 pinching 产生的动量/时间幂 prefactor，因而 top 对 sub 的系数仍是 dlog。`reference/ref_code/codebubble/Omega_tau_generator.m` 中的 `buildTopToSubsectorBlock` 实现了相同的 bit 删除、补 `1-bit`、`(-1)^bit` 和对两个顶点求和的结构，并由 `OmegaTopToR1/OmegaTopToR2` 组装 bubble 的 off-diagonal block；该文件注释把来源误标成 Eq. (3.27)，新包不得沿用这个错误编号。
 
-## 9. H/h/time-only 变换
-
-公开局部矩阵：
-
-```wl
-MSHTohMatrix[nu,z,context]
-MShToHMatrix[nu,z,context]
-```
-
-其中
-
-```text
-T(H->h) = {{z^nu, 0}, {nu z^(nu-1), z^nu}}.
-```
-
-这里 `nu` 是本包输入的 Hankel order 本身，不取绝对值；`NuConvention` 选择 prefactor exponent `+nu/-nu`，Hankel order 保持 `nu`。负 prefactor 时把上式中的 `nu` 换成 `-nu`。
-
-`MSConvertBasis` 提供局部二态和全 sector 同序状态向量的正反变换。全 sector 变换按 slot registry 组装 Kronecker 矩阵，每个 massive 顶点使用自己的 `z=-k tau_component`；一条 massless Full 传播子共享的 quotient slot 保持单位作用。`NuConvention` 只在 `MSInitTree` 时选择，全 sector 换基固定读取 context，不接受逐调用覆盖。已经积分后的 `MSIntegral` 还会同时改变 component base time power，首版没有独立的 H-family metadata，因此这一重载必须 fail closed，不能把非整数时间幂变化伪装成普通 bit 变换。
+## 9. dSIBP time-only adapter
 
 另提供 `MSIntegral[sectorKey,timeShifts,stateBits]` 与 dSIBP 020 `J[sectorKey,timeShifts,stateBits]` 的双向 adapter。adapter 只转换同一 sector/state-slot schema 下可唯一解析的对象；含 loop/ISP/b-slot 或不唯一 sector 的输入拒绝转换。
 
@@ -385,11 +368,11 @@ rank[C] = Max[rank[v], v in C].
 
 严格全序下，`K[C]` 由 `C` 内 rank 最大的 root vertex 主导。delta 合并只改变 component、base time power 和 contact normalization；边界 chart 始终由同一套 root rank 诱导，不能在每个 subsector 独立重选一个不兼容的 rank。剩余 theta 连接两个 components 时，比较它们各自主导 root 的 rank。
 
-每个 sector 的边界按自己的 top sector 计算：先使用其 normalization 和 contact 后的 base time power，再把固定为 0/1 的 theta 分支拆成 component vertex families。bottom sector 先算；parent 的非齐次边界再由 block-triangular Frobenius leading system 或等价的 theta/delta 顶点展开递归确定。不能只给 top homogeneous product 而遗漏 lower-sector solution 对 parent components 的领先贡献。
+每个 sector 的边界按自己的 top sector 计算：先使用其 normalization 和 contact 后的 base time power，再把固定为 0/1 的 theta 分支拆成 component vertex families。bottom sector 先算；supersector 的非齐次边界再由 block-triangular Frobenius leading system 或等价的 theta/delta 顶点展开递归确定。不能只给 top homogeneous product 而遗漏 lower-sector solution 对 supersector components 的领先贡献。
 
 ### 10.4 非退化证书
 
-由 sector diagonal 公式，任意运动学 letter 都是 component 指数能量加各传播子的 signed energy。由 2401.00129 Eq. (3.68) 的 top-to-sub 公式，非对角块只用 parent 的同一组 `Log[kappa]` 乘常数 contact map，不产生新 log argument；若 child shift 需要递推，只会再引入 child sector 的同型 letters。因此对 contact DAG 归纳后，完整 connection 的每个含 `K` 分母均有一般形式
+由 sector diagonal 公式，任意运动学 letter 都是 component 指数能量加各传播子的 signed energy。由 2401.00129 Eq. (3.68) 的 top-to-sub 公式，非对角块只用 supersector 的同一组 `Log[kappa]` 乘常数 contact map，不产生新 log argument；若 subsector shift 需要递推，只会再引入 subsector 的同型 letters。因此对 contact DAG 归纳后，完整 connection 的每个含 `K` 分母均有一般形式
 
 ```text
 D[alpha,s] = Q[alpha,s] + Sum[c[alpha,s,v] K[v], v],
@@ -429,7 +412,7 @@ raising recurrence 使用 `M0^-1`，而
 Det[M0[C]] proportional to Product[kappa[C,s], s].
 ```
 
-所以 `k0[v]=0` 并非自动普通。单条 Full 传播子的 top letters 是 `k0[u] +/- q`、`k0[v] +/- q`，但收缩该传播子后的 sector 还有 `k0[u]+k0[v]`；两辅助能量同时取零时，top 可非奇异而 child 必为奇异。更一般地，任一 sector component 在目标点没有剩余二维 slot且总指数能量为零时，必有零 letter。
+所以 `k0[v]=0` 并非自动普通。单条 Full 传播子的 top letters 是 `k0[u] +/- q`、`k0[v] +/- q`，但收缩该传播子后的 sector 还有 `k0[u]+k0[v]`；两辅助能量同时取零时，top 可非奇异而 subsector 必为奇异。更一般地，任一 sector component 在目标点没有剩余二维 slot且总指数能量为零时，必有零 letter。
 
 `M1` 的 general-index 零层必须直接由其对角本征值枚举，而不是笼统标成边界发散。它只阻断使用 `M1^-1` 的 lowering；同一点若 raising 只使用 `M0^-1 M1`，则 `M1=0` 只令相应 numerator/rank 降低，不产生求逆 pole。反向地，`M0=0` 阻断 raising，却不阻断只使用 `M1^-1 M0` 的 lowering。程序返回方向、当前 shift、state bits、零本征值和原始 IBP constraint；不自动增加 master，也不把离散 shift resonance 混入共同 `K -> infinity` 边界。
 
@@ -527,7 +510,7 @@ package-MadStree/versions/MadStree-v0.17/
   test/results_test/
 ```
 
-现行公开接口包括初始化、结构、公式、边界、输运和导出六层：`MSInitTree`、`MSInitTimeGraph`、`MSInitVertexFamily`、`MSContextQ`、`MSSectors`、`MSSlotRegistry`、`MSIntegral`、`MSBareIntegral`、`MSIntegralDefinition`、`MSMasterIntegrals`、`MSFormulaMatrices`、`MSFormulaData`、`MSWriteFormulaArtifacts`、`MSContactMaps`、`MSRecurrenceStep`、`MSReduce`、`MSDLogDE`、`MSHTohMatrix`、`MShToHMatrix`、`MSConvertBasis`、`MSToDSIBPJ`、`MSFromDSIBPJ`、`MSFromDSIBPExpression`、`MSNumericalSystem`、`MSBoundaryChartCertificate`、`MSBoundaryData`、`MSFlintNDEConfiguration`、`MSSetFlintNDERelativePath`、`MSEvaluatePath`、`MSReconstructEpSeries` 和 `MSExportEvaluationData`。
+现行公开接口包括初始化、结构、公式、边界、输运和导出六层：`MSInitTree`、`MSInitTimeGraph`、`MSInitVertexFamily`、`MSContextQ`、`MSSectors`、`MSSlotRegistry`、`MSIntegral`、`MSBareIntegral`、`MSIntegralDefinition`、`MSMasterIntegrals`、`MSFormulaMatrices`、`MSFormulaData`、`MSWriteFormulaArtifacts`、`MSContactMaps`、`MSRecurrenceStep`、`MSReduce`、`MSDLogDE`、`MSToDSIBPJ`、`MSFromDSIBPJ`、`MSFromDSIBPExpression`、`MSNumericalSystem`、`MSBoundaryChartCertificate`、`MSBoundaryData`、`MSFlintNDEConfiguration`、`MSSetFlintNDERelativePath`、`MSEvaluatePath`、`MSReconstructEpSeries` 和 `MSExportEvaluationData`。
 
 内部函数按物理含义命名；不以数字后缀区分操作，不为不同 sector 或 fold 数复制实现。
 
@@ -555,21 +538,21 @@ package-MadStree/versions/MadStree-v0.17/
 - 对每个 contact 显示 source shift、target shift 和 base-power 推导。
 - 对每个 state 显示方向敏感的 `M1` lowering resonance 与 `M0` raising letter；同时为零时返回原始 rank-deficient constraint，不自动改变 master basis。
 
-验收：bubble 的 raw `R^(0)` 为 child `-1` shift，`R^(1)` 为 child `0` shift；无 contact sector 的升降一步互逆；递归不残留非目标 shifted integral。
+验收：bubble 的 raw `R^(0)` 为 subsector `-1` shift，`R^(1)` 为 subsector `0` shift；无 contact sector 的升降一步互逆；递归不残留非目标 shifted integral。
 
 ### Phase D：dlog DE
 
-- 按 Eq. (3.65)、(3.68) 组装 sector diagonal 和 parent-to-child blocks，并把 `buildTopToSubsectorBlock` 仅作为 bubble specialization oracle。
+- 按 Eq. (3.65)、(3.68) 组装 sector diagonal 和 supersector-to-subsector blocks，并把 `buildTopToSubsectorBlock` 仅作为 bubble specialization oracle。
 - 同步输出 master list、offset 和 digest。
 - 做 constant-residue、normalization ratio、block-triangular 和 exact residual 检查。
 - 对每个二维 slot 检查所有 vertex-local Pauli directions 共线；只有通过共同对角化条件时才使用逐 letter 取逆的快速路径。
-- 非零 `R^(1)` child shift 逐列调用 `MSReduce`，抽取到全局 master order 的 reduction matrix 后右复合 contact block；任何 residual/remaining shift 返回 `contactShiftReductionFailed`。
+- 非零 `R^(1)` subsector shift 逐列调用 `MSReduce`，抽取到全局 master order 的 reduction matrix 后右复合 contact block；任何 residual/remaining shift 返回 `contactShiftReductionFailed`。
 
 验收：pure massive two-vertex 适用子集与参考 `Omega_tau_generator.m` 同序比较；单条 massless Full 传播子的 top 维数由 4 降为 2，subsector master 与 contact block 维数正确；所有声称 dlog 的 block residue 为常数。
 
 ### Phase E：变换、数值边界与文档
 
-- 实现 H/h 局部基变换及 dSIBP 020 time-only adapter 的可逆子集。
+- 实现 dSIBP 020 time-only adapter 的可逆子集；曾实现的 H/h 局部基变换已于 2026-10-17 物理删除，不属现行接口。
 - 固定手动数值系统接口；自动边界由 Phase F 独立实现。
 - 补 README 和最小 examples；完整使用指南待接口稳定后写入手册。
 
@@ -582,7 +565,7 @@ package-MadStree/versions/MadStree-v0.17/
 - [x] 实现裸坐标普通保存点、临时点与奇点 LO 点语义；二阶 pole 等未认证起点在普通输运前 fail closed。
 - [x] 实现逐个辅助顶点能量移除；普通零点走普通输运，有限奇点零点进入 FlintNDE 局部分类/双侧 bucket，超出局部能力或分支不唯一时 fail closed。
 
-验收：复现文献两顶点 chart `x=k34/k12, y=1/k34`、五维 leading system 和边界 factorization；正/负顶点分别以 `k0=-I pik0`、`k0=+I mik0` 得到同一 `Exp[-K t]`；preferred 点的能量降序与 time 尺度升序一致；单条 massless Full 传播子的 top/child 零点判定正确；任意小树每个 sector 的 strict transforms 均通过 normal-crossing 检查；输出边界向量与 `MSDLogDE` master digest 完全一致。
+验收：复现文献两顶点 chart `x=k34/k12, y=1/k34`、五维 leading system 和边界 factorization；正/负顶点分别以 `k0=-I pik0`、`k0=+I mik0` 得到同一 `Exp[-K t]`；preferred 点的能量降序与 time 尺度升序一致；单条 massless Full 传播子的 top/subsector 零点判定正确；任意小树每个 sector 的 strict transforms 均通过 normal-crossing 检查；输出边界向量与 `MSDLogDE` master digest 完全一致。
 
 ### Phase G：time-only 圈图输入扩展
 

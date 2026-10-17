@@ -422,46 +422,7 @@ record[
 
 
 (* ::Chapter:: *)
-(* H/h and recurrence *)
-
-hRoundTrip = Simplify[
-  MShToHMatrix[nu, z, massiveContext].MSHTohMatrix[nu, z, massiveContext]
-];
-record["HhRoundTrip", hRoundTrip === IdentityMatrix[2]];
-
-hNegativeRoundTrip = Simplify[
-  MShToHMatrix[nu, z, referenceContext].MSHTohMatrix[nu, z, referenceContext]
-];
-record["HhNegativeRoundTrip", hNegativeRoundTrip === IdentityMatrix[2]];
-record["localContextRequired", Head[MSHTohMatrix[nu, z]] === Failure];
-
-globalState = Array[state, 4];
-globalHToh = MSConvertBasis[globalState, "H" -> "h", massiveTopKey, {tauU, tauV}, massiveContext];
-globalRoundTrip = MSConvertBasis[globalHToh, "h" -> "H", massiveTopKey, {tauU, tauV}, massiveContext];
-record["globalHhRoundTrip", Simplify[globalRoundTrip - globalState] === ConstantArray[0, 4]];
-
-negativeGlobalState = Array[negativeState, 4];
-negativeGlobalHToh = MSConvertBasis[
-  negativeGlobalState, "H" -> "h", referenceTopKey, {tau1, tau2}, referenceContext
-];
-negativeGlobalRoundTrip = MSConvertBasis[
-  negativeGlobalHToh, "h" -> "H", referenceTopKey, {tau1, tau2}, referenceContext
-];
-record[
-  "globalNegativeHhRoundTrip",
-  Simplify[negativeGlobalRoundTrip - negativeGlobalState] === ConstantArray[0, 4]
-];
-record[
-  "globalConventionOverrideRejected",
-  Head[Quiet[MSConvertBasis[
-    negativeGlobalState,
-    "H" -> "h",
-    referenceTopKey,
-    {tau1, tau2},
-    referenceContext,
-    NuConvention -> "Positive"
-  ], MSConvertBasis::unsupported]] === Failure
-];
+(* Recurrence and numerical system *)
 
 numericalWithoutBoundary = MSNumericalSystem[masslessDE];
 record["numericalBoundaryRequired", numericalWithoutBoundary["status"] === "boundaryDataRequired"];

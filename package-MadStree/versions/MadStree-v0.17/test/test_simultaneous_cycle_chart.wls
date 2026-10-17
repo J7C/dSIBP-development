@@ -2,7 +2,7 @@
 
 (***
 File: test_simultaneous_cycle_chart.wls
-Purpose: Verifies common-theta odd-subset simultaneous contact, the coincident quotient, time-only cycle sector canonicalization, shifted-child formula reduction and the nested blow-up certificates.
+Purpose: Verifies common-theta odd-subset simultaneous contact, the coincident quotient, time-only cycle sector canonicalization, shifted-subsector formula reduction and the nested blow-up certificates.
 Run: wolframscript -file package-MadStree/versions/MadStree-v0.17/test/test_simultaneous_cycle_chart.wls
 ***)
 
@@ -148,7 +148,7 @@ record["triangleLeadingResidual",
 
 
 (* ::Chapter:: *)
-(* Shifted-child reduction helper and summary *)
+(* Shifted-subsector reduction helper and summary *)
 
 triangleTargetSector = triangleSectors[[2]];
 shiftReduction = MadStree`Private`msShiftedTargetReduction[

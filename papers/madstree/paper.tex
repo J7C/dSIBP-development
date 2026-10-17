@@ -368,8 +368,9 @@ integration, and the graph is a tree, so
 \end{equation}
 and only the top sector has as many shifts as the graph has vertices. Sectors are partially ordered
 by $t\prec s$ when $t$ is reachable from $s$ by at least one contact, i.e.\ when
-$L_t^{\rm ctr}\supsetneq L_s^{\rm ctr}$. This ordering is the tree-level counterpart of the
-\emph{subsector} relation of flat-space IBP, where $S$ is a subsector of $S'$ if every propagator
+$L_t^{\rm ctr}\supsetneq L_s^{\rm ctr}$; we then call $t$ a \emph{subsector} of $s$ and $s$ a
+\emph{supersector} of $t$. This ordering is the tree-level counterpart of the subsector relation of
+flat-space IBP, where $S$ is a subsector of $S'$ if every propagator
 power of $S$ is less than or equal to the corresponding power of $S'$ \cite{Klappert:2020nbg}: the
 integer propagator powers that order flat-space sectors are here replaced by the contact indicator
 bits $\xi_j$, since a propagator of a tree is either kept ($\xi_j=1$) or contracted away
@@ -380,11 +381,7 @@ These three indices also label the package object
 $J_s=\cN_s\widehat{\text I}_s$ defined below. Here
 \texttt{sectorKey} is the string \eqref{eq:sector-key}, \texttt{aShifts} the vector $\bm n$ and
 \texttt{stateBits} the string $\bm a$; the same slots are used by the returned records
-\texttt{"sectorKey", "stateBits", "integral", "normalization"}. The object maps
-slot-by-slot onto the corresponding \texttt{dSIBP} object
-\texttt{J[sectorKey, timeShifts, stateBits]} of the parent framework \cite{dSIBP:inPreparation},
-with the same key alphabet, the same shift dimension $c_s$ and the same bit order, so that a
-\texttt{MadStree} master can be read as a \texttt{dSIBP} $J$ and vice versa without any re-indexing.
+\texttt{"sectorKey", "stateBits", "integral", "normalization"}.
 
 \paragraph{Suppressed data and normalization.}
 The indices in \eqref{eq:graph-index} label the integral within a fixed context. Its full
@@ -874,25 +871,25 @@ count is exactly the number of such hypersurfaces.
 
 \paragraph{Two different remaining terms.}
 The lowering and raising directions evaluate the contact term $\cR_{v,s}$ in
-\eqref{eq:one-step-ibp} at different shifts. If the lower time powers of the child sector
+\eqref{eq:one-step-ibp} at different shifts. If the lower time powers of the subsector
 $t\prec s$ are reduced first, one obtains the \emph{lowering} version
 \begin{equation}
   \cR_{v,s}^{(0)}\equiv\cR_{v,s}(\bm n),
   \qquad
-  \text{child reached at shift } -1,
+  \text{subsector reached at shift } -1,
   \label{eq:R0}
 \end{equation}
 while the contact that appears in the raising row \eqref{eq:global-Aplus} is
 \begin{equation}
   \cR_{v,s}^{(1)}\equiv\cR_{v,s}(\bm n+\bm e_C),
   \qquad
-  \text{child reached at shift } 0.
+  \text{subsector reached at shift } 0.
   \label{eq:R1}
 \end{equation}
 The reason is the base-power rule \eqref{eq:base-power}: the raw contact integrand carries one
-factor $(-\tau)^{\varrho_e}$ too few to be a master of the child at vanishing shift, so
-$\cR^{(0)}$ lands on child shift $-1$ and only $\cR^{(1)}$ --- obtained by raising the parent power
-by one, which raises the merged component by one --- hits the child master itself. Since the DE
+factor $(-\tau)^{\varrho_e}$ too few to be a master of the subsector at vanishing shift, so
+$\cR^{(0)}$ lands at subsector shift $-1$ and only $\cR^{(1)}$ --- obtained by raising the supersector power
+by one, which raises the merged component by one --- hits the subsector master itself. Since the DE
 differentiates the masters $\bm{\text I}_s(\bm 0)$ and therefore uses the raising row, \emph{the
 off-diagonal blocks of the DE must be built from $\cR^{(1)}$}; substituting $\cR^{(0)}$ gives the
 wrong sign and a non-closing expression.
@@ -952,15 +949,15 @@ term of the lowering row is therefore
 \end{equation}
 where $v$ is the vertex the row is taken at, $\sigma_e$ is the contour sign of the contracted
 propagator, of the same rule as in \eqref{eq:contact-weight}, $k$ and $\nu$ are its momentum magnitude
-and order, $t$ is the child sector
-reached by the contact, and $\text{I}_{t}(-\bm e_C;\bm r)$ is the child integral
+and order, $t$ is the subsector
+reached by the contact, and $\text{I}_{t}(-\bm e_C;\bm r)$ is the subsector integral
 \eqref{eq:graph-index} of the merged component $C$, with mode-function state-bit string $\bm r$ packed into
 $\tilde{\bm r}$ and with the shift $-1$ on that single component; here $c_t=1$ by
-\eqref{eq:component-count}, so $-\bm e_C=(-1)$. The child base power is
+\eqref{eq:component-count}, so $-\bm e_C=(-1)$. The subsector base power is
 $\nu_{0,u}+\nu_{0,v}+2\nu-1$, one below $A_{C,t}$ of \eqref{eq:base-power}, which is what the shift
 $-1$ records. The version needed by the DE is \eqref{eq:R-two-vertex} with
 $\text{I}_{t}(-\bm e_C;\bm r)\to\text{I}_{t}(\bm 0;\bm r)$, whose base power is
-$\nu_{0,u}+\nu_{0,v}+2\nu$ and which is an actual master of the child sector; the two-vertex contact
+$\nu_{0,u}+\nu_{0,v}+2\nu$ and which is an actual master of the subsector; the two-vertex contact
 of the first application example is written out in this notation in \eqref{eq:application-child-master}.
 
 Two comments on the relation to \cite{Chen:2024glu} follow. First, that reference prints this
@@ -972,7 +969,7 @@ $\nu$ at both vertices, and the two bases are related by the constant identity
 $e^{-\pi\mu}H^{(2)}_{-\ii\mu}=H^{(2)}_{\ii\mu}$ for $\nu=\ii\mu$, so that in the common-order
 basis the explicit Boltzmann factor is absorbed into this change of basis and does not appear
 in \eqref{eq:R-two-vertex}. Second, the same constant $-\sigma_e\frac{4\ii}{\pi}k^{2\nu-1}$ is what
-the package assigns to the sector normalization $\cN_t$ of the child $t$ as its pinch factor; because
+the package assigns to the sector normalization $\cN_t$ of the subsector $t$ as its pinch factor; because
 the contact blocks of the normalized masters carry the ratio $\cN_s/\cN_t$ of
 \eqref{eq:normalized-de}, that constant cancels from the normalized DE, and the block
 \eqref{eq:contact-omega} below has no residual pinch prefactor.
@@ -987,8 +984,8 @@ where $C^{I,(v,1)}_{st}$ is the injection matrix in the raw $h$ basis. It contai
 local contact selectors, their Wronskian factors and the odd-subset coefficient of
 Sec.~\ref{sec:common-theta}, with spectator bits preserved. It is independent of the
 vertex energies but can depend on the propagator momenta through factors such as
-$q_e^{2\nu_e-1}$. By the choice of base power, the child appears at vanishing shift;
-if an event leaves a nonzero shift, the recurrence is first applied inside the child.
+$q_e^{2\nu_e-1}$. By the choice of base power, the subsector appears at vanishing shift;
+if an event leaves a nonzero shift, the recurrence is first applied inside the subsector.
 
 Differentiating $e^{\ii p_{0,C}\tau_C}$ with respect to the component energy brings down
 $\ii\tau_C=-\ii(-\tau_C)$, raising the time power by one:
@@ -1043,7 +1040,7 @@ $\mathcal A=\sum_x\mathcal A_x\nd x$ is block triangular,
 so each sector is sourced only by itself and lower sectors. This permits a recursive solution
 starting from the lowest sectors. The package transports the complete normalized stack as one
 system (Sec.~\ref{sec:numerics}). Algebraic reduction proceeds downward through the hierarchy,
-since contacts replace a parent integral by child integrals.
+since contacts replace a supersector integral by subsector integrals.
 
 \paragraph{The normalized system.}
 The package combines the constant massless basis change \eqref{eq:package-massless-basis}
@@ -1586,17 +1583,7 @@ of masters in each sector.}
 The vertex \texttt{vertexType} field (\texttt{"+"} or \texttt{"-"}) determines the sign of the pure
 vertex exponential $e^{\ii k_0\tau}$ of \eqref{eq:vertex-integral-family}, and the pair of vertex types determines the SK class of each propagator, from which the default Hankel branches of
 \eqref{eq:h-definition} follow; a propagator may override them with its own \texttt{hankelBranches}
-field. The
-package $h$ mode-function states are those of \eqref{eq:h-definition}, i.e.\
-$h(\nu,1;z)=\partial_zh(\nu,0;z)$. \texttt{MSHTohMatrix[nu, z, context]} and
-\texttt{MShToHMatrix[nu, z, context]} give the local $2\times2$ change of basis between the raw
-Hankel states $(H_\nu(z),\partial_zH_\nu(z))$ and these states and its inverse;
-\texttt{MSConvertBasis} applies it to a local two-component state vector or, given a sector key
-and component times, to the complete sector state vector as the Kronecker product over the slot
-registry, with the massless shared mode-function two-state slot of Sec.~\ref{sec:massless} acting
-trivially. These commands convert integrand states, not integral objects: the powers of
-$z=-k\tau$ in the matrix also shift the component base time powers, so converting an
-\texttt{MSIntegral} itself fails closed.
+field.
 
 
 
@@ -1621,8 +1608,6 @@ propagators, master counts)\\
 \texttt{MSIntegral[sectorKey, aShifts, stateBits]}\\
 \texttt{MSIntegralDefinition[integral, context]} & bare label, exact normalization $\cN_s$ and
 inert identity of one valid \texttt{MSIntegral}\\
-\texttt{MSHTohMatrix[...]} / \texttt{MShToHMatrix[...]} / \texttt{MSConvertBasis[...]} & local and
-sector-level conversion between raw Hankel states and $h$ states\\
 \texttt{MSFormulaMatrices[context, key]} & per-component $\text{M}_1$, $\text{M}_0$ and energy letters $\kappa_{\bm a}$;
 sector diagonalizer \texttt{"U"} and \texttt{"UInverse"}\\
 \texttt{MSDLogDE[context]} & block-triangular d log-form potential $\Omega$, letters, certification
@@ -1630,7 +1615,7 @@ status\\
 \texttt{MSRecurrenceStep[integral, component, context]} & one recurrence step moving one nonzero
 time shift toward zero\\
 \texttt{MSReduce[expr, context]} & iterative IBP reduction to the master basis; scalar, list or nested table input\\
-\texttt{MSContactMaps[context, key]} & parent-to-sub-sector contact maps\\
+\texttt{MSContactMaps[context, key]} & supersector-to-subsector contact maps\\
 \texttt{MSWriteFormulaArtifacts[context]} & write formula products beside the caller\\
 \texttt{MSFormulaData[context]} & aggregate all-sector masters, recurrence metadata and the d log-form DE\\
 \texttt{MSEvaluatePath[context, pointSequence, opts]} & single-stage evaluation: boundary initialization and segment transport in one backend process; optional FlintNDE path planning\\
@@ -2324,7 +2309,7 @@ In the IBP reduction, derivatives of the functions that impose time ordering gen
 contact terms that merge adjacent vertices. These terms define the
 LeftPinch, RightPinch and DoublePinch sectors.
 The left pinch merges $L$ and $M$ and leaves the two indices of propagator 2, so its four masters
-are the child integrals of the contact term \eqref{eq:R-two-vertex}, written out as
+are the subsector integrals of the contact term \eqref{eq:R-two-vertex}, written out as
 \begin{equation}
  \begin{aligned}
  \text{I}^{\boldsymbol\sigma,{\rm L}}_{cd}
@@ -2410,9 +2395,9 @@ written in the indices of this graph; the contact at $v=L$ has the opposite sign
   \qquad \tilde{\bm r}=1+2c+d,
   \label{eq:tree-contact-term}
 \end{equation}
-where the child is taken at shift $-1$ on the merged component and $0$ on $\tau_R$, so that its
+where the subsector integral is taken at shift $-1$ on the merged component and $0$ on $\tau_R$, so that its
 merged power is one below \eqref{eq:application-child-master}, and the bits $a,b$ of the contracted
-propagator are removed from the parent string, leaving $\tilde{\bm r}$ as the packed label of $(c,d)$.
+propagator are removed from the supersector string, leaving $\tilde{\bm r}$ as the packed label of $(c,d)$.
 The four sectors then carry the hidden constants
 \begin{equation}
   \begin{aligned}
@@ -3216,10 +3201,10 @@ package enumerates: the $k$-th telescoping term stands for ``contract only the $
 after the spectators are expanded the same subset $S$ is reached from several $k$, so an
 enumeration over $k$ would generate the same sector transition more than once. After collecting,
 each event appears exactly once with a numerical weight, and the deduplication key of the reduction
-is the triple (parent sector, child sector, set of selected propagator identifiers). There are only
+is the triple (supersector, subsector, set of selected propagator identifiers). There are only
 finitely many such events, because every event strictly reduces the number of current components.
 
-\paragraph{Child base power and coincident unselected propagators.}
+\paragraph{Subsector base power and coincident unselected propagators.}
 For a component $C$ produced by such events the base power is \eqref{eq:base-power},
 $A_{C,s}=\sum_{v\in C}\nu_{0,v}+\sum_{e\in E_s(C)}\varrho_e+|C|-1$.
 The vertex powers add because the merged integrand is a product.
@@ -3228,7 +3213,7 @@ $(-\tau)^{\varrho_e}$ accompanying the corresponding $\delta$.
 The last term counts component merges: $|C|-1$ for $|C|$ vertices, regardless of how many
 bundle propagators are contracted at once. Since \eqref{eq:base-power} depends only on the final component and on
 the contracted set, and not on the order or the clustering of the events, different legal event
-sequences that reach the same sector give the same child base power; the reduction is confluent at
+sequences that reach the same sector give the same subsector base power; the reduction is confluent at
 the level of the powers.
 
 An unselected propagator whose two vertices fall into one component after a bundle event must also be
